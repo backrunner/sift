@@ -1,0 +1,90 @@
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# Logs and diagnostics
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Dependencies
+node_modules/
+
+# JavaScript / TypeScript build output
+dist/
+build/
+.svelte-kit/
+.vercel/
+.netlify/
+coverage/
+*.tsbuildinfo
+
+# Cloudflare Workers local state and secrets
+.wrangler/
+apps/worker-*/wrangler.toml
+apps/worker-*/.dev.vars
+apps/worker-*/.dev.vars.*
+
+# Environment files and local secrets
+.env
+.env.*
+!.env.example
+*.local
+*.secret
+*.secrets
+secrets/
+
+# Swift / Xcode build products
+.build/
+DerivedData/
+*.xcworkspace
+*.xcuserstate
+*.xcscmblueprint
+*.moved-aside
+*.hmap
+*.ipa
+*.dSYM/
+*.xcarchive/
+*.xcodeproj/*
+!*.xcodeproj/project.pbxproj
+
+# Apple signing material
+*.cer
+*.p12
+*.mobileprovision
+*.provisionprofile
+*.keychain
+*.keychain-db
+
+# Databases and local sample exports
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+*.db
+*.ndjson
+*.jsonl
+*.csv
+*.tsv
+*.parquet
+*.arrow
+
+# Core ML / trainer working artifacts
+*.mlmodel
+!apps/ios/GeneratedModels/SiftSMSClassifier.mlmodel
+*.mlmodelc/
+*.mlpackage/
+*.mlarchive
+
+# Python / tooling caches
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.venv/
+venv/
+*.egg-info/

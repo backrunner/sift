@@ -1,0 +1,26 @@
+{
+  "name": "sift",
+  "private": true,
+  "packageManager": "pnpm@10.24.0",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "build": "pnpm -r build",
+    "test": "pnpm -r test",
+    "typecheck": "pnpm -r typecheck",
+    "lint": "pnpm -r lint",
+    "format": "pnpm -r format",
+    "build:workers": "pnpm --filter @sift/worker-toc build && pnpm --filter @sift/worker-tob build",
+    "test:workers": "pnpm --filter @sift/worker-toc test && pnpm --filter @sift/worker-tob test",
+    "check:workers": "pnpm build:workers && pnpm test:workers",
+    "deploy:workers": "pnpm --filter @sift/worker-toc exec tsx ../../tools/cloudflare/deploy-workers.ts --env production",
+    "deploy:workers:dry-run": "pnpm --filter @sift/worker-toc exec tsx ../../tools/cloudflare/deploy-workers.ts --env production --dry-run",
+    "deploy:worker:toc": "pnpm --filter @sift/worker-toc exec tsx ../../tools/cloudflare/deploy-workers.ts --env production --worker toc",
+    "deploy:worker:tob": "pnpm --filter @sift/worker-toc exec tsx ../../tools/cloudflare/deploy-workers.ts --env production --worker tob",
+    "dev:legal": "pnpm --filter @sift/legal-site dev",
+    "build:legal": "pnpm --filter @sift/legal-site build",
+    "check:legal": "pnpm --filter @sift/legal-site check"
+  }
+}
