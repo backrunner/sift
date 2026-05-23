@@ -1,0 +1,2036 @@
+import MessageFilterCore
+import SwiftUI
+#if canImport(AppKit)
+import AppKit
+#endif
+#if canImport(UIKit)
+import UIKit
+#endif
+
+public struct SiftRootView: View {
+    @State private var model = SiftAppModel()
+
+    public init() {}
+
+    public var body: some View {
+        NavigationStack {
+            ScrollView {
+                dashboardSections
+            }
+            .scrollIndicators(.hidden)
+            .background(AtmosphericBackground())
+            .ignoresSafeArea(edges: .top)
+            #if os(iOS)
+            .toolbar(.hidden, for: .navigationBar)
+            #endif
+        }
+        .tint(.siftMint)
+        .overlay(alignment: .top) {
+            ToastOverlay(toast: $model.currentToast)
+        }
+    }
+
+    @ViewBuilder
+    private var dashboardSections: some View {
+        VStack(spacing: 18) {
+            DashboardHero(model: model)
+            if !model.hasConfirmedFilterSetup {
+                InterceptionSetupPanel(model: model)
+            }
+            TestSamplePanel(model: model)
+            SubmitSamplePanel(model: model)
+            RulesPanel(model: model)
+            LegalLinksPanel(model: model)
+        }
+        .padding(.horizontal, 16)
+        .padding(.top, safeAreaTop + 14)
+        .padding(.bottom, 32)
+    }
+
+    private var safeAreaTop: CGFloat {
+        #if canImport(UIKit)
+        UIApplication.shared.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .flatMap { $0.windows }
+            .first(where: \.isKeyWindow)?.safeAreaInsets.top ?? 44
+        #else
+        0
+        #endif
+    }
+}
+
+private struct AtmosphericBackground: View {
+    @Environment(\.colorScheme) private var colorScheme
+
+    var body: some View {
+        ZStack {
+            Color.siftCanvas
+                .ignoresSafeArea()
+
+            // 柔和强调色光斑：左上 mint，右下 cool blue。
+            // 让亮色不再"白板"，暗色下也提供方向感的色温。
+            GeometryReader { proxy in
+                let size = max(proxy.size.width, proxy.size.height)
+                ZStack {
+                    Circle()
+                        .fill(Color.siftMint.opacity(colorScheme == .dark ? 0.18 : 0.14))
+                        .frame(width: size * 0.95, height: size * 0.95)
+                        .blur(radius: 90)
+                        .offset(x: -size * 0.35, y: -size * 0.45)
+
+                    Circle()
+                        .fill(Color.siftHalo.opacity(colorScheme == .dark ? 0.22 : 0.16))
+                        .frame(width: size * 0.85, height: size * 0.85)
+                        .blur(radius: 100)
+                        .offset(x: size * 0.4, y: size * 0.55)
+                }
+            }
+            .ignoresSafeArea()
+            .allowsHitTesting(false)
+        }
+    }
+}
+
+private struct DashboardHero: View {
+    let model: SiftAppModel
+
+    private var formattedModelVersion: String {
+        formatModelVersion(model.modelVersion)
+    }
+
+    var body: some View {
+        HStack(alignment: .center, spacing: 12) {
+            Text("Sift")
+                .font(.system(size: 34, weight: .bold))
+                .foregroundStyle(.primary)
+
+            Spacer(minLength: 8)
+
+            HStack(spacing: 5) {
+                Image(systemName: "cpu")
+                    .font(.caption2.weight(.bold))
+                    .foregroundStyle(.white.opacity(0.85))
+                Text("模型版本")
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(.white.opacity(0.85))
+                Text(formattedModelVersion)
+                    .font(.caption2.weight(.bold).monospaced())
+                    .foregroundStyle(.white)
+            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 5)
+            .background(
+                LinearGradient(
+                    colors: [Color.siftMint, Color.siftMint.opacity(0.86)],
+                    startPoint: .top,
+                    endPoint: .bottom
+                ),
+                in: Capsule()
+            )
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, 4)
+        .padding(.top, 6)
+        .padding(.bottom, 2)
+    }
+}
+
+/// 从 manifest 里的 `<codename>-<major>.<minor>` 格式（如 `corpus-0.1`）
+/// 中提取纯版本号 `major.minor`，展示在 "模型版本 <version>" 胶囊里。
+private func formatModelVersion(_ raw: String) -> String {
+    let trimmed = raw.trimmingCharacters(in: .whitespaces)
+    guard !trimmed.isEmpty else {
+        return "0.1"
+    }
+    let parts = trimmed.split(separator: "-").map(String.init)
+    guard let last = parts.last,
+          let major = last.split(separator: ".").first,
+          Int(major) != nil
+    else {
+        return trimmed
+    }
+
+    let versionParts = last.split(separator: ".")
+    let major2 = versionParts.first.map(String.init) ?? "0"
+    let minor2 = versionParts.dropFirst().first.map(String.init) ?? "1"
+    return "\(major2).\(minor2)"
+}
+
+private struct InterceptionSetupPanel: View {
+    @Bindable var model: SiftAppModel
+    @Environment(\.openURL) private var openURL
+    @State private var didOpenSettings = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            SectionHeader(
+                title: "短信拦截设置",
+                icon: "gearshape"
+            )
+
+            VStack(alignment: .leading, spacing: 10) {
+                SetupStepRow(
+                    index: "1",
+                    title: "打开系统设置",
+                    detail: "进入 iPhone 的设置应用。"
+                )
+
+                SetupStepRow(
+                    index: "2",
+                    title: "找到信息",
+                    detail: "进入「信息」里的未知与垃圾信息。"
+                )
+
+                SetupStepRow(
+                    index: "3",
+                    title: "启用 Sift",
+                    detail: "打开筛选并允许 Sift 参与拦截。"
+                )
+            }
+
+            HStack(spacing: 10) {
+                ActionButton(
+                    title: "前往设置",
+                    icon: "gearshape.fill",
+                    style: .secondary,
+                    isEnabled: settingsURL != nil
+                ) {
+                    guard let url = settingsURL else { return }
+                    didOpenSettings = true
+                    openURL(url)
+                }
+
+                ActionButton(
+                    title: "已完成",
+                    style: didOpenSettings ? .primary : .neutral,
+                    isEnabled: didOpenSettings
+                ) {
+                    model.hasConfirmedFilterSetup = true
+                }
+            }
+        }
+        .padding(18)
+        .cardSurface()
+    }
+
+    private var settingsURL: URL? {
+        #if canImport(UIKit)
+        URL(string: UIApplication.openSettingsURLString)
+        #else
+        nil
+        #endif
+    }
+}
+
+private struct SetupStepRow: View {
+    let index: String
+    let title: String
+    let detail: String
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 12) {
+            ZStack {
+                Circle()
+                    .fill(Color.siftMint.opacity(0.18))
+                    .frame(width: 28, height: 28)
+                Text(index)
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(Color.siftMint)
+            }
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.callout.weight(.semibold))
+                    .foregroundStyle(.primary)
+                Text(detail)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(2)
+            }
+
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
+        .insetSurface()
+    }
+}
+
+private struct TestSamplePanel: View {
+    @Bindable var model: SiftAppModel
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            SectionHeader(title: "测试样本", icon: "brain.head.profile")
+
+            GlassTextEditor(title: "短信正文", placeholder: "输入短信正文", text: $model.testBody, minHeight: 104)
+                .onChange(of: model.testBody) { _, _ in model.clearCurrentDecision() }
+
+            ActionButton(
+                title: "开始测试",
+                icon: "text.magnifyingglass",
+                style: .primary,
+                isEnabled: model.canClassifyCurrentDraft
+            ) {
+                model.classifyCurrentDraft()
+            }
+
+            if let decision = model.lastDecision {
+                ResultStrip(decision: decision)
+            }
+        }
+        .padding(18)
+        .cardSurface()
+    }
+}
+
+private struct SubmitSamplePanel: View {
+    @Bindable var model: SiftAppModel
+    @Environment(\.openURL) private var openURL
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            SectionHeader(title: "提交样本", icon: "tray.and.arrow.up")
+
+            SubmissionModeSelector(selection: $model.submissionDestination)
+                .onChange(of: model.submissionDestination) { _, _ in
+                    model.sampleSubmissionFeedback = nil
+                }
+
+            if model.submissionDestination == .remote {
+                RemoteSubmissionPrivacyCard(
+                    isAccepted: $model.hasAcceptedRemoteSamplePrivacy,
+                    privacyPolicyURL: model.privacyPolicyURL,
+                    termsOfServiceURL: model.termsOfServiceURL
+                ) { url in
+                    openURL(url)
+                }
+                .transition(.opacity.combined(with: .move(edge: .top)))
+            }
+
+            GlassTextEditor(title: "样本文本", placeholder: "粘贴一条待标注短信", text: $model.submissionText, minHeight: 104)
+                .onChange(of: model.submissionText) { _, _ in
+                    model.sampleSubmissionFeedback = nil
+                    model.refreshSanitizedPreview()
+                }
+
+            if model.shouldShowSanitizedPreview {
+                PrivacyPreview(text: model.sanitizedPreview)
+            }
+
+            CategoryMenu(selectedLabelID: $model.selectedLabelID)
+
+            ActionButton(
+                title: model.submissionDestination == .local ? "加入本地微调队列" : "匿名提交脱敏样本",
+                icon: "checkmark.shield",
+                style: .primary,
+                isEnabled: model.canSubmitSample && !model.isSubmittingSample,
+                isLoading: model.isSubmittingSample
+            ) {
+                model.submitSample()
+            }
+
+            if let feedback = model.sampleSubmissionFeedback {
+                SubmissionFeedbackStrip(feedback: feedback)
+                    .transition(.opacity.combined(with: .move(edge: .top)))
+            }
+
+            if model.submissionDestination == .remote, let receiptToken = model.lastReceiptToken {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("回执")
+                        .font(.caption.weight(.bold))
+                        .foregroundStyle(.secondary)
+                    Text(receiptToken)
+                        .font(.caption.monospaced())
+                        .lineLimit(2)
+                        .textSelection(.enabled)
+                        .foregroundStyle(.primary.opacity(0.84))
+                    ActionButton(
+                        title: "删除远程样本",
+                        icon: "trash",
+                        style: .danger
+                    ) {
+                        model.deleteLastRemoteSample()
+                    }
+                }
+                .padding(12)
+                .insetSurface()
+            }
+        }
+        .padding(18)
+        .cardSurface()
+        .animation(.snappy(duration: 0.22), value: model.sampleSubmissionFeedback?.id)
+        .animation(.snappy(duration: 0.22), value: model.submissionDestination)
+    }
+}
+
+private struct LegalLinksPanel: View {
+    let model: SiftAppModel
+    @Environment(\.openURL) private var openURL
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            SectionHeader(
+                title: "隐私与条款",
+                subtitle: "查看匿名贡献、数据保留和服务范围。",
+                icon: "doc.text.magnifyingglass"
+            )
+
+            HStack(spacing: 10) {
+                ActionButton(
+                    title: "隐私说明",
+                    icon: "hand.raised.fill",
+                    style: .secondary
+                ) {
+                    openURL(model.privacyPolicyURL)
+                }
+
+                ActionButton(
+                    title: "服务条款",
+                    icon: "checkmark.seal",
+                    style: .neutral
+                ) {
+                    openURL(model.termsOfServiceURL)
+                }
+            }
+        }
+        .padding(18)
+        .cardSurface()
+    }
+}
+
+private struct RemoteSubmissionPrivacyCard: View {
+    @Binding var isAccepted: Bool
+    let privacyPolicyURL: URL
+    let termsOfServiceURL: URL
+    let openPrivacyPolicy: (URL) -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 11) {
+            HStack(alignment: .top, spacing: 9) {
+                Image(systemName: "hand.raised.fill")
+                    .font(.callout.weight(.semibold))
+                    .foregroundStyle(Color.siftMint)
+                    .frame(width: 18)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("匿名贡献隐私说明")
+                        .font(.footnote.weight(.bold))
+                        .foregroundStyle(.primary)
+                    Text("会发送脱敏后的样本文本、分类和模型版本；不发送发送方、账号或设备标识。你可以用回执删除最近一次远程样本。")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+
+            Toggle("我同意匿名贡献", isOn: $isAccepted)
+                .font(.footnote.weight(.semibold))
+                .toggleStyle(.switch)
+                .tint(.siftMint)
+
+            HStack(spacing: 12) {
+                Button {
+                    openPrivacyPolicy(privacyPolicyURL)
+                } label: {
+                    Label("隐私说明", systemImage: "doc.text.magnifyingglass")
+                        .font(.caption.weight(.semibold))
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(Color.siftMint)
+
+                Button {
+                    openPrivacyPolicy(termsOfServiceURL)
+                } label: {
+                    Label("服务条款", systemImage: "checkmark.seal")
+                        .font(.caption.weight(.semibold))
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(Color.siftMint)
+            }
+        }
+        .padding(12)
+        .insetSurface(cornerRadius: 12)
+        .accessibilityElement(children: .contain)
+    }
+}
+
+private struct SubmissionModeSelector: View {
+    @Binding var selection: SubmissionDestination
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("提交方式")
+                .font(.caption.weight(.bold))
+                .foregroundStyle(.secondary)
+
+            HStack(spacing: 10) {
+                SubmissionModeChip(
+                    title: "仅本地",
+                    subtitle: "数据留在设备",
+                    icon: "lock.shield",
+                    isSelected: selection == .local
+                ) {
+                    selection = .local
+                }
+
+                SubmissionModeChip(
+                    title: "匿名提交",
+                    subtitle: "发送脱敏文本",
+                    icon: "icloud.and.arrow.up",
+                    isSelected: selection == .remote
+                ) {
+                    selection = .remote
+                }
+            }
+        }
+        .animation(.bouncy(duration: 0.22), value: selection)
+        .sensoryFeedback(.selection, trigger: selection)
+    }
+}
+
+private struct SubmissionModeChip: View {
+    let title: String
+    let subtitle: String
+    let icon: String
+    let isSelected: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(alignment: .top) {
+                    Image(systemName: icon)
+                        .font(.headline.weight(.bold))
+                        .foregroundStyle(isSelected ? Color.siftMint : .secondary)
+                    Spacer(minLength: 0)
+                    if isSelected {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.caption.weight(.bold))
+                            .foregroundStyle(Color.siftMint)
+                    }
+                }
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title)
+                        .font(.callout.weight(.semibold))
+                        .foregroundStyle(.primary)
+                        .lineLimit(1)
+                    Text(subtitle)
+                        .font(.caption2.weight(.medium))
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
+                .multilineTextAlignment(.leading)
+            }
+            .frame(maxWidth: .infinity, minHeight: 64, alignment: .leading)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 12)
+            .foregroundStyle(isSelected ? Color.primary : Color.primary.opacity(0.9))
+            .pillSurface(cornerRadius: 14, isSelected: isSelected)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+private struct RulesPanel: View {
+    let model: SiftAppModel
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            SectionHeader(
+                title: "自定义规则",
+                icon: "slider.horizontal.3"
+            ) {
+                if model.customRuleCount > 0 {
+                    RuleCountBadge(total: model.customRuleCount, active: model.activeRuleCount)
+                }
+            }
+
+            NavigationLink {
+                RuleManagementView(model: model)
+            } label: {
+                Label("管理规则", systemImage: "slider.horizontal.3")
+                    .font(.callout.weight(.semibold))
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 14)
+                    .padding(.horizontal, 16)
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(.primary)
+            .insetSurface(cornerRadius: 12)
+        }
+        .padding(18)
+        .cardSurface()
+    }
+}
+
+private struct RuleCountBadge: View {
+    let total: Int
+    let active: Int
+
+    var body: some View {
+        HStack(spacing: 4) {
+            Text("\(active)")
+                .contentTransition(.numericText())
+            Text("/")
+                .foregroundStyle(Color.siftMint.opacity(0.55))
+            Text("\(total)")
+                .contentTransition(.numericText())
+        }
+        .font(.caption.weight(.bold).monospacedDigit())
+        .foregroundStyle(Color.siftMint)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 5)
+        .background(Color.siftMint.opacity(0.12), in: Capsule())
+    }
+}
+
+private struct RuleManagementView: View {
+    @Bindable var model: SiftAppModel
+    @State private var isDraftExpanded = false
+    @State private var editingRuleID: UUID?
+    @State private var openRuleID: UUID?
+
+    private var customRuleRows: [RuleRowReference] {
+        model.customRuleIndices.compactMap { index in
+            guard model.rules.indices.contains(index) else {
+                return nil
+            }
+            return RuleRowReference(id: model.rules[index].id, ruleIndex: index)
+        }
+    }
+
+    var body: some View {
+        #if os(iOS)
+        Group {
+            ruleList
+        }
+        .navigationTitle("规则管理")
+        .toolbarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .confirmationAction) {
+                if customRuleRows.count > 1 {
+                    EditButton()
+                        .font(.callout.weight(.semibold))
+                }
+            }
+        }
+        .sheet(item: editingRuleBinding) { row in
+            NavigationStack {
+                RuleEditView(model: model, ruleID: row.id) {
+                    editingRuleID = nil
+                }
+            }
+            .presentationDetents([.large])
+            .presentationDragIndicator(.visible)
+        }
+        #else
+        ruleList
+        #endif
+    }
+
+    private var editingRuleBinding: Binding<RuleRowReference?> {
+        Binding(
+            get: {
+                guard let id = editingRuleID,
+                      let index = model.rules.firstIndex(where: { $0.id == id })
+                else {
+                    return nil
+                }
+                return RuleRowReference(id: id, ruleIndex: index)
+            },
+            set: { newValue in
+                editingRuleID = newValue?.id
+            }
+        )
+    }
+
+    @ViewBuilder
+    private var ruleList: some View {
+        List {
+            VStack(alignment: .leading, spacing: 0) {
+                DisclosureCardHeader(
+                    icon: "plus.circle",
+                    title: "新建规则",
+                    isExpanded: isDraftExpanded
+                ) {
+                    isDraftExpanded.toggle()
+                }
+
+                if isDraftExpanded {
+                    Divider()
+                        .background(Color.siftHairline)
+                        .padding(.top, 14)
+                        .padding(.bottom, 16)
+
+                    RuleDraftForm(model: model)
+                    .transition(.opacity)
+                }
+            }
+            .padding(18)
+            .cardSurface()
+            .animation(.snappy(duration: 0.28), value: isDraftExpanded)
+            .ruleManagementListRow(top: 14, bottom: 12)
+
+            SectionHeader(
+                title: "规则列表",
+                icon: "list.bullet.rectangle"
+            ) {
+                if !customRuleRows.isEmpty {
+                    RuleCountBadge(total: model.customRuleCount, active: model.activeRuleCount)
+                }
+            }
+            .padding(.horizontal, 3)
+            .ruleManagementListRow(top: 8, bottom: 4)
+
+            if customRuleRows.isEmpty {
+                RuleEmptyState()
+                    .ruleManagementListRow(top: 4, bottom: 16)
+            } else {
+                ForEach(model.rules) { rule in
+                    RuleListRow(
+                        rule: rule,
+                        isEnabled: ruleEnabledBinding(for: rule.id),
+                        openRuleID: $openRuleID,
+                        onEdit: { editingRuleID = rule.id },
+                        onDelete: { model.deleteRule(id: rule.id) }
+                    )
+                    .ruleManagementListRow(top: 6, bottom: 6)
+                }
+                .onMove { source, destination in
+                    model.moveCustomRules(from: source, to: destination)
+                }
+            }
+        }
+        .listStyle(.plain)
+        .scrollContentBackground(.hidden)
+        .background(AtmosphericBackground())
+    }
+
+    private func ruleEnabledBinding(for ruleID: UUID) -> Binding<Bool> {
+        Binding(
+            get: {
+                model.rules.first(where: { $0.id == ruleID })?.enabled ?? false
+            },
+            set: { newValue in
+                guard let index = model.rules.firstIndex(where: { $0.id == ruleID }) else {
+                    return
+                }
+                var rule = model.rules[index]
+                rule.enabled = newValue
+                model.rules[index] = rule
+            }
+        )
+    }
+}
+
+private struct RuleRowReference: Identifiable {
+    let id: UUID
+    let ruleIndex: Int
+}
+
+private struct RuleDraftForm: View {
+    @Bindable var model: SiftAppModel
+
+    private var patternPlaceholder: String {
+        switch model.ruleDraftPatternKind {
+        case .substring:
+            return model.ruleDraftLocation == .sender ? "955" : "取件码"
+        case .regex:
+            return model.ruleDraftLocation == .sender ? "^955\\d{2}$" : #"取件码\s*\d{4,8}"#
+        }
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            GlassTextField(title: "规则名称（可选）", placeholder: model.defaultRuleNamePlaceholder, text: $model.ruleDraftName)
+
+            VStack(alignment: .leading, spacing: 8) {
+                Text("匹配位置")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                SegmentedChoiceRow {
+                    RuleChoiceChip(
+                        title: RuleMatchLocation.sender.title,
+                        icon: RuleMatchLocation.sender.symbol,
+                        isSelected: model.ruleDraftLocation == .sender
+                    ) {
+                        model.ruleDraftLocation = .sender
+                    }
+
+                    RuleChoiceChip(
+                        title: RuleMatchLocation.body.title,
+                        icon: RuleMatchLocation.body.symbol,
+                        isSelected: model.ruleDraftLocation == .body
+                    ) {
+                        model.ruleDraftLocation = .body
+                    }
+                }
+            }
+
+            VStack(alignment: .leading, spacing: 8) {
+                Text("匹配方式")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                SegmentedChoiceRow {
+                    RuleChoiceChip(
+                        title: RulePatternKind.substring.title,
+                        icon: "tag",
+                        isSelected: model.ruleDraftPatternKind == .substring
+                    ) {
+                        model.ruleDraftPatternKind = .substring
+                    }
+
+                    RuleChoiceChip(
+                        title: RulePatternKind.regex.title,
+                        icon: "function",
+                        isSelected: model.ruleDraftPatternKind == .regex
+                    ) {
+                        model.ruleDraftPatternKind = .regex
+                    }
+                }
+            }
+
+            GlassTextField(title: "匹配内容", placeholder: patternPlaceholder, text: $model.ruleDraftPattern)
+
+            CategoryMenu(titleLabel: "分类", selectedLabelID: $model.ruleDraftLabelID)
+
+            ActionButton(
+                title: "添加规则",
+                icon: "plus",
+                style: .primary,
+                isEnabled: model.canAddCustomRule
+            ) {
+                _ = model.addCustomRuleFromDraft()
+            }
+        }
+    }
+}
+
+private struct SegmentedChoiceRow<Content: View>: View {
+    @ViewBuilder let content: Content
+
+    var body: some View {
+        HStack(spacing: 6) {
+            content
+        }
+        .padding(4)
+        .background(Color.siftInsetFill, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .stroke(Color.siftHairline, lineWidth: 1)
+        )
+    }
+}
+
+private struct RuleChoiceChip: View {
+    let title: String
+    let icon: String
+    let isSelected: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 6) {
+                Image(systemName: icon)
+                    .font(.caption2.weight(.semibold))
+                Text(title)
+                    .font(.footnote.weight(.semibold))
+            }
+            .frame(maxWidth: .infinity)
+            .frame(height: 32)
+            .foregroundStyle(isSelected ? Color.siftMint : .secondary)
+            .background {
+                if isSelected {
+                    RoundedRectangle(cornerRadius: 9, style: .continuous)
+                        .fill(Color.siftCardFill)
+                        .shadow(color: Color.black.opacity(0.06), radius: 3, x: 0, y: 1)
+                }
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .animation(.snappy(duration: 0.18), value: isSelected)
+    }
+}
+
+private struct RuleListRow: View {
+    let rule: CustomRule
+    let isEnabled: Binding<Bool>
+    @Binding var openRuleID: UUID?
+    var onEdit: () -> Void = {}
+    var onDelete: () -> Void = {}
+
+    #if os(iOS)
+    @Environment(\.editMode) private var editMode
+    #endif
+    @State private var dragOffset: CGFloat = 0
+    @State private var isDragging = false
+
+    private let actionButtonWidth: CGFloat = 44
+    private let actionButtonHeight: CGFloat = 44
+    private let interButtonSpacing: CGFloat = 6
+    private let cardToActionsGap: CGFloat = 6
+
+    private var revealWidth: CGFloat {
+        actionButtonWidth * 2 + interButtonSpacing + cardToActionsGap
+    }
+
+    private var isOpen: Bool { openRuleID == rule.id }
+
+    private var isEditingList: Bool {
+        #if os(iOS)
+        editMode?.wrappedValue.isEditing == true
+        #else
+        false
+        #endif
+    }
+
+    private var displayOffset: CGFloat {
+        if isEditingList { return 0 }
+        let base: CGFloat = isOpen ? -revealWidth : 0
+        return base + dragOffset
+    }
+
+    private var locationTitle: String {
+        rule.sender != nil ? RuleMatchLocation.sender.title : RuleMatchLocation.body.title
+    }
+
+    private var locationIcon: String {
+        rule.sender != nil ? RuleMatchLocation.sender.symbol : RuleMatchLocation.body.symbol
+    }
+
+    private var patternKindTitle: String {
+        if let sender = rule.sender { return sender.kind.title }
+        if let text = rule.text { return text.kind.title }
+        return ""
+    }
+
+    private var patternKindIcon: String {
+        if let sender = rule.sender {
+            return sender.kind == .regex ? "function" : "tag"
+        }
+        if let text = rule.text {
+            return text.kind == .regex ? "function" : "tag"
+        }
+        return "tag"
+    }
+
+    private var targetLabel: LeafLabel {
+        SiftTaxonomy.leaf(id: rule.targetLabelID) ?? SiftTaxonomy.leaves[0]
+    }
+
+    var body: some View {
+        ZStack(alignment: .trailing) {
+            actionButtons
+                .opacity(displayOffset < 0 ? 1 : 0)
+
+            cardContent
+                .background(Color.clear)
+                .contentShape(Rectangle())
+                .offset(x: displayOffset)
+                .gesture(swipeGesture, including: isEditingList ? .subviews : .all)
+                .onTapGesture {
+                    if isOpen {
+                        withAnimation(.snappy(duration: 0.22)) {
+                            openRuleID = nil
+                        }
+                    }
+                }
+        }
+        .onChange(of: isEditingList) { _, editing in
+            if editing {
+                withAnimation(.snappy(duration: 0.22)) {
+                    dragOffset = 0
+                    if isOpen { openRuleID = nil }
+                }
+            }
+        }
+        .onChange(of: openRuleID) { _, newValue in
+            if newValue != rule.id, dragOffset != 0 {
+                withAnimation(.snappy(duration: 0.22)) {
+                    dragOffset = 0
+                }
+            }
+        }
+    }
+
+    private var cardContent: some View {
+        HStack(spacing: 10) {
+            VStack(alignment: .leading, spacing: 8) {
+                Text(rule.name)
+                    .font(.callout.weight(.semibold))
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
+
+                HStack(spacing: 6) {
+                    RuleTag(icon: locationIcon, text: locationTitle, tint: .secondary)
+                    RuleTag(icon: patternKindIcon, text: patternKindTitle, tint: .secondary)
+                    RuleTag(icon: "tag", text: targetLabel.title, tint: .accent)
+                }
+            }
+
+            Spacer(minLength: 6)
+
+            Toggle("", isOn: isEnabled)
+                .labelsHidden()
+                .toggleStyle(.switch)
+                .tint(.siftMint)
+                .scaleEffect(0.78, anchor: .center)
+                .frame(width: 42, height: 26)
+                .padding(.trailing, 2)
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
+        .cardSurface(cornerRadius: 14)
+    }
+
+    private var actionButtons: some View {
+        HStack(spacing: interButtonSpacing) {
+            Button {
+                closeRow()
+                onEdit()
+            } label: {
+                Image(systemName: "square.and.pencil")
+                    .font(.body.weight(.bold))
+                    .foregroundStyle(.white)
+                    .frame(width: actionButtonWidth, height: actionButtonHeight)
+                    .background(Color.siftMint, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+            }
+            .buttonStyle(.plain)
+
+            Button {
+                closeRow()
+                onDelete()
+            } label: {
+                Image(systemName: "trash.fill")
+                    .font(.body.weight(.bold))
+                    .foregroundStyle(.white)
+                    .frame(width: actionButtonWidth, height: actionButtonHeight)
+                    .background(Color.red, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+            }
+            .buttonStyle(.plain)
+        }
+    }
+
+    private var swipeGesture: some Gesture {
+        DragGesture(minimumDistance: 12)
+            .onChanged { value in
+                guard !isEditingList else { return }
+                let dx = value.translation.width
+                let dy = value.translation.height
+                if !isDragging {
+                    guard abs(dx) > abs(dy) * 1.2 else { return }
+                    isDragging = true
+                }
+                let base: CGFloat = isOpen ? -revealWidth : 0
+                let projected = base + dx
+                if projected > 0 {
+                    dragOffset = -base + rubberBand(projected)
+                } else if projected < -revealWidth {
+                    let overshoot = -(projected + revealWidth)
+                    dragOffset = (-revealWidth - base) - rubberBand(overshoot)
+                } else {
+                    dragOffset = dx
+                }
+            }
+            .onEnded { value in
+                let wasDragging = isDragging
+                isDragging = false
+                guard wasDragging else { return }
+                let base: CGFloat = isOpen ? -revealWidth : 0
+                let finalOffset = base + value.translation.width
+                let velocity = value.predictedEndTranslation.width - value.translation.width
+                let shouldOpen: Bool = {
+                    if velocity < -200 { return true }
+                    if velocity > 200 { return false }
+                    return finalOffset < -revealWidth / 2
+                }()
+                withAnimation(.snappy(duration: 0.22)) {
+                    dragOffset = 0
+                    if shouldOpen {
+                        openRuleID = rule.id
+                    } else if isOpen {
+                        openRuleID = nil
+                    }
+                }
+            }
+    }
+
+    private func rubberBand(_ x: CGFloat) -> CGFloat {
+        let limit: CGFloat = 80
+        return limit * (1 - 1 / (x / limit + 1))
+    }
+
+    private func closeRow() {
+        withAnimation(.snappy(duration: 0.22)) {
+            dragOffset = 0
+            openRuleID = nil
+        }
+    }
+}
+
+private struct RuleTag: View {
+    enum Tint { case secondary, accent }
+    let icon: String
+    let text: String
+    var tint: Tint = .secondary
+
+    var body: some View {
+        HStack(spacing: 4) {
+            Image(systemName: icon)
+                .font(.system(size: 9, weight: .semibold))
+            Text(text)
+                .font(.caption2.weight(.semibold))
+                .lineLimit(1)
+        }
+        .foregroundStyle(foreground)
+        .padding(.horizontal, 7)
+        .padding(.vertical, 3)
+        .background(background, in: Capsule())
+        .overlay(Capsule().stroke(border, lineWidth: 0.5))
+    }
+
+    private var foreground: Color {
+        switch tint {
+        case .secondary: return .secondary
+        case .accent:    return .siftMint
+        }
+    }
+
+    private var background: Color {
+        switch tint {
+        case .secondary: return Color.siftInsetFill
+        case .accent:    return Color.siftMint.opacity(0.12)
+        }
+    }
+
+    private var border: Color {
+        switch tint {
+        case .secondary: return Color.siftHairline
+        case .accent:    return Color.siftMint.opacity(0.28)
+        }
+    }
+}
+
+private struct RuleEditView: View {
+    @Bindable var model: SiftAppModel
+    let ruleID: UUID
+    let onDismiss: () -> Void
+
+    @State private var name: String = ""
+    @State private var pattern: String = ""
+    @State private var location: RuleMatchLocation = .body
+    @State private var patternKind: RulePatternKind = .substring
+    @State private var labelID: String = "life.pickup_code"
+    @State private var didLoad = false
+
+    private var patternPlaceholder: String {
+        switch patternKind {
+        case .substring:
+            return location == .sender ? "955" : "取件码"
+        case .regex:
+            return location == .sender ? "^955\\d{2}$" : #"取件码\s*\d{4,8}"#
+        }
+    }
+
+    private var canSave: Bool {
+        let trimmed = pattern.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return false }
+        if patternKind == .regex {
+            return (try? NSRegularExpression(pattern: trimmed)) != nil
+        }
+        return true
+    }
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 14) {
+                GlassTextField(title: "规则名称（可选）", placeholder: model.defaultRuleNamePlaceholder, text: $name)
+
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("匹配位置")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                    SegmentedChoiceRow {
+                        RuleChoiceChip(
+                            title: RuleMatchLocation.sender.title,
+                            icon: RuleMatchLocation.sender.symbol,
+                            isSelected: location == .sender
+                        ) { location = .sender }
+
+                        RuleChoiceChip(
+                            title: RuleMatchLocation.body.title,
+                            icon: RuleMatchLocation.body.symbol,
+                            isSelected: location == .body
+                        ) { location = .body }
+                    }
+                }
+
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("匹配方式")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                    SegmentedChoiceRow {
+                        RuleChoiceChip(
+                            title: RulePatternKind.substring.title,
+                            icon: "tag",
+                            isSelected: patternKind == .substring
+                        ) { patternKind = .substring }
+
+                        RuleChoiceChip(
+                            title: RulePatternKind.regex.title,
+                            icon: "function",
+                            isSelected: patternKind == .regex
+                        ) { patternKind = .regex }
+                    }
+                }
+
+                GlassTextField(title: "匹配内容", placeholder: patternPlaceholder, text: $pattern)
+
+                CategoryMenu(titleLabel: "分类", selectedLabelID: $labelID)
+            }
+            .padding(18)
+            .cardSurface()
+            .padding(.horizontal, 16)
+            .padding(.top, 16)
+            .padding(.bottom, 24)
+        }
+        .scrollIndicators(.hidden)
+        .background(AtmosphericBackground())
+        .navigationTitle("编辑规则")
+        #if os(iOS)
+        .toolbarTitleDisplayMode(.inline)
+        #endif
+        .toolbar {
+            ToolbarItem(placement: .cancellationAction) {
+                Button("取消") { onDismiss() }
+                    .font(.callout.weight(.semibold))
+            }
+            ToolbarItem(placement: .confirmationAction) {
+                Button("保存") {
+                    let success = model.updateRule(
+                        id: ruleID,
+                        name: name,
+                        location: location,
+                        patternKind: patternKind,
+                        pattern: pattern,
+                        labelID: labelID
+                    )
+                    if success {
+                        onDismiss()
+                    }
+                }
+                .font(.callout.weight(.semibold))
+                .disabled(!canSave)
+            }
+        }
+        .onAppear(perform: loadFromRule)
+    }
+
+    private func loadFromRule() {
+        guard !didLoad,
+              let rule = model.rules.first(where: { $0.id == ruleID })
+        else { return }
+        didLoad = true
+        name = rule.name
+        labelID = rule.targetLabelID
+        if let sender = rule.sender {
+            location = .sender
+            pattern = sender.pattern
+            patternKind = sender.kind == .regex ? .regex : .substring
+        } else if let text = rule.text {
+            location = .body
+            pattern = text.pattern
+            patternKind = text.kind == .regex ? .regex : .substring
+        }
+    }
+}
+
+private struct RuleEmptyState: View {
+    var body: some View {
+        HStack(alignment: .top, spacing: 12) {
+            Image(systemName: "slider.horizontal.3")
+                .font(.headline.weight(.bold))
+                .foregroundStyle(Color.siftMint)
+                .frame(width: 32, height: 32)
+                .background(Color.siftMint.opacity(0.12), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+
+            VStack(alignment: .leading, spacing: 5) {
+                Text("还没有自定义规则")
+                    .font(.callout.weight(.semibold))
+                    .foregroundStyle(.primary)
+                Text("先在上面的表单里添加一条子串或正则规则。")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(16)
+        .cardSurface()
+    }
+}
+
+private struct ResultStrip: View {
+    let decision: ClassificationDecision
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: decision.source == .rule ? "scope" : "brain.head.profile")
+                .font(.title3.weight(.bold))
+                .foregroundStyle(Color.siftMint)
+            VStack(alignment: .leading, spacing: 3) {
+                Text("\(decision.groupTitle) / \(decision.labelTitle)")
+                    .font(.headline.weight(.bold))
+                    .foregroundStyle(.primary)
+                Text("\(decision.source.rawValue) · \(Int(decision.confidence * 100))% · \(decision.systemAction.rawValue)")
+                    .font(.caption.monospaced())
+                    .foregroundStyle(.secondary)
+            }
+            Spacer()
+        }
+        .padding(14)
+        .insetSurface(cornerRadius: 14)
+    }
+}
+
+private struct GlassTextField: View {
+    let title: String
+    let placeholder: String
+    @Binding var text: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(title)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.secondary)
+            TextField(placeholder, text: $text)
+                .autocorrectionDisabled()
+                .textFieldStyle(.plain)
+                .font(.footnote)
+                .foregroundStyle(.primary)
+                .frame(minHeight: FormInputMetrics.textLineHeight)
+                .padding(.horizontal, FormInputMetrics.horizontalPadding)
+                .padding(.vertical, FormInputMetrics.verticalPadding)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .insetSurface(cornerRadius: FormInputMetrics.cornerRadius)
+        }
+    }
+}
+
+private struct GlassTextEditor: View {
+    let title: String
+    let placeholder: String
+    @Binding var text: String
+    let minHeight: CGFloat
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(title)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.secondary)
+            ZStack(alignment: .topLeading) {
+                if text.isEmpty {
+                    Text(placeholder)
+                        .font(.footnote)
+                        .foregroundStyle(.secondary.opacity(0.6))
+                        .padding(.horizontal, FormInputMetrics.horizontalPadding)
+                        .padding(.vertical, FormInputMetrics.verticalPadding)
+                        .allowsHitTesting(false)
+                }
+
+                SiftMultilineTextView(text: $text)
+                    .frame(maxWidth: .infinity)
+                    .frame(minHeight: minHeight)
+            }
+            .frame(minHeight: minHeight)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .insetSurface(cornerRadius: FormInputMetrics.cornerRadius)
+        }
+    }
+}
+
+private enum FormInputMetrics {
+    static let horizontalPadding: CGFloat = 12
+    static let verticalPadding: CGFloat = 10
+    static let cornerRadius: CGFloat = 10
+    static let textLineHeight: CGFloat = 20
+}
+
+#if canImport(UIKit)
+private struct SiftMultilineTextView: UIViewRepresentable {
+    @Binding var text: String
+
+    func makeUIView(context: Context) -> UITextView {
+        let textView = SiftTextView()
+        textView.delegate = context.coordinator
+        textView.backgroundColor = .clear
+        textView.isOpaque = false
+        textView.font = UIFont.preferredFont(forTextStyle: .footnote)
+        textView.adjustsFontForContentSizeCategory = true
+        textView.textColor = .label
+        textView.tintColor = UIColor(Color.siftMint)
+        textView.textContainerInset = UIEdgeInsets(
+            top: FormInputMetrics.verticalPadding,
+            left: FormInputMetrics.horizontalPadding,
+            bottom: FormInputMetrics.verticalPadding,
+            right: FormInputMetrics.horizontalPadding
+        )
+        textView.textContainer.lineFragmentPadding = 0
+        textView.autocorrectionType = .no
+        textView.autocapitalizationType = .sentences
+        textView.spellCheckingType = .no
+        textView.returnKeyType = .default
+        return textView
+    }
+
+    func updateUIView(_ uiView: UITextView, context: Context) {
+        if uiView.text != text {
+            uiView.text = text
+        }
+    }
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(text: $text)
+    }
+
+    final class Coordinator: NSObject, UITextViewDelegate {
+        var text: Binding<String>
+
+        init(text: Binding<String>) {
+            self.text = text
+        }
+
+        func textViewDidChange(_ textView: UITextView) {
+            text.wrappedValue = textView.text
+        }
+    }
+}
+
+private final class SiftTextView: UITextView {
+    override func caretRect(for position: UITextPosition) -> CGRect {
+        var rect = super.caretRect(for: position)
+        guard let font else { return rect }
+
+        let targetHeight = ceil(font.pointSize)
+        if rect.height > targetHeight {
+            rect.origin.y = rect.midY - targetHeight / 2
+            rect.size.height = targetHeight
+        }
+        return rect
+    }
+}
+#else
+private struct SiftMultilineTextView: View {
+    @Binding var text: String
+
+    var body: some View {
+        TextEditor(text: $text)
+            .autocorrectionDisabled()
+            .textFieldStyle(.plain)
+            .font(.footnote)
+            .foregroundStyle(.primary)
+            .scrollContentBackground(.hidden)
+            .padding(.horizontal, FormInputMetrics.horizontalPadding - 4)
+            .padding(.vertical, FormInputMetrics.verticalPadding - 6)
+            .background(.clear)
+    }
+}
+#endif
+
+private struct CategoryMenu: View {
+    var titleLabel: String = "分类"
+    @Binding var selectedLabelID: String
+    @State private var isShowingPicker = false
+
+    private var selectedLabel: LeafLabel {
+        SiftTaxonomy.leaf(id: selectedLabelID) ?? SiftTaxonomy.leaves[0]
+    }
+
+    var body: some View {
+        Button {
+            isShowingPicker = true
+        } label: {
+            HStack(spacing: 12) {
+                Text(titleLabel)
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(.secondary)
+
+                Spacer(minLength: 12)
+
+                HStack(spacing: 6) {
+                    Text(selectedLabel.groupTitle)
+                        .foregroundStyle(.secondary)
+                    Image(systemName: "chevron.right")
+                        .font(.caption2.weight(.bold))
+                        .foregroundStyle(.tertiary)
+                    Text(selectedLabel.title)
+                        .foregroundStyle(.primary)
+                }
+                .font(.footnote.weight(.semibold))
+                .lineLimit(1)
+                .truncationMode(.tail)
+
+                Image(systemName: "chevron.down")
+                    .font(.caption2.weight(.bold))
+                    .foregroundStyle(.secondary)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 12)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .sheet(isPresented: $isShowingPicker) {
+            NavigationStack {
+                CategorySelectionView(title: titleLabel, selectedLabelID: $selectedLabelID)
+            }
+            .presentationDetents([.medium, .large])
+            .presentationDragIndicator(.visible)
+        }
+        .sensoryFeedback(.selection, trigger: selectedLabelID)
+        .insetSurface(cornerRadius: 12)
+    }
+}
+
+private struct CategorySelectionView: View {
+    let title: String
+    @Binding var selectedLabelID: String
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        ScrollView {
+            categoryContent
+        }
+        .scrollIndicators(.hidden)
+        .background(AtmosphericBackground())
+        .navigationTitle(title)
+        .toolbarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .confirmationAction) {
+                Button("完成") {
+                    dismiss()
+                }
+                .font(.callout.weight(.semibold))
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var categoryContent: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            ForEach(SiftTaxonomy.groups) { group in
+                CategoryGroupCard(
+                    group: group,
+                    selectedLabelID: selectedLabelID
+                ) { leaf in
+                    selectedLabelID = leaf.id
+                    dismiss()
+                }
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.top, 16)
+        .padding(.bottom, 30)
+    }
+}
+
+private struct CategoryGroupCard: View {
+    let group: LabelGroup
+    let selectedLabelID: String
+    let onSelect: (LeafLabel) -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text(group.title)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(.secondary)
+                .padding(.horizontal, 4)
+
+            VStack(spacing: 8) {
+                ForEach(group.leaves) { leaf in
+                    let isSelected = leaf.id == selectedLabelID
+                    Button {
+                        onSelect(leaf)
+                    } label: {
+                        HStack(spacing: 12) {
+                            Text(leaf.title)
+                                .font(.callout.weight(.semibold))
+                                .foregroundStyle(.primary)
+
+                            Spacer(minLength: 0)
+
+                            if isSelected {
+                                Image(systemName: "checkmark")
+                                    .font(.footnote.weight(.bold))
+                                    .foregroundStyle(Color.siftMint)
+                            }
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 12)
+                        .background(
+                            isSelected ? Color.siftMint.opacity(0.12) : Color.siftCardFill,
+                            in: RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        )
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                .stroke(isSelected ? Color.siftMint.opacity(0.45) : Color.siftHairline, lineWidth: 1)
+                        )
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+        }
+    }
+}
+
+private struct SubmissionFeedbackStrip: View {
+    let feedback: SampleSubmissionFeedback
+
+    private var icon: String {
+        switch feedback.kind {
+        case .success: return "checkmark.circle.fill"
+        case .error:   return "exclamationmark.triangle.fill"
+        case .info:    return "info.circle.fill"
+        }
+    }
+
+    private var tint: Color {
+        switch feedback.kind {
+        case .success: return .siftMint
+        case .error:   return .red
+        case .info:    return .siftHalo
+        }
+    }
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 9) {
+            Image(systemName: icon)
+                .font(.callout.weight(.semibold))
+                .foregroundStyle(tint)
+                .frame(width: 18)
+            Text(feedback.message)
+                .font(.footnote.weight(.semibold))
+                .foregroundStyle(.primary.opacity(0.86))
+                .fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
+        .background(tint.opacity(0.10), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .stroke(tint.opacity(0.24), lineWidth: 1)
+        )
+        .accessibilityElement(children: .combine)
+    }
+}
+
+private struct PrivacyPreview: View {
+    let text: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 6) {
+                Image(systemName: "eye.slash")
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(Color.siftMint)
+                Text("脱敏预览")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                Spacer(minLength: 0)
+            }
+            Text(text)
+                .font(.footnote.monospaced())
+                .foregroundStyle(.primary.opacity(0.86))
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 9)
+                .insetSurface(cornerRadius: 10)
+        }
+    }
+}
+
+private struct SectionHeader<Accessory: View>: View {
+    let title: String
+    var subtitle: String?
+    let icon: String
+    @ViewBuilder var accessory: Accessory
+
+    var body: some View {
+        HStack(alignment: subtitle == nil ? .center : .top, spacing: 10) {
+            Image(systemName: icon)
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(Color.siftMint)
+                .frame(width: 30, height: 30)
+                .background(Color.siftMint.opacity(0.12), in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+            VStack(alignment: .leading, spacing: 3) {
+                Text(title)
+                    .font(.headline.weight(.semibold))
+                    .foregroundStyle(.primary)
+                if let subtitle {
+                    Text(subtitle)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(2)
+                }
+            }
+            Spacer(minLength: 0)
+            accessory
+        }
+    }
+}
+
+extension SectionHeader where Accessory == EmptyView {
+    init(title: String, subtitle: String? = nil, icon: String) {
+        self.init(title: title, subtitle: subtitle, icon: icon, accessory: { EmptyView() })
+    }
+}
+
+private enum ActionButtonStyle {
+    case primary
+    case secondary
+    case neutral
+    case danger
+}
+
+private struct ActionButton: View {
+    let title: String
+    var icon: String?
+    var style: ActionButtonStyle = .primary
+    var isEnabled: Bool = true
+    var isLoading: Bool = false
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 7) {
+                if isLoading {
+                    ProgressView()
+                        .controlSize(.small)
+                        .tint(foreground)
+                } else if let icon {
+                    Image(systemName: icon)
+                        .font(.callout.weight(.semibold))
+                        .symbolRenderingMode(.monochrome)
+                }
+                Text(isLoading ? "" : title)
+                    .font(.callout.weight(.semibold))
+            }
+            .frame(maxWidth: .infinity)
+            .frame(height: 44)
+            .foregroundStyle(foreground)
+            .background(background)
+            .overlay(border)
+            .opacity(isEnabled || isLoading ? 1 : 0.5)
+        }
+        .buttonStyle(.plain)
+        .disabled(!isEnabled || isLoading)
+    }
+
+    @ViewBuilder
+    private var background: some View {
+        let shape = RoundedRectangle(cornerRadius: 14, style: .continuous)
+        switch style {
+        case .primary:
+            shape.fill(
+                LinearGradient(
+                    colors: [Color.siftMint, Color.siftMint.opacity(0.88)],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+            )
+        case .secondary:
+            shape.fill(Color.siftMint.opacity(0.14))
+        case .neutral:
+            shape.fill(Color.siftInsetFill)
+        case .danger:
+            shape.fill(Color.red.opacity(0.12))
+        }
+    }
+
+    @ViewBuilder
+    private var border: some View {
+        let shape = RoundedRectangle(cornerRadius: 14, style: .continuous)
+        switch style {
+        case .primary:
+            EmptyView()
+        case .secondary:
+            shape.stroke(Color.siftMint.opacity(0.30), lineWidth: 1)
+        case .neutral:
+            shape.stroke(Color.siftHairline, lineWidth: 1)
+        case .danger:
+            shape.stroke(Color.red.opacity(0.28), lineWidth: 1)
+        }
+    }
+
+    private var foreground: Color {
+        switch style {
+        case .primary:   return .white
+        case .secondary: return .siftMint
+        case .neutral:   return .secondary
+        case .danger:    return .red
+        }
+    }
+}
+
+private struct ToastOverlay: View {
+    @Binding var toast: SiftToast?
+    @State private var dismissTask: Task<Void, Never>?
+
+    var body: some View {
+        VStack {
+            if let toast {
+                ToastBubble(toast: toast)
+                    .id(toast.id)
+                    .padding(.top, 12)
+                    .padding(.horizontal, 16)
+                    .transition(.move(edge: .top).combined(with: .opacity))
+                    .onTapGesture {
+                        clear()
+                    }
+            }
+            Spacer(minLength: 0)
+        }
+        .frame(maxWidth: .infinity, alignment: .top)
+        .animation(.snappy(duration: 0.28), value: toast?.id)
+        .onChange(of: toast?.id) { _, newID in
+            dismissTask?.cancel()
+            guard newID != nil else { return }
+            dismissTask = Task { @MainActor in
+                try? await Task.sleep(nanoseconds: 2_400_000_000)
+                guard !Task.isCancelled else { return }
+                clear()
+            }
+        }
+        .allowsHitTesting(toast != nil)
+    }
+
+    private func clear() {
+        toast = nil
+        dismissTask?.cancel()
+        dismissTask = nil
+    }
+}
+
+private struct ToastBubble: View {
+    let toast: SiftToast
+
+    private var icon: String {
+        switch toast.kind {
+        case .success: return "checkmark.circle.fill"
+        case .error:   return "exclamationmark.triangle.fill"
+        case .info:    return "info.circle.fill"
+        }
+    }
+
+    private var tint: Color {
+        switch toast.kind {
+        case .success: return .siftMint
+        case .error:   return .siftAmber
+        case .info:    return .siftHalo
+        }
+    }
+
+    var body: some View {
+        HStack(spacing: 10) {
+            Image(systemName: icon)
+                .font(.callout.weight(.semibold))
+                .foregroundStyle(tint)
+            Text(toast.message)
+                .font(.footnote.weight(.semibold))
+                .foregroundStyle(.primary)
+                .lineLimit(2)
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 11)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.siftCardFill, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .stroke(Color.siftHairline, lineWidth: 1)
+        )
+        .shadow(color: Color.black.opacity(0.10), radius: 16, x: 0, y: 6)
+    }
+}
+
+private struct DisclosureCardHeader: View {
+    let icon: String
+    let title: String
+    let isExpanded: Bool
+    let onToggle: () -> Void
+
+    var body: some View {
+        Button(action: onToggle) {
+            HStack(alignment: .center, spacing: 10) {
+                Image(systemName: icon)
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(Color.siftMint)
+                    .frame(width: 30, height: 30)
+                    .background(Color.siftMint.opacity(0.12), in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+
+                Text(title)
+                    .font(.headline.weight(.semibold))
+                    .foregroundStyle(.primary)
+
+                Spacer(minLength: 8)
+
+                Image(systemName: "chevron.down")
+                    .font(.footnote.weight(.bold))
+                    .foregroundStyle(.secondary)
+                    .rotationEffect(.degrees(isExpanded ? 180 : 0))
+                    .frame(width: 28, height: 28)
+                    .background(
+                        Circle().fill(Color.siftInsetFill)
+                    )
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .sensoryFeedback(.selection, trigger: isExpanded)
+    }
+}
+
+private extension View {
+    func ruleManagementListRow(top: CGFloat = 6, bottom: CGFloat = 6) -> some View {
+        listRowBackground(Color.clear)
+            .listRowSeparator(.hidden)
+            .listRowInsets(EdgeInsets(top: top, leading: 16, bottom: bottom, trailing: 16))
+    }
+
+    func cardSurface(cornerRadius: CGFloat = 20) -> some View {
+        modifier(CardSurfaceModifier(cornerRadius: cornerRadius))
+    }
+
+    func insetSurface(cornerRadius: CGFloat = 12) -> some View {
+        modifier(InsetSurfaceModifier(cornerRadius: cornerRadius, isSelected: false))
+    }
+
+    func pillSurface(cornerRadius: CGFloat = 999, isSelected: Bool = false) -> some View {
+        modifier(InsetSurfaceModifier(cornerRadius: cornerRadius, isSelected: isSelected))
+    }
+}
+
+private struct CardSurfaceModifier: ViewModifier {
+    let cornerRadius: CGFloat
+
+    func body(content: Content) -> some View {
+        let shape = RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+        return content
+            .background(shape.fill(Color.siftCardFill))
+            .overlay(shape.strokeBorder(Color.siftHairline, lineWidth: 1))
+            .clipShape(shape)
+            .shadow(color: Color.siftCardShadow, radius: 14, x: 0, y: 4)
+    }
+}
+
+private struct InsetSurfaceModifier: ViewModifier {
+    let cornerRadius: CGFloat
+    let isSelected: Bool
+
+    func body(content: Content) -> some View {
+        let shape = RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+        let fillColor: Color = isSelected
+            ? Color.siftMint.opacity(0.12)
+            : Color.siftInsetFill
+        let strokeColor: Color = isSelected
+            ? Color.siftMint.opacity(0.45)
+            : Color.siftHairline
+
+        return content
+            .background(shape.fill(fillColor))
+            .overlay(shape.strokeBorder(strokeColor, lineWidth: 1))
+            .clipShape(shape)
+    }
+}
+
+private extension SenderMatcher.Kind {
+    var title: String {
+        switch self {
+        case .exact:
+            return "精确"
+        case .prefix:
+            return "前缀"
+        case .substring:
+            return "子串"
+        case .regex:
+            return "正则"
+        }
+    }
+}
+
+private extension TextMatcher.Kind {
+    var title: String {
+        switch self {
+        case .keyword:
+            return "关键词"
+        case .substring:
+            return "子串"
+        case .regex:
+            return "正则"
+        }
+    }
+}
+
+private extension Color {
+    static let siftMint = Color(
+        light: Color(red: 0.10, green: 0.62, blue: 0.55),
+        dark: Color(red: 0.36, green: 0.85, blue: 0.76)
+    )
+
+    static let siftAmber = Color(
+        light: Color(red: 0.95, green: 0.62, blue: 0.20),
+        dark: Color(red: 1.0, green: 0.78, blue: 0.42)
+    )
+
+    static let siftHalo = Color(
+        light: Color(red: 0.42, green: 0.55, blue: 0.95),
+        dark: Color(red: 0.46, green: 0.58, blue: 1.0)
+    )
+
+    static let siftCanvas = Color(
+        light: Color(red: 0.962, green: 0.964, blue: 0.972),
+        dark: Color(red: 0.063, green: 0.068, blue: 0.082)
+    )
+
+    static let siftCardFill = Color(
+        light: .white,
+        dark: Color(red: 0.115, green: 0.122, blue: 0.140)
+    )
+
+    static let siftInsetFill = Color(
+        light: Color(red: 0.945, green: 0.948, blue: 0.958),
+        dark: Color(red: 0.165, green: 0.172, blue: 0.190)
+    )
+
+    static let siftHairline = Color(
+        light: Color.black.opacity(0.06),
+        dark: Color.white.opacity(0.08)
+    )
+
+    static let siftCardShadow = Color(
+        light: Color.black.opacity(0.045),
+        dark: Color.black.opacity(0.45)
+    )
+
+    init(light: Color, dark: Color) {
+        #if canImport(UIKit)
+        self.init(uiColor: UIColor { traits in
+            traits.userInterfaceStyle == .dark
+                ? UIColor(dark)
+                : UIColor(light)
+        })
+        #elseif canImport(AppKit)
+        self.init(nsColor: NSColor(name: nil) { appearance in
+            let isDark = appearance.bestMatch(from: [.darkAqua, .vibrantDark, .accessibilityHighContrastDarkAqua, .accessibilityHighContrastVibrantDark]) != nil
+            return isDark ? NSColor(dark) : NSColor(light)
+        })
+        #else
+        self = light
+        #endif
+    }
+}

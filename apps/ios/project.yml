@@ -1,0 +1,76 @@
+name: Sift
+options:
+  bundleIdPrefix: io.alkinum.sift
+  deploymentTarget:
+    iOS: "18.0"
+settings:
+  SWIFT_VERSION: "6.0"
+  GENERATE_INFOPLIST_FILE: YES
+  MARKETING_VERSION: "1.0"
+  CURRENT_PROJECT_VERSION: "1"
+targets:
+  MessageFilterCore:
+    type: framework
+    platform: iOS
+    sources:
+      - Sources/MessageFilterCore
+    settings:
+      PRODUCT_BUNDLE_IDENTIFIER: io.alkinum.sift.MessageFilterCore
+  SiftAppKit:
+    type: framework
+    platform: iOS
+    sources:
+      - Sources/SiftAppKit
+      - path: Privacy/SiftAppKit/PrivacyInfo.xcprivacy
+        buildPhase: resources
+    dependencies:
+      - target: MessageFilterCore
+    settings:
+      PRODUCT_BUNDLE_IDENTIFIER: io.alkinum.sift.SiftAppKit
+  MessageFilterExtensionKit:
+    type: framework
+    platform: iOS
+    sources:
+      - Sources/MessageFilterExtensionKit
+    dependencies:
+      - target: MessageFilterCore
+    settings:
+      PRODUCT_BUNDLE_IDENTIFIER: io.alkinum.sift.MessageFilterExtensionKit
+  SiftApp:
+    type: application
+    platform: iOS
+    sources:
+      - SiftApp
+      - path: Privacy/SiftApp/PrivacyInfo.xcprivacy
+        buildPhase: resources
+      - path: GeneratedModels/SiftSMSClassifier.mlmodel
+      - path: GeneratedModels/SiftSMSClassifier.manifest.json
+        buildPhase: resources
+    dependencies:
+      - target: SiftAppKit
+      - target: MessageFilterCore
+        embed: true
+      - target: MessageFilterExtension
+        embed: true
+    settings:
+      PRODUCT_BUNDLE_IDENTIFIER: io.alkinum.sift
+      GENERATE_INFOPLIST_FILE: NO
+      INFOPLIST_FILE: SiftApp/Info.plist
+      ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+  MessageFilterExtension:
+    type: app-extension
+    platform: iOS
+    sources:
+      - MessageFilterExtension
+      - path: GeneratedModels/SiftSMSClassifier.mlmodel
+      - path: GeneratedModels/SiftSMSClassifier.manifest.json
+        buildPhase: resources
+    dependencies:
+      - target: MessageFilterCore
+        embed: true
+      - target: MessageFilterExtensionKit
+        embed: true
+    settings:
+      PRODUCT_BUNDLE_IDENTIFIER: io.alkinum.sift.MessageFilterExtension
+      GENERATE_INFOPLIST_FILE: NO
+      INFOPLIST_FILE: MessageFilterExtension/Info.plist
