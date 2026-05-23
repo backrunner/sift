@@ -1,0 +1,65 @@
+name = "sift-worker-tob"
+main = "src/index.ts"
+compatibility_date = "2026-05-09"
+compatibility_flags = ["nodejs_compat"]
+
+# Copy this file to wrangler.toml and fill in real Cloudflare resource IDs.
+# wrangler.toml is intentionally gitignored because open-source repos should not
+# publish account-specific infrastructure identifiers.
+# MASTER_KEY must be stored as a secret, not in this file:
+#   pnpm exec wrangler secret put MASTER_KEY --env production
+# For local development, place MASTER_KEY in .dev.vars or .dev.vars.development.
+
+[env.development]
+name = "sift-worker-tob-development"
+workers_dev = true
+
+[env.development.vars]
+ENVIRONMENT = "development"
+BASE_PATH = ""
+MODEL_MANIFEST_KEY = "current"
+RETENTION_DAYS = "180"
+SNAPSHOT_RETENTION_DAYS = "30"
+
+[[env.development.d1_databases]]
+binding = "DB"
+database_name = "sift_samples_development"
+database_id = "replace-with-development-d1-id"
+
+[[env.development.r2_buckets]]
+binding = "SNAPSHOT_BUCKET"
+bucket_name = "sift-snapshots-development"
+
+[[env.development.kv_namespaces]]
+binding = "MODEL_MANIFEST"
+id = "replace-with-development-kv-id"
+
+[env.production]
+name = "sift-worker-tob"
+workers_dev = false
+routes = [
+  { pattern = "sift.alkinum.io/api/tob/*", zone_name = "alkinum.io" }
+]
+
+[env.production.vars]
+ENVIRONMENT = "production"
+BASE_PATH = "/api/tob"
+MODEL_MANIFEST_KEY = "current"
+RETENTION_DAYS = "180"
+SNAPSHOT_RETENTION_DAYS = "30"
+
+[env.production.triggers]
+crons = ["17 3 * * *"]
+
+[[env.production.d1_databases]]
+binding = "DB"
+database_name = "sift_samples_production"
+database_id = "replace-with-production-d1-id"
+
+[[env.production.r2_buckets]]
+binding = "SNAPSHOT_BUCKET"
+bucket_name = "sift-snapshots-production"
+
+[[env.production.kv_namespaces]]
+binding = "MODEL_MANIFEST"
+id = "replace-with-production-kv-id"

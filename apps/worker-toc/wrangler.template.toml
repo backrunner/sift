@@ -1,0 +1,47 @@
+name = "sift-worker-toc"
+main = "src/index.ts"
+compatibility_date = "2026-05-09"
+compatibility_flags = ["nodejs_compat"]
+
+# Copy this file to wrangler.toml and fill in real Cloudflare resource IDs.
+# wrangler.toml is intentionally gitignored because open-source repos should not
+# publish account-specific infrastructure identifiers.
+
+[env.development]
+name = "sift-worker-toc-development"
+workers_dev = true
+
+[env.development.vars]
+ENVIRONMENT = "development"
+BASE_PATH = ""
+MODEL_MANIFEST_KEY = "current"
+
+[[env.development.d1_databases]]
+binding = "DB"
+database_name = "sift_samples_development"
+database_id = "replace-with-development-d1-id"
+
+[[env.development.kv_namespaces]]
+binding = "MODEL_MANIFEST"
+id = "replace-with-development-kv-id"
+
+[env.production]
+name = "sift-worker-toc"
+workers_dev = false
+routes = [
+  { pattern = "sift.alkinum.io/api/toc/*", zone_name = "alkinum.io" }
+]
+
+[env.production.vars]
+ENVIRONMENT = "production"
+BASE_PATH = "/api/toc"
+MODEL_MANIFEST_KEY = "current"
+
+[[env.production.d1_databases]]
+binding = "DB"
+database_name = "sift_samples_production"
+database_id = "replace-with-production-d1-id"
+
+[[env.production.kv_namespaces]]
+binding = "MODEL_MANIFEST"
+id = "replace-with-production-kv-id"
