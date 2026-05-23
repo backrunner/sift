@@ -1,0 +1,126 @@
+{
+  "schemaVersion": 1,
+  "groups": [
+    {
+      "id": "finance",
+      "title": "财务",
+      "systemAction": "transaction",
+      "leaves": [
+        { "id": "finance.bank", "title": "银行" },
+        { "id": "finance.insurance", "title": "保险" },
+        { "id": "finance.wealth", "title": "理财" },
+        { "id": "finance.credit_card", "title": "信用卡" },
+        { "id": "finance.consumption", "title": "消费" },
+        { "id": "finance.income", "title": "入账" },
+        { "id": "finance.refund", "title": "退款" },
+        { "id": "finance.stock", "title": "股票" },
+        { "id": "finance.other", "title": "其他" }
+      ]
+    },
+    {
+      "id": "transaction",
+      "title": "交易",
+      "systemAction": "transaction",
+      "leaves": [
+        { "id": "transaction.order", "title": "订单" },
+        { "id": "transaction.points", "title": "积分" },
+        { "id": "transaction.member", "title": "会员" },
+        { "id": "transaction.message", "title": "消息" },
+        { "id": "transaction.account_security", "title": "账号安全" },
+        { "id": "transaction.other", "title": "其他" }
+      ]
+    },
+    {
+      "id": "life",
+      "title": "生活",
+      "systemAction": "transaction",
+      "leaves": [
+        { "id": "life.takeaway", "title": "外卖" },
+        { "id": "life.express", "title": "快递" },
+        { "id": "life.utility", "title": "生活费用" },
+        { "id": "life.logistics", "title": "物流" },
+        { "id": "life.pickup_code", "title": "取件码" },
+        { "id": "life.medical", "title": "医疗" },
+        { "id": "life.weather", "title": "天气" },
+        { "id": "life.other", "title": "其他" }
+      ]
+    },
+    {
+      "id": "travel",
+      "title": "出行",
+      "systemAction": "transaction",
+      "leaves": [
+        { "id": "travel.tourism", "title": "旅游" },
+        { "id": "travel.transport", "title": "交通" },
+        { "id": "travel.ticketing", "title": "票务" },
+        { "id": "travel.other", "title": "其他" }
+      ]
+    },
+    {
+      "id": "work",
+      "title": "工作",
+      "systemAction": "transaction",
+      "leaves": [
+        { "id": "work.meeting", "title": "会议" },
+        { "id": "work.approval", "title": "审批" },
+        { "id": "work.attendance", "title": "考勤" },
+        { "id": "work.announcement", "title": "公告" },
+        { "id": "work.training", "title": "培训" },
+        { "id": "work.reminder", "title": "提醒" },
+        { "id": "work.alert", "title": "告警" },
+        { "id": "work.other", "title": "其他" }
+      ]
+    },
+    {
+      "id": "carrier",
+      "title": "运营商",
+      "systemAction": "transaction",
+      "leaves": [
+        { "id": "carrier.call_reminder", "title": "来电提醒" },
+        { "id": "carrier.data_reminder", "title": "流量提醒" },
+        { "id": "carrier.service", "title": "业务办理" },
+        { "id": "carrier.promotion", "title": "推广" },
+        { "id": "carrier.other", "title": "其他" }
+      ]
+    },
+    {
+      "id": "government",
+      "title": "政府",
+      "systemAction": "transaction",
+      "leaves": [
+        { "id": "government.notice", "title": "通知" },
+        { "id": "government.traffic", "title": "交管" },
+        { "id": "government.tax", "title": "税务" },
+        { "id": "government.social_security", "title": "社保医保" },
+        { "id": "government.court", "title": "司法" },
+        { "id": "government.policy", "title": "政策" },
+        { "id": "government.other", "title": "其他" }
+      ]
+    },
+    {
+      "id": "verification",
+      "title": "验证码",
+      "systemAction": "transaction",
+      "leaves": [
+        { "id": "verification", "title": "验证码" }
+      ]
+    },
+    {
+      "id": "promotion",
+      "title": "推广信息",
+      "systemAction": "promotion",
+      "leaves": [
+        { "id": "promotion", "title": "推广信息" }
+      ]
+    },
+    {
+      "id": "spam",
+      "title": "垃圾信息",
+      "systemAction": "junk",
+      "leaves": [
+        { "id": "spam", "title": "垃圾信息" }
+      ]
+    }
+  ]
+}
+
