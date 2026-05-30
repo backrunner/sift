@@ -22,6 +22,11 @@ export interface NormalizedSubmission {
   readonly schemaVersion: number;
 }
 
+/**
+ * Framework-neutral training example shared by local corpora and toB exports.
+ * Keep persisted datasets in this simple text/label shape; trainers should
+ * adapt it to Core ML, PyTorch, or another backend at the point of use.
+ */
 export interface TrainingSetRow {
   readonly text: string;
   readonly label: string;
@@ -134,6 +139,8 @@ export function toExportLine(submission: NormalizedSubmission & { readonly recei
 }
 
 export function toTrainingSetLine(row: TrainingSetRow): string {
+  // Do not add trainer-specific fields here. This payload is the portable
+  // dataset contract consumed by Apple and future non-Apple training stacks.
   return JSON.stringify({
     text: row.text,
     label: assertLeafLabel(row.label)

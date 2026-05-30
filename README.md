@@ -1,6 +1,6 @@
 # Sift
 
-隐私优先的 iOS 短信过滤应用、规则引擎、Core ML 训练管线和匿名收集后端。
+隐私优先的 iOS 短信过滤应用、规则引擎、通用训练数据集、Core ML 训练适配器和匿名收集后端。
 
 ## Layout
 
@@ -10,7 +10,7 @@
 - `apps/worker-tob` - internal export worker at `https://sift.alkinum.io/api/tob/*`
 - `packages/taxonomy` - canonical category and label catalog
 - `packages/contracts` - request/response shapes and validation
-- `tools/apple-trainer` - Create ML/Core ML base-model trainer and synthetic seed generator
+- `tools/apple-trainer` - Create ML/Core ML adapter for generic text/label NDJSON datasets and synthetic seed generation
 
 ## Notes
 
@@ -95,7 +95,7 @@ pnpm deploy:worker:tob
 Deploy `apps/legal-site/build` to Cloudflare Pages on `sift.alkinum.io`; keep
 the Worker routes limited to `/api/toc/*` and `/api/tob/*`.
 
-Build a local corpus from synthetic seed rows plus public SMS datasets, then train with Apple's native stack:
+Build a local corpus from synthetic seed rows plus public SMS datasets as generic `text`/`label` NDJSON, then train with Apple's native stack. The corpus stays framework-neutral; `SiftAppleTrainer` converts rows into Create ML training data only when it trains:
 
 ```bash
 cd tools/apple-trainer
@@ -103,7 +103,7 @@ swift run SiftAppleTrainer --build-public-corpus ../../build/public-corpus.ndjso
 swift run SiftAppleTrainer --input ../../build/public-corpus.ndjson --out ../../build/apple-model --algorithm auto --install-ios
 ```
 
-The internal toB worker exports production training rows directly:
+The internal toB worker exports the same generic production training rows directly:
 
 ```bash
 curl -H "Authorization: Bearer $MASTER_KEY" \

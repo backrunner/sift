@@ -134,7 +134,7 @@ test("unauthenticated export is rejected", async () => {
   assert.equal(response.status, 401);
 });
 
-test("training set exports ndjson for apple trainer", async () => {
+test("training set exports generic ndjson examples", async () => {
   const response = await worker.fetch(
     new Request("https://sift.alkinum.io/api/tob/v1/training-set?source=remote&label=verification&limit=1", {
       headers: { authorization: "Bearer secret" }

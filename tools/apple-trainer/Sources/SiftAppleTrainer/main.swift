@@ -4,6 +4,9 @@ import CryptoKit
 import Foundation
 import NaturalLanguage
 
+/// Canonical framework-neutral dataset row. Persisted corpora and worker
+/// exports stay in this shape; Core ML/Create ML adaptation happens only at
+/// the training boundary.
 struct SampleRow: Codable, Hashable, Sendable {
     let text: String
     let label: String
@@ -163,9 +166,9 @@ enum TrainerError: Error, CustomStringConvertible {
 
     Options:
       --generate-synthetic <path>
-                                  Generate synthetic seed rows as Apple-trainer NDJSON.
+                                  Generate synthetic seed rows as framework-neutral text/label NDJSON.
       --build-public-corpus <path>
-                                  Generate synthetic rows, fetch public SMS corpora, and write balanced NDJSON.
+                                  Generate synthetic rows, fetch public SMS corpora, and write balanced text/label NDJSON.
       --per-label <n>             Synthetic rows per leaf label. Defaults to 50.
       --public-per-label <n>      Max public rows retained per leaf label. Defaults to 500.
       --out <dir>                 Output directory. Defaults to <repo>/build/apple-model.
@@ -898,15 +901,16 @@ func train(
         algorithmName = "create-ml-maxent"
     }
 
+    let trainingData = createMLTextClassifierData(from: trainingRows)
     let validationData: MLTextClassifier.ModelParameters.ValidationData = validationRows.isEmpty
         ? .none
-        : .dictionary(groupedTexts(validationRows))
+        : .dictionary(createMLTextClassifierData(from: validationRows))
     let parameters = MLTextClassifier.ModelParameters(
         validation: validationData,
         algorithm: algorithm,
         language: .simplifiedChinese
     )
-    let classifier = try MLTextClassifier(trainingData: groupedTexts(trainingRows), parameters: parameters)
+    let classifier = try MLTextClassifier(trainingData: trainingData, parameters: parameters)
     let validationMetrics = validationRows.isEmpty ? nil : classifier.validationMetrics
 
     return AlgorithmResult(
@@ -1570,7 +1574,9 @@ func stratifiedSplit(rows: [SampleRow], validationFraction: Double, seed: UInt64
     return TrainingSplit(training: training, validation: validation)
 }
 
-func groupedTexts(_ rows: [SampleRow]) -> [String: [String]] {
+func createMLTextClassifierData(from rows: [SampleRow]) -> [String: [String]] {
+    // Convert only at the Create ML boundary so NDJSON corpora remain reusable
+    // by PyTorch or other training stacks.
     var grouped: [String: [String]] = [:]
     for row in rows {
         grouped[row.label, default: []].append(row.text)

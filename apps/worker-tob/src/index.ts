@@ -226,6 +226,8 @@ function toExportPayload(rows: Record<string, unknown>[]): string {
 }
 
 function toTrainingSetPayload(rows: Record<string, unknown>[]): string {
+  // Keep worker-exported training data backend-neutral; model-specific
+  // conversion belongs in the trainer that consumes this NDJSON.
   return rows
     .map((row) =>
       toTrainingSetLine({

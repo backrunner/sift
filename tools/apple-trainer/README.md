@@ -1,17 +1,17 @@
 # Sift Apple Trainer
 
-Primary base-model trainer for Sift. It uses Apple's Create ML `MLTextClassifier` and writes a Core ML `.mlmodel` plus a signed-release-ready manifest.
+Primary Apple base-model adapter for Sift. It reads the shared generic `text`/`label` NDJSON dataset, converts it to Create ML `MLTextClassifier` input at training time, and writes a Core ML `.mlmodel` plus a signed-release-ready manifest.
 
 ## Flow
 
-Generate a synthetic seed NDJSON dataset:
+Generate a synthetic seed dataset in generic `text`/`label` NDJSON:
 
 ```bash
 cd tools/apple-trainer
 swift run SiftAppleTrainer --generate-synthetic ../../build/synthetic.ndjson --per-label 50
 ```
 
-Build a richer local corpus from synthetic rows plus public SMS datasets:
+Build a richer generic local corpus from synthetic rows plus public SMS datasets:
 
 ```bash
 swift run SiftAppleTrainer \
@@ -20,7 +20,7 @@ swift run SiftAppleTrainer \
   --public-per-label 250
 ```
 
-Train with Apple's native stack and install the raw model into the iOS project resources:
+Train from the generic corpus with Apple's native stack and install the raw model into the iOS project resources:
 
 ```bash
 swift run SiftAppleTrainer \
@@ -40,6 +40,8 @@ curl -H "Authorization: Bearer $MASTER_KEY" \
   "https://<tob-worker>/v1/training-set" \
   > build/remote-training.ndjson
 ```
+
+The worker export is intentionally not an Apple/Core ML format. Keep generated corpora and remote exports as portable `{"text","label"}` NDJSON; any Core ML/Create ML conversion should happen inside this trainer, and future PyTorch trainers can consume the same dataset contract.
 
 Public corpus sources currently used by `--build-public-corpus`:
 

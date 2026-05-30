@@ -12,7 +12,8 @@ swift test
 swift run CoreSmokeTests
 ```
 
-Train or refresh the bundled base model:
+Train or refresh the bundled base model from the shared generic `text`/`label`
+NDJSON corpus:
 
 ```bash
 cd ../../tools/apple-trainer

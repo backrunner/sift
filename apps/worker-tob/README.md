@@ -32,8 +32,8 @@ Endpoints:
 
 - `GET /health` - public probe
 - `GET /v1/stats` - sample counts by label, group, system action, and source
-- `GET /v1/export` - full NDJSON export for training and archive pipelines
-- `GET /v1/training-set` - simplified `text`/`label` NDJSON for `tools/apple-trainer`
+- `GET /v1/export` - full framework-neutral NDJSON export for training and archive pipelines
+- `GET /v1/training-set` - portable `text`/`label` NDJSON for any trainer
 - `GET /v1/snapshots` - list stored R2 snapshots
 - `GET /v1/snapshots/<key>` - download a snapshot by key
 - `GET /v1/model/manifest` - read the current manifest from KV
@@ -55,13 +55,13 @@ Optional filters:
 - `groupId=<group-id>`
 - `limit=<1-50000>`
 
-The response is NDJSON with one row per line:
+The response is backend-neutral NDJSON with one row per line:
 
 ```json
 {"text":"您的验证码是 {{CODE}}","label":"verification"}
 ```
 
-This is the direct input format for `tools/apple-trainer`.
+This is the shared dataset contract. The current Apple trainer converts these rows to Create ML input at training time; future PyTorch or other trainers should consume the same format.
 
 ## Retention
 
