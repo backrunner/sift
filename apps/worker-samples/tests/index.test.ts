@@ -35,10 +35,10 @@ function createDbMock(state: MockState = {}): D1Database {
   } as unknown as D1Database;
 }
 
-test("public worker uses /api/toc base path and forces remote submissions", async () => {
+test("public samples worker uses the root v1/samples path and forces remote submissions", async () => {
   const state: MockState = {};
   const response = await worker.fetch(
-    new Request("https://sift.alkinum.io/api/toc/v1/samples", {
+    new Request("https://api.sift.alkinum.io/v1/samples", {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({
@@ -51,7 +51,7 @@ test("public worker uses /api/toc base path and forces remote submissions", asyn
       DB: createDbMock(state),
       MODEL_MANIFEST_KEY: "current",
       MODEL_MANIFEST: {} as KVNamespace,
-      BASE_PATH: "/api/toc"
+      BASE_PATH: ""
     }
   );
 
@@ -64,7 +64,7 @@ test("public worker uses /api/toc base path and forces remote submissions", asyn
 
 test("public worker rejects identity fields", async () => {
   const response = await worker.fetch(
-    new Request("https://sift.alkinum.io/api/toc/v1/samples", {
+    new Request("https://api.sift.alkinum.io/v1/samples", {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({
@@ -77,7 +77,7 @@ test("public worker rejects identity fields", async () => {
       DB: createDbMock(),
       MODEL_MANIFEST_KEY: "current",
       MODEL_MANIFEST: {} as KVNamespace,
-      BASE_PATH: "/api/toc"
+      BASE_PATH: ""
     }
   );
 
@@ -88,12 +88,12 @@ test("public worker rejects identity fields", async () => {
 
 test("public worker exposes receipt status under the same base path", async () => {
   const response = await worker.fetch(
-    new Request("https://sift.alkinum.io/api/toc/v1/samples/receipt-123"),
+    new Request("https://api.sift.alkinum.io/v1/samples/receipt-123"),
     {
       DB: createDbMock({ receiptRow: { deleted_at: null } }),
       MODEL_MANIFEST_KEY: "current",
       MODEL_MANIFEST: {} as KVNamespace,
-      BASE_PATH: "/api/toc"
+      BASE_PATH: ""
     }
   );
 
@@ -106,12 +106,12 @@ test("public worker exposes receipt status under the same base path", async () =
 test("public worker deletes receipt rows instead of keeping sample data", async () => {
   const state: MockState = {};
   const response = await worker.fetch(
-    new Request("https://sift.alkinum.io/api/toc/v1/samples/receipt-123", { method: "DELETE" }),
+    new Request("https://api.sift.alkinum.io/v1/samples/receipt-123", { method: "DELETE" }),
     {
       DB: createDbMock(state),
       MODEL_MANIFEST_KEY: "current",
       MODEL_MANIFEST: {} as KVNamespace,
-      BASE_PATH: "/api/toc"
+      BASE_PATH: ""
     }
   );
 

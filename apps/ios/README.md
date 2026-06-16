@@ -33,7 +33,14 @@ If Xcode commands report that the license has not been accepted, run `sudo xcode
 
 The real `ILMessageFilterExtension` target requires the Apple message filtering entitlement before it can be enabled as a system filter on device. Until then, the app UI and sandbox classification path use the same `MessageFilterCore` pipeline.
 
-The public submission endpoint defaults to `https://sift.alkinum.io/api/toc/v1/samples`.
+Once the Apple Developer account has access, enable the managed SMS/Call Reporting message-filtering capability for the explicit App IDs:
+
+- `com.alkinum.sift`
+- `com.alkinum.sift.MessageFilterExtension`
+
+Then regenerate/download the development and App Store provisioning profiles for both identifiers, open `Sift.xcodeproj`, select the team in Signing & Capabilities for both `SiftApp` and `MessageFilterExtension`, and let Xcode refresh automatic signing. The project includes empty entitlements files for both signed targets so Xcode can add any entitlement entries that the approved capability requires. If the filter later defers classification to a server with `deferQueryRequestToNetwork`, also add Associated Domains with `messagefilter:<domain>` and set `ILMessageFilterExtensionNetworkURL` in `MessageFilterExtension/Info.plist`.
+
+The public submission endpoint defaults to `https://api.sift.alkinum.io/v1/samples`.
 The privacy policy URL defaults to `https://sift.alkinum.io/privacy`, and the
 terms URL defaults to `https://sift.alkinum.io/tos`.
 

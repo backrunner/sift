@@ -23,8 +23,9 @@ app and only a SHA-256 hash of the receipt is stored in D1.
 - Data minimization: only sanitized text and labeling metadata are accepted.
 - Erasure: the app stores the most recent receipt token and can delete that row
   from the primary sample database.
-- Retention: toB runs a production cron and exposes an authenticated retention
-  endpoint. Primary samples default to 180 days; R2 snapshots default to 30 days.
+- Retention: the internal dataset worker runs a production cron and exposes an
+  authenticated retention endpoint. Primary samples default to 180 days; R2
+  snapshots default to 30 days.
 - Transparency: the public privacy policy is served at
   `https://sift.alkinum.io/privacy` by the Svelte legal site.
 
@@ -52,5 +53,6 @@ app and only a SHA-256 hash of the receipt is stored in D1.
 in CI secrets. Production deploys use Wrangler env `production`.
 
 The legal pages are built from `apps/legal-site` and should be deployed to
-Cloudflare Pages at the `sift.alkinum.io` root. The Workers keep only the API
-path routes.
+Cloudflare Pages at the `sift.alkinum.io` root. The Workers live on
+`api.sift.alkinum.io` for sample submissions and `api.sift.alkinum.dev` for
+internal dataset export and retention.

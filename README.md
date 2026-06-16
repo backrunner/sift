@@ -6,8 +6,8 @@
 
 - `apps/ios` - SwiftUI app, shared core, and extension scaffolding
 - `apps/legal-site` - SvelteKit legal pages for `https://sift.alkinum.io/privacy` and `/tos`
-- `apps/worker-toc` - anonymous public submission worker at `https://sift.alkinum.io/api/toc/*`
-- `apps/worker-tob` - internal export worker at `https://sift.alkinum.io/api/tob/*`
+- `apps/worker-samples` - anonymous public submission worker at `https://api.sift.alkinum.io/*`
+- `apps/worker-datasets` - internal export worker at `https://api.sift.alkinum.dev/*`
 - `packages/taxonomy` - canonical category and label catalog
 - `packages/contracts` - request/response shapes and validation
 - `tools/apple-trainer` - Create ML/Core ML adapter for generic text/label NDJSON datasets and synthetic seed generation
@@ -17,7 +17,7 @@
 - This repo is designed for local-first operation.
 - User submission is opt-in only.
 - No account, device ID, or user identity is stored in the sample pipeline.
-- The public iOS submission endpoint is `https://sift.alkinum.io/api/toc/v1/samples`.
+- The public iOS submission endpoint is `https://api.sift.alkinum.io/v1/samples`.
 - The public privacy policy URL is `https://sift.alkinum.io/privacy`.
 - The public terms URL is `https://sift.alkinum.io/tos`.
 - Worker templates are committed as `wrangler.template.toml`; real `wrangler.toml`
@@ -32,8 +32,8 @@ pnpm test
 pnpm check:workers
 pnpm build:legal
 cd apps/ios && swift test && swift run CoreSmokeTests
-pnpm --filter @sift/worker-toc dev
-pnpm --filter @sift/worker-tob dev
+pnpm --filter @sift/worker-samples dev
+pnpm --filter @sift/worker-datasets dev
 ```
 
 Preview the Svelte legal pages:
@@ -49,16 +49,19 @@ environment-specific Cloudflare resources. The copied `wrangler.toml` files are
 ignored on purpose:
 
 ```bash
-cp apps/worker-toc/wrangler.template.toml apps/worker-toc/wrangler.toml
-cp apps/worker-tob/wrangler.template.toml apps/worker-tob/wrangler.toml
+cp apps/worker-samples/wrangler.template.toml apps/worker-samples/wrangler.toml
+cp apps/worker-datasets/wrangler.template.toml apps/worker-datasets/wrangler.toml
 ```
 
 Keep `development` and `production` resources separate in those files. The
-production env routes through `sift.alkinum.io`; development uses `workers.dev`.
-Store the toB `MASTER_KEY` as a Wrangler secret, not in `wrangler.toml`:
+production env routes through `api.sift.alkinum.io` for sample submission and
+`api.sift.alkinum.dev` for internal dataset export; development uses
+`workers.dev`.
+Store the internal dataset worker `MASTER_KEY` as a Wrangler secret, not in
+`wrangler.toml`:
 
 ```bash
-cd apps/worker-tob
+cd apps/worker-datasets
 pnpm exec wrangler secret put MASTER_KEY --env development
 pnpm exec wrangler secret put MASTER_KEY --env production
 ```
@@ -66,8 +69,8 @@ pnpm exec wrangler secret put MASTER_KEY --env production
 Local development runs each Worker with the `development` env:
 
 ```bash
-pnpm --filter @sift/worker-toc dev   # http://127.0.0.1:8787
-pnpm --filter @sift/worker-tob dev   # http://127.0.0.1:8788
+pnpm --filter @sift/worker-samples dev   # http://127.0.0.1:8787
+pnpm --filter @sift/worker-datasets dev   # http://127.0.0.1:8788
 ```
 
 The normal preflight is:
@@ -88,12 +91,12 @@ pnpm deploy:workers
 Single Worker releases are available when needed:
 
 ```bash
-pnpm deploy:worker:toc
-pnpm deploy:worker:tob
+pnpm deploy:worker:samples
+pnpm deploy:worker:datasets
 ```
 
 Deploy `apps/legal-site/build` to Cloudflare Pages on `sift.alkinum.io`; keep
-the Worker routes limited to `/api/toc/*` and `/api/tob/*`.
+the Worker routes on `api.sift.alkinum.io/*` and `api.sift.alkinum.dev/*`.
 
 Build a local corpus from synthetic seed rows plus public SMS datasets as generic `text`/`label` NDJSON, then train with Apple's native stack. The corpus stays framework-neutral; `SiftAppleTrainer` converts rows into Create ML training data only when it trains:
 
@@ -103,11 +106,11 @@ swift run SiftAppleTrainer --build-public-corpus ../../build/public-corpus.ndjso
 swift run SiftAppleTrainer --input ../../build/public-corpus.ndjson --out ../../build/apple-model --algorithm auto --install-ios
 ```
 
-The internal toB worker exports the same generic production training rows directly:
+The internal dataset worker exports the same generic production training rows directly:
 
 ```bash
 curl -H "Authorization: Bearer $MASTER_KEY" \
-  "https://sift.alkinum.io/api/tob/v1/training-set" \
+  "https://api.sift.alkinum.dev/v1/training-set" \
   > build/remote-training.ndjson
 
 cd tools/apple-trainer

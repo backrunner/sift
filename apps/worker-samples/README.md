@@ -1,8 +1,8 @@
-# Sift toC Worker
+# Sift Samples Worker
 
 Public anonymous submission worker.
 
-Production deploy: `https://sift.alkinum.io/api/toc/*`.
+Production deploy: `https://api.sift.alkinum.io/*`.
 
 Copy `wrangler.template.toml` to ignored `wrangler.toml`, fill in real
 Cloudflare IDs, then use Wrangler envs. Prefer root-level checks and deploys:
@@ -10,16 +10,16 @@ Cloudflare IDs, then use Wrangler envs. Prefer root-level checks and deploys:
 ```bash
 pnpm check:workers
 pnpm deploy:workers:dry-run
-pnpm deploy:worker:toc
+pnpm deploy:worker:samples
 ```
 
 For local development inside this package, run `pnpm dev`.
 
 `development` uses `workers.dev` and isolated development D1/KV resources.
-`production` routes through `sift.alkinum.io` and uses isolated production D1/KV
-resources. The worker reads `BASE_PATH=/api/toc` from the production env and
-strips it before routing. The privacy and TOS pages live in the Svelte legal
-site at the domain root.
+`production` routes through `api.sift.alkinum.io` and uses isolated production
+D1/KV resources. The worker owns the API subdomain root, so requests go
+directly to `/v1/samples` and related endpoints. The privacy and TOS pages live
+in the Svelte legal site at the domain root.
 
 Endpoints:
 

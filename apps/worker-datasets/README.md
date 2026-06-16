@@ -1,8 +1,8 @@
-# Sift toB Worker
+# Sift Datasets Worker
 
 Internal worker for exports and training data.
 
-Production deploy: `https://sift.alkinum.io/api/tob/*`.
+Production deploy: `https://api.sift.alkinum.dev/*`.
 
 Copy `wrangler.template.toml` to ignored `wrangler.toml`, fill in real
 Cloudflare IDs, then set `MASTER_KEY` as a secret:
@@ -19,14 +19,14 @@ Use Wrangler envs. Prefer root-level checks and deploys:
 ```bash
 pnpm check:workers
 pnpm deploy:workers:dry-run
-pnpm deploy:worker:tob
+pnpm deploy:worker:datasets
 ```
 
 For local development inside this package, run `pnpm dev`.
 
 `development` uses isolated development D1/KV/R2 resources. `production` routes
-through `sift.alkinum.io`, uses isolated production resources, and runs the
-retention cron configured in `wrangler.toml`.
+through `api.sift.alkinum.dev`, uses isolated production resources, and runs
+the retention cron configured in `wrangler.toml`.
 
 Endpoints:
 
@@ -44,7 +44,7 @@ Endpoints:
 
 ```bash
 curl -H "Authorization: Bearer $MASTER_KEY" \
-  "https://sift.alkinum.io/api/tob/v1/training-set" \
+  "https://api.sift.alkinum.dev/v1/training-set" \
   > sift-training-set.ndjson
 ```
 

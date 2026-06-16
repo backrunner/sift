@@ -111,24 +111,24 @@ function createKvMock(store: Map<string, string> = new Map()): KVNamespace {
 }
 
 test("health is public", async () => {
-  const response = await worker.fetch(new Request("https://example.test/api/tob/health"), {
+  const response = await worker.fetch(new Request("https://api.sift.alkinum.dev/health"), {
     DB: createDbMock(),
     SNAPSHOT_BUCKET: createBucketMock(),
     MODEL_MANIFEST: createKvMock(),
     MASTER_KEY: "secret",
-    BASE_PATH: "/api/tob"
+    BASE_PATH: ""
   });
 
   assert.equal(response.status, 200);
 });
 
 test("unauthenticated export is rejected", async () => {
-  const response = await worker.fetch(new Request("https://example.test/api/tob/v1/export"), {
+  const response = await worker.fetch(new Request("https://api.sift.alkinum.dev/v1/export"), {
     DB: createDbMock(),
     SNAPSHOT_BUCKET: createBucketMock(),
     MODEL_MANIFEST: createKvMock(),
     MASTER_KEY: "secret",
-    BASE_PATH: "/api/tob"
+    BASE_PATH: ""
   });
 
   assert.equal(response.status, 401);
@@ -136,7 +136,7 @@ test("unauthenticated export is rejected", async () => {
 
 test("training set exports generic ndjson examples", async () => {
   const response = await worker.fetch(
-    new Request("https://sift.alkinum.io/api/tob/v1/training-set?source=remote&label=verification&limit=1", {
+    new Request("https://api.sift.alkinum.dev/v1/training-set?source=remote&label=verification&limit=1", {
       headers: { authorization: "Bearer secret" }
     }),
     {
@@ -156,7 +156,7 @@ test("training set exports generic ndjson examples", async () => {
       SNAPSHOT_BUCKET: createBucketMock(),
       MODEL_MANIFEST: createKvMock(),
       MASTER_KEY: "secret",
-      BASE_PATH: "/api/tob"
+      BASE_PATH: ""
     }
   );
 
@@ -179,7 +179,7 @@ test("snapshot list and read work", async () => {
   ]);
 
   const listResponse = await worker.fetch(
-    new Request("https://sift.alkinum.io/api/tob/v1/snapshots", {
+    new Request("https://api.sift.alkinum.dev/v1/snapshots", {
       headers: { authorization: "Bearer secret" }
     }),
     {
@@ -187,7 +187,7 @@ test("snapshot list and read work", async () => {
       SNAPSHOT_BUCKET: createBucketMock(snapshots),
       MODEL_MANIFEST: createKvMock(),
       MASTER_KEY: "secret",
-      BASE_PATH: "/api/tob"
+      BASE_PATH: ""
     }
   );
 
@@ -197,7 +197,7 @@ test("snapshot list and read work", async () => {
 
   const readResponse = await worker.fetch(
     new Request(
-      "https://sift.alkinum.io/api/tob/v1/snapshots/" +
+      "https://api.sift.alkinum.dev/v1/snapshots/" +
         encodeURIComponent("snapshots/2026-05-09T00-00-00Z.ndjson"),
       { headers: { authorization: "Bearer secret" } }
     ),
@@ -206,7 +206,7 @@ test("snapshot list and read work", async () => {
       SNAPSHOT_BUCKET: createBucketMock(snapshots),
       MODEL_MANIFEST: createKvMock(),
       MASTER_KEY: "secret",
-      BASE_PATH: "/api/tob"
+      BASE_PATH: ""
     }
   );
 
@@ -218,7 +218,7 @@ test("model manifest can be written and read", async () => {
   const kv = createKvMock();
 
   const writeResponse = await worker.fetch(
-    new Request("https://sift.alkinum.io/api/tob/v1/model/manifest", {
+    new Request("https://api.sift.alkinum.dev/v1/model/manifest", {
       method: "PUT",
       headers: {
         authorization: "Bearer secret",
@@ -231,7 +231,7 @@ test("model manifest can be written and read", async () => {
       SNAPSHOT_BUCKET: createBucketMock(),
       MODEL_MANIFEST: kv,
       MASTER_KEY: "secret",
-      BASE_PATH: "/api/tob"
+      BASE_PATH: ""
     }
   );
 
@@ -241,7 +241,7 @@ test("model manifest can be written and read", async () => {
   assert.equal(writeBody.key, "current");
 
   const readResponse = await worker.fetch(
-    new Request("https://sift.alkinum.io/api/tob/v1/model/manifest", {
+    new Request("https://api.sift.alkinum.dev/v1/model/manifest", {
       headers: { authorization: "Bearer secret" }
     }),
     {
@@ -249,7 +249,7 @@ test("model manifest can be written and read", async () => {
       SNAPSHOT_BUCKET: createBucketMock(),
       MODEL_MANIFEST: kv,
       MASTER_KEY: "secret",
-      BASE_PATH: "/api/tob"
+      BASE_PATH: ""
     }
   );
 
@@ -271,7 +271,7 @@ test("retention run purges old sample rows and stale snapshots", async () => {
   ]);
 
   const response = await worker.fetch(
-    new Request("https://sift.alkinum.io/api/tob/v1/retention/run", {
+    new Request("https://api.sift.alkinum.dev/v1/retention/run", {
       method: "POST",
       headers: { authorization: "Bearer secret" }
     }),
@@ -280,7 +280,7 @@ test("retention run purges old sample rows and stale snapshots", async () => {
       SNAPSHOT_BUCKET: createBucketMock(snapshots, uploadedAt),
       MODEL_MANIFEST: createKvMock(),
       MASTER_KEY: "secret",
-      BASE_PATH: "/api/tob",
+      BASE_PATH: "",
       RETENTION_DAYS: "180",
       SNAPSHOT_RETENTION_DAYS: "30"
     }

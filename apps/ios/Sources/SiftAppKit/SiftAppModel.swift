@@ -586,7 +586,7 @@ public final class SiftAppModel {
     }
 
     private static func configuredRemoteSamplesEndpoint() -> URL? {
-        let keys = ["SiftSamplesEndpoint", "SIFT_TOC_SAMPLES_ENDPOINT"]
+        let keys = ["SiftSamplesEndpoint", "SIFT_SAMPLES_ENDPOINT"]
         for key in keys {
             guard
                 let value = Bundle.main.object(forInfoDictionaryKey: key) as? String,

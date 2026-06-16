@@ -3,7 +3,7 @@ import { dirname, join, resolve } from "node:path";
 import { spawnSync } from "node:child_process";
 
 type DeployEnvironment = "development" | "production";
-type WorkerTarget = "toc" | "tob";
+type WorkerTarget = "samples" | "datasets";
 
 interface WorkerConfig {
   readonly target: WorkerTarget;
@@ -16,14 +16,14 @@ const repoRoot = resolve(scriptDir, "../..");
 
 const workers: readonly WorkerConfig[] = [
   {
-    target: "toc",
-    packageName: "@sift/worker-toc",
-    directory: join(repoRoot, "apps/worker-toc")
+    target: "samples",
+    packageName: "@sift/worker-samples",
+    directory: join(repoRoot, "apps/worker-samples")
   },
   {
-    target: "tob",
-    packageName: "@sift/worker-tob",
-    directory: join(repoRoot, "apps/worker-tob")
+    target: "datasets",
+    packageName: "@sift/worker-datasets",
+    directory: join(repoRoot, "apps/worker-datasets")
   }
 ];
 
@@ -47,15 +47,15 @@ function hasFlag(name: string): boolean {
 }
 
 function usage(): string {
-  return `Usage: tsx tools/cloudflare/deploy-workers.ts [--env production|development] [--worker all|toc|tob] [--dry-run] [--skip-checks] [--skip-whoami]
+  return `Usage: tsx tools/cloudflare/deploy-workers.ts [--env production|development] [--worker all|samples|datasets] [--dry-run] [--skip-checks] [--skip-whoami]
 
 Deploys Sift Workers through Wrangler with the selected environment.
 
 Root shortcuts:
   pnpm deploy:workers
   pnpm deploy:workers:dry-run
-  pnpm deploy:worker:toc
-  pnpm deploy:worker:tob
+  pnpm deploy:worker:samples
+  pnpm deploy:worker:datasets
 
 Defaults:
   --env production
@@ -82,10 +82,10 @@ function parseTargets(): readonly WorkerConfig[] {
   if (value === "all") {
     return workers;
   }
-  if (value === "toc" || value === "tob") {
+  if (value === "samples" || value === "datasets") {
     return workers.filter((worker) => worker.target === value);
   }
-  throw new Error(`Unsupported --worker "${value}". Expected toc, tob, or all.`);
+  throw new Error(`Unsupported --worker "${value}". Expected samples, datasets, or all.`);
 }
 
 function validateWranglerConfig(worker: WorkerConfig): void {

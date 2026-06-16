@@ -35,7 +35,7 @@ importers:
         specifier: ^8.0.11
         version: 8.0.11(@types/node@24.12.2)(esbuild@0.27.7)(tsx@4.21.0)
 
-  apps/worker-tob:
+  apps/worker-datasets:
     dependencies:
       '@sift/contracts':
         specifier: workspace:*
@@ -60,7 +60,7 @@ importers:
         specifier: ^4.88.0
         version: 4.88.0(@cloudflare/workers-types@4.20260506.1)
 
-  apps/worker-toc:
+  apps/worker-samples:
     dependencies:
       '@sift/contracts':
         specifier: workspace:*

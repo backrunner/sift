@@ -9,9 +9,8 @@ export interface Env {
   readonly RETENTION_DAYS?: string;
   readonly SNAPSHOT_RETENTION_DAYS?: string;
   /**
-   * Path prefix this worker is mounted under, e.g. "/api/tob" when deployed at
-   * https://sift.alkinum.io/api/tob/*. Empty string when the worker owns the
-   * whole zone (local dev defaults to empty).
+   * Optional mount path when sharing an origin. Production owns the internal API
+   * subdomain root and leaves this empty.
    */
   readonly BASE_PATH?: string;
 }
@@ -255,7 +254,7 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
   const path = routePath(url, env);
 
   if (path === "/health") {
-    return json({ ok: true, service: "tob" });
+    return json({ ok: true, service: "datasets" });
   }
 
   if (!requireAuth(request, env)) {
@@ -264,8 +263,8 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
 
   if (path === "/" && request.method === "GET") {
     return json({
-      service: "tob",
-      domain: "sift.alkinum.io",
+      service: "datasets",
+      domain: "api.sift.alkinum.dev",
       basePath: env.BASE_PATH ?? "",
       endpoints: {
         health: "/health",

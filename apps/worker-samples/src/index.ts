@@ -7,7 +7,8 @@ export interface Env {
   readonly MODEL_MANIFEST_KEY: string;
   readonly MODEL_MANIFEST?: KVNamespace;
   /**
-   * Public mount path, e.g. "/api/toc" for https://sift.alkinum.io/api/toc/*.
+   * Optional mount path when sharing an origin. Production owns the API subdomain
+   * root and leaves this empty.
    * Empty in local development when the worker owns the whole localhost origin.
    */
   readonly BASE_PATH?: string;
@@ -94,8 +95,8 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
 
   if (path === "/" && request.method === "GET") {
     return json({
-      service: "toc",
-      domain: "sift.alkinum.io",
+      service: "samples",
+      domain: "api.sift.alkinum.io",
       basePath: env.BASE_PATH ?? "",
       endpoints: {
         health: "/health",
@@ -107,7 +108,7 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
   }
 
   if (path === "/health") {
-    return json({ ok: true, service: "toc" });
+    return json({ ok: true, service: "samples" });
   }
 
   if (path === "/v1/taxonomy" && request.method === "GET") {

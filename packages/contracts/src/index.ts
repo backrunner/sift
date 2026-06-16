@@ -23,7 +23,7 @@ export interface NormalizedSubmission {
 }
 
 /**
- * Framework-neutral training example shared by local corpora and toB exports.
+ * Framework-neutral training example shared by local corpora and dataset exports.
  * Keep persisted datasets in this simple text/label shape; trainers should
  * adapt it to Core ML, PyTorch, or another backend at the point of use.
  */

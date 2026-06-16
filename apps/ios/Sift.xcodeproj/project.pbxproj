@@ -138,6 +138,7 @@
 		20B9AC80820B87C5D1C1A9F4 /* SiftSMSClassifier.mlmodel */ = {isa = PBXFileReference; lastKnownFileType = file.mlmodel; path = SiftSMSClassifier.mlmodel; sourceTree = "<group>"; };
 		27DA7D06EC28D68B6A037EB8 /* MessageModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessageModels.swift; sourceTree = "<group>"; };
 		2BB32170259154B79369B83A /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		2D1291EF99B315F04D4B0758 /* SiftApp.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = SiftApp.entitlements; sourceTree = "<group>"; };
 		2F94E7D7E6D9B2D3624A6493 /* FeatureHasher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeatureHasher.swift; sourceTree = "<group>"; };
 		3567C7E3C28918AC491F49A2 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		3621E146033750FC68CED506 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
@@ -155,6 +156,7 @@
 		95714DBDDEB14E7636B61DEB /* MessageFilterExtension.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = MessageFilterExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		A106E2DC9BA09A3E71EBD4BB /* AppleModelClassifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleModelClassifier.swift; sourceTree = "<group>"; };
 		DE9062B3BA12FA49279965C9 /* MessageFilterCore.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = MessageFilterCore.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		DF0856AE1DE18210A3372A0A /* MessageFilterExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = MessageFilterExtension.entitlements; sourceTree = "<group>"; };
 		DF848914EC70ED6F39C774C3 /* CoreMLBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoreMLBridge.swift; sourceTree = "<group>"; };
 		E646B03461B9CD0523D39416 /* Taxonomy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Taxonomy.swift; sourceTree = "<group>"; };
 		F43A09AA5745101A244CF132 /* SiftAppModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SiftAppModel.swift; sourceTree = "<group>"; };
@@ -225,6 +227,7 @@
 			isa = PBXGroup;
 			children = (
 				3567C7E3C28918AC491F49A2 /* Info.plist */,
+				2D1291EF99B315F04D4B0758 /* SiftApp.entitlements */,
 				94BE665417F14F6013BCD08F /* SiftApp.swift */,
 			);
 			path = SiftApp;
@@ -252,6 +255,7 @@
 			isa = PBXGroup;
 			children = (
 				2BB32170259154B79369B83A /* Info.plist */,
+				DF0856AE1DE18210A3372A0A /* MessageFilterExtension.entitlements */,
 				F580BBE41F0C66D0E4695772 /* MessageFilterExtension.swift */,
 			);
 			path = MessageFilterExtension;
@@ -586,7 +590,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = io.alkinum.sift.MessageFilterExtensionKit;
+				PRODUCT_BUNDLE_IDENTIFIER = com.alkinum.sift.MessageFilterExtensionKit;
 				SDKROOT = iphoneos;
 				SKIP_INSTALL = YES;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -608,7 +612,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = io.alkinum.sift.SiftAppKit;
+				PRODUCT_BUNDLE_IDENTIFIER = com.alkinum.sift.SiftAppKit;
 				SDKROOT = iphoneos;
 				SKIP_INSTALL = YES;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -630,7 +634,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = io.alkinum.sift.SiftAppKit;
+				PRODUCT_BUNDLE_IDENTIFIER = com.alkinum.sift.SiftAppKit;
 				SDKROOT = iphoneos;
 				SKIP_INSTALL = YES;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -642,6 +646,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = SiftApp/SiftApp.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = SiftApp/Info.plist;
@@ -649,7 +654,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = io.alkinum.sift;
+				PRODUCT_BUNDLE_IDENTIFIER = com.alkinum.sift;
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -658,6 +663,7 @@
 		5146FDD1C353AE1BCC666E7C /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = MessageFilterExtension/MessageFilterExtension.entitlements;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = MessageFilterExtension/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -665,7 +671,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = io.alkinum.sift.MessageFilterExtension;
+				PRODUCT_BUNDLE_IDENTIFIER = com.alkinum.sift.MessageFilterExtension;
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -685,7 +691,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = io.alkinum.sift.MessageFilterCore;
+				PRODUCT_BUNDLE_IDENTIFIER = com.alkinum.sift.MessageFilterCore;
 				SDKROOT = iphoneos;
 				SKIP_INSTALL = YES;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -766,7 +772,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = io.alkinum.sift.MessageFilterCore;
+				PRODUCT_BUNDLE_IDENTIFIER = com.alkinum.sift.MessageFilterCore;
 				SDKROOT = iphoneos;
 				SKIP_INSTALL = YES;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -778,6 +784,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = SiftApp/SiftApp.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = SiftApp/Info.plist;
@@ -785,7 +792,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = io.alkinum.sift;
+				PRODUCT_BUNDLE_IDENTIFIER = com.alkinum.sift;
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -860,6 +867,7 @@
 		E630565CD3E40890D9983BD1 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = MessageFilterExtension/MessageFilterExtension.entitlements;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = MessageFilterExtension/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -867,7 +875,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = io.alkinum.sift.MessageFilterExtension;
+				PRODUCT_BUNDLE_IDENTIFIER = com.alkinum.sift.MessageFilterExtension;
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -887,7 +895,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = io.alkinum.sift.MessageFilterExtensionKit;
+				PRODUCT_BUNDLE_IDENTIFIER = com.alkinum.sift.MessageFilterExtensionKit;
 				SDKROOT = iphoneos;
 				SKIP_INSTALL = YES;
 				TARGETED_DEVICE_FAMILY = "1,2";

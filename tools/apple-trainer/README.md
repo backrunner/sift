@@ -33,11 +33,11 @@ swift run SiftAppleTrainer \
 
 `--algorithm auto` prefers Create ML BERT transfer learning and falls back to MaxEnt if the local environment cannot run BERT. Use `--algorithm maxent` for fast smoke tests.
 
-For production sample export, use the toB worker:
+For production sample export, use the internal dataset worker:
 
 ```bash
 curl -H "Authorization: Bearer $MASTER_KEY" \
-  "https://<tob-worker>/v1/training-set" \
+  "https://api.sift.alkinum.dev/v1/training-set" \
   > build/remote-training.ndjson
 ```
 

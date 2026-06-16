@@ -1,11 +1,11 @@
 {
-  "name": "@sift/worker-toc",
+  "name": "@sift/worker-datasets",
   "version": "0.1.0",
   "private": true,
   "type": "module",
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "dev": "wrangler dev --env development --local --port 8787",
+    "dev": "wrangler dev --env development --local --port 8788",
     "deploy": "wrangler deploy --env production",
     "typecheck": "tsc -p tsconfig.json",
     "test": "tsx --test tests/**/*.test.ts"

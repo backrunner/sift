@@ -1,4 +1,4 @@
-name = "sift-worker-tob"
+name = "sift-worker-datasets"
 main = "src/index.ts"
 compatibility_date = "2026-05-09"
 compatibility_flags = ["nodejs_compat"]
@@ -11,7 +11,7 @@ compatibility_flags = ["nodejs_compat"]
 # For local development, place MASTER_KEY in .dev.vars or .dev.vars.development.
 
 [env.development]
-name = "sift-worker-tob-development"
+name = "sift-worker-datasets-development"
 workers_dev = true
 
 [env.development.vars]
@@ -35,15 +35,15 @@ binding = "MODEL_MANIFEST"
 id = "replace-with-development-kv-id"
 
 [env.production]
-name = "sift-worker-tob"
+name = "sift-worker-datasets"
 workers_dev = false
 routes = [
-  { pattern = "sift.alkinum.io/api/tob/*", zone_name = "alkinum.io" }
+  { pattern = "api.sift.alkinum.dev/*", zone_name = "alkinum.dev" }
 ]
 
 [env.production.vars]
 ENVIRONMENT = "production"
-BASE_PATH = "/api/tob"
+BASE_PATH = ""
 MODEL_MANIFEST_KEY = "current"
 RETENTION_DAYS = "180"
 SNAPSHOT_RETENTION_DAYS = "30"

@@ -23,8 +23,8 @@ The production build writes static files to `apps/legal-site/build`.
 Deploy `build/` to Cloudflare Pages with the custom domain
 `sift.alkinum.io`. Keep the API Workers on path routes:
 
-- `sift.alkinum.io/api/toc/*`
-- `sift.alkinum.io/api/tob/*`
+- `api.sift.alkinum.io/*`
+- `api.sift.alkinum.dev/*`
 
 This lets the Svelte site own `/privacy` and `/tos` while the Workers keep the
-API paths.
+API subdomains.
