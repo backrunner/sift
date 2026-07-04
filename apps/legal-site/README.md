@@ -21,10 +21,6 @@ The production build writes static files to `apps/legal-site/build`.
 ## Deployment
 
 Deploy `build/` to Cloudflare Pages with the custom domain
-`sift.alkinum.io`. Keep the API Workers on path routes:
-
-- `api.sift.alkinum.io/*`
-- `api.sift.alkinum.dev/*`
-
-This lets the Svelte site own `/privacy` and `/tos` while the Workers keep the
-API subdomains.
+`sift.alkinum.io`. Data collection now goes directly through CloudKit from the
+iOS app, so the static legal pages are the only deployable surface in this
+package.

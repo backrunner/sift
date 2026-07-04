@@ -4,7 +4,7 @@ import CryptoKit
 import Foundation
 import NaturalLanguage
 
-/// Canonical framework-neutral dataset row. Persisted corpora and worker
+/// Canonical framework-neutral dataset row. Persisted corpora and CloudKit
 /// exports stay in this shape; Core ML/Create ML adaptation happens only at
 /// the training boundary.
 struct SampleRow: Codable, Hashable, Sendable {
