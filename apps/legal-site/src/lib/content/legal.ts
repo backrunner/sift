@@ -5,7 +5,7 @@ export const privacyPage: LegalPageData = {
   title: "Privacy Policy",
   lead:
     "Sift filters SMS on device first. Remote sample contribution is optional, sanitized, and reversible with a receipt token.",
-  updated: "2026-05-09",
+  updated: "2026-07-05",
   summaryTitle: "At a glance",
   summary: [
     {
@@ -20,13 +20,13 @@ export const privacyPage: LegalPageData = {
     },
     {
       label: "Identity fields",
-      value: "Rejected",
-      note: "Sender, account, device, and similar identity fields are blocked at the API."
+      value: "Never sent",
+      note: "Sender, account, phone, and device identity fields are never part of the sample payload."
     },
     {
-      label: "Retention",
-      value: "180 / 30 days",
-      note: "Primary samples and training snapshots follow separate retention windows."
+      label: "Storage",
+      value: "iCloud (CloudKit)",
+      note: "Samples live in the app's CloudKit public database; statistics back up to your own private iCloud database."
     }
   ],
   sections: [
@@ -40,13 +40,21 @@ export const privacyPage: LegalPageData = {
     {
       title: "When a sample is shared remotely",
       paragraphs: [
-        "If you choose anonymous contribution, the app sends only sanitized SMS text, the chosen label, and model metadata needed to improve the classifier.",
-        "The public worker rejects identity fields if a client tries to send them."
+        "If you choose anonymous contribution, the app writes only sanitized SMS text, the chosen label, the classifier version, and a coarse language/region tag (for example zh-CN) into the app's CloudKit public database.",
+        "Submission uses your device's iCloud session, but the stored sample payload carries no account, sender, or device identity fields."
       ],
       bullets: [
-        "No account ID or login is required.",
-        "No sender, phone number, email, contact name, or device identifier is accepted in the sample API.",
-        "The server returns a receipt token so you can delete the submitted sample later."
+        "No Sift account or login is required; an iCloud session on the device is used only to write the record.",
+        "No sender, phone number, email, contact name, or device identifier is included in the sample payload.",
+        "The app keeps a receipt for the submitted record so you can delete it later.",
+        "Settings → Data & Privacy lets you export all of your submissions as JSON or erase every one of them permanently."
+      ]
+    },
+    {
+      title: "Statistics and purchases",
+      paragraphs: [
+        "Daily filtering statistics are counters only — never message content — and are backed up to the CloudKit private database of your own iCloud account, which we cannot read.",
+        "The optional Premium upgrade is a one-time in-app purchase processed entirely by Apple; we never receive payment details."
       ]
     },
     {
@@ -59,12 +67,12 @@ export const privacyPage: LegalPageData = {
     {
       title: "Retention and deletion",
       paragraphs: [
-        "Primary D1 sample rows are retained for up to 180 days unless deleted earlier with a valid receipt token.",
-        "Training snapshots stored in R2 are retained for up to 30 days.",
-        "The app keeps the last receipt token locally so the most recent remote sample can still be deleted after a relaunch."
+        "Contributed samples are kept in the CloudKit public database while they remain useful for training and dataset curation.",
+        "Training corpora are exported as snapshots; snapshots are rebuilt from the live database, so a deleted sample drops out of future exports.",
+        "The app keeps the last receipt locally so the most recent remote sample can still be deleted after a relaunch."
       ],
       callout:
-        "If you delete a sample from the app, the primary row is removed from the sample database rather than only hidden."
+        "Erasure is built into the app: Settings → Data & Privacy removes every sample you contributed and your statistics backups, and erased samples drop out of all future model training."
     },
     {
       title: "Legal site traffic",
@@ -83,7 +91,7 @@ export const tosPage: LegalPageData = {
   title: "Terms of Service",
   lead:
     "These terms cover the Sift iOS app, the optional sample pipeline, and the legal site hosted on sift.alkinum.io.",
-  updated: "2026-05-09",
+  updated: "2026-07-05",
   summaryTitle: "At a glance",
   summary: [
     {
@@ -134,20 +142,28 @@ export const tosPage: LegalPageData = {
         "Do not try to submit identity fields, malicious payloads, or data you do not have the right to share."
       ],
       callout:
-        "The public API is intentionally narrow: it is meant for labeled SMS samples, not for arbitrary user content."
+        "The sample store is intentionally narrow: it is meant for labeled SMS samples, not for arbitrary user content."
+    },
+    {
+      title: "Premium (in-app purchase)",
+      paragraphs: [
+        "Premium is a one-time, non-consumable purchase that permanently unlocks the Transformer multilingual model on your Apple ID.",
+        "Prices — including temporary discounts or free promotions — are set and displayed by the App Store; restore purchases from Settings on any device with the same Apple ID.",
+        "Billing and refunds are handled exclusively by Apple. If a purchase is refunded, the app reverts to the standard model."
+      ]
     },
     {
       title: "Remote contribution",
       paragraphs: [
         "If you choose to contribute a sample, you confirm that the sample can be sanitized and used to improve the model.",
-        "The receipt token returned by the server is your deletion handle for the most recent accepted submission."
+        "The receipt kept by the app is your deletion handle for the most recent accepted submission, and full erasure is available in Settings."
       ]
     },
     {
       title: "Availability and changes",
       paragraphs: [
-        "Cloud infrastructure, API routes, and retention windows may change over time.",
-        "If a service endpoint is unavailable, the app should continue to work in its local mode."
+        "Cloud infrastructure, storage backends, and dataset curation practices may change over time.",
+        "If the sample store is unavailable, the app should continue to work in its local mode."
       ]
     },
     {

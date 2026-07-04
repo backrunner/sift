@@ -4,12 +4,19 @@ Primary Apple base-model adapter for Sift. It reads the shared generic `text`/`l
 
 ## Flow
 
-Generate a synthetic seed dataset in generic `text`/`label` NDJSON:
+Generate a multilingual synthetic seed dataset in generic `text`/`label` NDJSON
+(中文为主，英文覆盖全部标签，另含 es/pt/fr/de/ru/ja/ko/id/vi/th 高频类别):
 
 ```bash
 cd tools/apple-trainer
-swift run SiftAppleTrainer --generate-synthetic ../../build/synthetic.ndjson --per-label 50
+swift run SiftAppleTrainer --generate-synthetic ../../build/synthetic.ndjson \
+  --per-label 50 --intl-per-label 12 --languages all
 ```
+
+- `--per-label` controls Chinese rows per label; `--intl-per-label` controls
+  rows per covered label for every other language (0 disables them).
+- `--languages zh` reproduces a Chinese-only corpus; any comma-separated
+  subset of `zh,en,es,pt,fr,de,ru,ja,ko,id,vi,th` works.
 
 Build a richer generic local corpus from synthetic rows plus public SMS datasets:
 
@@ -33,21 +40,24 @@ swift run SiftAppleTrainer \
 
 `--algorithm auto` prefers Create ML BERT transfer learning and falls back to MaxEnt if the local environment cannot run BERT. Use `--algorithm maxent` for fast smoke tests.
 
-For production sample export, use the internal dataset worker:
+Training language: `--language auto` (default) inspects the corpus — a ≥90%
+single-language corpus trains with that language hint, anything mixed trains
+language-agnostic. Force with `--language zh-Hans` / `--language en` /
+`--language multilingual`.
 
-```bash
-curl -H "Authorization: Bearer $MASTER_KEY" \
-  "https://api.sift.alkinum.dev/v1/training-set" \
-  > build/remote-training.ndjson
-```
-
-The worker export is intentionally not an Apple/Core ML format. Keep generated corpora and remote exports as portable `{"text","label"}` NDJSON; any Core ML/Create ML conversion should happen inside this trainer, and future PyTorch trainers can consume the same dataset contract.
+For production sample export, pull live CloudKit submissions with the
+repo-root script (`pnpm export:training`, see `tools/cloudkit/README.md`);
+it writes the same portable `{"text","label"}` NDJSON. Any Core ML/Create ML
+conversion should happen inside this trainer, and the SetFit trainer
+(`tools/transformer-trainer`) consumes the same dataset contract.
 
 Public corpus sources currently used by `--build-public-corpus`:
 
 - `Cypher-Z/FBS_SMS_Dataset`: Chinese fake-base-station spam SMS; preprocessed and anonymized by the dataset authors.
 - `codesignal/sms-spam-collection`: English SMS Spam Collection, CC BY 4.0.
 - `reportsmishing/Smishing-Dataset-IMC25`: global smishing SMS dataset, CC BY 4.0.
+- `hrwhisper/SpamMessage`: ~800k labelled Chinese SMS; spam rows are split into
+  Sift's `spam` vs `promotion` buckets heuristically.
 
 See `PUBLIC_SOURCES.md` for attribution and mapping details.
 

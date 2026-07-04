@@ -4,7 +4,8 @@
   "packageManager": "pnpm@10.24.0",
   "workspaces": [
     "packages/*",
-    "apps/*"
+    "apps/*",
+    "tools/cloudkit"
   ],
   "scripts": {
     "build": "pnpm -r build",
@@ -12,13 +13,8 @@
     "typecheck": "pnpm -r typecheck",
     "lint": "pnpm -r lint",
     "format": "pnpm -r format",
-    "build:workers": "pnpm --filter @sift/worker-samples build && pnpm --filter @sift/worker-datasets build",
-    "test:workers": "pnpm --filter @sift/worker-samples test && pnpm --filter @sift/worker-datasets test",
-    "check:workers": "pnpm build:workers && pnpm test:workers",
-    "deploy:workers": "pnpm --filter @sift/worker-samples exec tsx ../../tools/cloudflare/deploy-workers.ts --env production",
-    "deploy:workers:dry-run": "pnpm --filter @sift/worker-samples exec tsx ../../tools/cloudflare/deploy-workers.ts --env production --dry-run",
-    "deploy:worker:samples": "pnpm --filter @sift/worker-samples exec tsx ../../tools/cloudflare/deploy-workers.ts --env production --worker samples",
-    "deploy:worker:datasets": "pnpm --filter @sift/worker-samples exec tsx ../../tools/cloudflare/deploy-workers.ts --env production --worker datasets",
+    "export:training": "pnpm --filter @sift/cloudkit-tools export",
+    "pipeline": "python3 tools/pipeline/sift_pipeline.py",
     "dev:legal": "pnpm --filter @sift/legal-site dev",
     "build:legal": "pnpm --filter @sift/legal-site build",
     "check:legal": "pnpm --filter @sift/legal-site check"

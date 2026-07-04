@@ -1,0 +1,43 @@
+DEFINE SCHEMA
+
+    RECORD TYPE SmsSample (
+        "___createTime" TIMESTAMP,
+        "___createdBy"  REFERENCE QUERYABLE,
+        "___etag"       STRING,
+        "___modTime"    TIMESTAMP,
+        "___modifiedBy" REFERENCE,
+        "___recordID"   REFERENCE QUERYABLE,
+        agreement       INT64 QUERYABLE,
+        createdAt       INT64 QUERYABLE SORTABLE,
+        label           STRING QUERYABLE SORTABLE,
+        labelGroup      STRING QUERYABLE,
+        locale          STRING QUERYABLE,
+        modelVersion    STRING QUERYABLE,
+        predictedConfidence DOUBLE,
+        predictedLabel  STRING QUERYABLE,
+        schemaVersion   INT64 QUERYABLE,
+        source          STRING,
+        text            STRING,
+        textLanguage    STRING QUERYABLE,
+        GRANT CREATE TO "_icloud",
+        GRANT WRITE TO "_creator",
+        GRANT READ TO "_icloud"
+    );
+
+    RECORD TYPE FilterStats (
+        "___createTime" TIMESTAMP,
+        "___createdBy"  REFERENCE,
+        "___etag"       STRING,
+        "___modTime"    TIMESTAMP,
+        "___modifiedBy" REFERENCE,
+        "___recordID"   REFERENCE QUERYABLE,
+        byGroup         STRING,
+        day             STRING QUERYABLE,
+        junk            INT64,
+        promotion       INT64,
+        total           INT64,
+        transaction     INT64,
+        GRANT CREATE TO "_icloud",
+        GRANT WRITE TO "_creator",
+        GRANT READ TO "_creator"
+    );

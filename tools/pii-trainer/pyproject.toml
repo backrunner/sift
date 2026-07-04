@@ -1,0 +1,14 @@
+[project]
+name = "sift-pii-trainer"
+version = "0.1.0"
+description = "Train the on-device Core ML PII detector (token classification) for Sift's sanitizer."
+requires-python = ">=3.10,<3.13"
+dependencies = [
+    "transformers>=4.44,<4.50",
+    "torch>=2.3,<2.6",
+    "coremltools>=8.0,<9",
+    "numpy>=1.26,<3",
+]
+
+[tool.uv]
+package = false

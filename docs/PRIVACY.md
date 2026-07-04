@@ -6,26 +6,38 @@ classification, custom rules, and local personalization on device.
 ## Remote sample contribution
 
 Remote contribution is optional and gated by an in-app consent toggle. When the
-user chooses anonymous contribution, the app sends only:
+user chooses anonymous contribution, the app writes a single record into the
+app's CloudKit **public database** containing only:
 
 - sanitized SMS text;
-- selected label;
+- selected label and its taxonomy group;
 - model version;
-- schema version.
+- schema version;
+- a coarse language/region tag (for example `zh-CN`) used to balance
+  multilingual training corpora;
+- a client timestamp used for incremental exports.
 
-The public worker rejects identity fields such as sender, account ID, device ID,
-phone, email, contact, name, IDFA, and IDFV. Receipt tokens are returned to the
-app and only a SHA-256 hash of the receipt is stored in D1.
+The payload carries no sender, account ID, device ID, phone, email, contact,
+name, IDFA, or IDFV fields. Submission requires an iCloud session on the
+device (a CloudKit platform requirement); CloudKit internally associates the
+record with its creator, which is exactly what lets the app honor the
+"delete my last submission" receipt without storing any identity in the
+record itself. Training exports read only the record payload, never creator
+identities.
 
 ## GDPR controls
 
 - Lawful basis: remote contribution is consent-based and opt-in.
-- Data minimization: only sanitized text and labeling metadata are accepted.
-- Erasure: the app stores the most recent receipt token and can delete that row
-  from the primary sample database.
-- Retention: the internal dataset worker runs a production cron and exposes an
-  authenticated retention endpoint. Primary samples default to 180 days; R2
-  snapshots default to 30 days.
+- Data minimization: only sanitized text and labeling metadata are written.
+- Erasure: beyond the last-submission receipt, Settings → 数据与隐私 offers
+  full erasure — a creator-scoped CloudKit query deletes every sample the
+  user ever contributed plus their private statistics backups (GDPR Art. 17).
+- Access/portability: the same creator-scoped query powers "导出我的全部提交"
+  (machine-readable JSON, GDPR Art. 15/20).
+- Retention: samples remain in the public database while they are useful for
+  training; corpora are exported as snapshots via
+  `tools/cloudkit/export-training-set.ts`, so deleted samples drop out of all
+  future exports.
 - Transparency: the public privacy policy is served at
   `https://sift.alkinum.io/privacy` by the Svelte legal site.
 
@@ -40,19 +52,31 @@ app and only a SHA-256 hash of the receipt is stored in D1.
 - Link to the terms page at `https://sift.alkinum.io/tos` wherever product or
   store metadata needs Terms of Service.
 - Keep `PrivacyInfo.xcprivacy` in the app/framework bundles because the app uses
-  `UserDefaults` for preferences, consent, custom rules, and the latest receipt.
+  `UserDefaults` for preferences, consent, custom rules, model selection, and
+  the latest receipt.
 - Fill App Store Connect App Privacy details consistently with the shipped app:
   local SMS filtering is on device, and remote sample contribution is optional.
 - Do not claim that SMS samples are impossible to identify in all circumstances;
   treat sanitized text conservatively as personal data for operational controls.
 
-## Cloudflare configuration
+## Statistics & purchases
 
-`apps/worker-*/wrangler.template.toml` is safe to commit. Real
-`wrangler.toml` files and `.dev.vars*` files are ignored and must stay local or
-in CI secrets. Production deploys use Wrangler env `production`.
+Daily filtering statistics are counters only and are mirrored to the user's
+CloudKit **private database** (`FilterStats` records) as a backup we cannot
+read. The Premium in-app purchase is processed entirely by Apple via
+StoreKit 2; the app stores no payment data. Full store-ready legal documents
+live in `docs/legal/PRIVACY_POLICY.md` and `docs/legal/TERMS_OF_SERVICE.md`.
+
+## CloudKit configuration
+
+The container is `iCloud.com.alkinum.sift`; the schema lives in
+`infra/cloudkit/schema.ckdb` and is imported with `xcrun cktool save-schema`
+(see `infra/cloudkit/README.md`). Public-database permissions allow any
+signed-in user to create `SmsSample` records, allow only the creator to modify
+or delete their own record, and require authentication to read.
+
+Training exports authenticate with a CloudKit server-to-server key. Keep the
+private key PEM outside the repository and pass it via `$CLOUDKIT_PRIVATE_KEY`.
 
 The legal pages are built from `apps/legal-site` and should be deployed to
-Cloudflare Pages at the `sift.alkinum.io` root. The Workers live on
-`api.sift.alkinum.io` for sample submissions and `api.sift.alkinum.dev` for
-internal dataset export and retention.
+Cloudflare Pages at the `sift.alkinum.io` root.
