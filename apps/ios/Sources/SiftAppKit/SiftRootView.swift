@@ -13,7 +13,8 @@ public struct SiftRootView: View {
     public init() {}
 
     public var body: some View {
-        NavigationStack {
+        @Bindable var model = model
+        return NavigationStack {
             ScrollView {
                 dashboardSections
             }
@@ -34,6 +35,7 @@ public struct SiftRootView: View {
     private var dashboardSections: some View {
         VStack(spacing: 18) {
             DashboardHero(model: model)
+            StatisticsPanel(model: model)
             if !model.hasConfirmedFilterSetup {
                 InterceptionSetupPanel(model: model)
             }
@@ -59,7 +61,7 @@ public struct SiftRootView: View {
     }
 }
 
-private struct AtmosphericBackground: View {
+struct AtmosphericBackground: View {
     @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
@@ -92,7 +94,9 @@ private struct AtmosphericBackground: View {
 }
 
 private struct DashboardHero: View {
-    let model: SiftAppModel
+    @Bindable var model: SiftAppModel
+    @State private var isShowingModelPicker = false
+    @State private var isShowingSettings = false
 
     private var formattedModelVersion: String {
         formatModelVersion(model.modelVersion)
@@ -106,38 +110,226 @@ private struct DashboardHero: View {
 
             Spacer(minLength: 8)
 
-            HStack(spacing: 5) {
-                Image(systemName: "cpu")
-                    .font(.caption2.weight(.bold))
-                    .foregroundStyle(.white.opacity(0.85))
-                Text("模型版本")
-                    .font(.caption2.weight(.semibold))
-                    .foregroundStyle(.white.opacity(0.85))
-                Text(formattedModelVersion)
-                    .font(.caption2.weight(.bold).monospaced())
-                    .foregroundStyle(.white)
+            Button {
+                isShowingModelPicker = true
+            } label: {
+                HStack(spacing: 5) {
+                    if model.isSwitchingModelVariant {
+                        ProgressView()
+                            .controlSize(.mini)
+                            .tint(.white)
+                    } else {
+                        Image(systemName: model.selectedModelVariant.symbol)
+                            .font(.caption2.weight(.bold))
+                            .foregroundStyle(.white.opacity(0.85))
+                    }
+                    Text(model.selectedModelVariant.title)
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(.white.opacity(0.85))
+                    Text(formattedModelVersion)
+                        .font(.caption2.weight(.bold).monospaced())
+                        .foregroundStyle(.white)
+                    Image(systemName: "chevron.up.chevron.down")
+                        .font(.system(size: 8, weight: .bold))
+                        .foregroundStyle(.white.opacity(0.7))
+                }
+                .padding(.horizontal, 10)
+                .padding(.vertical, 5)
+                .background(
+                    LinearGradient(
+                        colors: [Color.siftMint, Color.siftMint.opacity(0.86)],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    ),
+                    in: Capsule()
+                )
+                .contentShape(Capsule())
             }
-            .padding(.horizontal, 10)
-            .padding(.vertical, 5)
-            .background(
-                LinearGradient(
-                    colors: [Color.siftMint, Color.siftMint.opacity(0.86)],
-                    startPoint: .top,
-                    endPoint: .bottom
-                ),
-                in: Capsule()
-            )
+            .buttonStyle(.plain)
+            .sensoryFeedback(.selection, trigger: isShowingModelPicker)
+
+            Button {
+                isShowingSettings = true
+            } label: {
+                Image(systemName: "gearshape.fill")
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(.secondary)
+                    .frame(width: 30, height: 30)
+                    .background(Color.siftInsetFill, in: Circle())
+                    .overlay(Circle().stroke(Color.siftHairline, lineWidth: 1))
+                    .contentShape(Circle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(String(localized: "设置"))
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 4)
         .padding(.top, 6)
         .padding(.bottom, 2)
+        .sheet(isPresented: $isShowingModelPicker) {
+            NavigationStack {
+                ModelPickerView(model: model)
+            }
+            .presentationDetents([.medium, .large])
+            .presentationDragIndicator(.visible)
+        }
+        .sheet(isPresented: $isShowingSettings) {
+            NavigationStack {
+                SettingsView(model: model)
+            }
+            .presentationDetents([.large])
+            .presentationDragIndicator(.visible)
+        }
+    }
+}
+
+private struct ModelPickerView: View {
+    @Bindable var model: SiftAppModel
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 12) {
+                ForEach(model.availableModelVariants) { variant in
+                    let isLocked = variant == .transformer && !model.premium.isUnlocked
+                    ModelVariantCard(
+                        variant: variant,
+                        isSelected: model.selectedModelVariant == variant,
+                        isAvailable: model.isModelVariantAvailable(variant),
+                        isLockedByPremium: isLocked,
+                        version: model.modelVersion(for: variant).map(formatModelVersion)
+                    ) {
+                        // 未购买时 selectModelVariant 会转为打开购买引导:
+                        // 此时保持选择器在场,paywall 作为嵌套 sheet 叠加展示,
+                        // 购买成功后自动切换、返回时选中态已就绪。
+                        model.selectModelVariant(variant)
+                        if !(isLocked && model.isModelVariantAvailable(variant)) {
+                            dismiss()
+                        }
+                    }
+                    .disabled(model.isSwitchingModelVariant)
+                }
+
+                HStack(alignment: .top, spacing: 8) {
+                    Image(systemName: "info.circle")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(Color.siftHalo)
+                    Text(String(localized: "经典模型可通过本地样本在设备上微调；Transformer 模型面向多语言场景离线训练，不支持设备端微调，切换后本地微调入口将隐藏。"))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .padding(12)
+                .insetSurface(cornerRadius: 12)
+            }
+            .padding(.horizontal, 16)
+            .padding(.top, 16)
+            .padding(.bottom, 24)
+            .animation(.snappy(duration: 0.22), value: model.selectedModelVariant)
+        }
+        .scrollIndicators(.hidden)
+        .background(AtmosphericBackground())
+        .sheet(isPresented: $model.isShowingPaywall) {
+            NavigationStack {
+                PremiumPaywallView(model: model)
+            }
+            .presentationDetents([.large])
+            .presentationDragIndicator(.visible)
+        }
+        .navigationTitle(String(localized: "选择模型"))
+        .toolbarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .confirmationAction) {
+                Button(String(localized: "完成")) {
+                    dismiss()
+                }
+                .font(.callout.weight(.semibold))
+            }
+        }
+    }
+}
+
+private struct ModelVariantCard: View {
+    let variant: ModelVariant
+    let isSelected: Bool
+    let isAvailable: Bool
+    var isLockedByPremium: Bool = false
+    let version: String?
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(alignment: .center, spacing: 12) {
+                Image(systemName: variant.symbol)
+                    .font(.headline.weight(.bold))
+                    .foregroundStyle(isSelected ? Color.siftMint : .secondary)
+                    .frame(width: 34, height: 34)
+                    .background(
+                        (isSelected ? Color.siftMint.opacity(0.14) : Color.siftInsetFill),
+                        in: RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    )
+
+                VStack(alignment: .leading, spacing: 3) {
+                    HStack(spacing: 6) {
+                        Text(variant.title)
+                            .font(.callout.weight(.semibold))
+                            .foregroundStyle(.primary)
+                        if let version {
+                            Text(version)
+                                .font(.caption2.weight(.bold).monospaced())
+                                .foregroundStyle(Color.siftMint)
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 2)
+                                .background(Color.siftMint.opacity(0.12), in: Capsule())
+                        }
+                        if !isAvailable {
+                            Text(String(localized: "未内置"))
+                                .font(.caption2.weight(.semibold))
+                                .foregroundStyle(.secondary)
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 2)
+                                .background(Color.siftInsetFill, in: Capsule())
+                        }
+                        if isLockedByPremium {
+                            HStack(spacing: 3) {
+                                Image(systemName: "crown.fill")
+                                    .font(.system(size: 8, weight: .bold))
+                                Text(String(localized: "高级版"))
+                                    .font(.caption2.weight(.bold))
+                            }
+                            .foregroundStyle(Color.siftAmber)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(Color.siftAmber.opacity(0.14), in: Capsule())
+                        }
+                    }
+                    Text(variant.subtitle)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                Spacer(minLength: 0)
+
+                if isSelected {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.headline.weight(.bold))
+                        .foregroundStyle(Color.siftMint)
+                }
+            }
+            .padding(14)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .pillSurface(cornerRadius: 16, isSelected: isSelected)
+            .contentShape(Rectangle())
+            .opacity(isAvailable ? 1 : 0.55)
+        }
+        .buttonStyle(.plain)
+        .disabled(!isAvailable)
     }
 }
 
 /// 从 manifest 里的 `<codename>-<major>.<minor>` 格式（如 `corpus-0.1`）
 /// 中提取纯版本号 `major.minor`，展示在 "模型版本 <version>" 胶囊里。
-private func formatModelVersion(_ raw: String) -> String {
+func formatModelVersion(_ raw: String) -> String {
     let trimmed = raw.trimmingCharacters(in: .whitespaces)
     guard !trimmed.isEmpty else {
         return "0.1"
@@ -164,33 +356,33 @@ private struct InterceptionSetupPanel: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             SectionHeader(
-                title: "短信拦截设置",
+                title: String(localized: "短信拦截设置"),
                 icon: "gearshape"
             )
 
             VStack(alignment: .leading, spacing: 10) {
                 SetupStepRow(
                     index: "1",
-                    title: "打开系统设置",
-                    detail: "进入 iPhone 的设置应用。"
+                    title: String(localized: "打开系统设置"),
+                    detail: String(localized: "进入 iPhone 的设置应用。")
                 )
 
                 SetupStepRow(
                     index: "2",
-                    title: "找到信息",
-                    detail: "进入「信息」里的未知与垃圾信息。"
+                    title: String(localized: "找到信息"),
+                    detail: String(localized: "进入「信息」里的未知与垃圾信息。")
                 )
 
                 SetupStepRow(
                     index: "3",
-                    title: "启用 Sift",
-                    detail: "打开筛选并允许 Sift 参与拦截。"
+                    title: String(localized: "启用 Sift"),
+                    detail: String(localized: "打开筛选并允许 Sift 参与拦截。")
                 )
             }
 
             HStack(spacing: 10) {
                 ActionButton(
-                    title: "前往设置",
+                    title: String(localized: "前往设置"),
                     icon: "gearshape.fill",
                     style: .secondary,
                     isEnabled: settingsURL != nil
@@ -201,7 +393,7 @@ private struct InterceptionSetupPanel: View {
                 }
 
                 ActionButton(
-                    title: "已完成",
+                    title: String(localized: "已完成"),
                     style: didOpenSettings ? .primary : .neutral,
                     isEnabled: didOpenSettings
                 ) {
@@ -261,13 +453,13 @@ private struct TestSamplePanel: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            SectionHeader(title: "测试样本", icon: "brain.head.profile")
+            SectionHeader(title: String(localized: "测试样本"), icon: "brain.head.profile")
 
-            GlassTextEditor(title: "短信正文", placeholder: "输入短信正文", text: $model.testBody, minHeight: 104)
+            GlassTextEditor(title: String(localized: "短信正文"), placeholder: String(localized: "输入短信正文"), text: $model.testBody, minHeight: 104)
                 .onChange(of: model.testBody) { _, _ in model.clearCurrentDecision() }
 
             ActionButton(
-                title: "开始测试",
+                title: String(localized: "开始测试"),
                 icon: "text.magnifyingglass",
                 style: .primary,
                 isEnabled: model.canClassifyCurrentDraft
@@ -290,12 +482,25 @@ private struct SubmitSamplePanel: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            SectionHeader(title: "提交样本", icon: "tray.and.arrow.up")
-
-            SubmissionModeSelector(selection: $model.submissionDestination)
-                .onChange(of: model.submissionDestination) { _, _ in
-                    model.sampleSubmissionFeedback = nil
+            SectionHeader(title: String(localized: "提交样本"), icon: "tray.and.arrow.up") {
+                if model.submittedSampleCount > 0 {
+                    Text(String(localized: "已贡献 \(model.submittedSampleCount) 条"))
+                        .font(.caption2.weight(.bold).monospacedDigit())
+                        .foregroundStyle(Color.siftMint)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 3)
+                        .background(Color.siftMint.opacity(0.12), in: Capsule())
                 }
+            }
+
+            if model.supportsLocalPersonalization {
+                SubmissionModeSelector(selection: $model.submissionDestination)
+                    .onChange(of: model.submissionDestination) { _, _ in
+                        model.sampleSubmissionFeedback = nil
+                    }
+            } else {
+                TransformerSubmissionNotice()
+            }
 
             if model.submissionDestination == .remote {
                 RemoteSubmissionPrivacyCard(
@@ -308,11 +513,26 @@ private struct SubmitSamplePanel: View {
                 .transition(.opacity.combined(with: .move(edge: .top)))
             }
 
-            GlassTextEditor(title: "样本文本", placeholder: "粘贴一条待标注短信", text: $model.submissionText, minHeight: 104)
+            GlassTextEditor(title: String(localized: "样本文本"), placeholder: String(localized: "粘贴一条待标注短信"), text: $model.submissionText, minHeight: 104)
                 .onChange(of: model.submissionText) { _, _ in
                     model.sampleSubmissionFeedback = nil
                     model.refreshSanitizedPreview()
                 }
+
+            if let validationMessage = model.submissionValidationMessage {
+                HStack(alignment: .top, spacing: 8) {
+                    Image(systemName: "exclamationmark.circle.fill")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(Color.siftAmber)
+                    Text(validationMessage)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .padding(10)
+                .insetSurface(cornerRadius: 10)
+                .transition(.opacity)
+            }
 
             if model.shouldShowSanitizedPreview {
                 PrivacyPreview(text: model.sanitizedPreview)
@@ -321,7 +541,7 @@ private struct SubmitSamplePanel: View {
             CategoryMenu(selectedLabelID: $model.selectedLabelID)
 
             ActionButton(
-                title: model.submissionDestination == .local ? "加入本地微调队列" : "匿名提交脱敏样本",
+                title: model.submissionDestination == .local ? String(localized: "加入本地微调队列") : String(localized: "匿名提交脱敏样本"),
                 icon: "checkmark.shield",
                 style: .primary,
                 isEnabled: model.canSubmitSample && !model.isSubmittingSample,
@@ -337,7 +557,7 @@ private struct SubmitSamplePanel: View {
 
             if model.submissionDestination == .remote, let receiptToken = model.lastReceiptToken {
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("回执")
+                    Text(String(localized: "回执"))
                         .font(.caption.weight(.bold))
                         .foregroundStyle(.secondary)
                     Text(receiptToken)
@@ -346,7 +566,7 @@ private struct SubmitSamplePanel: View {
                         .textSelection(.enabled)
                         .foregroundStyle(.primary.opacity(0.84))
                     ActionButton(
-                        title: "删除远程样本",
+                        title: String(localized: "删除远程样本"),
                         icon: "trash",
                         style: .danger
                     ) {
@@ -361,6 +581,33 @@ private struct SubmitSamplePanel: View {
         .cardSurface()
         .animation(.snappy(duration: 0.22), value: model.sampleSubmissionFeedback?.id)
         .animation(.snappy(duration: 0.22), value: model.submissionDestination)
+        .animation(.snappy(duration: 0.22), value: model.selectedModelVariant)
+        .animation(.snappy(duration: 0.22), value: model.submissionValidationMessage)
+    }
+}
+
+/// Shown instead of the local/remote selector while the transformer model is
+/// active: that variant cannot be fine-tuned on device.
+private struct TransformerSubmissionNotice: View {
+    var body: some View {
+        HStack(alignment: .top, spacing: 9) {
+            Image(systemName: "lock.badge.clock")
+                .font(.callout.weight(.semibold))
+                .foregroundStyle(Color.siftHalo)
+                .frame(width: 18)
+            VStack(alignment: .leading, spacing: 3) {
+                Text(String(localized: "Transformer 模型不支持本地微调"))
+                    .font(.footnote.weight(.bold))
+                    .foregroundStyle(.primary)
+                Text(String(localized: "样本可继续通过 iCloud 匿名共享，用于云端训练下一版模型；切回经典模型可恢复本地微调。"))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .padding(12)
+        .insetSurface(cornerRadius: 12)
+        .accessibilityElement(children: .combine)
     }
 }
 
@@ -371,14 +618,14 @@ private struct LegalLinksPanel: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             SectionHeader(
-                title: "隐私与条款",
-                subtitle: "查看匿名贡献、数据保留和服务范围。",
+                title: String(localized: "隐私与条款"),
+                subtitle: String(localized: "查看匿名贡献、数据保留和服务范围。"),
                 icon: "doc.text.magnifyingglass"
             )
 
             HStack(spacing: 10) {
                 ActionButton(
-                    title: "隐私说明",
+                    title: String(localized: "隐私说明"),
                     icon: "hand.raised.fill",
                     style: .secondary
                 ) {
@@ -386,7 +633,7 @@ private struct LegalLinksPanel: View {
                 }
 
                 ActionButton(
-                    title: "服务条款",
+                    title: String(localized: "服务条款"),
                     icon: "checkmark.seal",
                     style: .neutral
                 ) {
@@ -413,17 +660,17 @@ private struct RemoteSubmissionPrivacyCard: View {
                     .foregroundStyle(Color.siftMint)
                     .frame(width: 18)
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("匿名贡献隐私说明")
+                    Text(String(localized: "匿名贡献隐私说明"))
                         .font(.footnote.weight(.bold))
                         .foregroundStyle(.primary)
-                    Text("会发送脱敏后的样本文本、分类和模型版本；不发送发送方、账号或设备标识。你可以用回执删除最近一次远程样本。")
+                    Text(String(localized: "会通过 iCloud 共享脱敏后的样本文本、分类、模型版本和粗粒度语言地区（如 zh-CN）；不发送发送方、账号或设备标识。需设备已登录 iCloud，你可以用回执删除最近一次远程样本。"))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
             }
 
-            Toggle("我同意匿名贡献", isOn: $isAccepted)
+            Toggle(String(localized: "我同意匿名贡献"), isOn: $isAccepted)
                 .font(.footnote.weight(.semibold))
                 .toggleStyle(.switch)
                 .tint(.siftMint)
@@ -432,7 +679,7 @@ private struct RemoteSubmissionPrivacyCard: View {
                 Button {
                     openPrivacyPolicy(privacyPolicyURL)
                 } label: {
-                    Label("隐私说明", systemImage: "doc.text.magnifyingglass")
+                    Label(String(localized: "隐私说明"), systemImage: "doc.text.magnifyingglass")
                         .font(.caption.weight(.semibold))
                 }
                 .buttonStyle(.plain)
@@ -441,7 +688,7 @@ private struct RemoteSubmissionPrivacyCard: View {
                 Button {
                     openPrivacyPolicy(termsOfServiceURL)
                 } label: {
-                    Label("服务条款", systemImage: "checkmark.seal")
+                    Label(String(localized: "服务条款"), systemImage: "checkmark.seal")
                         .font(.caption.weight(.semibold))
                 }
                 .buttonStyle(.plain)
@@ -459,14 +706,14 @@ private struct SubmissionModeSelector: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("提交方式")
+            Text(String(localized: "提交方式"))
                 .font(.caption.weight(.bold))
                 .foregroundStyle(.secondary)
 
             HStack(spacing: 10) {
                 SubmissionModeChip(
-                    title: "仅本地",
-                    subtitle: "数据留在设备",
+                    title: String(localized: "仅本地"),
+                    subtitle: String(localized: "数据留在设备"),
                     icon: "lock.shield",
                     isSelected: selection == .local
                 ) {
@@ -474,8 +721,8 @@ private struct SubmissionModeSelector: View {
                 }
 
                 SubmissionModeChip(
-                    title: "匿名提交",
-                    subtitle: "发送脱敏文本",
+                    title: String(localized: "匿名提交"),
+                    subtitle: String(localized: "发送脱敏文本"),
                     icon: "icloud.and.arrow.up",
                     isSelected: selection == .remote
                 ) {
@@ -539,7 +786,7 @@ private struct RulesPanel: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             SectionHeader(
-                title: "自定义规则",
+                title: String(localized: "自定义规则"),
                 icon: "slider.horizontal.3"
             ) {
                 if model.customRuleCount > 0 {
@@ -550,7 +797,7 @@ private struct RulesPanel: View {
             NavigationLink {
                 RuleManagementView(model: model)
             } label: {
-                Label("管理规则", systemImage: "slider.horizontal.3")
+                Label(String(localized: "管理规则"), systemImage: "slider.horizontal.3")
                     .font(.callout.weight(.semibold))
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 14)
@@ -606,7 +853,7 @@ private struct RuleManagementView: View {
         Group {
             ruleList
         }
-        .navigationTitle("规则管理")
+        .navigationTitle(String(localized: "规则管理"))
         .toolbarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .confirmationAction) {
@@ -652,7 +899,7 @@ private struct RuleManagementView: View {
             VStack(alignment: .leading, spacing: 0) {
                 DisclosureCardHeader(
                     icon: "plus.circle",
-                    title: "新建规则",
+                    title: String(localized: "新建规则"),
                     isExpanded: isDraftExpanded
                 ) {
                     isDraftExpanded.toggle()
@@ -674,7 +921,7 @@ private struct RuleManagementView: View {
             .ruleManagementListRow(top: 14, bottom: 12)
 
             SectionHeader(
-                title: "规则列表",
+                title: String(localized: "规则列表"),
                 icon: "list.bullet.rectangle"
             ) {
                 if !customRuleRows.isEmpty {
@@ -736,7 +983,7 @@ private struct RuleDraftForm: View {
     private var patternPlaceholder: String {
         switch model.ruleDraftPatternKind {
         case .substring:
-            return model.ruleDraftLocation == .sender ? "955" : "取件码"
+            return model.ruleDraftLocation == .sender ? "955" : String(localized: "取件码")
         case .regex:
             return model.ruleDraftLocation == .sender ? "^955\\d{2}$" : #"取件码\s*\d{4,8}"#
         }
@@ -744,10 +991,10 @@ private struct RuleDraftForm: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            GlassTextField(title: "规则名称（可选）", placeholder: model.defaultRuleNamePlaceholder, text: $model.ruleDraftName)
+            GlassTextField(title: String(localized: "规则名称（可选）"), placeholder: model.defaultRuleNamePlaceholder, text: $model.ruleDraftName)
 
             VStack(alignment: .leading, spacing: 8) {
-                Text("匹配位置")
+                Text(String(localized: "匹配位置"))
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(.secondary)
                 SegmentedChoiceRow {
@@ -770,7 +1017,7 @@ private struct RuleDraftForm: View {
             }
 
             VStack(alignment: .leading, spacing: 8) {
-                Text("匹配方式")
+                Text(String(localized: "匹配方式"))
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(.secondary)
                 SegmentedChoiceRow {
@@ -792,12 +1039,12 @@ private struct RuleDraftForm: View {
                 }
             }
 
-            GlassTextField(title: "匹配内容", placeholder: patternPlaceholder, text: $model.ruleDraftPattern)
+            GlassTextField(title: String(localized: "匹配内容"), placeholder: patternPlaceholder, text: $model.ruleDraftPattern)
 
-            CategoryMenu(titleLabel: "分类", selectedLabelID: $model.ruleDraftLabelID)
+            CategoryMenu(titleLabel: String(localized: "分类"), selectedLabelID: $model.ruleDraftLabelID)
 
             ActionButton(
-                title: "添加规则",
+                title: String(localized: "添加规则"),
                 icon: "plus",
                 style: .primary,
                 isEnabled: model.canAddCustomRule
@@ -1129,7 +1376,7 @@ private struct RuleEditView: View {
     private var patternPlaceholder: String {
         switch patternKind {
         case .substring:
-            return location == .sender ? "955" : "取件码"
+            return location == .sender ? "955" : String(localized: "取件码")
         case .regex:
             return location == .sender ? "^955\\d{2}$" : #"取件码\s*\d{4,8}"#
         }
@@ -1147,10 +1394,10 @@ private struct RuleEditView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 14) {
-                GlassTextField(title: "规则名称（可选）", placeholder: model.defaultRuleNamePlaceholder, text: $name)
+                GlassTextField(title: String(localized: "规则名称（可选）"), placeholder: model.defaultRuleNamePlaceholder, text: $name)
 
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("匹配位置")
+                    Text(String(localized: "匹配位置"))
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(.secondary)
                     SegmentedChoiceRow {
@@ -1169,7 +1416,7 @@ private struct RuleEditView: View {
                 }
 
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("匹配方式")
+                    Text(String(localized: "匹配方式"))
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(.secondary)
                     SegmentedChoiceRow {
@@ -1187,9 +1434,9 @@ private struct RuleEditView: View {
                     }
                 }
 
-                GlassTextField(title: "匹配内容", placeholder: patternPlaceholder, text: $pattern)
+                GlassTextField(title: String(localized: "匹配内容"), placeholder: patternPlaceholder, text: $pattern)
 
-                CategoryMenu(titleLabel: "分类", selectedLabelID: $labelID)
+                CategoryMenu(titleLabel: String(localized: "分类"), selectedLabelID: $labelID)
             }
             .padding(18)
             .cardSurface()
@@ -1199,17 +1446,17 @@ private struct RuleEditView: View {
         }
         .scrollIndicators(.hidden)
         .background(AtmosphericBackground())
-        .navigationTitle("编辑规则")
+        .navigationTitle(String(localized: "编辑规则"))
         #if os(iOS)
         .toolbarTitleDisplayMode(.inline)
         #endif
         .toolbar {
             ToolbarItem(placement: .cancellationAction) {
-                Button("取消") { onDismiss() }
+                Button(String(localized: "取消")) { onDismiss() }
                     .font(.callout.weight(.semibold))
             }
             ToolbarItem(placement: .confirmationAction) {
-                Button("保存") {
+                Button(String(localized: "保存")) {
                     let success = model.updateRule(
                         id: ruleID,
                         name: name,
@@ -1258,10 +1505,10 @@ private struct RuleEmptyState: View {
                 .background(Color.siftMint.opacity(0.12), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
 
             VStack(alignment: .leading, spacing: 5) {
-                Text("还没有自定义规则")
+                Text(String(localized: "还没有自定义规则"))
                     .font(.callout.weight(.semibold))
                     .foregroundStyle(.primary)
-                Text("先在上面的表单里添加一条子串或正则规则。")
+                Text(String(localized: "先在上面的表单里添加一条子串或正则规则。"))
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -1351,7 +1598,7 @@ private struct GlassTextEditor: View {
     }
 }
 
-private enum FormInputMetrics {
+enum FormInputMetrics {
     static let horizontalPadding: CGFloat = 12
     static let verticalPadding: CGFloat = 10
     static let cornerRadius: CGFloat = 10
@@ -1440,7 +1687,7 @@ private struct SiftMultilineTextView: View {
 #endif
 
 private struct CategoryMenu: View {
-    var titleLabel: String = "分类"
+    var titleLabel: String = String(localized: "分类")
     @Binding var selectedLabelID: String
     @State private var isShowingPicker = false
 
@@ -1509,7 +1756,7 @@ private struct CategorySelectionView: View {
         .toolbarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .confirmationAction) {
-                Button("完成") {
+                Button(String(localized: "完成")) {
                     dismiss()
                 }
                 .font(.callout.weight(.semibold))
@@ -1638,7 +1885,7 @@ private struct PrivacyPreview: View {
                 Image(systemName: "eye.slash")
                     .font(.caption2.weight(.semibold))
                     .foregroundStyle(Color.siftMint)
-                Text("脱敏预览")
+                Text(String(localized: "脱敏预览"))
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(.secondary)
                 Spacer(minLength: 0)
@@ -1654,7 +1901,7 @@ private struct PrivacyPreview: View {
     }
 }
 
-private struct SectionHeader<Accessory: View>: View {
+struct SectionHeader<Accessory: View>: View {
     let title: String
     var subtitle: String?
     let icon: String
@@ -1690,14 +1937,14 @@ extension SectionHeader where Accessory == EmptyView {
     }
 }
 
-private enum ActionButtonStyle {
+enum ActionButtonStyle {
     case primary
     case secondary
     case neutral
     case danger
 }
 
-private struct ActionButton: View {
+struct ActionButton: View {
     let title: String
     var icon: String?
     var style: ActionButtonStyle = .primary
@@ -1895,7 +2142,7 @@ private struct DisclosureCardHeader: View {
     }
 }
 
-private extension View {
+extension View {
     func ruleManagementListRow(top: CGFloat = 6, bottom: CGFloat = 6) -> some View {
         listRowBackground(Color.clear)
             .listRowSeparator(.hidden)
@@ -1952,13 +2199,13 @@ private extension SenderMatcher.Kind {
     var title: String {
         switch self {
         case .exact:
-            return "精确"
+            return String(localized: "精确")
         case .prefix:
-            return "前缀"
+            return String(localized: "前缀")
         case .substring:
-            return "子串"
+            return String(localized: "子串")
         case .regex:
-            return "正则"
+            return String(localized: "正则")
         }
     }
 }
@@ -1967,16 +2214,16 @@ private extension TextMatcher.Kind {
     var title: String {
         switch self {
         case .keyword:
-            return "关键词"
+            return String(localized: "关键词")
         case .substring:
-            return "子串"
+            return String(localized: "子串")
         case .regex:
-            return "正则"
+            return String(localized: "正则")
         }
     }
 }
 
-private extension Color {
+extension Color {
     static let siftMint = Color(
         light: Color(red: 0.10, green: 0.62, blue: 0.55),
         dark: Color(red: 0.36, green: 0.85, blue: 0.76)

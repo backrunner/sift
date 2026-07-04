@@ -12,13 +12,20 @@
 		0C531EFADABA41DCC6083EB8 /* MessageFilterExtensionKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6CBD4DFE2D496DF56947A303 /* MessageFilterExtensionKit.framework */; };
 		0C78DF462A5FAC3F6A6AA4FB /* MessageFilterExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = F580BBE41F0C66D0E4695772 /* MessageFilterExtension.swift */; };
 		13988EDB6F5E1DCE2DA7FD70 /* SiftAppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F43A09AA5745101A244CF132 /* SiftAppModel.swift */; };
-		143CE183057B264DA940C177 /* RemoteSampleClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67BEDF25DE19289A1DB73E67 /* RemoteSampleClient.swift */; };
+		1841BDACA80E97ECA1FE7F87 /* SiftTransformerClassifier.vocab.txt in Resources */ = {isa = PBXBuildFile; fileRef = 0B9C71019DD16AD4F2379867 /* SiftTransformerClassifier.vocab.txt */; };
+		18790970A3AF1DD07AAD6AF5 /* SiftPIIDetector.manifest.json in Resources */ = {isa = PBXBuildFile; fileRef = 03EADA2502AEE010EE20F4F5 /* SiftPIIDetector.manifest.json */; };
 		1A2430A7C99CA6258D6305A4 /* FeatureHasher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F94E7D7E6D9B2D3624A6493 /* FeatureHasher.swift */; };
+		1FC39F0616712256D1C1B9F4 /* ModelSelection.swift in Sources */ = {isa = PBXBuildFile; fileRef = C29F041CB845ED5477E6AC11 /* ModelSelection.swift */; };
+		24F42188738E020AC24D3E6B /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 7EA84B55EFAA05AB592B06F3 /* Localizable.xcstrings */; };
+		32802BD3E25D04E202A8C691 /* FilterStatistics.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF3A58DEA3DAEB51EA8F59D7 /* FilterStatistics.swift */; };
 		382E91E8A2CDB0FEB8D96AAB /* AppleModelClassifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = A106E2DC9BA09A3E71EBD4BB /* AppleModelClassifier.swift */; };
 		3D99F36498C1C6D795ED49D5 /* MessageFilterExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 95714DBDDEB14E7636B61DEB /* MessageFilterExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		4428BAF5EA8D38D82262CABC /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 414E55D72A3C1BB0973F2C21 /* Assets.xcassets */; };
+		4C9DEC9151D24D2F3FB63621 /* SiftTransformerClassifier.manifest.json in Resources */ = {isa = PBXBuildFile; fileRef = 3F1C369869603AACEE833130 /* SiftTransformerClassifier.manifest.json */; };
 		4D723A300D58F861A7AF3CC5 /* MessageFilterCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DE9062B3BA12FA49279965C9 /* MessageFilterCore.framework */; };
 		4D78855A78F3C73FF3C76608 /* SampleStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D5C960A4586578B74DD045F /* SampleStore.swift */; };
 		4D90C615FA1371A4048092D5 /* SiftAppKit.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 11B4806EA8A49EA7B49DFE06 /* SiftAppKit.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		501B66CEEF014D5CA0C9FDDF /* SiftPIIDetector.mlpackage in Sources */ = {isa = PBXBuildFile; fileRef = F4D17437D44ADF0B5804FADB /* SiftPIIDetector.mlpackage */; };
 		5825DED50EE74D98B233C0DA /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = F94B8A23D8B6D58EDFE4D12B /* PrivacyInfo.xcprivacy */; };
 		58F0198193B053CD63CE0944 /* SiftSMSClassifier.mlmodel in Sources */ = {isa = PBXBuildFile; fileRef = 20B9AC80820B87C5D1C1A9F4 /* SiftSMSClassifier.mlmodel */; };
 		5AEDA33C9EA687897EC905C6 /* RuleEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 753C8AF04FE9FA5CE3C68EC1 /* RuleEngine.swift */; };
@@ -27,19 +34,31 @@
 		68E9C0CAAEE4F4719B65EBDD /* ModelManifest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6552BE571000D043A0B5FEC8 /* ModelManifest.swift */; };
 		80EA440A0B3377EEBF648BA7 /* Classifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 91A2208F6DF258C04BFA1DBF /* Classifier.swift */; };
 		8BB645CC14EFDD4FF2C4F3A3 /* PrivacySanitizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85A81258E948F5F731486B23 /* PrivacySanitizer.swift */; };
+		9432635D3D3C7B4052D34978 /* PIIDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7618B89E17DF7C4ABFB2C888 /* PIIDetector.swift */; };
 		963B035935077DD1AA645701 /* MessageFilterCore.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = DE9062B3BA12FA49279965C9 /* MessageFilterCore.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		9C33A935CBCD37F0BE95309C /* MessageFilterActionMapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90D8C514C04E418B11B62568 /* MessageFilterActionMapper.swift */; };
 		A08F823208268F7EBE0DA032 /* SiftSMSClassifier.manifest.json in Resources */ = {isa = PBXBuildFile; fileRef = 03A3CC79E2485F5F94485559 /* SiftSMSClassifier.manifest.json */; };
 		A597B3E2DE38645AFDF3E2B1 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 3621E146033750FC68CED506 /* PrivacyInfo.xcprivacy */; };
+		B03AD5D16E2BB20888D457DA /* PremiumStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36F6A1D8E3C1E952689092F2 /* PremiumStore.swift */; };
+		BD66089BC2094323F89BC153 /* SiftPIIDetector.vocab.txt in Resources */ = {isa = PBXBuildFile; fileRef = 68E31588A615F637BCA1A72A /* SiftPIIDetector.vocab.txt */; };
 		BD98F94128FED4D69A01C995 /* MessageModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27DA7D06EC28D68B6A037EB8 /* MessageModels.swift */; };
 		C56E33680ED9B0782A91EB61 /* MessageFilterCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DE9062B3BA12FA49279965C9 /* MessageFilterCore.framework */; };
+		C949FF2E312F2B3292269D7C /* WordPieceTokenizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2AD0B23B094B7F19C398D6C6 /* WordPieceTokenizer.swift */; };
 		C97F06BC823C58D4E211ABB5 /* CoreMLBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF848914EC70ED6F39C774C3 /* CoreMLBridge.swift */; };
+		C9F138E6EF756C5EBDE526B9 /* CloudKitSampleClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B97F0AAEE63E8477A369B76 /* CloudKitSampleClient.swift */; };
+		CCCC9570118742B944570CB6 /* SiftTransformerClassifier.manifest.json in Resources */ = {isa = PBXBuildFile; fileRef = 3F1C369869603AACEE833130 /* SiftTransformerClassifier.manifest.json */; };
 		CCD972873C3E56D77A538AAD /* SiftSMSClassifier.manifest.json in Resources */ = {isa = PBXBuildFile; fileRef = 03A3CC79E2485F5F94485559 /* SiftSMSClassifier.manifest.json */; };
 		CCE0687DC8B943DCBEE3C8EF /* SiftAppKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 11B4806EA8A49EA7B49DFE06 /* SiftAppKit.framework */; };
+		CF3E9E68BAF81AD4FC188624 /* SiftTransformerClassifier.vocab.txt in Resources */ = {isa = PBXBuildFile; fileRef = 0B9C71019DD16AD4F2379867 /* SiftTransformerClassifier.vocab.txt */; };
 		D010F600019315C948F6855A /* MessageFilterCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DE9062B3BA12FA49279965C9 /* MessageFilterCore.framework */; };
 		DA1BE1AFA1A47145D8E20860 /* SiftSMSClassifier.mlmodel in Sources */ = {isa = PBXBuildFile; fileRef = 20B9AC80820B87C5D1C1A9F4 /* SiftSMSClassifier.mlmodel */; };
+		DA9E0BDA7A47D675C779EB6E /* TransformerClassifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 484100600463D6DE7C77A4EC /* TransformerClassifier.swift */; };
+		DDFD20E0EC444C5DF500978C /* PremiumViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = B01E8E89CED9145777F73B53 /* PremiumViews.swift */; };
+		DF9C0BBD95DC94A66AEAF7D4 /* SiftTransformerClassifier.mlpackage in Sources */ = {isa = PBXBuildFile; fileRef = 21CE0ADC71B2CEF630DE9A54 /* SiftTransformerClassifier.mlpackage */; };
 		E698229663809AC1761A38C1 /* MessageFilterCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DE9062B3BA12FA49279965C9 /* MessageFilterCore.framework */; };
+		EBB916001952F59808045D0F /* SubmissionHistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 188D3402D6C10DAE8AE2CF7F /* SubmissionHistoryView.swift */; };
 		F5F35629D1518DB8FBB4D0E8 /* SiftRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49D7FE397BA0808616CA19CE /* SiftRootView.swift */; };
+		FE965E47B4E6015F705BE6C8 /* SiftTransformerClassifier.mlpackage in Sources */ = {isa = PBXBuildFile; fileRef = 21CE0ADC71B2CEF630DE9A54 /* SiftTransformerClassifier.mlpackage */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -134,20 +153,32 @@
 
 /* Begin PBXFileReference section */
 		03A3CC79E2485F5F94485559 /* SiftSMSClassifier.manifest.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = SiftSMSClassifier.manifest.json; sourceTree = "<group>"; };
+		03EADA2502AEE010EE20F4F5 /* SiftPIIDetector.manifest.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = SiftPIIDetector.manifest.json; sourceTree = "<group>"; };
+		0B9C71019DD16AD4F2379867 /* SiftTransformerClassifier.vocab.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = SiftTransformerClassifier.vocab.txt; sourceTree = "<group>"; };
 		11B4806EA8A49EA7B49DFE06 /* SiftAppKit.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = SiftAppKit.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		188D3402D6C10DAE8AE2CF7F /* SubmissionHistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubmissionHistoryView.swift; sourceTree = "<group>"; };
 		20B9AC80820B87C5D1C1A9F4 /* SiftSMSClassifier.mlmodel */ = {isa = PBXFileReference; lastKnownFileType = file.mlmodel; path = SiftSMSClassifier.mlmodel; sourceTree = "<group>"; };
+		21CE0ADC71B2CEF630DE9A54 /* SiftTransformerClassifier.mlpackage */ = {isa = PBXFileReference; path = SiftTransformerClassifier.mlpackage; sourceTree = "<group>"; };
 		27DA7D06EC28D68B6A037EB8 /* MessageModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessageModels.swift; sourceTree = "<group>"; };
+		2AD0B23B094B7F19C398D6C6 /* WordPieceTokenizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WordPieceTokenizer.swift; sourceTree = "<group>"; };
+		2B97F0AAEE63E8477A369B76 /* CloudKitSampleClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudKitSampleClient.swift; sourceTree = "<group>"; };
 		2BB32170259154B79369B83A /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		2D1291EF99B315F04D4B0758 /* SiftApp.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = SiftApp.entitlements; sourceTree = "<group>"; };
 		2F94E7D7E6D9B2D3624A6493 /* FeatureHasher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeatureHasher.swift; sourceTree = "<group>"; };
 		3567C7E3C28918AC491F49A2 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		3621E146033750FC68CED506 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		36F6A1D8E3C1E952689092F2 /* PremiumStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PremiumStore.swift; sourceTree = "<group>"; };
+		3F1C369869603AACEE833130 /* SiftTransformerClassifier.manifest.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = SiftTransformerClassifier.manifest.json; sourceTree = "<group>"; };
+		414E55D72A3C1BB0973F2C21 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		484100600463D6DE7C77A4EC /* TransformerClassifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransformerClassifier.swift; sourceTree = "<group>"; };
 		49D7FE397BA0808616CA19CE /* SiftRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SiftRootView.swift; sourceTree = "<group>"; };
 		6552BE571000D043A0B5FEC8 /* ModelManifest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelManifest.swift; sourceTree = "<group>"; };
-		67BEDF25DE19289A1DB73E67 /* RemoteSampleClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteSampleClient.swift; sourceTree = "<group>"; };
+		68E31588A615F637BCA1A72A /* SiftPIIDetector.vocab.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = SiftPIIDetector.vocab.txt; sourceTree = "<group>"; };
 		6CBD4DFE2D496DF56947A303 /* MessageFilterExtensionKit.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = MessageFilterExtensionKit.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		753C8AF04FE9FA5CE3C68EC1 /* RuleEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RuleEngine.swift; sourceTree = "<group>"; };
+		7618B89E17DF7C4ABFB2C888 /* PIIDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PIIDetector.swift; sourceTree = "<group>"; };
 		7D5C960A4586578B74DD045F /* SampleStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SampleStore.swift; sourceTree = "<group>"; };
+		7EA84B55EFAA05AB592B06F3 /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
 		85A81258E948F5F731486B23 /* PrivacySanitizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivacySanitizer.swift; sourceTree = "<group>"; };
 		874872CE3C4DDB3875720851 /* SiftApp.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = SiftApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		90D8C514C04E418B11B62568 /* MessageFilterActionMapper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessageFilterActionMapper.swift; sourceTree = "<group>"; };
@@ -155,11 +186,15 @@
 		94BE665417F14F6013BCD08F /* SiftApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SiftApp.swift; sourceTree = "<group>"; };
 		95714DBDDEB14E7636B61DEB /* MessageFilterExtension.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = MessageFilterExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		A106E2DC9BA09A3E71EBD4BB /* AppleModelClassifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleModelClassifier.swift; sourceTree = "<group>"; };
+		AF3A58DEA3DAEB51EA8F59D7 /* FilterStatistics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FilterStatistics.swift; sourceTree = "<group>"; };
+		B01E8E89CED9145777F73B53 /* PremiumViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PremiumViews.swift; sourceTree = "<group>"; };
+		C29F041CB845ED5477E6AC11 /* ModelSelection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelSelection.swift; sourceTree = "<group>"; };
 		DE9062B3BA12FA49279965C9 /* MessageFilterCore.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = MessageFilterCore.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		DF0856AE1DE18210A3372A0A /* MessageFilterExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = MessageFilterExtension.entitlements; sourceTree = "<group>"; };
 		DF848914EC70ED6F39C774C3 /* CoreMLBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoreMLBridge.swift; sourceTree = "<group>"; };
 		E646B03461B9CD0523D39416 /* Taxonomy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Taxonomy.swift; sourceTree = "<group>"; };
 		F43A09AA5745101A244CF132 /* SiftAppModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SiftAppModel.swift; sourceTree = "<group>"; };
+		F4D17437D44ADF0B5804FADB /* SiftPIIDetector.mlpackage */ = {isa = PBXFileReference; path = SiftPIIDetector.mlpackage; sourceTree = "<group>"; };
 		F580BBE41F0C66D0E4695772 /* MessageFilterExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessageFilterExtension.swift; sourceTree = "<group>"; };
 		F94B8A23D8B6D58EDFE4D12B /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -205,8 +240,14 @@
 		13DDE3D65F3A2DDFAC5B4A07 /* GeneratedModels */ = {
 			isa = PBXGroup;
 			children = (
+				03EADA2502AEE010EE20F4F5 /* SiftPIIDetector.manifest.json */,
+				F4D17437D44ADF0B5804FADB /* SiftPIIDetector.mlpackage */,
+				68E31588A615F637BCA1A72A /* SiftPIIDetector.vocab.txt */,
 				03A3CC79E2485F5F94485559 /* SiftSMSClassifier.manifest.json */,
 				20B9AC80820B87C5D1C1A9F4 /* SiftSMSClassifier.mlmodel */,
+				3F1C369869603AACEE833130 /* SiftTransformerClassifier.manifest.json */,
+				21CE0ADC71B2CEF630DE9A54 /* SiftTransformerClassifier.mlpackage */,
+				0B9C71019DD16AD4F2379867 /* SiftTransformerClassifier.vocab.txt */,
 			);
 			path = GeneratedModels;
 			sourceTree = "<group>";
@@ -226,7 +267,9 @@
 		842B307EDCD10FB251967BF1 /* SiftApp */ = {
 			isa = PBXGroup;
 			children = (
+				414E55D72A3C1BB0973F2C21 /* Assets.xcassets */,
 				3567C7E3C28918AC491F49A2 /* Info.plist */,
+				7EA84B55EFAA05AB592B06F3 /* Localizable.xcstrings */,
 				2D1291EF99B315F04D4B0758 /* SiftApp.entitlements */,
 				94BE665417F14F6013BCD08F /* SiftApp.swift */,
 			);
@@ -264,8 +307,11 @@
 		D71C37223619958E100C0D22 /* SiftAppKit */ = {
 			isa = PBXGroup;
 			children = (
+				36F6A1D8E3C1E952689092F2 /* PremiumStore.swift */,
+				B01E8E89CED9145777F73B53 /* PremiumViews.swift */,
 				F43A09AA5745101A244CF132 /* SiftAppModel.swift */,
 				49D7FE397BA0808616CA19CE /* SiftRootView.swift */,
+				188D3402D6C10DAE8AE2CF7F /* SubmissionHistoryView.swift */,
 			);
 			name = SiftAppKit;
 			path = Sources/SiftAppKit;
@@ -291,15 +337,20 @@
 			children = (
 				A106E2DC9BA09A3E71EBD4BB /* AppleModelClassifier.swift */,
 				91A2208F6DF258C04BFA1DBF /* Classifier.swift */,
+				2B97F0AAEE63E8477A369B76 /* CloudKitSampleClient.swift */,
 				DF848914EC70ED6F39C774C3 /* CoreMLBridge.swift */,
 				2F94E7D7E6D9B2D3624A6493 /* FeatureHasher.swift */,
+				AF3A58DEA3DAEB51EA8F59D7 /* FilterStatistics.swift */,
 				27DA7D06EC28D68B6A037EB8 /* MessageModels.swift */,
 				6552BE571000D043A0B5FEC8 /* ModelManifest.swift */,
+				C29F041CB845ED5477E6AC11 /* ModelSelection.swift */,
+				7618B89E17DF7C4ABFB2C888 /* PIIDetector.swift */,
 				85A81258E948F5F731486B23 /* PrivacySanitizer.swift */,
-				67BEDF25DE19289A1DB73E67 /* RemoteSampleClient.swift */,
 				753C8AF04FE9FA5CE3C68EC1 /* RuleEngine.swift */,
 				7D5C960A4586578B74DD045F /* SampleStore.swift */,
 				E646B03461B9CD0523D39416 /* Taxonomy.swift */,
+				484100600463D6DE7C77A4EC /* TransformerClassifier.swift */,
+				2AD0B23B094B7F19C398D6C6 /* WordPieceTokenizer.swift */,
 			);
 			name = MessageFilterCore;
 			path = Sources/MessageFilterCore;
@@ -428,14 +479,24 @@
 				BuildIndependentTargetsInParallel = YES;
 				LastUpgradeCheck = 1430;
 				TargetAttributes = {
+					C3324A12402929775996737E = {
+						DevelopmentTeam = PB8H83VL3Z;
+						ProvisioningStyle = Automatic;
+					};
+					C7B074B15045AF82A82E305E = {
+						DevelopmentTeam = PB8H83VL3Z;
+						ProvisioningStyle = Automatic;
+					};
 				};
 			};
 			buildConfigurationList = 26CDFAA764C4528BC7582626 /* Build configuration list for PBXProject "Sift" */;
-			developmentRegion = en;
+			developmentRegion = "zh-Hans";
 			hasScannedForEncodings = 0;
 			knownRegions = (
 				Base,
 				en,
+				ja,
+				"zh-Hans",
 			);
 			mainGroup = D852F6552D37B1F8043D7CEB;
 			minimizedProjectReferenceProxies = 1;
@@ -458,8 +519,14 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				4428BAF5EA8D38D82262CABC /* Assets.xcassets in Resources */,
+				24F42188738E020AC24D3E6B /* Localizable.xcstrings in Resources */,
 				A597B3E2DE38645AFDF3E2B1 /* PrivacyInfo.xcprivacy in Resources */,
+				18790970A3AF1DD07AAD6AF5 /* SiftPIIDetector.manifest.json in Resources */,
+				BD66089BC2094323F89BC153 /* SiftPIIDetector.vocab.txt in Resources */,
 				CCD972873C3E56D77A538AAD /* SiftSMSClassifier.manifest.json in Resources */,
+				4C9DEC9151D24D2F3FB63621 /* SiftTransformerClassifier.manifest.json in Resources */,
+				1841BDACA80E97ECA1FE7F87 /* SiftTransformerClassifier.vocab.txt in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -476,6 +543,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				A08F823208268F7EBE0DA032 /* SiftSMSClassifier.manifest.json in Resources */,
+				CCCC9570118742B944570CB6 /* SiftTransformerClassifier.manifest.json in Resources */,
+				CF3E9E68BAF81AD4FC188624 /* SiftTransformerClassifier.vocab.txt in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -488,15 +557,20 @@
 			files = (
 				382E91E8A2CDB0FEB8D96AAB /* AppleModelClassifier.swift in Sources */,
 				80EA440A0B3377EEBF648BA7 /* Classifier.swift in Sources */,
+				C9F138E6EF756C5EBDE526B9 /* CloudKitSampleClient.swift in Sources */,
 				C97F06BC823C58D4E211ABB5 /* CoreMLBridge.swift in Sources */,
 				1A2430A7C99CA6258D6305A4 /* FeatureHasher.swift in Sources */,
+				32802BD3E25D04E202A8C691 /* FilterStatistics.swift in Sources */,
 				BD98F94128FED4D69A01C995 /* MessageModels.swift in Sources */,
 				68E9C0CAAEE4F4719B65EBDD /* ModelManifest.swift in Sources */,
+				1FC39F0616712256D1C1B9F4 /* ModelSelection.swift in Sources */,
+				9432635D3D3C7B4052D34978 /* PIIDetector.swift in Sources */,
 				8BB645CC14EFDD4FF2C4F3A3 /* PrivacySanitizer.swift in Sources */,
-				143CE183057B264DA940C177 /* RemoteSampleClient.swift in Sources */,
 				5AEDA33C9EA687897EC905C6 /* RuleEngine.swift in Sources */,
 				4D78855A78F3C73FF3C76608 /* SampleStore.swift in Sources */,
 				632A870ACC0BF0C36277286E /* Taxonomy.swift in Sources */,
+				DA9E0BDA7A47D675C779EB6E /* TransformerClassifier.swift in Sources */,
+				C949FF2E312F2B3292269D7C /* WordPieceTokenizer.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -513,7 +587,9 @@
 			buildActionMask = 2147483647;
 			files = (
 				5F3D38AECFF72DFFCE517F45 /* SiftApp.swift in Sources */,
+				501B66CEEF014D5CA0C9FDDF /* SiftPIIDetector.mlpackage in Sources */,
 				58F0198193B053CD63CE0944 /* SiftSMSClassifier.mlmodel in Sources */,
+				DF9C0BBD95DC94A66AEAF7D4 /* SiftTransformerClassifier.mlpackage in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -523,6 +599,7 @@
 			files = (
 				0C78DF462A5FAC3F6A6AA4FB /* MessageFilterExtension.swift in Sources */,
 				DA1BE1AFA1A47145D8E20860 /* SiftSMSClassifier.mlmodel in Sources */,
+				FE965E47B4E6015F705BE6C8 /* SiftTransformerClassifier.mlpackage in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -530,8 +607,11 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				B03AD5D16E2BB20888D457DA /* PremiumStore.swift in Sources */,
+				DDFD20E0EC444C5DF500978C /* PremiumViews.swift in Sources */,
 				13988EDB6F5E1DCE2DA7FD70 /* SiftAppModel.swift in Sources */,
 				F5F35629D1518DB8FBB4D0E8 /* SiftRootView.swift in Sources */,
+				EBB916001952F59808045D0F /* SubmissionHistoryView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -648,6 +728,8 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = SiftApp/SiftApp.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = PB8H83VL3Z;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = SiftApp/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -655,6 +737,7 @@
 					"@executable_path/Frameworks",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.alkinum.sift;
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -664,6 +747,8 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = MessageFilterExtension/MessageFilterExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = PB8H83VL3Z;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = MessageFilterExtension/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -672,6 +757,7 @@
 					"@executable_path/../../Frameworks",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.alkinum.sift.MessageFilterExtension;
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -786,6 +872,8 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = SiftApp/SiftApp.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = PB8H83VL3Z;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = SiftApp/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -793,6 +881,7 @@
 					"@executable_path/Frameworks",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.alkinum.sift;
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -868,6 +957,8 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = MessageFilterExtension/MessageFilterExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = PB8H83VL3Z;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = MessageFilterExtension/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -876,6 +967,7 @@
 					"@executable_path/../../Frameworks",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.alkinum.sift.MessageFilterExtension;
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};

@@ -74,7 +74,7 @@ public struct RuleMatch: Hashable, Sendable {
     }
 }
 
-public struct RuleEngine {
+public struct RuleEngine: Sendable {
     public init() {}
 
     public func match(sender: String?, body: String, rules: [CustomRule]) -> RuleMatch? {

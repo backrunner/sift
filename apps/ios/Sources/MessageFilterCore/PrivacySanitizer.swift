@@ -24,8 +24,23 @@ public struct SanitizationResult: Hashable, Sendable {
     }
 }
 
+/// Two-track sanitizer: deterministic regex/detector rules are the floor and
+/// always run; an optional on-device Core ML PII model (see
+/// `PIIDetectorLoader`) widens recall on top. Both tracks' findings are
+/// unioned before redaction, so a weak early model can never make results
+/// worse than rules-only.
 public struct PrivacySanitizer {
-    public init() {}
+    private let modelDetector: (any PIIDetecting)?
+
+    public init(modelDetector: (any PIIDetecting)? = nil) {
+        self.modelDetector = modelDetector
+    }
+
+    /// Rules plus the bundled Core ML PII model when its artifacts ship in
+    /// one of the given bundles; rules-only otherwise.
+    public static func withBundledModel(bundles: [Bundle] = [.main]) -> PrivacySanitizer {
+        PrivacySanitizer(modelDetector: PIIDetectorLoader.bundled(bundles: bundles))
+    }
 
     public func sanitize(_ text: String) -> SanitizationResult {
         let redactions = collectRedactions(in: text).sorted { $0.range.lowerBound < $1.range.lowerBound }
@@ -67,6 +82,23 @@ public struct PrivacySanitizer {
         }
 
         redactions.append(contentsOf: regexRedactions(in: text, pattern: #"\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b"#, token: "{{EMAIL}}"))
+        // 中国居民身份证：18 位（含尾部校验位 X）与 15 位旧式，均要求出生日期段合法。
+        redactions.append(contentsOf: regexRedactions(
+            in: text,
+            pattern: #"(?<![0-9Xx])\d{6}(?:19|20)\d{2}(?:0[1-9]|1[0-2])(?:[0-2]\d|3[01])\d{3}[\dXx](?![0-9Xx])"#,
+            token: "{{ID}}"
+        ))
+        redactions.append(contentsOf: regexRedactions(
+            in: text,
+            pattern: #"(?<!\d)\d{6}\d{2}(?:0[1-9]|1[0-2])(?:[0-2]\d|3[01])\d{3}(?!\d)"#,
+            token: "{{ID}}"
+        ))
+        // 中国护照：E/G 开头 + 8 位数字（新版 E 后可带一位字母）。
+        redactions.append(contentsOf: regexRedactions(
+            in: text,
+            pattern: #"\b[EG][A-Z]?\d{8}\b"#,
+            token: "{{ID}}"
+        ))
         redactions.append(contentsOf: regexRedactions(in: text, pattern: #"(?:收件地址|地址)[:：]?\s*[^，。；\n]{4,}"#, token: "{{ADDRESS}}"))
         redactions.append(contentsOf: regexRedactions(in: text, pattern: #"(?<!\d)\d{4,8}(?!\d)"#, token: "{{CODE}}"))
         redactions.append(contentsOf: regexRedactions(in: text, pattern: #"(?:¥|￥|RMB|CNY)\s*\d+(?:\.\d{1,2})?|\b\d+(?:\.\d{1,2})?\s*(?:元|块)\b"#, token: "{{AMOUNT}}"))
@@ -76,6 +108,12 @@ public struct PrivacySanitizer {
         #if canImport(NaturalLanguage)
         redactions.append(contentsOf: nameRedactions(in: text))
         #endif
+
+        if let modelDetector {
+            redactions.append(contentsOf: modelDetector.detections(in: text).map { detection in
+                Redaction(token: detection.kind.token, range: detection.range)
+            })
+        }
 
         return mergeRedactions(redactions, in: text)
     }
@@ -146,7 +184,7 @@ public struct PrivacySanitizer {
 
     private func chooseToken(_ lhs: String, _ rhs: String) -> String {
         if lhs == rhs { return lhs }
-        let priority = ["{{PHONE}}", "{{URL}}", "{{EMAIL}}", "{{ADDRESS}}", "{{CARD}}", "{{ORDER_ID}}", "{{AMOUNT}}", "{{CODE}}", "{{NAME}}"]
+        let priority = ["{{PHONE}}", "{{URL}}", "{{EMAIL}}", "{{ID}}", "{{ADDRESS}}", "{{CARD}}", "{{ORDER_ID}}", "{{AMOUNT}}", "{{CODE}}", "{{NAME}}"]
         for token in priority where token == lhs || token == rhs {
             return token
         }

@@ -2,6 +2,10 @@ import Foundation
 import MessageFilterCore
 import Observation
 
+#if canImport(CloudKit)
+import CloudKit
+#endif
+
 public enum SubmissionDestination: String, CaseIterable, Identifiable, Sendable {
     case local
     case remote
@@ -11,9 +15,9 @@ public enum SubmissionDestination: String, CaseIterable, Identifiable, Sendable 
     public var title: String {
         switch self {
         case .local:
-            return "仅本地微调"
+            return String(localized: "仅本地微调")
         case .remote:
-            return "匿名提交"
+            return String(localized: "匿名提交")
         }
     }
 }
@@ -27,9 +31,9 @@ public enum RuleMatchLocation: String, CaseIterable, Identifiable, Sendable {
     public var title: String {
         switch self {
         case .sender:
-            return "发送方"
+            return String(localized: "发送方")
         case .body:
-            return "短信正文"
+            return String(localized: "短信正文")
         }
     }
 
@@ -52,9 +56,9 @@ public enum RulePatternKind: String, CaseIterable, Identifiable, Sendable {
     public var title: String {
         switch self {
         case .substring:
-            return "子串"
+            return String(localized: "子串")
         case .regex:
-            return "正则"
+            return String(localized: "正则")
         }
     }
 }
@@ -82,6 +86,9 @@ public struct SampleSubmissionFeedback: Identifiable, Equatable, Sendable {
 public final class SiftAppModel {
     public var modelDate: String = "2026-05-06"
     public var modelVersion: String = "corpus-0.1"
+    public private(set) var selectedModelVariant: ModelVariant = .classic
+    public private(set) var isSwitchingModelVariant: Bool = false
+    public let isTransformerModelAvailable: Bool
     public var submissionDestination: SubmissionDestination = .local
     public var testBody: String = ""
     public var submissionText: String = ""
@@ -122,12 +129,29 @@ public final class SiftAppModel {
     public var currentToast: SiftToast?
     public var sampleSubmissionFeedback: SampleSubmissionFeedback?
     public var isSubmittingSample: Bool = false
+    public var isShowingPaywall: Bool = false
+    public private(set) var isErasingRemoteData: Bool = false
+    public private(set) var todayStats: DailyFilterStats = DailyFilterStats(day: FilterStatisticsStore.dayKey(for: .now))
+    public private(set) var weeklyStats: [DailyFilterStats] = []
+
+    /// 本地记录的已贡献样本数(App Group 计数,云端历史列表为准)。
+    public private(set) var submittedSampleCount: Int = 0
+
+    // 提交历史(下拉无限加载,最多展示最近 historyMaxItems 条)。
+    public static let historyPageSize = 30
+    public static let historyMaxItems = 200
+    public private(set) var submissionHistory: [RemoteSubmissionSummary] = []
+    public private(set) var isLoadingHistory: Bool = false
+    public private(set) var historyFullyLoaded: Bool = false
+
+    /// 高级版(IAP)状态与购买流程。
+    public let premium: PremiumStore
 
     @ObservationIgnored
-    private let sanitizer = PrivacySanitizer()
+    private let sanitizer = PrivacySanitizer.withBundledModel()
 
     @ObservationIgnored
-    private let baseClassifier: any MessageClassifier
+    private var baseClassifier: any MessageClassifier
 
     @ObservationIgnored
     private var pipeline: ClassificationPipeline
@@ -136,25 +160,189 @@ public final class SiftAppModel {
     private let sampleStore: LocalSampleStore
 
     @ObservationIgnored
-    private let remoteSamplesEndpoint: URL?
+    private let remoteSampleClient: any RemoteSampleSubmitting
 
     @ObservationIgnored
     private let personalizationTrainer = PersonalizationTrainer()
 
-    public init() {
+    @ObservationIgnored
+    private let statisticsStore = FilterStatisticsStore()
+
+    /// 注入口:测试用独立 UserDefaults suite 隔离贡献计数。
+    @ObservationIgnored
+    private let ledgerDefaults: UserDefaults?
+
+    public init(
+        remoteSampleClient: (any RemoteSampleSubmitting)? = nil,
+        premiumBackend: (any PremiumPurchasing)? = nil,
+        transformerAvailabilityOverride: Bool? = nil,
+        ledgerDefaults: UserDefaults? = nil
+    ) {
+        self.ledgerDefaults = ledgerDefaults
         self.sampleStore = LocalSampleStore(fileURL: LocalSampleStore.defaultFileURL())
-        self.remoteSamplesEndpoint = Self.configuredRemoteSamplesEndpoint()
-        if let manifest = BundledModelManifest.load() {
-            self.modelDate = Self.displayDate(for: manifest.trainedAt)
-            self.modelVersion = manifest.version
-        }
-        let classifier = AppleClassifierLoader.defaultClassifier()
-        self.baseClassifier = classifier
-        self.pipeline = ClassificationPipeline(classifier: classifier)
+        self.remoteSampleClient = remoteSampleClient ?? CloudKitSampleClient(
+            containerIdentifier: CloudKitSampleClient.configuredContainerIdentifier()
+        )
+        self.premium = PremiumStore(backend: premiumBackend)
+
+        let transformerAvailable = transformerAvailabilityOverride ?? TransformerClassifierLoader.isAvailable()
+        self.isTransformerModelAvailable = transformerAvailable
+        let storedVariant = ModelSelectionStore.load()
+        let variant: ModelVariant = (storedVariant == .transformer && !transformerAvailable) ? .classic : storedVariant
+        self.selectedModelVariant = variant
+
+        let stack = Self.makeClassifierStack(for: variant)
+        self.baseClassifier = stack.base
+        self.pipeline = stack.pipeline
         self.rules = Self.loadPersistedRules()
+
+        refreshModelMetadataDisplay()
+        if !variant.supportsLocalPersonalization {
+            submissionDestination = .remote
+        }
         refreshSanitizedPreview()
         classifyCurrentDraft()
         Task { await refreshLocalSampleCount() }
+
+        submittedSampleCount = SubmissionLedger.count(defaults: ledgerDefaults)
+        refreshStatistics()
+        // 统计云备份是 best-effort:失败静默,永不打扰用户。仅在真机 App
+        // 环境执行——单测/命令行环境没有 CloudKit entitlement,构造
+        // CKContainer 会直接抛 ObjC 异常。
+        #if os(iOS)
+        Task.detached(priority: .utility) { [containerIdentifier = CloudKitSampleClient.configuredContainerIdentifier()] in
+            await CloudKitStatsSync(containerIdentifier: containerIdentifier).sync()
+        }
+        #endif
+
+        // 高级版被退款/撤销时,若正在使用 Transformer 则回退经典模型。
+        premium.onEntitlementChange = { [weak self] unlocked in
+            guard let self, !unlocked, self.selectedModelVariant == .transformer else {
+                return
+            }
+            self.selectModelVariant(.classic)
+            self.showToast(.info, String(localized: "高级版授权已失效，已切换回经典模型"))
+        }
+    }
+
+    /// 刷新仪表盘统计(今日 + 近 7 天)。
+    public func refreshStatistics() {
+        todayStats = statisticsStore.stats()
+        weeklyStats = statisticsStore.recent(days: 7)
+    }
+
+    /// Whether the active model variant allows on-device fine-tuning. The
+    /// transformer variant is frozen, so all personalization UI must hide.
+    public var supportsLocalPersonalization: Bool {
+        selectedModelVariant.supportsLocalPersonalization
+    }
+
+    public var availableModelVariants: [ModelVariant] {
+        ModelVariant.allCases
+    }
+
+    public func isModelVariantAvailable(_ variant: ModelVariant) -> Bool {
+        variant != .transformer || isTransformerModelAvailable
+    }
+
+    /// Manifest version for a variant, for display in the model picker.
+    public func modelVersion(for variant: ModelVariant) -> String? {
+        switch variant {
+        case .classic:
+            return BundledModelManifest.load()?.version
+        case .transformer:
+            return TransformerClassifierLoader.manifest()?.version
+        }
+    }
+
+    public func selectModelVariant(_ variant: ModelVariant) {
+        guard variant != selectedModelVariant, !isSwitchingModelVariant else {
+            return
+        }
+        guard isModelVariantAvailable(variant) else {
+            showToast(.info, String(localized: "Transformer 模型未包含在当前构建中"))
+            return
+        }
+        if variant == .transformer, !premium.isUnlocked {
+            // 高级版付费项:未解锁时打开购买引导,而不是直接切换。
+            isShowingPaywall = true
+            return
+        }
+
+        selectedModelVariant = variant
+        ModelSelectionStore.save(variant)
+        refreshModelMetadataDisplay()
+        if !variant.supportsLocalPersonalization {
+            if submissionDestination == .local {
+                submissionDestination = .remote
+            }
+            sampleSubmissionFeedback = nil
+        }
+
+        // Core ML loading (and possible first-launch model compilation) is
+        // slow enough to hitch the UI; build the new stack off the main actor.
+        isSwitchingModelVariant = true
+        Task {
+            let stack = await Task.detached(priority: .userInitiated) {
+                Self.makeClassifierStack(for: variant)
+            }.value
+
+            // A newer switch may have started while we were loading.
+            guard selectedModelVariant == variant else {
+                return
+            }
+            baseClassifier = stack.base
+            pipeline = stack.pipeline
+            isSwitchingModelVariant = false
+
+            if canClassifyCurrentDraft {
+                classifyCurrentDraft()
+            } else {
+                clearCurrentDecision()
+            }
+            showToast(.success, String(localized: "已切换至\(variant.title)"))
+        }
+    }
+
+    /// Builds the classifier stack for a variant, layering the persisted
+    /// personalization adapter on top when the variant allows local
+    /// fine-tuning. Safe to call from any executor.
+    private nonisolated static func makeClassifierStack(
+        for variant: ModelVariant
+    ) -> (base: any MessageClassifier, pipeline: ClassificationPipeline) {
+        let base = AppleClassifierLoader.classifier(for: variant)
+        if
+            variant.supportsLocalPersonalization,
+            let personalized = loadPersistedPersonalization()
+        {
+            return (base, ClassificationPipeline(
+                classifier: CascadingClassifier(primary: personalized, fallback: base)
+            ))
+        }
+        return (base, ClassificationPipeline(classifier: base))
+    }
+
+    private nonisolated static func loadPersistedPersonalization() -> (any MessageClassifier)? {
+        let compiledURL = LocalSampleStore.defaultFileURL(filename: "personalization.mlmodelc")
+        guard FileManager.default.fileExists(atPath: compiledURL.path) else {
+            return nil
+        }
+        return AppleClassifierLoader.personalized(modelURL: compiledURL)
+    }
+
+    private func refreshModelMetadataDisplay() {
+        switch selectedModelVariant {
+        case .classic:
+            if let manifest = BundledModelManifest.load() {
+                modelDate = Self.displayDate(for: manifest.trainedAt)
+                modelVersion = manifest.version
+            }
+        case .transformer:
+            if let manifest = TransformerClassifierLoader.manifest() {
+                modelDate = Self.displayDate(for: manifest.trainedAt)
+                modelVersion = manifest.version
+            }
+        }
     }
 
     public var selectedLabel: LeafLabel {
@@ -178,15 +366,30 @@ public final class SiftAppModel {
         return !body.isEmpty
     }
 
+    /// 单条样本的最大长度(与训练侧长度过滤一致)。
+    public static let maxSubmissionTextLength = 500
+
     public var canSubmitSample: Bool {
         let text = submissionText.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !text.isEmpty else {
+        guard !text.isEmpty, text.count <= Self.maxSubmissionTextLength else {
             return false
         }
         if submissionDestination == .remote && !hasAcceptedRemoteSamplePrivacy {
             return false
         }
         return true
+    }
+
+    /// 提交前的即时校验提示(超长等),空则不显示。
+    public var submissionValidationMessage: String? {
+        let text = submissionText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !text.isEmpty else {
+            return nil
+        }
+        if text.count > Self.maxSubmissionTextLength {
+            return String(localized: "样本过长（\(text.count)/\(Self.maxSubmissionTextLength) 字符），请拆分或截取关键内容")
+        }
+        return nil
     }
 
     public var privacyPolicyURL: URL {
@@ -232,7 +435,7 @@ public final class SiftAppModel {
         guard ruleDraftPatternKind == .regex, !isValidRegex(pattern) else {
             return nil
         }
-        return "正则表达式格式不正确"
+        return String(localized: "正则表达式格式不正确")
     }
 
     public func classifyCurrentDraft() {
@@ -243,7 +446,9 @@ public final class SiftAppModel {
             return
         }
 
-        lastDecision = pipeline.classifier.classify(sender: nil, body: body)
+        // Route through the full pipeline so the preview honors the user's
+        // custom rules exactly like the message-filter extension does.
+        lastDecision = pipeline.classify(sender: nil, body: body, rules: rules)
     }
 
     public func submitSample() {
@@ -254,12 +459,16 @@ public final class SiftAppModel {
         let text = submissionText
         let trimmedText = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmedText.isEmpty else {
-            showSubmissionFeedback(.error, "请输入样本文本")
+            showSubmissionFeedback(.error, String(localized: "请输入样本文本"))
             return
         }
         let sanitizedText = sanitizedPreview
         switch submissionDestination {
         case .local:
+            guard supportsLocalPersonalization else {
+                showSubmissionFeedback(.error, String(localized: "当前模型不支持本地微调，请使用匿名提交"))
+                return
+            }
             isSubmittingSample = true
             Task {
                 defer { isSubmittingSample = false }
@@ -291,51 +500,63 @@ public final class SiftAppModel {
                             )
                             classifyCurrentDraft()
                         }
-                        showToast(.success, "本地个性化层已更新")
+                        showToast(.success, String(localized: "本地个性化层已更新"))
                     case .ready:
-                        showToast(.success, "样本已加入本地队列")
+                        showToast(.success, String(localized: "样本已加入本地队列"))
                     case .unsupported:
-                        showToast(.info, "样本已保存，当前系统暂不支持本地训练")
+                        showToast(.info, String(localized: "样本已保存，当前系统暂不支持本地训练"))
                     case .failed:
-                        showToast(.info, "样本已保存，本地训练稍后重试")
+                        showToast(.info, String(localized: "样本已保存，本地训练稍后重试"))
                     case .missingModel:
-                        showToast(.info, "样本已保存，等待基座模型")
+                        showToast(.info, String(localized: "样本已保存，等待基座模型"))
                     }
-                    sampleSubmissionFeedback = SampleSubmissionFeedback(kind: .success, message: "样本已保存到本地，仅用于设备上的个性化微调。")
+                    sampleSubmissionFeedback = SampleSubmissionFeedback(kind: .success, message: String(localized: "样本已保存到本地，仅用于设备上的个性化微调。"))
                     submissionText = ""
                     refreshSanitizedPreview()
                 } catch {
-                    showSubmissionFeedback(.error, "本地保存失败：\(error.localizedDescription)")
+                    showSubmissionFeedback(.error, String(localized: "本地保存失败：\(error.localizedDescription)"))
                 }
             }
         case .remote:
             guard hasAcceptedRemoteSamplePrivacy else {
-                showSubmissionFeedback(.error, "请先阅读并同意匿名提交隐私说明")
-                return
-            }
-            guard let endpoint = remoteSamplesEndpoint else {
-                showSubmissionFeedback(.error, "匿名提交服务暂未配置")
+                showSubmissionFeedback(.error, String(localized: "请先阅读并同意匿名提交隐私说明"))
                 return
             }
 
             isSubmittingSample = true
+            // Coarse-classify the sanitized text with the base model (no
+            // custom rules) and ship the verdict with the sample: curation
+            // uses agreement/confidence to weigh noisy submissions, without
+            // ever blocking a correction the user is deliberately making.
+            let localDecision = baseClassifier.classify(sender: nil, body: sanitizedText)
+            let assessment = LocalAssessment(
+                predictedLabelID: localDecision.labelID,
+                confidence: localDecision.confidence
+            )
             Task {
                 defer { isSubmittingSample = false }
                 do {
-                    let receipt = try await RemoteSampleClient(samplesEndpoint: endpoint).submit(
+                    let receipt = try await remoteSampleClient.submit(
                         sanitizedText: sanitizedText,
                         labelID: selectedLabel.id,
-                        modelVersion: modelVersion
+                        modelVersion: modelVersion,
+                        assessment: assessment
                     )
                     if receipt.accepted, let receiptToken = receipt.receiptToken {
                         lastReceiptToken = receiptToken
-                        showSubmissionFeedback(.success, "已匿名提交脱敏样本，可用回执删除。")
+                        SubmissionLedger.increment(defaults: self.ledgerDefaults)
+                        submittedSampleCount = SubmissionLedger.count(defaults: self.ledgerDefaults)
+                        resetSubmissionHistory()
+                        if assessment.predictedLabelID != selectedLabel.id, assessment.confidence >= 0.8 {
+                            let predictedTitle = SiftTaxonomy.leaf(id: assessment.predictedLabelID)?.title ?? assessment.predictedLabelID
+                            showSubmissionFeedback(.info, String(localized: "已按你的选择提交。本地模型倾向于「\(predictedTitle)」，若确认无误请忽略。"))
+                        } else {
+                            showSubmissionFeedback(.success, String(localized: "已通过 iCloud 匿名共享脱敏样本，可用回执删除。"))
+                        }
                         submissionText = ""
                         refreshSanitizedPreview()
-                    } else if receipt.accepted {
-                        showSubmissionFeedback(.error, "匿名提交服务未返回删除回执，样本未确认为可撤回")
                     } else {
-                        showSubmissionFeedback(.error, "远程未接收样本")
+                        showSubmissionFeedback(.error, String(localized: "样本未被接收，请稍后重试"))
                     }
                 } catch {
                     showSubmissionFeedback(.error, remoteSubmissionErrorMessage(for: error))
@@ -348,24 +569,22 @@ public final class SiftAppModel {
         guard let receiptToken = lastReceiptToken else {
             return
         }
-        guard let endpoint = remoteSamplesEndpoint else {
-            showToast(.error, "匿名提交服务暂未配置")
-            return
-        }
 
         Task {
             do {
-                let deleted = try await RemoteSampleClient(samplesEndpoint: endpoint).delete(receiptToken: receiptToken)
+                let deleted = try await remoteSampleClient.delete(receiptToken: receiptToken)
                 if deleted {
                     lastReceiptToken = nil
-                    showSubmissionFeedback(.success, "远程样本已删除")
+                    SubmissionLedger.decrement(defaults: self.ledgerDefaults)
+                    submittedSampleCount = SubmissionLedger.count(defaults: self.ledgerDefaults)
+                    resetSubmissionHistory()
+                    showSubmissionFeedback(.success, String(localized: "远程样本已删除"))
                 } else {
-                    showSubmissionFeedback(.info, "未找到可删除的远程样本")
+                    lastReceiptToken = nil
+                    showSubmissionFeedback(.info, String(localized: "未找到可删除的远程样本"))
                 }
-            } catch let error as URLError where error.code == .timedOut {
-                showSubmissionFeedback(.error, "删除超时，请稍后重试")
             } catch {
-                showSubmissionFeedback(.error, "删除失败：\(error.localizedDescription)")
+                showSubmissionFeedback(.error, remoteDeletionErrorMessage(for: error))
             }
         }
     }
@@ -375,6 +594,119 @@ public final class SiftAppModel {
             localSampleCount = try await sampleStore.loadAll().count
         } catch {
             localSampleCount = 0
+        }
+    }
+
+    /// GDPR 擦除权:删除当前用户在云端的全部提交样本与统计备份。
+    public func eraseAllRemoteData() {
+        guard !isErasingRemoteData else {
+            return
+        }
+        isErasingRemoteData = true
+        Task {
+            defer { isErasingRemoteData = false }
+            do {
+                let deletedSamples = try await remoteSampleClient.eraseAllSubmissions()
+                let deletedStats = (try? await CloudKitStatsSync(
+                    containerIdentifier: CloudKitSampleClient.configuredContainerIdentifier()
+                ).eraseBackup()) ?? 0
+                lastReceiptToken = nil
+                SubmissionLedger.reset(defaults: self.ledgerDefaults)
+                submittedSampleCount = 0
+                submissionHistory = []
+                historyFullyLoaded = true
+                if deletedSamples == 0 && deletedStats == 0 {
+                    showToast(.info, String(localized: "云端没有找到你提交的数据"))
+                } else if deletedSamples == 0 {
+                    showToast(.success, String(localized: "已清除云端统计备份"))
+                } else if deletedStats > 0 {
+                    showToast(.success, String(localized: "已抹除 \(deletedSamples) 条提交样本及统计备份"))
+                } else {
+                    showToast(.success, String(localized: "已抹除 \(deletedSamples) 条提交样本"))
+                }
+            } catch {
+                showToast(.error, remoteDeletionErrorMessage(for: error))
+            }
+        }
+    }
+
+    /// 重置提交历史(下次进入列表重新从第一页加载)。
+    public func resetSubmissionHistory() {
+        submissionHistory = []
+        historyFullyLoaded = false
+    }
+
+    /// 下拉无限加载:按 createdAt 倒序取下一页,去重合并,封顶
+    /// `historyMaxItems` 条。
+    public func loadMoreSubmissionHistory() {
+        guard !isLoadingHistory, !historyFullyLoaded else {
+            return
+        }
+        isLoadingHistory = true
+        Task {
+            defer { isLoadingHistory = false }
+            do {
+                let anchor = submissionHistory.last?.createdAtMillis
+                let page = try await remoteSampleClient.fetchMySubmissions(
+                    before: anchor,
+                    limit: Self.historyPageSize
+                )
+                let known = Set(submissionHistory.map(\.recordName))
+                submissionHistory.append(contentsOf: page.filter { !known.contains($0.recordName) })
+                if submissionHistory.count >= Self.historyMaxItems {
+                    submissionHistory = Array(submissionHistory.prefix(Self.historyMaxItems))
+                    historyFullyLoaded = true
+                } else if page.count < Self.historyPageSize {
+                    historyFullyLoaded = true
+                }
+                // 首次拉取时用云端信息校准本地计数(本地计数可能因重装偏低)。
+                if anchor == nil, submissionHistory.count > submittedSampleCount {
+                    submittedSampleCount = submissionHistory.count
+                }
+            } catch {
+                showToast(.error, remoteDeletionErrorMessage(for: error))
+            }
+        }
+    }
+
+    /// 单条抹除:从云端删除指定提交并同步列表/计数/回执。
+    public func deleteSubmission(_ summary: RemoteSubmissionSummary) {
+        Task {
+            do {
+                let deleted = try await remoteSampleClient.delete(receiptToken: summary.recordName)
+                submissionHistory.removeAll { $0.recordName == summary.recordName }
+                if deleted {
+                    SubmissionLedger.decrement(defaults: self.ledgerDefaults)
+                    submittedSampleCount = SubmissionLedger.count(defaults: self.ledgerDefaults)
+                    if lastReceiptToken == summary.recordName {
+                        lastReceiptToken = nil
+                    }
+                    showToast(.success, String(localized: "已抹除该条提交"))
+                } else {
+                    showToast(.info, String(localized: "该条提交已不存在，列表已同步"))
+                }
+            } catch {
+                showToast(.error, remoteDeletionErrorMessage(for: error))
+            }
+        }
+    }
+
+    /// GDPR 访问权:把当前用户的全部云端提交导出为 JSON 文本。
+    public func exportMySubmissionsJSON() async -> String? {
+        do {
+            let submissions = try await remoteSampleClient.fetchMySubmissions()
+            guard !submissions.isEmpty else {
+                showToast(.info, String(localized: "云端没有找到你提交的样本"))
+                return nil
+            }
+            let encoder = JSONEncoder()
+            encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+            encoder.dateEncodingStrategy = .iso8601
+            let data = try encoder.encode(submissions)
+            return String(decoding: data, as: UTF8.self)
+        } catch {
+            showToast(.error, remoteDeletionErrorMessage(for: error))
+            return nil
         }
     }
 
@@ -391,11 +723,11 @@ public final class SiftAppModel {
     public func addCustomRuleFromDraft() -> Bool {
         let pattern = ruleDraftPattern.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !pattern.isEmpty else {
-            showToast(.error, "请输入匹配内容")
+            showToast(.error, String(localized: "请输入匹配内容"))
             return false
         }
         guard canAddCustomRule else {
-            showToast(.error, "正则表达式格式不正确")
+            showToast(.error, String(localized: "正则表达式格式不正确"))
             return false
         }
 
@@ -420,7 +752,7 @@ public final class SiftAppModel {
 
         rules.insert(rule, at: customRuleIndices.first ?? rules.startIndex)
         normalizeRulePriorities()
-        showToast(.success, "已添加规则")
+        showToast(.success, String(localized: "已添加规则"))
         resetRuleDraft()
         if canClassifyCurrentDraft {
             classifyCurrentDraft()
@@ -448,11 +780,11 @@ public final class SiftAppModel {
     ) -> Bool {
         let trimmedPattern = pattern.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmedPattern.isEmpty else {
-            showToast(.error, "请输入匹配内容")
+            showToast(.error, String(localized: "请输入匹配内容"))
             return false
         }
         if patternKind == .regex, !isValidRegex(trimmedPattern) {
-            showToast(.error, "正则表达式格式不正确")
+            showToast(.error, String(localized: "正则表达式格式不正确"))
             return false
         }
         guard let index = rules.firstIndex(where: { $0.id == id }) else {
@@ -482,7 +814,7 @@ public final class SiftAppModel {
             rule.text = TextMatcher(kind: textKind, pattern: trimmedPattern)
         }
         rules[index] = rule
-        showToast(.success, "规则已更新")
+        showToast(.success, String(localized: "规则已更新"))
         if canClassifyCurrentDraft {
             classifyCurrentDraft()
         } else {
@@ -497,7 +829,7 @@ public final class SiftAppModel {
         }
         rules.remove(at: index)
         normalizeRulePriorities()
-        showToast(.success, "规则已删除")
+        showToast(.success, String(localized: "规则已删除"))
         if canClassifyCurrentDraft {
             classifyCurrentDraft()
         } else {
@@ -523,7 +855,7 @@ public final class SiftAppModel {
 
         rules.removeAll { ids.contains($0.id) }
         normalizeRulePriorities()
-        statusMessage = "已删除 \(ids.count) 条规则"
+        statusMessage = String(localized: "已删除 \(ids.count) 条规则")
         if canClassifyCurrentDraft {
             classifyCurrentDraft()
         } else {
@@ -537,7 +869,7 @@ public final class SiftAppModel {
         }
         rules.move(fromOffsets: source, toOffset: destination)
         normalizeRulePriorities()
-        statusMessage = "规则顺序已更新"
+        statusMessage = String(localized: "规则顺序已更新")
         if canClassifyCurrentDraft {
             classifyCurrentDraft()
         } else {
@@ -545,24 +877,15 @@ public final class SiftAppModel {
         }
     }
 
-    private static let rulesPersistenceKey = "Sift.customRules"
     private static let remoteSamplePrivacyConsentKey = "Sift.hasAcceptedRemoteSamplePrivacy"
     private static let lastRemoteSampleReceiptTokenKey = "Sift.lastRemoteSampleReceiptToken"
 
     private func persistRules() {
-        do {
-            let data = try JSONEncoder().encode(rules)
-            UserDefaults.standard.set(data, forKey: Self.rulesPersistenceKey)
-        } catch {
-            // 静默失败：持久化是 best-effort，错误不应中断业务流。
-        }
+        SharedRuleStore.save(rules)
     }
 
     private static func loadPersistedRules() -> [CustomRule] {
-        guard let data = UserDefaults.standard.data(forKey: rulesPersistenceKey) else {
-            return []
-        }
-        return (try? JSONDecoder().decode([CustomRule].self, from: data)) ?? []
+        SharedRuleStore.load()
     }
 
     private static func displayDate(for timestamp: String) -> String {
@@ -583,21 +906,6 @@ public final class SiftAppModel {
         formatter.locale = Locale(identifier: "en_US_POSIX")
         formatter.dateFormat = "yyyy-MM-dd"
         return formatter.string(from: date)
-    }
-
-    private static func configuredRemoteSamplesEndpoint() -> URL? {
-        let keys = ["SiftSamplesEndpoint", "SIFT_SAMPLES_ENDPOINT"]
-        for key in keys {
-            guard
-                let value = Bundle.main.object(forInfoDictionaryKey: key) as? String,
-                let url = URL(string: value),
-                url.scheme != nil
-            else {
-                continue
-            }
-            return url
-        }
-        return nil
     }
 
     private static func configuredPrivacyPolicyURL() -> URL {
@@ -631,31 +939,68 @@ public final class SiftAppModel {
     }
 
     private func remoteSubmissionErrorMessage(for error: Error) -> String {
+        if let message = cloudKitSampleErrorMessage(for: error, action: String(localized: "提交")) {
+            return message
+        }
+        return String(localized: "提交失败：\(error.localizedDescription)")
+    }
+
+    private func remoteDeletionErrorMessage(for error: Error) -> String {
+        if let message = cloudKitSampleErrorMessage(for: error, action: String(localized: "删除")) {
+            return message
+        }
+        return String(localized: "删除失败：\(error.localizedDescription)")
+    }
+
+    /// Shared CloudKit error copy. Returns nil when the error is not one of
+    /// the recognizable CloudKit / client conditions.
+    private func cloudKitSampleErrorMessage(for error: Error, action: String) -> String? {
+        if let clientError = error as? RemoteSampleClientError {
+            switch clientError {
+            case .cloudKitUnavailable:
+                return String(localized: "当前环境不支持 iCloud，样本未\(action)")
+            case .noAccount:
+                return String(localized: "请先在系统设置中登录 iCloud，再匿名共享样本")
+            case .accountRestricted:
+                return String(localized: "此设备的 iCloud 账户受限，无法\(action)样本")
+            case .accountUnknown:
+                return String(localized: "暂时无法确认 iCloud 状态，请稍后重试")
+            }
+        }
+
+        #if canImport(CloudKit)
+        if let ckError = error as? CKError {
+            switch ckError.code {
+            case .notAuthenticated:
+                return String(localized: "请先在系统设置中登录 iCloud，再匿名共享样本")
+            case .networkUnavailable, .networkFailure:
+                return String(localized: "网络不可用，样本未\(action)")
+            case .requestRateLimited, .zoneBusy:
+                return String(localized: "操作过于频繁，请稍后重试")
+            case .quotaExceeded:
+                return String(localized: "iCloud 存储配额不足，样本未\(action)")
+            case .serviceUnavailable:
+                return String(localized: "iCloud 服务暂不可用，请稍后重试")
+            case .permissionFailure:
+                return String(localized: "iCloud 权限不足，样本未\(action)")
+            default:
+                return String(localized: "\(action)失败：iCloud 返回错误（\(ckError.code.rawValue)）")
+            }
+        }
+
         if let urlError = error as? URLError {
             switch urlError.code {
             case .timedOut:
-                return "提交超时，请稍后重试"
+                return String(localized: "\(action)超时，请稍后重试")
             case .notConnectedToInternet, .networkConnectionLost:
-                return "网络不可用，样本未提交"
-            case .cannotConnectToHost, .cannotFindHost, .dnsLookupFailed:
-                return "无法连接匿名提交服务，样本未提交"
-            case .secureConnectionFailed, .serverCertificateUntrusted, .serverCertificateHasBadDate, .serverCertificateHasUnknownRoot, .serverCertificateNotYetValid:
-                return "匿名提交服务证书校验失败，样本未提交"
+                return String(localized: "网络不可用，样本未\(action)")
             default:
-                return "提交失败：\(urlError.localizedDescription)"
+                break
             }
         }
+        #endif
 
-        if let clientError = error as? RemoteSampleClientError {
-            switch clientError {
-            case .invalidResponse:
-                return "匿名提交服务返回异常，样本未提交"
-            case .httpStatus(let status):
-                return "匿名提交服务返回 \(status)，样本未提交"
-            }
-        }
-
-        return "提交失败：\(error.localizedDescription)"
+        return nil
     }
 
     private func defaultRuleName(for pattern: String) -> String {
@@ -680,7 +1025,7 @@ public final class SiftAppModel {
                 maxIndex = max(maxIndex, n)
             }
         }
-        return "规则 \(maxIndex + 1)"
+        return String(localized: "规则 \(maxIndex + 1)")
     }
 
     private func normalizeRulePriorities() {

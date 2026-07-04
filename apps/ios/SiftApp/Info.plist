@@ -24,8 +24,10 @@
 	<true/>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
-	<key>SiftSamplesEndpoint</key>
-	<string>https://api.sift.alkinum.io/v1/samples</string>
+	<key>SiftCloudKitContainerIdentifier</key>
+	<string>iCloud.com.alkinum.sift</string>
+	<key>SiftPremiumProductIdentifier</key>
+	<string>com.alkinum.sift.premium</string>
 	<key>SiftPrivacyPolicyURL</key>
 	<string>https://sift.alkinum.io/privacy</string>
 	<key>SiftTermsOfServiceURL</key>

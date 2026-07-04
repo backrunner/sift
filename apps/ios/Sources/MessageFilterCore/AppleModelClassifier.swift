@@ -66,6 +66,27 @@ public enum AppleClassifierLoader {
 
         return HeuristicClassifier()
     }
+
+    /// Builds the classifier stack for the selected model variant. Falls back
+    /// to the classic stack when transformer artifacts are not bundled.
+    public static func classifier(
+        for variant: ModelVariant,
+        bundles: [Bundle] = [.main]
+    ) -> any MessageClassifier {
+        switch variant {
+        case .classic:
+            return defaultClassifier()
+        case .transformer:
+            guard let transformer = TransformerClassifierLoader.bundled(bundles: bundles) else {
+                return defaultClassifier()
+            }
+            return CascadingClassifier(
+                primary: transformer,
+                fallback: HeuristicClassifier(),
+                primaryThreshold: 0.5
+            )
+        }
+    }
 }
 
 #if canImport(NaturalLanguage)

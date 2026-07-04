@@ -1,6 +1,7 @@
 name: Sift
 options:
   bundleIdPrefix: com.alkinum.sift
+  developmentLanguage: zh-Hans
   deploymentTarget:
     iOS: "18.0"
 settings:
@@ -41,11 +42,29 @@ targets:
     platform: iOS
     sources:
       - SiftApp
+      - path: SiftApp/Localizable.xcstrings
+        buildPhase: resources
       - path: Privacy/SiftApp/PrivacyInfo.xcprivacy
         buildPhase: resources
       - path: GeneratedModels/SiftSMSClassifier.mlmodel
       - path: GeneratedModels/SiftSMSClassifier.manifest.json
         buildPhase: resources
+      - path: GeneratedModels/SiftTransformerClassifier.mlpackage
+        optional: true
+      - path: GeneratedModels/SiftTransformerClassifier.manifest.json
+        buildPhase: resources
+        optional: true
+      - path: GeneratedModels/SiftTransformerClassifier.vocab.txt
+        buildPhase: resources
+        optional: true
+      - path: GeneratedModels/SiftPIIDetector.mlpackage
+        optional: true
+      - path: GeneratedModels/SiftPIIDetector.manifest.json
+        buildPhase: resources
+        optional: true
+      - path: GeneratedModels/SiftPIIDetector.vocab.txt
+        buildPhase: resources
+        optional: true
     dependencies:
       - target: SiftAppKit
       - target: MessageFilterCore
@@ -53,6 +72,9 @@ targets:
       - target: MessageFilterExtension
         embed: true
     settings:
+      CODE_SIGN_STYLE: Automatic
+      DEVELOPMENT_TEAM: PB8H83VL3Z
+      PROVISIONING_PROFILE_SPECIFIER: ""
       CODE_SIGN_ENTITLEMENTS: SiftApp/SiftApp.entitlements
       PRODUCT_BUNDLE_IDENTIFIER: com.alkinum.sift
       GENERATE_INFOPLIST_FILE: NO
@@ -66,12 +88,23 @@ targets:
       - path: GeneratedModels/SiftSMSClassifier.mlmodel
       - path: GeneratedModels/SiftSMSClassifier.manifest.json
         buildPhase: resources
+      - path: GeneratedModels/SiftTransformerClassifier.mlpackage
+        optional: true
+      - path: GeneratedModels/SiftTransformerClassifier.manifest.json
+        buildPhase: resources
+        optional: true
+      - path: GeneratedModels/SiftTransformerClassifier.vocab.txt
+        buildPhase: resources
+        optional: true
     dependencies:
       - target: MessageFilterCore
         embed: true
       - target: MessageFilterExtensionKit
         embed: true
     settings:
+      CODE_SIGN_STYLE: Automatic
+      DEVELOPMENT_TEAM: PB8H83VL3Z
+      PROVISIONING_PROFILE_SPECIFIER: ""
       CODE_SIGN_ENTITLEMENTS: MessageFilterExtension/MessageFilterExtension.entitlements
       PRODUCT_BUNDLE_IDENTIFIER: com.alkinum.sift.MessageFilterExtension
       GENERATE_INFOPLIST_FILE: NO

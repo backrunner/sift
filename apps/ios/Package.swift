@@ -23,7 +23,7 @@ let package = Package(
             dependencies: ["MessageFilterCore"],
             path: "Tools/CoreSmokeTests"
         ),
-        .testTarget(name: "MessageFilterCoreTests", dependencies: ["MessageFilterCore"]),
+        .testTarget(name: "MessageFilterCoreTests", dependencies: ["MessageFilterCore", "MessageFilterExtensionKit"]),
         .testTarget(name: "SiftAppKitTests", dependencies: ["SiftAppKit", "MessageFilterCore"])
     ]
 )
