@@ -6,121 +6,570 @@
       "title": "财务",
       "systemAction": "transaction",
       "leaves": [
-        { "id": "finance.bank", "title": "银行" },
-        { "id": "finance.insurance", "title": "保险" },
-        { "id": "finance.wealth", "title": "理财" },
-        { "id": "finance.credit_card", "title": "信用卡" },
-        { "id": "finance.consumption", "title": "消费" },
-        { "id": "finance.income", "title": "入账" },
-        { "id": "finance.refund", "title": "退款" },
-        { "id": "finance.stock", "title": "股票" },
-        { "id": "finance.other", "title": "其他" }
-      ]
+        {
+          "id": "finance.bank",
+          "title": "银行",
+          "titles": {
+            "zh": "银行",
+            "en": "Banking",
+            "ja": "銀行"
+          }
+        },
+        {
+          "id": "finance.insurance",
+          "title": "保险",
+          "titles": {
+            "zh": "保险",
+            "en": "Insurance",
+            "ja": "保険"
+          }
+        },
+        {
+          "id": "finance.wealth",
+          "title": "理财",
+          "titles": {
+            "zh": "理财",
+            "en": "Wealth",
+            "ja": "資産運用"
+          }
+        },
+        {
+          "id": "finance.credit_card",
+          "title": "信用卡",
+          "titles": {
+            "zh": "信用卡",
+            "en": "Credit Card",
+            "ja": "クレジットカード"
+          }
+        },
+        {
+          "id": "finance.consumption",
+          "title": "消费",
+          "titles": {
+            "zh": "消费",
+            "en": "Purchases",
+            "ja": "支払い"
+          }
+        },
+        {
+          "id": "finance.income",
+          "title": "入账",
+          "titles": {
+            "zh": "入账",
+            "en": "Income",
+            "ja": "入金"
+          }
+        },
+        {
+          "id": "finance.refund",
+          "title": "退款",
+          "titles": {
+            "zh": "退款",
+            "en": "Refunds",
+            "ja": "返金"
+          }
+        },
+        {
+          "id": "finance.stock",
+          "title": "股票",
+          "titles": {
+            "zh": "股票",
+            "en": "Securities",
+            "ja": "証券"
+          }
+        },
+        {
+          "id": "finance.other",
+          "title": "其他",
+          "titles": {
+            "zh": "其他",
+            "en": "Other Finance",
+            "ja": "その他（金融）"
+          }
+        }
+      ],
+      "titles": {
+        "zh": "财务",
+        "en": "Finance",
+        "ja": "金融"
+      }
     },
     {
       "id": "transaction",
-      "title": "交易",
+      "title": "账户与订单",
       "systemAction": "transaction",
       "leaves": [
-        { "id": "transaction.order", "title": "订单" },
-        { "id": "transaction.points", "title": "积分" },
-        { "id": "transaction.member", "title": "会员" },
-        { "id": "transaction.message", "title": "消息" },
-        { "id": "transaction.account_security", "title": "账号安全" },
-        { "id": "transaction.other", "title": "其他" }
-      ]
+        {
+          "id": "transaction.order",
+          "title": "订单",
+          "titles": {
+            "zh": "订单",
+            "en": "Orders",
+            "ja": "注文"
+          }
+        },
+        {
+          "id": "transaction.points",
+          "title": "积分",
+          "titles": {
+            "zh": "积分",
+            "en": "Points",
+            "ja": "ポイント"
+          }
+        },
+        {
+          "id": "transaction.member",
+          "title": "会员",
+          "titles": {
+            "zh": "会员",
+            "en": "Membership",
+            "ja": "会員"
+          }
+        },
+        {
+          "id": "transaction.message",
+          "title": "平台消息",
+          "titles": {
+            "zh": "平台消息",
+            "en": "Platform Messages",
+            "ja": "プラットフォーム通知"
+          }
+        },
+        {
+          "id": "transaction.account_security",
+          "title": "账号安全",
+          "titles": {
+            "zh": "账号安全",
+            "en": "Account Security",
+            "ja": "アカウント保護"
+          }
+        },
+        {
+          "id": "transaction.other",
+          "title": "其他",
+          "titles": {
+            "zh": "其他",
+            "en": "Other Account",
+            "ja": "その他（アカウント）"
+          }
+        }
+      ],
+      "titles": {
+        "zh": "账户与订单",
+        "en": "Account & Orders",
+        "ja": "アカウントと注文"
+      }
     },
     {
       "id": "life",
       "title": "生活",
       "systemAction": "transaction",
       "leaves": [
-        { "id": "life.takeaway", "title": "外卖" },
-        { "id": "life.express", "title": "快递" },
-        { "id": "life.utility", "title": "生活费用" },
-        { "id": "life.logistics", "title": "物流" },
-        { "id": "life.pickup_code", "title": "取件码" },
-        { "id": "life.medical", "title": "医疗" },
-        { "id": "life.weather", "title": "天气" },
-        { "id": "life.other", "title": "其他" }
-      ]
+        {
+          "id": "life.takeaway",
+          "title": "外卖",
+          "titles": {
+            "zh": "外卖",
+            "en": "Food Delivery",
+            "ja": "フードデリバリー"
+          }
+        },
+        {
+          "id": "life.express",
+          "title": "快递",
+          "titles": {
+            "zh": "快递",
+            "en": "Parcels",
+            "ja": "宅配便"
+          }
+        },
+        {
+          "id": "life.utility",
+          "title": "生活费用",
+          "titles": {
+            "zh": "生活费用",
+            "en": "Utilities",
+            "ja": "公共料金"
+          }
+        },
+        {
+          "id": "life.logistics",
+          "title": "物流",
+          "titles": {
+            "zh": "物流",
+            "en": "Logistics",
+            "ja": "物流"
+          }
+        },
+        {
+          "id": "life.pickup_code",
+          "title": "取件码",
+          "titles": {
+            "zh": "取件码",
+            "en": "Pickup Codes",
+            "ja": "受取コード"
+          }
+        },
+        {
+          "id": "life.medical",
+          "title": "医疗",
+          "titles": {
+            "zh": "医疗",
+            "en": "Healthcare",
+            "ja": "医療"
+          }
+        },
+        {
+          "id": "life.weather",
+          "title": "天气",
+          "titles": {
+            "zh": "天气",
+            "en": "Weather",
+            "ja": "気象情報"
+          }
+        },
+        {
+          "id": "life.other",
+          "title": "其他",
+          "titles": {
+            "zh": "其他",
+            "en": "Other Life",
+            "ja": "その他（生活）"
+          }
+        }
+      ],
+      "titles": {
+        "zh": "生活",
+        "en": "Daily Life",
+        "ja": "生活"
+      }
     },
     {
       "id": "travel",
       "title": "出行",
       "systemAction": "transaction",
       "leaves": [
-        { "id": "travel.tourism", "title": "旅游" },
-        { "id": "travel.transport", "title": "交通" },
-        { "id": "travel.ticketing", "title": "票务" },
-        { "id": "travel.other", "title": "其他" }
-      ]
+        {
+          "id": "travel.tourism",
+          "title": "旅游",
+          "titles": {
+            "zh": "旅游",
+            "en": "Tourism",
+            "ja": "観光"
+          }
+        },
+        {
+          "id": "travel.transport",
+          "title": "交通",
+          "titles": {
+            "zh": "交通",
+            "en": "Transport",
+            "ja": "交通"
+          }
+        },
+        {
+          "id": "travel.ticketing",
+          "title": "票务",
+          "titles": {
+            "zh": "票务",
+            "en": "Tickets",
+            "ja": "チケット"
+          }
+        },
+        {
+          "id": "travel.other",
+          "title": "其他",
+          "titles": {
+            "zh": "其他",
+            "en": "Other Travel",
+            "ja": "その他（旅行）"
+          }
+        }
+      ],
+      "titles": {
+        "zh": "出行",
+        "en": "Travel",
+        "ja": "旅行・交通"
+      }
     },
     {
       "id": "work",
       "title": "工作",
       "systemAction": "transaction",
       "leaves": [
-        { "id": "work.meeting", "title": "会议" },
-        { "id": "work.approval", "title": "审批" },
-        { "id": "work.attendance", "title": "考勤" },
-        { "id": "work.announcement", "title": "公告" },
-        { "id": "work.training", "title": "培训" },
-        { "id": "work.reminder", "title": "提醒" },
-        { "id": "work.alert", "title": "告警" },
-        { "id": "work.other", "title": "其他" }
-      ]
+        {
+          "id": "work.meeting",
+          "title": "会议",
+          "titles": {
+            "zh": "会议",
+            "en": "Meetings",
+            "ja": "会議"
+          }
+        },
+        {
+          "id": "work.approval",
+          "title": "审批",
+          "titles": {
+            "zh": "审批",
+            "en": "Approvals",
+            "ja": "承認"
+          }
+        },
+        {
+          "id": "work.attendance",
+          "title": "考勤",
+          "titles": {
+            "zh": "考勤",
+            "en": "Attendance",
+            "ja": "勤怠"
+          }
+        },
+        {
+          "id": "work.announcement",
+          "title": "公告",
+          "titles": {
+            "zh": "公告",
+            "en": "Announcements",
+            "ja": "社内通知"
+          }
+        },
+        {
+          "id": "work.training",
+          "title": "培训",
+          "titles": {
+            "zh": "培训",
+            "en": "Training",
+            "ja": "研修"
+          }
+        },
+        {
+          "id": "work.reminder",
+          "title": "提醒",
+          "titles": {
+            "zh": "提醒",
+            "en": "Reminders",
+            "ja": "リマインダー"
+          }
+        },
+        {
+          "id": "work.alert",
+          "title": "告警",
+          "titles": {
+            "zh": "告警",
+            "en": "Alerts",
+            "ja": "アラート"
+          }
+        },
+        {
+          "id": "work.other",
+          "title": "其他",
+          "titles": {
+            "zh": "其他",
+            "en": "Other Work",
+            "ja": "その他（仕事）"
+          }
+        }
+      ],
+      "titles": {
+        "zh": "工作",
+        "en": "Work",
+        "ja": "仕事"
+      }
     },
     {
       "id": "carrier",
       "title": "运营商",
       "systemAction": "transaction",
       "leaves": [
-        { "id": "carrier.call_reminder", "title": "来电提醒" },
-        { "id": "carrier.data_reminder", "title": "流量提醒" },
-        { "id": "carrier.service", "title": "业务办理" },
-        { "id": "carrier.promotion", "title": "推广" },
-        { "id": "carrier.other", "title": "其他" }
-      ]
+        {
+          "id": "carrier.call_reminder",
+          "title": "来电提醒",
+          "titles": {
+            "zh": "来电提醒",
+            "en": "Missed Calls",
+            "ja": "不在着信"
+          }
+        },
+        {
+          "id": "carrier.data_reminder",
+          "title": "流量提醒",
+          "titles": {
+            "zh": "流量提醒",
+            "en": "Data & Balance",
+            "ja": "データ残量"
+          }
+        },
+        {
+          "id": "carrier.service",
+          "title": "业务办理",
+          "titles": {
+            "zh": "业务办理",
+            "en": "Carrier Services",
+            "ja": "契約手続き"
+          }
+        },
+        {
+          "id": "carrier.promotion",
+          "title": "推广",
+          "titles": {
+            "zh": "推广",
+            "en": "Carrier Offers",
+            "ja": "キャリア特典"
+          }
+        },
+        {
+          "id": "carrier.other",
+          "title": "其他",
+          "titles": {
+            "zh": "其他",
+            "en": "Other Carrier",
+            "ja": "その他（キャリア）"
+          }
+        }
+      ],
+      "titles": {
+        "zh": "运营商",
+        "en": "Carrier",
+        "ja": "通信キャリア"
+      }
     },
     {
       "id": "government",
-      "title": "政府",
+      "title": "政务",
       "systemAction": "transaction",
       "leaves": [
-        { "id": "government.notice", "title": "通知" },
-        { "id": "government.traffic", "title": "交管" },
-        { "id": "government.tax", "title": "税务" },
-        { "id": "government.social_security", "title": "社保医保" },
-        { "id": "government.court", "title": "司法" },
-        { "id": "government.policy", "title": "政策" },
-        { "id": "government.other", "title": "其他" }
-      ]
+        {
+          "id": "government.notice",
+          "title": "通知",
+          "titles": {
+            "zh": "通知",
+            "en": "Public Notices",
+            "ja": "行政通知"
+          }
+        },
+        {
+          "id": "government.traffic",
+          "title": "交管",
+          "titles": {
+            "zh": "交管",
+            "en": "Traffic Authority",
+            "ja": "交通行政"
+          }
+        },
+        {
+          "id": "government.tax",
+          "title": "税务",
+          "titles": {
+            "zh": "税务",
+            "en": "Tax",
+            "ja": "税務"
+          }
+        },
+        {
+          "id": "government.social_security",
+          "title": "社保医保",
+          "titles": {
+            "zh": "社保医保",
+            "en": "Social Security",
+            "ja": "社会保障"
+          }
+        },
+        {
+          "id": "government.court",
+          "title": "司法",
+          "titles": {
+            "zh": "司法",
+            "en": "Judicial",
+            "ja": "司法"
+          }
+        },
+        {
+          "id": "government.policy",
+          "title": "政策",
+          "titles": {
+            "zh": "政策",
+            "en": "Policy",
+            "ja": "政策"
+          }
+        },
+        {
+          "id": "government.other",
+          "title": "其他",
+          "titles": {
+            "zh": "其他",
+            "en": "Other Government",
+            "ja": "その他（行政）"
+          }
+        }
+      ],
+      "titles": {
+        "zh": "政务",
+        "en": "Government",
+        "ja": "行政"
+      }
     },
     {
       "id": "verification",
       "title": "验证码",
       "systemAction": "transaction",
       "leaves": [
-        { "id": "verification", "title": "验证码" }
-      ]
+        {
+          "id": "verification",
+          "title": "验证码",
+          "titles": {
+            "zh": "验证码",
+            "en": "Verification Codes",
+            "ja": "認証コード"
+          }
+        }
+      ],
+      "titles": {
+        "zh": "验证码",
+        "en": "Verification Codes",
+        "ja": "認証コード"
+      }
     },
     {
       "id": "promotion",
       "title": "推广信息",
       "systemAction": "promotion",
       "leaves": [
-        { "id": "promotion", "title": "推广信息" }
-      ]
+        {
+          "id": "promotion",
+          "title": "推广信息",
+          "titles": {
+            "zh": "推广信息",
+            "en": "Promotions",
+            "ja": "プロモーション"
+          }
+        }
+      ],
+      "titles": {
+        "zh": "推广信息",
+        "en": "Promotions",
+        "ja": "プロモーション"
+      }
     },
     {
       "id": "spam",
       "title": "垃圾信息",
       "systemAction": "junk",
       "leaves": [
-        { "id": "spam", "title": "垃圾信息" }
-      ]
+        {
+          "id": "spam",
+          "title": "垃圾信息",
+          "titles": {
+            "zh": "垃圾信息",
+            "en": "Spam & Fraud",
+            "ja": "迷惑・詐欺"
+          }
+        }
+      ],
+      "titles": {
+        "zh": "垃圾信息",
+        "en": "Spam & Fraud",
+        "ja": "迷惑・詐欺"
+      }
     }
   ]
 }
-
