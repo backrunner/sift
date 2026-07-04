@@ -1,122 +1,93 @@
-# Sift
+<div align="center">
 
-隐私优先的 iOS 短信过滤应用、规则引擎、通用训练数据集、Core ML 训练适配器和匿名收集后端。
+# 🛡️ Sift
 
-## Layout
+**隐私优先的 iOS 智能短信过滤 · Privacy-first on-device SMS filtering**
 
-- `apps/ios` - SwiftUI app, shared core, and extension scaffolding
-- `apps/legal-site` - SvelteKit legal pages for `https://sift.alkinum.io/privacy` and `/tos`
-- `apps/worker-samples` - anonymous public submission worker at `https://api.sift.alkinum.io/*`
-- `apps/worker-datasets` - internal export worker at `https://api.sift.alkinum.dev/*`
-- `packages/taxonomy` - canonical category and label catalog
-- `packages/contracts` - request/response shapes and validation
-- `tools/apple-trainer` - Create ML/Core ML adapter for generic text/label NDJSON datasets and synthetic seed generation
+分类在设备上完成 · 样本贡献匿名且可撤回 · 中文 / English / 日本語
 
-## Notes
+[![Platform](https://img.shields.io/badge/platform-iOS%2018%2B-black?logo=apple)](apps/ios)
+[![Swift 6](https://img.shields.io/badge/Swift-6.0-F05138?logo=swift&logoColor=white)](apps/ios/Package.swift)
+[![License](https://img.shields.io/badge/code-Apache--2.0-blue)](LICENSE)
+[![Brand](https://img.shields.io/badge/name%20%26%20icon-All%20rights%20reserved-8A2BE2)](TRADEMARKS.md)
+[![i18n](https://img.shields.io/badge/i18n-zh%20%C2%B7%20en%20%C2%B7%20ja-2ea44f)](docs/TAXONOMY.md)
 
-- This repo is designed for local-first operation.
-- User submission is opt-in only.
-- No account, device ID, or user identity is stored in the sample pipeline.
-- The public iOS submission endpoint is `https://api.sift.alkinum.io/v1/samples`.
-- The public privacy policy URL is `https://sift.alkinum.io/privacy`.
-- The public terms URL is `https://sift.alkinum.io/tos`.
-- Worker templates are committed as `wrangler.template.toml`; real `wrangler.toml`
-  files and `.dev.vars*` stay ignored for open-source safety.
+</div>
 
-## Local Checks
+---
+
+短信收件箱不该是垃圾场。Sift 在 **你的 iPhone 上** 把短信分进 50 个精细类别
+(垃圾、推广、验证码、快递、银行……),内容永远不离开设备;想帮模型变得
+更聪明时,可以**匿名**贡献一条脱敏样本——并且随时看到、导出、或彻底抹掉
+自己贡献过的一切。
+
+## ✨ 亮点
+
+| | |
+| --- | --- |
+| 🧠 **双模型架构** | 经典 Create ML 模型(支持**设备端微调**)+ SetFit Transformer 多语言模型(高级版内购,一次买断) |
+| 🌍 **三语一级支持** | 分类体系与 App 界面完整支持中 / 英 / 日;语料另覆盖 es·pt·fr·de·ru·ko·id·vi·th |
+| 🔒 **双轨脱敏** | 规则引擎(手机号/证件号/邮箱/卡号/验证码/地址/人名)∪ 可选设备端 Core ML PII 模型,并集脱敏、规则兜底 |
+| ☁️ **匿名可撤回的贡献** | CloudKit 公共库,零身份字段;回执删除、历史列表单条抹除、一键 GDPR 全量擦除与 JSON 导出 |
+| 📊 **本地统计** | 每日拦截计数(永不含内容),备份到你自己的 iCloud 私有库 |
+| 🤖 **全自动训练管线** | `pnpm pipeline -- all --install-ios`:抓数据 → 质量过筛 → 三语审计 → 双模型训练(断点续训/增量微调)→ 装进 App;训练报告 HTML 可视化 |
+| 🧪 **可信的测试体系** | 45 项 Swift 测试 + TS/Python 单测,全部隔离、零外部依赖 |
+
+## 🚀 快速开始
 
 ```bash
+git clone <repo> && cd sift
 pnpm install
-pnpm typecheck
-pnpm test
-pnpm check:workers
-pnpm build:legal
+
+# iOS 核心:构建 + 测试 + 冒烟
 cd apps/ios && swift test && swift run CoreSmokeTests
-pnpm --filter @sift/worker-samples dev
-pnpm --filter @sift/worker-datasets dev
+
+# 打开 Xcode 工程(需要 xcodegen)
+xcodegen generate && open Sift.xcodeproj
+
+# 训练两个模型并装进 App(详见 docs/TRAINING.md)
+pnpm pipeline -- all --skip fetch-remote --install-ios
 ```
 
-Preview the Svelte legal pages:
+## 🏗️ 仓库结构
 
-```bash
-pnpm dev:legal
+```
+apps/ios                  SwiftUI App + IdentityLookup 过滤扩展(SwiftPM 模块化)
+apps/legal-site           隐私政策 / 服务条款静态站(SvelteKit)
+packages/taxonomy         50 叶子三语分类体系(唯一事实源)
+tools/apple-trainer       Create ML 训练器 + 多语言合成语料
+tools/transformer-trainer SetFit→CoreML 训练器 + 数据质量过筛/审计
+tools/pii-trainer         设备端 PII 脱敏模型训练器(可选)
+tools/cloudkit            CloudKit 样本导出(server-to-server)
+tools/pipeline            一条命令的全自动训练编排
+infra/cloudkit            容器 schema(cktool 导入)
+docs                      TRAINING / TAXONOMY / PRIVACY / legal(商店级文档)
 ```
 
-## Worker Build And Deploy
+深入阅读:**[训练管线手册](docs/TRAINING.md)** ·
+[架构总览](agents/architecture.md) · [开发规范](AGENTS.md) ·
+[分类设计与标注指南](docs/TAXONOMY.md) · [隐私说明](docs/PRIVACY.md)
 
-Before running Workers locally or deploying, copy each template and fill in the
-environment-specific Cloudflare resources. The copied `wrangler.toml` files are
-ignored on purpose:
+## 🔐 隐私承诺
 
-```bash
-cp apps/worker-samples/wrangler.template.toml apps/worker-samples/wrangler.toml
-cp apps/worker-datasets/wrangler.template.toml apps/worker-datasets/wrangler.toml
-```
+- 过滤永远在设备上;扩展进程不联网。
+- 贡献是显式同意 + 脱敏预览后才发生;载荷零身份字段。
+- 统计只有数字,存在**你的** iCloud 私有库,我们读不到。
+- 应用内即可行使 GDPR 权利:导出全部提交、抹除全部提交。
 
-Keep `development` and `production` resources separate in those files. The
-production env routes through `api.sift.alkinum.io` for sample submission and
-`api.sift.alkinum.dev` for internal dataset export; development uses
-`workers.dev`.
-Store the internal dataset worker `MASTER_KEY` as a Wrangler secret, not in
-`wrangler.toml`:
+完整文档:[Privacy Policy](docs/legal/PRIVACY_POLICY.md) ·
+[Terms of Service](docs/legal/TERMS_OF_SERVICE.md)
+(线上版本 `sift.alkinum.io/privacy` · `/tos`)
 
-```bash
-cd apps/worker-datasets
-pnpm exec wrangler secret put MASTER_KEY --env development
-pnpm exec wrangler secret put MASTER_KEY --env production
-```
+## ⚖️ 许可与商标
 
-Local development runs each Worker with the `development` env:
+**代码**以 [Apache License 2.0](LICENSE) 开源。
+**"Sift" 名称、应用图标与品牌资产不在开源范围内,保留所有权利** ——
+Fork 发行请更换名称、图标、bundle id 与 CloudKit 容器,详见
+[TRADEMARKS.md](TRADEMARKS.md)。
 
-```bash
-pnpm --filter @sift/worker-samples dev   # http://127.0.0.1:8787
-pnpm --filter @sift/worker-datasets dev   # http://127.0.0.1:8788
-```
+---
 
-The normal preflight is:
-
-```bash
-pnpm check:workers
-```
-
-Production deploys are pinned to Wrangler env `production`. The deploy script
-validates real `wrangler.toml` files, refuses template placeholders and inline
-`MASTER_KEY`, runs Worker build/test, checks Wrangler auth, and then deploys:
-
-```bash
-pnpm deploy:workers:dry-run
-pnpm deploy:workers
-```
-
-Single Worker releases are available when needed:
-
-```bash
-pnpm deploy:worker:samples
-pnpm deploy:worker:datasets
-```
-
-Deploy `apps/legal-site/build` to Cloudflare Pages on `sift.alkinum.io`; keep
-the Worker routes on `api.sift.alkinum.io/*` and `api.sift.alkinum.dev/*`.
-
-Build a local corpus from synthetic seed rows plus public SMS datasets as generic `text`/`label` NDJSON, then train with Apple's native stack. The corpus stays framework-neutral; `SiftAppleTrainer` converts rows into Create ML training data only when it trains:
-
-```bash
-cd tools/apple-trainer
-swift run SiftAppleTrainer --build-public-corpus ../../build/public-corpus.ndjson --per-label 80 --public-per-label 500
-swift run SiftAppleTrainer --input ../../build/public-corpus.ndjson --out ../../build/apple-model --algorithm auto --install-ios
-```
-
-The internal dataset worker exports the same generic production training rows directly:
-
-```bash
-curl -H "Authorization: Bearer $MASTER_KEY" \
-  "https://api.sift.alkinum.dev/v1/training-set" \
-  > build/remote-training.ndjson
-
-cd tools/apple-trainer
-swift run SiftAppleTrainer --input ../../build/remote-training.ndjson --out ../../build/apple-model --algorithm auto --install-ios
-```
-
-`apps/ios/GeneratedModels` currently contains a local Create ML BERT seed model and manifest for Xcode debug builds. A paid Apple Developer account is not required for local Create ML training or the in-app sandbox; it is required later for real IdentityLookup message-filter entitlement provisioning.
-
-Privacy and App Store review notes live in `docs/PRIVACY.md`.
+<div align="center">
+<sub>Built with ❤️ for a quieter inbox · © Alkinum</sub>
+</div>
