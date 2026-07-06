@@ -119,16 +119,57 @@ https://sift.alkinum.io/models/SiftTransformerClassifier.manifest.json
 ```
 
 因此每次 Transformer 训练验收后,把 `build/pipeline/transformer-model/`
-上传到这个 URL 对应的公开目录。先 dry-run 校验清单、hash 与总大小:
+上传到这个 URL 对应的公开目录。推荐目标是 Cloudflare R2 bucket,再通过
+公开自定义域名或 Worker/Pages 路由暴露为上面的 HTTPS URL。也就是说:
+
+- R2 对象 key 前缀默认建议是 `models/`;
+- App 访问的公开 base URL 是 `https://sift.alkinum.io/models`;
+- 二者必须一一对应,让
+  `models/SiftTransformerClassifier.manifest.json` 能被公开 URL 访问。
+
+凭据不要进仓库;本地 shell 或 CI Secrets 设置:
+
+```bash
+export SIFT_TRANSFORMER_MODEL_BASE_URL=https://sift.alkinum.io/models
+export SIFT_MODEL_R2_BUCKET=sift-public
+export SIFT_MODEL_R2_PREFIX=models
+export CLOUDFLARE_ACCOUNT_ID=...
+export AWS_ACCESS_KEY_ID=...
+export AWS_SECRET_ACCESS_KEY=...
+```
+
+`AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` 使用 Cloudflare R2 的
+S3-compatible access key,只授予该 bucket 的写入权限。先 dry-run 校验清单、
+hash 与总大小:
 
 ```bash
 pnpm upload:transformer-model -- \
   --model-dir build/pipeline/transformer-model \
-  --base-url https://sift.alkinum.io/models \
   --dry-run
 ```
 
-上传到任意对象存储/CDN 时使用命令模板。脚本会对 manifest 和每个
+正式上传到 R2:
+
+```bash
+pnpm upload:transformer-model -- \
+  --model-dir build/pipeline/transformer-model \
+  --r2-bucket "$SIFT_MODEL_R2_BUCKET" \
+  --verify-http
+```
+
+如果不想在环境里放 account id,可显式传
+`--r2-endpoint-url https://<account-id>.r2.cloudflarestorage.com`。如果用
+AWS profile 管理本机凭据,传 `--aws-profile <profile>` 即可。
+
+也可以先复制到本地发布目录:
+
+```bash
+pnpm upload:transformer-model -- \
+  --model-dir build/pipeline/transformer-model \
+  --dest-dir /path/to/public/models
+```
+
+其他对象存储/CDN 仍可用命令模板。脚本会对 manifest 和每个
 `remoteArtifacts` 文件分别调用一次模板,支持 `{src}`、`{path}`、
 `{content_type}`、`{cache_control}`:
 
@@ -138,15 +179,6 @@ pnpm upload:transformer-model -- \
   --base-url https://sift.alkinum.io/models \
   --upload-command 'rclone copyto {src} r2:sift-public/models/{path}' \
   --verify-http
-```
-
-也可以先复制到本地发布目录:
-
-```bash
-pnpm upload:transformer-model -- \
-  --model-dir build/pipeline/transformer-model \
-  --base-url https://sift.alkinum.io/models \
-  --dest-dir /path/to/public/models
 ```
 
 发布验收:

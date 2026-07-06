@@ -19,8 +19,22 @@ Examples:
     --base-url https://sift.alkinum.io/models \
     --dest-dir /tmp/sift-models
 
-  # Use an object-storage CLI. The template is split with shlex and supports
-  # {src}, {path}, {content_type}, and {cache_control}.
+  # Upload to Cloudflare R2 with the AWS CLI. Credentials are read by the AWS
+  # CLI from environment variables or --aws-profile; do not commit them.
+  export SIFT_TRANSFORMER_MODEL_BASE_URL=https://sift.alkinum.io/models
+  export SIFT_MODEL_R2_BUCKET=sift-public
+  export SIFT_MODEL_R2_PREFIX=models
+  export CLOUDFLARE_ACCOUNT_ID=...
+  export AWS_ACCESS_KEY_ID=...
+  export AWS_SECRET_ACCESS_KEY=...
+  python3 tools/transformer-trainer/upload_transformer_model.py \
+    --model-dir build/pipeline/transformer-model \
+    --r2-bucket "$SIFT_MODEL_R2_BUCKET" \
+    --verify-http
+
+  # Any other object-storage CLI can still be used via a command template.
+  # The template is split with shlex and supports {src}, {path},
+  # {content_type}, and {cache_control}.
   python3 tools/transformer-trainer/upload_transformer_model.py \
     --model-dir build/pipeline/transformer-model \
     --base-url https://sift.alkinum.io/models \
@@ -33,6 +47,7 @@ import argparse
 import hashlib
 import json
 import mimetypes
+import os
 import shlex
 import shutil
 import subprocess
@@ -63,8 +78,22 @@ def parse_arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--model-dir", type=Path, required=True, help="directory containing the exported transformer artifacts")
     parser.add_argument("--model-name", default=DEFAULT_MODEL_NAME)
-    parser.add_argument("--base-url", required=True, help="public URL prefix used by the iOS app, e.g. https://sift.alkinum.io/models")
+    parser.add_argument(
+        "--base-url",
+        default=os.getenv("SIFT_TRANSFORMER_MODEL_BASE_URL"),
+        help="public URL prefix used by the iOS app; can also come from SIFT_TRANSFORMER_MODEL_BASE_URL",
+    )
     parser.add_argument("--dest-dir", type=Path, default=None, help="optional local destination directory")
+    parser.add_argument("--r2-bucket", default=os.getenv("SIFT_MODEL_R2_BUCKET"), help="Cloudflare R2 bucket name")
+    parser.add_argument("--r2-prefix", default=os.getenv("SIFT_MODEL_R2_PREFIX", ""), help="R2 object key prefix")
+    parser.add_argument(
+        "--r2-account-id",
+        default=os.getenv("CLOUDFLARE_ACCOUNT_ID"),
+        help="Cloudflare account id used to derive the R2 S3 endpoint",
+    )
+    parser.add_argument("--r2-endpoint-url", default=os.getenv("SIFT_MODEL_R2_ENDPOINT_URL"), help="explicit R2 S3 endpoint URL")
+    parser.add_argument("--aws-profile", default=os.getenv("AWS_PROFILE"), help="optional AWS CLI profile for R2 credentials")
+    parser.add_argument("--aws-region", default=os.getenv("AWS_REGION") or os.getenv("AWS_DEFAULT_REGION") or "auto")
     parser.add_argument(
         "--upload-command",
         default=None,
@@ -83,17 +112,20 @@ def parse_arguments() -> argparse.Namespace:
 
 def main() -> None:
     args = parse_arguments()
+    base_url = normalize_base_url(args.base_url)
     model_dir = args.model_dir.expanduser().resolve()
     if not model_dir.is_dir():
         raise SystemExit(f"error: --model-dir is not a directory: {model_dir}")
-    if not args.dry_run and args.dest_dir is None and args.upload_command is None:
-        raise SystemExit("error: pass --dest-dir, --upload-command, or --dry-run")
+    if not args.dry_run and args.dest_dir is None and args.upload_command is None and not args.r2_bucket:
+        raise SystemExit("error: pass --r2-bucket, --dest-dir, --upload-command, or --dry-run")
 
     validate_command_template(args.upload_command)
+    if args.r2_bucket and not args.dry_run:
+        validate_r2_configuration(args)
 
     manifest_path = model_dir / f"{args.model_name}.manifest.json"
     manifest = read_manifest(manifest_path)
-    manifest = normalize_manifest(manifest, model_dir, args.model_name, args.base_url.rstrip("/"))
+    manifest = normalize_manifest(manifest, model_dir, args.model_name, base_url)
     validate_manifest_artifacts(manifest, model_dir)
 
     with tempfile.TemporaryDirectory(prefix="sift-model-upload-") as temp:
@@ -108,7 +140,7 @@ def main() -> None:
             artifact_cache_control=args.artifact_cache_control,
         )
 
-        print_plan(items, args.base_url.rstrip("/"))
+        print_plan(items, base_url)
 
         if args.write_manifest and not args.dry_run:
             manifest_path.write_text(staged_manifest.read_text(encoding="utf-8"), encoding="utf-8")
@@ -119,10 +151,21 @@ def main() -> None:
 
         if args.dest_dir is not None:
             copy_to_destination(items, args.dest_dir.expanduser().resolve())
+        if args.r2_bucket:
+            upload_to_r2(items, args)
         if args.upload_command is not None:
             run_upload_command(items, args.upload_command)
         if args.verify_http:
-            verify_http(items, args.base_url.rstrip("/"))
+            verify_http(items, base_url)
+
+
+def normalize_base_url(value: str | None) -> str:
+    if not value:
+        raise SystemExit("error: pass --base-url or set SIFT_TRANSFORMER_MODEL_BASE_URL")
+    value = value.rstrip("/")
+    if not value.startswith(("https://", "http://")):
+        raise SystemExit("error: --base-url must be an absolute http(s) URL")
+    return value
 
 
 def read_manifest(path: Path) -> dict[str, Any]:
@@ -262,6 +305,49 @@ def copy_to_destination(items: list[UploadItem], dest_dir: Path) -> None:
         target.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(item.source, target)
         print(f"copied: {target}")
+
+
+def validate_r2_configuration(args: argparse.Namespace) -> None:
+    if shutil.which("aws") is None:
+        raise SystemExit("error: --r2-bucket requires the AWS CLI (`aws`) to be installed")
+    r2_endpoint_url(args)
+    if args.aws_profile:
+        return
+    if os.getenv("AWS_ACCESS_KEY_ID") and os.getenv("AWS_SECRET_ACCESS_KEY"):
+        return
+    raise SystemExit("error: set AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY or pass --aws-profile for R2 upload")
+
+
+def r2_endpoint_url(args: argparse.Namespace) -> str:
+    if args.r2_endpoint_url:
+        return args.r2_endpoint_url.rstrip("/")
+    if args.r2_account_id:
+        return f"https://{args.r2_account_id}.r2.cloudflarestorage.com"
+    raise SystemExit("error: set CLOUDFLARE_ACCOUNT_ID or pass --r2-endpoint-url for R2 upload")
+
+
+def r2_object_key(prefix: str, path: str) -> str:
+    prefix = prefix.strip("/")
+    return f"{prefix}/{path}" if prefix else path
+
+
+def upload_to_r2(items: list[UploadItem], args: argparse.Namespace) -> None:
+    endpoint = r2_endpoint_url(args)
+    for item in items:
+        target = f"s3://{args.r2_bucket}/{r2_object_key(args.r2_prefix, item.path)}"
+        command = [
+            "aws", "s3", "cp",
+            str(item.source),
+            target,
+            "--endpoint-url", endpoint,
+            "--region", args.aws_region,
+            "--content-type", item.content_type,
+            "--cache-control", item.cache_control,
+        ]
+        if args.aws_profile:
+            command.extend(["--profile", args.aws_profile])
+        print(f"r2 upload: {' '.join(shlex.quote(part) for part in command)}")
+        subprocess.run(command, check=True)
 
 
 def run_upload_command(items: list[UploadItem], template: str) -> None:
