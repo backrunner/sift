@@ -19,14 +19,9 @@ Examples:
     --base-url https://sift.alkinum.io/models \
     --dest-dir /tmp/sift-models
 
-  # Upload to Cloudflare R2 with the AWS CLI. Credentials are read by the AWS
-  # CLI from environment variables or --aws-profile; do not commit them.
-  export SIFT_TRANSFORMER_MODEL_BASE_URL=https://sift.alkinum.io/models
-  export SIFT_MODEL_R2_BUCKET=sift-public
-  export SIFT_MODEL_R2_PREFIX=models
-  export CLOUDFLARE_ACCOUNT_ID=...
-  export AWS_ACCESS_KEY_ID=...
-  export AWS_SECRET_ACCESS_KEY=...
+  # Upload to Cloudflare R2 with the AWS CLI. Copy
+  # .env.transformer-model.example to .env.transformer-model first; do not
+  # commit the real dotenv file.
   python3 tools/transformer-trainer/upload_transformer_model.py \
     --model-dir build/pipeline/transformer-model \
     --r2-bucket "$SIFT_MODEL_R2_BUCKET" \
@@ -64,6 +59,7 @@ from typing import Any
 DEFAULT_MODEL_NAME = "SiftTransformerClassifier"
 DEFAULT_ARTIFACT_CACHE_CONTROL = "public, max-age=31536000, immutable"
 DEFAULT_MANIFEST_CACHE_CONTROL = "public, max-age=300"
+DEFAULT_DOTENV_NAME = ".env.transformer-model"
 
 
 @dataclass(frozen=True)
@@ -75,6 +71,11 @@ class UploadItem:
 
 
 def parse_arguments() -> argparse.Namespace:
+    raw = sys.argv[1:]
+    if raw and raw[0] == "--":
+        raw = raw[1:]
+    load_dotenv_from_arguments(raw)
+
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--model-dir", type=Path, required=True, help="directory containing the exported transformer artifacts")
     parser.add_argument("--model-name", default=DEFAULT_MODEL_NAME)
@@ -104,10 +105,83 @@ def parse_arguments() -> argparse.Namespace:
     parser.add_argument("--artifact-cache-control", default=DEFAULT_ARTIFACT_CACHE_CONTROL)
     parser.add_argument("--manifest-cache-control", default=DEFAULT_MANIFEST_CACHE_CONTROL)
     parser.add_argument("--write-manifest", action="store_true", help="also update the manifest inside --model-dir")
-    raw = sys.argv[1:]
-    if raw and raw[0] == "--":
-        raw = raw[1:]
+    parser.add_argument(
+        "--env-file",
+        type=Path,
+        default=None,
+        help=f"dotenv file to load before reading SIFT_* / AWS_* variables; defaults to {DEFAULT_DOTENV_NAME} when present",
+    )
+    parser.add_argument("--no-env-file", action="store_true", help="skip automatic dotenv loading")
     return parser.parse_args(raw)
+
+
+def load_dotenv_from_arguments(raw: list[str]) -> None:
+    if "-h" in raw or "--help" in raw:
+        return
+
+    env_file: Path | None = None
+    explicit_env_file = False
+    skip_env_file = False
+
+    index = 0
+    while index < len(raw):
+        token = raw[index]
+        if token == "--no-env-file":
+            skip_env_file = True
+        elif token == "--env-file":
+            index += 1
+            if index >= len(raw):
+                raise SystemExit("error: --env-file requires a value")
+            env_file = Path(raw[index])
+            explicit_env_file = True
+        elif token.startswith("--env-file="):
+            env_file = Path(token.split("=", 1)[1])
+            explicit_env_file = True
+        index += 1
+
+    if skip_env_file:
+        return
+
+    if env_file is None:
+        configured = os.getenv("SIFT_TRANSFORMER_MODEL_ENV_FILE")
+        if configured:
+            env_file = Path(configured)
+            explicit_env_file = True
+        else:
+            env_file = repo_root() / DEFAULT_DOTENV_NAME
+
+    if env_file.exists():
+        load_dotenv(env_file)
+    elif explicit_env_file:
+        raise SystemExit(f"error: dotenv file not found: {env_file}")
+
+
+def repo_root() -> Path:
+    directory = Path(__file__).resolve().parent
+    while directory != directory.parent:
+        if (directory / "package.json").exists() and (directory / "pnpm-workspace.yaml").exists():
+            return directory
+        directory = directory.parent
+    return Path.cwd()
+
+
+def load_dotenv(path: Path) -> None:
+    for line_number, raw_line in enumerate(path.read_text(encoding="utf-8").splitlines(), start=1):
+        try:
+            parts = shlex.split(raw_line, comments=True, posix=True)
+        except ValueError as error:
+            raise SystemExit(f"error: invalid dotenv syntax in {path}:{line_number}: {error}") from error
+        if not parts:
+            continue
+        if parts[0] == "export":
+            parts = parts[1:]
+        if len(parts) != 1 or "=" not in parts[0]:
+            raise SystemExit(f"error: invalid dotenv assignment in {path}:{line_number}")
+        key, value = parts[0].split("=", 1)
+        key = key.strip()
+        if not key or not key.replace("_", "").isalnum() or key[0].isdigit():
+            raise SystemExit(f"error: invalid dotenv key in {path}:{line_number}: {key}")
+        os.environ.setdefault(key, value)
 
 
 def main() -> None:

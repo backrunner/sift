@@ -127,16 +127,15 @@ https://sift.alkinum.io/models/SiftTransformerClassifier.manifest.json
 - 二者必须一一对应,让
   `models/SiftTransformerClassifier.manifest.json` 能被公开 URL 访问。
 
-凭据不要进仓库;本地 shell 或 CI Secrets 设置:
+凭据不要进仓库。先复制 dotenv 样本,在本机或 CI Secrets 注入真实值:
 
 ```bash
-export SIFT_TRANSFORMER_MODEL_BASE_URL=https://sift.alkinum.io/models
-export SIFT_MODEL_R2_BUCKET=sift-public
-export SIFT_MODEL_R2_PREFIX=models
-export CLOUDFLARE_ACCOUNT_ID=...
-export AWS_ACCESS_KEY_ID=...
-export AWS_SECRET_ACCESS_KEY=...
+cp .env.transformer-model.example .env.transformer-model
 ```
+
+上传脚本默认会加载仓库根目录 `.env.transformer-model`;也可以用
+`--env-file /path/to/file` 指定文件,或用 `--no-env-file` 跳过。真实
+`.env.transformer-model` 被 git ignore,不要提交。
 
 `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` 使用 Cloudflare R2 的
 S3-compatible access key,只授予该 bucket 的写入权限。先 dry-run 校验清单、
@@ -159,7 +158,8 @@ pnpm upload:transformer-model -- \
 
 如果不想在环境里放 account id,可显式传
 `--r2-endpoint-url https://<account-id>.r2.cloudflarestorage.com`。如果用
-AWS profile 管理本机凭据,传 `--aws-profile <profile>` 即可。
+AWS profile 管理本机凭据,在 dotenv 里设置 `AWS_PROFILE=sift-r2` 或传
+`--aws-profile <profile>` 即可。
 
 也可以先复制到本地发布目录:
 

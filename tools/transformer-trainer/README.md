@@ -126,12 +126,7 @@ uv run train_mmbert.py \
   --version mmbert-0.1
 
 # validate and upload to the public model URL used by the iOS app
-export SIFT_TRANSFORMER_MODEL_BASE_URL=https://sift.alkinum.io/models
-export SIFT_MODEL_R2_BUCKET=sift-public
-export SIFT_MODEL_R2_PREFIX=models
-export CLOUDFLARE_ACCOUNT_ID=...
-export AWS_ACCESS_KEY_ID=...
-export AWS_SECRET_ACCESS_KEY=...
+cp ../../.env.transformer-model.example ../../.env.transformer-model
 python3 upload_transformer_model.py \
   --model-dir ../../build/transformer-model \
   --dry-run
