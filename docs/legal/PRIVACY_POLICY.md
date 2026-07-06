@@ -70,7 +70,7 @@ these backups at any time from Settings → Data & Privacy.
 
 ## 5. Purchases
 
-The Premium upgrade ("高级版") is a non-consumable in-app purchase processed
+The Premium upgrade is a non-consumable in-app purchase processed
 by Apple. We receive no name, address, or payment information. Purchase
 entitlement is verified on-device through StoreKit. See Apple's privacy
 policy for how Apple processes purchase data.

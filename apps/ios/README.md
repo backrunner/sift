@@ -27,9 +27,9 @@ The app ships two classifier variants, switchable from the model capsule on
 the dashboard (the selection is shared with the message-filter extension via
 the `group.com.alkinum.sift` app group):
 
-- **经典模型 (classic)** — the Create ML text classifier above plus the
-  on-device personalization adapter. Supports local fine-tuning from the
-  "仅本地微调" sample queue.
+- **Classic model** — the Create ML text classifier above plus the on-device
+  personalization adapter. Supports local fine-tuning from the local-only
+  sample queue.
 - **Transformer** — a frozen multilingual mmBERT model exported by
   `tools/transformer-trainer` and uploaded to the public model CDN. It is
   downloaded into the shared App Group only after a Premium user explicitly
@@ -46,7 +46,7 @@ Group to be provisioned for both targets.
 ## Sanitization (two tracks)
 
 `PrivacySanitizer` always runs its deterministic rules (phone, URL, email,
-身份证/护照 `{{ID}}`, bank card, order/pickup/verification codes, amounts,
+identity documents `{{ID}}`, bank card, order/pickup/verification codes, amounts,
 addresses, names). If the optional `SiftPIIDetector.*` artifacts from
 `tools/pii-trainer` are bundled, a Core ML token-classification model runs on
 top and its detections are **unioned** with the rules — the model can only

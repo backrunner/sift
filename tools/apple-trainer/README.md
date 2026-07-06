@@ -4,8 +4,9 @@ Primary Apple base-model adapter for Sift. It reads the shared generic `text`/`l
 
 ## Flow
 
-Generate a multilingual synthetic seed dataset in generic `text`/`label` NDJSON
-(中文为主，英文覆盖全部标签，另含 es/pt/fr/de/ru/ja/ko/id/vi/th 高频类别):
+Generate a multilingual synthetic seed dataset in generic `text`/`label`
+NDJSON. The default emphasizes zh, covers every label in en, and adds core
+categories for es/pt/fr/de/ru/ja/ko/id/vi/th:
 
 ```bash
 cd tools/apple-trainer
@@ -52,7 +53,7 @@ language-agnostic. Force with `--language zh-Hans` / `--language en` /
 For production sample export, pull live CloudKit submissions with the
 repo-root script (`pnpm export:training`, see `tools/cloudkit/README.md`);
 it writes the same portable `{"text","label"}` NDJSON. Any Core ML/Create ML
-conversion should happen inside this trainer, and the SetFit trainer
+conversion should happen inside this trainer, and the transformer trainer
 (`tools/transformer-trainer`) consumes the same dataset contract.
 
 Public corpus sources currently used by `--build-public-corpus`:

@@ -29,10 +29,10 @@ identities.
 
 - Lawful basis: remote contribution is consent-based and opt-in.
 - Data minimization: only sanitized text and labeling metadata are written.
-- Erasure: beyond the last-submission receipt, Settings → 数据与隐私 offers
+- Erasure: beyond the last-submission receipt, Settings -> Data & Privacy offers
   full erasure — a creator-scoped CloudKit query deletes every sample the
   user ever contributed plus their private statistics backups (GDPR Art. 17).
-- Access/portability: the same creator-scoped query powers "导出我的全部提交"
+- Access/portability: the same creator-scoped query powers "Export all my submissions"
   (machine-readable JSON, GDPR Art. 15/20).
 - Retention: samples remain in the public database while they are useful for
   training; corpora are exported as snapshots via

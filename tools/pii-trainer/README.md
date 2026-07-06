@@ -4,7 +4,7 @@ Trains the **optional on-device Core ML PII detector** used by the app's
 sanitizer. Sanitization runs on two legs:
 
 1. **Rules (always on, the floor)** — deterministic regex/NSDataDetector
-   redaction in `PrivacySanitizer` (phone, URL, email, 身份证/护照, bank
+   redaction in `PrivacySanitizer` (phone, URL, email, identity documents, bank
    card, order/pickup/verification codes, amounts, addresses, names).
 2. **Model (this trainer, optional)** — a token-classification model that
    widens recall on messy formats the rules miss. The Swift side **unions**

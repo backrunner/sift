@@ -1,42 +1,48 @@
-# Sift 短信分类体系(taxonomy)设计与标注指南
+# Sift SMS Taxonomy And Labeling Guide
 
-50 个叶子标签,9 个分组。分组决定系统过滤动作(`systemAction`):`spam → junk`、
-`promotion → promotion`、其余 → `transaction`(iOS IdentityLookup 只有这三档 +
-放行)。叶子粒度服务于**统计展示与训练**,不影响拦截档位。
+The taxonomy has 50 leaf labels across 9 groups. Each group determines the
+system filter action (`systemAction`): `spam -> junk`, `promotion -> promotion`,
+and everything else -> `transaction` (the iOS IdentityLookup API exposes only
+those three buckets plus allow). Leaf granularity is for statistics and model
+training; it does not change the system-level filtering bucket.
 
-## 设计原则
+## Design Principles
 
-1. **id 永不改动**——训练语料、已发布模型与 CloudKit 数据都以 id 为键;
-   展示名(title)可以随时润色。
-2. **每组保留 `*.other`** 兜底,避免标注者硬塞错类。
-3. **组间边界以"发信方意图"为准,而不是文本关键词**(见下)。
+1. **Never change ids.** Training corpora, released models, and CloudKit data
+   use ids as keys. Display titles can be refined at any time.
+2. **Keep `*.other` in every group** as a fallback so annotators do not force
+   ambiguous messages into the wrong leaf.
+3. **Resolve cross-group boundaries by sender intent, not keywords.** See the
+   boundary notes below.
 
-## 易混淆边界(标注/补充模板时必读)
+## Common Boundary Cases
 
-| 边界 | 判定 |
+| Boundary | Decision rule |
 | --- | --- |
-| `finance.bank` vs `finance.income` vs `finance.consumption` | 银行=账户/管理类通知(余额、卡片、网点、贷款申请/审批进度);入账=**钱进来**(工资、转账到账、报销);消费=**钱出去且面向商户**(POS、扫码、订阅扣费)。银行动账短信按资金方向归入后两者,纯管理类才是 bank。 |
-| `life.express` vs `life.logistics` vs `life.pickup_code` | 快递=面向收件人的派送状态;物流=干线/仓配/货运视角(分拨、装车、冷链);取件码=**含取件凭证码**的到件通知(有码优先归取件码)。 |
-| `promotion` vs `carrier.promotion` vs `spam` | promotion=一般商户营销(可含退订);carrier.promotion=**运营商自营**套餐/流量/宽带营销;spam=违法违规或欺诈(仿冒、贷款诈骗、刷单、色情、钓鱼链接)。"烦人但合法"是 promotion,"骗人/违法"才是 spam。 |
-| `verification` vs `transaction.account_security` | 有一次性验证码=verification;无码的登录提醒/密码变更/异地登录=账号安全。 |
-| `transaction.message` vs `transaction.other` | 平台消息=站内信/评论/客服回复等**内容型**通知;other=状态型兜底。 |
-| `government.notice` vs `government.policy` | notice=针对个人事项的办理进度;policy=面向公众的政策发布。 |
-| `finance.bank` vs `government.social_security` | 贷款申请/贷款审批/住宅ローン=银行业务;社保医保=社保/医保缴费、待遇、凭证、公积金缴存/证明。 |
+| `finance.bank` vs `finance.income` vs `finance.consumption` | `finance.bank` is for account and banking-service notices such as balances, cards, branches, and loan application or approval status. `finance.income` is money coming in, such as salary, transfers received, and reimbursements. `finance.consumption` is money going out to a merchant, such as POS purchases, QR payments, or subscription charges. Banking transaction notices should follow fund direction; pure account-management notices stay in `finance.bank`. |
+| `life.express` vs `life.logistics` vs `life.pickup_code` | `life.express` is recipient-facing parcel delivery status. `life.logistics` is line-haul, warehouse, freight, dispatch, or cold-chain status. `life.pickup_code` is any arrival notice with a pickup credential; credentialed pickup wins. |
+| `promotion` vs `carrier.promotion` vs `spam` | `promotion` is ordinary merchant marketing, including unsubscribe text. `carrier.promotion` is carrier-owned plan, data, broadband, or service marketing. `spam` is illegal, fraudulent, impersonating, phishing, adult, loan-scam, or task-scam content. Annoying but legitimate marketing is promotion; deceptive or unlawful content is spam. |
+| `verification` vs `transaction.account_security` | One-time verification code present -> `verification`. Login alerts, password changes, unusual login notices, or account-security events without a code -> `transaction.account_security`. |
+| `transaction.message` vs `transaction.other` | `transaction.message` is content-style platform messaging such as inbox messages, comments, and support replies. `transaction.other` is the status-style fallback. |
+| `government.notice` vs `government.policy` | `government.notice` is a personal case or service-progress notice. `government.policy` is a public policy announcement. |
+| `finance.bank` vs `government.social_security` | Loan applications, loan approvals, and mortgage notices are banking. Social insurance, medical insurance, benefit, certificate, and housing-fund contribution notices are `government.social_security`. |
 
-## 统计口径
+## Statistics Scope
 
-App 内统计按 `systemAction` 三档(拦截/推广/正常)+ 分组两级展示;
-每日计数桶存 App Group,并以用户 **CloudKit 私有库** 做跨设备备份
-(`FilterStats` 记录,详见 `infra/cloudkit/README.md`)。统计数据永远
-不含短信内容,只有计数。
+The app displays statistics by the three `systemAction` buckets (junk,
+promotion, normal) and by taxonomy group. Daily count buckets live in the App
+Group and are backed up to the user's private CloudKit database as
+`FilterStats` records; see `infra/cloudkit/README.md`. Statistics never include
+message content, only counts.
 
-## 变更流程
+## Change Process
 
-改 `packages/taxonomy/taxonomy.json` 后运行:
+After editing `packages/taxonomy/taxonomy.json`, run:
 
 ```bash
 pnpm --filter @sift/taxonomy generate:swift
 ```
 
-新增叶子必须同步补齐 zh/en/ja 三语种子模板(`tools/apple-trainer` 会在生成期
-硬校验),并跑 `pnpm pipeline -- curate --strict-audit` 确认覆盖。
+New leaves must add complete zh/en/ja seed templates. `tools/apple-trainer`
+checks this during generation. Run
+`pnpm pipeline -- curate --strict-audit` to confirm coverage.

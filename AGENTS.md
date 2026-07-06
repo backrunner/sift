@@ -1,59 +1,72 @@
-# AGENTS.md — Sift 开发指南
+# AGENTS.md - Sift Development Guide
 
-> 供 AI 编码代理与新成员使用的项目速览与硬性规范。细节见 `agents/` 目录:
-> [architecture.md](agents/architecture.md) · [development.md](agents/development.md)
+> A compact project map and hard rules for AI coding agents and new contributors.
+> See the detailed guides in `agents/`:
+> [architecture.md](agents/architecture.md) and [development.md](agents/development.md).
 
-## 项目是什么
+## What This Project Is
 
-Sift 是隐私优先的 iOS 短信过滤应用:设备端分类(IdentityLookup 扩展)、
-50 叶子三语分类体系(zh/en/ja 一级)、双模型(Create ML 经典可微调 +
-SetFit Transformer 付费高级版)、CloudKit 匿名样本收集与用户私有库统计、
-全自动训练管线。**未上线,无需向后兼容。**
+Sift is a privacy-first iOS SMS filtering app. Classification runs on device
+through an IdentityLookup extension, using a 50-leaf taxonomy with first-class
+zh/en/ja coverage, a dual-model setup (a locally fine-tunable Create ML classic
+model plus a paid Premium transformer model), anonymous CloudKit sample
+collection, user-private statistics, and an automated training pipeline.
+The product is not launched yet; backward compatibility is not required.
 
-## 目录速查
+## Directory Map
 
-| 路径 | 内容 |
+| Path | Contents |
 | --- | --- |
-| `apps/ios` | SwiftPM 模块(MessageFilterCore / SiftAppKit / MessageFilterExtensionKit)+ XcodeGen 工程 |
-| `packages/taxonomy` | 分类唯一事实源(`taxonomy.json`),`generate:swift` 产出 Taxonomy.swift |
-| `tools/apple-trainer` | Create ML 训练器 + 多语言合成语料(zh/en/ja 全标签) |
-| `tools/transformer-trainer` | SetFit→CoreML 训练器、`curate_dataset.py` 质量过筛/审计 |
-| `tools/pii-trainer` | 可选 CoreML PII 脱敏模型训练器 |
-| `tools/cloudkit` | CloudKit 服务端导出(TS) |
-| `tools/pipeline` | `pnpm pipeline` 全自动编排(stdlib Python) |
-| `infra/cloudkit` | 容器 schema(`schema.ckdb`,cktool 导入) |
-| `docs/` | TAXONOMY / TRAINING / PRIVACY / legal(商店级 TOS 与隐私政策) |
+| `apps/ios` | SwiftPM modules (`MessageFilterCore`, `SiftAppKit`, `MessageFilterExtensionKit`) plus the XcodeGen project |
+| `packages/taxonomy` | Taxonomy source of truth (`taxonomy.json`); `generate:swift` emits `Taxonomy.swift` |
+| `tools/apple-trainer` | Create ML trainer plus multilingual synthetic corpora |
+| `tools/transformer-trainer` | mmBERT/Core ML trainer and `curate_dataset.py` quality audit tooling |
+| `tools/pii-trainer` | Optional Core ML PII redaction model trainer |
+| `tools/cloudkit` | CloudKit server-side export tooling in TypeScript |
+| `tools/pipeline` | `pnpm pipeline` orchestration in Python stdlib |
+| `infra/cloudkit` | CloudKit container schema (`schema.ckdb`) for `cktool` import |
+| `docs/` | Taxonomy, training, privacy, and store-grade legal documents |
 
-## 硬性规范(违反即返工)
+## Hard Rules
 
-1. **分类 id 永不改动**;展示名走 `taxonomy.json` 的 `titles`(zh/en/ja),改后必须
-   `pnpm --filter @sift/taxonomy generate:swift` 重新生成。
-2. **zh/en/ja 是一级语言**:新增叶子必须三语模板齐备(trainer 生成期硬校验),
-   语料改动跑 `curate --strict-audit`。
-3. **用户可见文案必须本地化**:Swift 里用 `String(localized: "中文原文")`,
-   并同步 `apps/ios/SiftApp/Localizable.xcstrings`(zh-Hans 为源,en/ja 必填);
-   正则/键名等非 UI 字符串禁止包裹。
-4. **隐私红线**:样本载荷永不携带身份字段;统计只有计数;新增云端字段必须
-   同步 `schema.ckdb`、导出脚本 `--raw`、`docs/PRIVACY.md` 与 legal 文案。
-5. **测试隔离**:任何触碰共享 UserDefaults/App Group 的测试必须用独立
-   suite(`UUID` 后缀)并 `removePersistentDomain` 清理;禁止依赖执行顺序。
-6. **副作用注入**:CloudKit/StoreKit 一律走协议缝(`RemoteSampleSubmitting` /
-   `PremiumPurchasing`),单测永不触网;`CKContainer` 构造必须有
-   `#if os(iOS)` 或注入保护(无 entitlement 环境会抛 ObjC 异常)。
-7. **XcodeGen 是工程事实源**:改 `project.yml` 后必须 `xcodegen generate`;
-   不手改 `project.pbxproj`。
-8. **模型产物不进 git**:`GeneratedModels/` 里的 transformer/PII 产物由训练器
-   `--install-ios` 安装,在 `project.yml` 中标记 `optional: true`。
-9. Swift 6 严格并发:跨 actor 传递的类型必须显式 `Sendable`。
-10. 提交前最低验证:`cd apps/ios && swift build && swift test && swift run CoreSmokeTests`
-    + 涉及 TS 时 `pnpm typecheck && pnpm test`
-    + 涉及语料/过筛时 `python3 -m unittest discover -s tools/transformer-trainer/tests`。
+1. **Never change taxonomy ids.** Display names come from `taxonomy.json`
+   `titles` (zh/en/ja). After taxonomy edits, run
+   `pnpm --filter @sift/taxonomy generate:swift`.
+2. **zh/en/ja are first-class languages.** New leaves must have complete
+   trilingual seed templates. Corpus changes must pass `curate --strict-audit`.
+3. **User-facing copy must be localized.** Use `String(localized:)` in Swift
+   and keep `apps/ios/SiftApp/Localizable.xcstrings` synchronized with
+   zh-Hans as the source language and en/ja filled in. Do not localize regexes,
+   identifiers, or storage keys.
+4. **Privacy boundary:** sample payloads must never carry identity fields;
+   statistics are counts only. Any new cloud field must be reflected in
+   `schema.ckdb`, the `--raw` export path, `docs/PRIVACY.md`, and legal copy.
+5. **Test isolation:** tests touching shared `UserDefaults` or App Group state
+   must use a UUID-suffixed suite and clean it with `removePersistentDomain`.
+   Tests must not depend on execution order.
+6. **Inject side effects.** CloudKit and StoreKit access must go through
+   protocol seams (`RemoteSampleSubmitting`, `PremiumPurchasing`). Unit tests
+   must not touch the network. `CKContainer` construction must be guarded with
+   `#if os(iOS)` or injected because entitlement-free environments can throw
+   Objective-C exceptions.
+7. **XcodeGen is the project source of truth.** After editing `project.yml`,
+   run `xcodegen generate`; do not hand-edit `project.pbxproj`.
+8. **Model artifacts do not go in git.** Transformer and PII artifacts under
+   `GeneratedModels/` are installed by trainers via `--install-ios` and marked
+   optional in `project.yml`.
+9. Swift 6 strict concurrency applies: types crossing actor boundaries must be
+   explicitly `Sendable`.
+10. Minimum pre-commit validation:
+    `cd apps/ios && swift build && swift test && swift run CoreSmokeTests`
+    plus `pnpm typecheck && pnpm test` for TypeScript changes, and
+    `python3 -m unittest discover -s tools/transformer-trainer/tests` for
+    corpus or curation changes.
 
-## 常用命令
+## Common Commands
 
 ```bash
-pnpm pipeline -- all --install-ios      # 全自动训练管线(见 docs/TRAINING.md)
-pnpm pipeline -- finetune               # 从检查点增量微调
-pnpm export:training                    # CloudKit 样本导出
-cd apps/ios && xcodegen generate        # 重新生成 Xcode 工程
+pnpm pipeline -- all --install-ios      # Full automated training pipeline
+pnpm pipeline -- finetune               # Incremental fine-tuning from checkpoint
+pnpm export:training                    # Export CloudKit samples
+cd apps/ios && xcodegen generate        # Regenerate the Xcode project
 ```

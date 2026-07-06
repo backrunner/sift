@@ -1,45 +1,49 @@
-# 训练管线操作手册
+# Training Pipeline Guide
 
-从零到训练经典模型、上传高级版 Transformer 模型,一条命令或分步执行都可以。
-本文是唯一权威操作文档;架构背景见 `agents/architecture.md`,分类规范见
-`docs/TAXONOMY.md`。
+This is the authoritative operating guide for training the classic model and
+publishing the Premium transformer model. For architecture background, see
+`agents/architecture.md`; for taxonomy rules, see `docs/TAXONOMY.md`.
 
-## 0. 前置条件
+## 0. Prerequisites
 
-- macOS + Xcode 16(Create ML 需要;`xcode-select --install` 不够,要完整 Xcode)
-- `pnpm install`(仓库根)
-- [uv](https://docs.astral.sh/uv)(transformer / PII 训练器与 curate 模型级过滤)
-- 可选:CloudKit 服务端密钥(拉取用户提交样本)
+- macOS with full Xcode 16. Create ML requires the full Xcode installation;
+  `xcode-select --install` is not enough.
+- `pnpm install` at the repository root.
+- [uv](https://docs.astral.sh/uv) for transformer training, PII training, and
+  model-level curation filters.
+- Optional CloudKit server key for fetching user-submitted samples.
 
 ```bash
-export CLOUDKIT_KEY_ID=<console 里创建的 key id>
+export CLOUDKIT_KEY_ID=<key id created in the CloudKit console>
 export CLOUDKIT_PRIVATE_KEY=~/.keys/sift-ck.pem
 ```
 
-## 1. 一条命令全流程
+## 1. One-Command Pipeline
 
 ```bash
 pnpm pipeline -- all --install-ios
 ```
 
-依次执行 `fetch-public → fetch-remote → curate → train-classic →
-train-transformer`,产物在 `build/pipeline/`。`--install-ios` 只会把经典
-Create ML 模型装进 `apps/ios/GeneratedModels/`;高级版 Transformer 不随 App
-分发,训练完成后走第 2.5 节上传到远端模型目录。没有 CloudKit 凭据时
-`fetch-remote` 自动跳过(`--require-remote` 改为硬失败)。
+This runs `fetch-public -> fetch-remote -> curate -> train-classic ->
+train-transformer`. Artifacts are written under `build/pipeline/`.
+`--install-ios` installs only the classic Create ML model into
+`apps/ios/GeneratedModels/`; the Premium transformer is not distributed with
+the app and must be uploaded after training as described in section 2.5.
+Without CloudKit credentials, `fetch-remote` skips politely; use
+`--require-remote` to make missing credentials a hard failure.
 
-常用变体:
+Common variants:
 
 ```bash
-pnpm pipeline -- all --skip fetch-remote            # 完全离线
-pnpm pipeline -- all --strict-audit                 # 三语覆盖不达标直接失败
-pnpm pipeline -- curate --model-filter off          # 轻量重跑过筛(不需要 uv)
-pnpm pipeline -- train-transformer --device mps     # 指定训练设备
+pnpm pipeline -- all --skip fetch-remote            # Fully offline
+pnpm pipeline -- all --strict-audit                 # Fail if zh/en/ja coverage is insufficient
+pnpm pipeline -- curate --model-filter off          # Lightweight curation rerun without uv
+pnpm pipeline -- train-transformer --device mps     # Force a training device
 ```
 
-## 2. 分步执行
+## 2. Step-By-Step
 
-### 2.1 数据获取
+### 2.1 Fetch Data
 
 ```bash
 pnpm pipeline -- fetch-public \
@@ -47,99 +51,113 @@ pnpm pipeline -- fetch-public \
 pnpm pipeline -- fetch-remote --cloudkit-env production
 ```
 
-`fetch-public` = 合成种子(zh 全标签 80/标签,en/ja 全标签 60/标签,
-es/pt/fr/de/ru/ko/id/vi/th 核心 12 标签 16/标签)+ 公共数据集下载。
+`fetch-public` builds synthetic seed data for all zh labels, all en/ja labels,
+and core categories in es/pt/fr/de/ru/ko/id/vi/th, then downloads public
+datasets.
 
-### 2.2 质量过筛与审计(curate)
+### 2.2 Curate And Audit
 
 ```bash
 pnpm pipeline -- curate --model-filter auto --strict-audit
 ```
 
-两级过滤:
+Two filters run:
 
-1. **规则级**(纯标准库):taxonomy 校验 → 规范化 → 长度(8–500)→ 垃圾
-   启发(低信息量/重复字符/词数不足/纯占位符)→ **脱敏占位符再水化**
-   (`{{PHONE}}`→逼真假值,消除训练/推理分布差)→ 精确+近重复去重 →
-   跨标签冲突剔除 → 语言白名单。
-2. **模型级**(`--model-filter auto|on`,需 uv):embedding 质心三段式 —
-   margin < `--hard-floor`(-0.15)必丢;灰区 [hard-floor, 0) 按 margin
-   排名每标签保留 `--gray-keep`(70%);≥0 全保留。既压噪声又保留用户
-   纠错样本。
+1. **Rule-level filter** using only the standard library: taxonomy validation,
+   normalization, length limits (8-500), low-information and repetition
+   heuristics, placeholder rehydration such as `{{PHONE}}` into realistic
+   values, exact and near-duplicate removal, cross-label conflict removal, and
+   language allowlisting.
+2. **Model-level filter** with `--model-filter auto|on` and uv: a centroid
+   embedding margin filter. Rows with margin < `--hard-floor` (-0.15) are
+   rejected; gray-zone rows in `[hard-floor, 0)` keep the top
+   `--gray-keep` share per label (70% by default); rows with margin >= 0 are
+   kept. This reduces noise while retaining likely correction samples.
 
-产物:`train.ndjson` / `rejected.ndjson`(带拒绝原因与 margin)/
-`curation-report.json`(逐来源、逐原因、标签×语言矩阵)。
+Outputs are `train.ndjson`, `rejected.ndjson` with rejection reasons and
+margins, and `curation-report.json` with source counts, rejection counts, and
+label-by-language matrices.
 
-审计:每个标签在 zh/en/ja 各 ≥ `--min-core-rows`(默认 10),不达标
-`--strict-audit` 下退出码 2。单独体检任意数据集:
+Audit rule: every label must have at least `--min-core-rows` rows (default 10)
+in each of zh/en/ja. With `--strict-audit`, failures exit with code 2. To audit
+any dataset directly:
 
 ```bash
 python3 tools/transformer-trainer/curate_dataset.py \
   --inputs some.ndjson --audit-only --strict-audit
 ```
 
-### 2.3 训练经典模型(Create ML)
+### 2.3 Train The Classic Model (Create ML)
 
 ```bash
 pnpm pipeline -- train-classic --version-classic corpus-0.2 \
   --algorithm-classic maxent --install-ios
 ```
 
-`--language auto`:≥90% 单语语料按该语言训练,混合语料自动语言无关。
-当前已验证的经典模型默认结构是 Create ML MaxEnt;`bert/auto` 可用于对照实验,
-但在 50 类小样本短信数据上低于 MaxEnt。
-复验泛化稳定性时改变 `--split-seed-classic`,不要只看默认 seed 42。
-训练完打印**最弱 12 个标签 + Top 混淆对** —— 这是该模型的主要提升回路:
-按报告去补种子模板/样本,重训。
+`--language auto` trains as a single language when at least 90% of the corpus is
+one language; mixed corpora train language-independently. The validated default
+classic architecture is Create ML MaxEnt. `bert` and `auto` are available for
+comparison, but they underperformed MaxEnt on the current 50-label small SMS
+dataset. Change `--split-seed-classic` when rechecking generalization; do not
+trust only the default seed 42.
 
-### 2.4 训练 Transformer(mmBERT → Core ML)
+Training prints the weakest 12 labels and the top confusion pairs. Use those
+reports as the main improvement loop: add targeted templates or samples, then
+retrain.
+
+### 2.4 Train The Transformer (mmBERT -> Core ML)
 
 ```bash
 pnpm pipeline -- train-transformer \
   --version-transformer mmbert-0.1 --quantize int8
 ```
 
-- 设备:`--device auto` = cuda(NVIDIA/AMD ROCm)→ mps(Apple Silicon)→ cpu;
-  ROCm 需先 `uv pip install torch --index-url https://download.pytorch.org/whl/rocm6.2`。
-- 默认底座:`jhu-clsp/mmBERT-small`(ModernBERT 架构,metaspace BPE tokenizer);
-  可用 `--backbone` 覆盖。
-- 每次训练写 `transformer-model/checkpoint/`
-  与 `training-report.html`(loss 曲线 / 每标签准确率 / 混淆对)。
-- 体积:`--quantize int8` + `--truncate-layers N`。BPE tokenizer 以
-  `SiftTransformerClassifier.tokenizer.json` 输出到模型目录。
-- 导出的 `SiftTransformerClassifier.manifest.json` 会写入 `remoteArtifacts`
-  与 `downloadBytes`;`.mlpackage` 是目录包,远端分发按文件清单逐个下载。
+- `--device auto` selects cuda (NVIDIA or AMD ROCm), then mps (Apple Silicon),
+  then cpu. For ROCm, first install the matching PyTorch wheel, for example:
+  `uv pip install torch --index-url https://download.pytorch.org/whl/rocm6.2`.
+- Default backbone: `jhu-clsp/mmBERT-small`, a ModernBERT architecture with a
+  metaspace BPE tokenizer. Override with `--backbone`.
+- Every run writes `transformer-model/checkpoint/` and `training-report.html`
+  with loss curves, per-label accuracy, and confusion pairs.
+- Size controls: `--quantize int8` and `--truncate-layers N`. The BPE tokenizer
+  is exported as `SiftTransformerClassifier.tokenizer.json`.
+- The exported `SiftTransformerClassifier.manifest.json` includes
+  `remoteArtifacts` and `downloadBytes`. `.mlpackage` is a directory package,
+  so remote distribution downloads the listed files individually.
 
-### 2.5 上传高级版 Transformer 模型
+### 2.5 Upload The Premium Transformer Model
 
-App 内的高级版切换按钮会先读取:
+The app reads the manifest first when a Premium user switches to the transformer:
 
 ```text
 https://sift.alkinum.io/models/SiftTransformerClassifier.manifest.json
 ```
 
-因此每次 Transformer 训练验收后,把 `build/pipeline/transformer-model/`
-上传到这个 URL 对应的公开目录。推荐目标是 Cloudflare R2 bucket,再通过
-公开自定义域名或 Worker/Pages 路由暴露为上面的 HTTPS URL。也就是说:
+After accepting a transformer training run, upload
+`build/pipeline/transformer-model/` to the public directory behind that URL.
+The recommended target is a Cloudflare R2 bucket exposed through a public
+custom domain or Worker/Pages route.
 
-- R2 对象 key 前缀默认建议是 `models/`;
-- App 访问的公开 base URL 是 `https://sift.alkinum.io/models`;
-- 二者必须一一对应,让
-  `models/SiftTransformerClassifier.manifest.json` 能被公开 URL 访问。
+- Recommended R2 object key prefix: `models/`.
+- Public base URL used by the app: `https://sift.alkinum.io/models`.
+- These must map one-to-one so
+  `models/SiftTransformerClassifier.manifest.json` is publicly reachable.
 
-凭据不要进仓库。先复制 dotenv 样本,在本机或 CI Secrets 注入真实值:
+Credentials must not be committed. Copy the dotenv sample and provide real
+values locally or via CI secrets:
 
 ```bash
 cp .env.transformer-model.example .env.transformer-model
 ```
 
-上传脚本默认会加载仓库根目录 `.env.transformer-model`;也可以用
-`--env-file /path/to/file` 指定文件,或用 `--no-env-file` 跳过。真实
-`.env.transformer-model` 被 git ignore,不要提交。
+The upload script loads `.env.transformer-model` from the repository root when
+present. Use `--env-file /path/to/file` to choose another file or
+`--no-env-file` to skip dotenv loading. The real `.env.transformer-model` file
+is git-ignored and must not be committed.
 
-`AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` 使用 Cloudflare R2 的
-S3-compatible access key,只授予该 bucket 的写入权限。先 dry-run 校验清单、
-hash 与总大小:
+Use Cloudflare R2 S3-compatible access keys for `AWS_ACCESS_KEY_ID` and
+`AWS_SECRET_ACCESS_KEY`, scoped to the model bucket with least privilege. First
+run a dry-run to validate the manifest, hashes, and total byte size:
 
 ```bash
 pnpm upload:transformer-model -- \
@@ -147,7 +165,7 @@ pnpm upload:transformer-model -- \
   --dry-run
 ```
 
-正式上传到 R2:
+Upload to R2:
 
 ```bash
 pnpm upload:transformer-model -- \
@@ -156,12 +174,12 @@ pnpm upload:transformer-model -- \
   --verify-http
 ```
 
-如果不想在环境里放 account id,可显式传
-`--r2-endpoint-url https://<account-id>.r2.cloudflarestorage.com`。如果用
-AWS profile 管理本机凭据,在 dotenv 里设置 `AWS_PROFILE=sift-r2` 或传
-`--aws-profile <profile>` 即可。
+If you do not want to place the account id in the environment, pass
+`--r2-endpoint-url https://<account-id>.r2.cloudflarestorage.com`. If you use an
+AWS profile, set `AWS_PROFILE=sift-r2` in dotenv or pass
+`--aws-profile <profile>`.
 
-也可以先复制到本地发布目录:
+You can also copy to a local publish directory:
 
 ```bash
 pnpm upload:transformer-model -- \
@@ -169,9 +187,9 @@ pnpm upload:transformer-model -- \
   --dest-dir /path/to/public/models
 ```
 
-其他对象存储/CDN 仍可用命令模板。脚本会对 manifest 和每个
-`remoteArtifacts` 文件分别调用一次模板,支持 `{src}`、`{path}`、
-`{content_type}`、`{cache_control}`:
+Other object stores or CDNs can still use an upload command template. The script
+runs the template once for the manifest and once for every `remoteArtifacts`
+file, supporting `{src}`, `{path}`, `{content_type}`, and `{cache_control}`:
 
 ```bash
 pnpm upload:transformer-model -- \
@@ -181,65 +199,74 @@ pnpm upload:transformer-model -- \
   --verify-http
 ```
 
-发布验收:
+Release acceptance:
 
-1. `--dry-run` 必须通过,并记录 `upload bytes` 与本次 Core ML 导出大小一致。
-2. 使用 `--verify-http` 确认 manifest 和所有 artifact 在 CDN 上可访问。
-3. 真机上未购买时点 Transformer 只出现高级版购买页;购买后再次点
-   Transformer 才下载。计费网络/低数据模式会先显示流量提示。
-4. 下载完成前 extension 只能使用经典模型;下载完成并校验后才切到
-   Transformer。
+1. `--dry-run` must pass, and `upload bytes` should match the current Core ML
+   export size.
+2. `--verify-http` must confirm that the manifest and every artifact are
+   reachable through the CDN.
+3. On device, selecting transformer while not purchased should open the Premium
+   purchase flow only. After purchase, selecting transformer should start the
+   download. Expensive or Low Data Mode networks should show the traffic prompt.
+4. Until download and checksum validation complete, the extension must keep
+   using the classic model. It switches only after validation.
 
-### 2.6 增量微调(补数据后不重训)
+### 2.6 Incremental Fine-Tuning
 
 ```bash
-pnpm pipeline -- finetune          # 默认从最近 checkpoint,LR 1e-5
+pnpm pipeline -- finetune          # Resume the latest checkpoint, LR 1e-5
 pnpm pipeline -- finetune --resume-from build/pipeline/transformer-model/checkpoint \
   --learning-rate 5e-6
 ```
 
-流程:新数据 → `curate` → `finetune`。关于"RL":分类任务没有独立奖励
-信号,工程等价物即"置信度分层过筛 + 低学习率增量监督微调",不建议引入
-真正的 RL 训练。
+Flow: new data -> `curate` -> `finetune`. This classification task has no
+separate reward signal; the practical equivalent is confidence-tiered curation
+plus low-learning-rate supervised fine-tuning. Do not introduce true RL here.
 
-### 2.7 可选:PII 脱敏模型
+### 2.7 Optional PII Redaction Model
 
 ```bash
 cd tools/pii-trainer && uv sync
 uv run train_pii.py --input ../../build/pipeline/train.ndjson --install-ios
 ```
 
-App 侧自动与规则脱敏取并集;不装则纯规则运行(见 `tools/pii-trainer/README.md`)。
+The app unions model detections with deterministic redaction rules. If the PII
+model is absent, pure rules run; see `tools/pii-trainer/README.md`.
 
-## 3. 多语言策略(决策记录)
+## 3. Multilingual Strategy Decision
 
-**结论:单一多语言模型,不按语言拆分。**
+**Decision: use one multilingual model, not per-language models.**
 
-- 两个模型的底座天然多语言(Apple contextual embedding 按文字系统覆盖;
-  Transformer 用 mmBERT 多语言 encoder),50 类 × 每类几十到几百样本
-  的量级下,跨语言共享类别语义使单模型的每语言准确率 ≥ 独立小模型
-  (独立模型每语言数据被切薄,长尾类别会塌)。
-- 中英混排(码切换)短信只有单模型能自然处理;三模型还意味着 3× 体积、
-  extension 内存与切换/维护成本。
-- 若某语言准确率显著落后:用训练报告定位 → 补该语言模板/样本 →
-  `finetune`,而不是拆模型。
+- Both model stacks are naturally multilingual: Apple contextual embeddings
+  cover writing systems, and the transformer uses an mmBERT multilingual
+  encoder. With 50 classes and tens to hundreds of samples per class, sharing
+  category semantics across languages gives better per-language accuracy than
+  splitting the data into thinner per-language models.
+- Mixed-language SMS messages are handled naturally by one model. Three models
+  would also triple size, extension memory pressure, switching logic, and
+  maintenance cost.
+- If one language lags, use the training report to locate weak labels, add
+  templates or samples for that language, and run `finetune`. Do not split the
+  model first.
 
-**样本语言标注:必要,已实现两处。** 设备 locale ≠ 文本语言(英文用户会
-提交中文短信),因此客户端提交时用 `NLLanguageRecognizer` 检测文本语言写入
-`textLanguage` 字段(质量高于训练侧启发式);curate 的脚本检测作为兜底与
-交叉校验。该字段用于语言配额、审计矩阵与按语言评估。
+**Sample language tagging is required and implemented in two places.** Device
+locale is not text language, so the client uses `NLLanguageRecognizer` when
+submitting samples and writes `textLanguage`. Curation-side language detection
+is a fallback and cross-check. The field powers language quotas, audit matrices,
+and per-language evaluation.
 
-## 4. 产物清单
+## 4. Artifact Inventory
 
-| 文件 | 去向 |
+| File | Destination |
 | --- | --- |
-| `build/pipeline/train.ndjson` | 两个训练器的输入 |
-| `build/pipeline/apple-model/SiftSMSClassifier.{mlmodel,manifest.json}` | App/扩展(经典) |
-| `build/pipeline/transformer-model/SiftTransformerClassifier.{mlpackage,tokenizer.json,manifest.json}` | 上传到 `https://sift.alkinum.io/models/` 供高级版按需下载 |
-| `build/pipeline/transformer-model/checkpoint/` | finetune 起点 |
-| `build/pipeline/transformer-model/training-report.html` | 训练可视化 |
-| `build/pii-model/SiftPIIDetector.*` | App(可选脱敏模型) |
+| `build/pipeline/train.ndjson` | Input for both trainers |
+| `build/pipeline/apple-model/SiftSMSClassifier.{mlmodel,manifest.json}` | App and extension classic model |
+| `build/pipeline/transformer-model/SiftTransformerClassifier.{mlpackage,tokenizer.json,manifest.json}` | Upload to `https://sift.alkinum.io/models/` for Premium on-demand download |
+| `build/pipeline/transformer-model/checkpoint/` | Fine-tuning starting point |
+| `build/pipeline/transformer-model/training-report.html` | Training report |
+| `build/pii-model/SiftPIIDetector.*` | Optional app PII model |
 
-装进 App 后:`cd apps/ios && xcodegen generate`,构建即生效。Transformer 不
-进入 `apps/ios/GeneratedModels/`;如果本地调试需要内置资源,只能临时改
-`project.yml`,提交前必须移除。
+After installing app artifacts, run `cd apps/ios && xcodegen generate` so the
+Xcode project sees them. Transformer artifacts must not be committed to
+`apps/ios/GeneratedModels/`; for local bundled debugging, edit `project.yml`
+temporarily and remove that change before committing.
