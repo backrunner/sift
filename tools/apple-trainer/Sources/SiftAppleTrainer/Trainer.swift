@@ -47,6 +47,7 @@ struct TrainerArguments {
     var modelName = "SiftSMSClassifier"
     var algorithm: AlgorithmChoice = .auto
     var validationFraction = 0.15
+    var splitSeed: UInt64 = 42
     var perLabel = 50
     var corePerLabel: Int?
     var intlPerLabel = 12
@@ -100,6 +101,12 @@ struct TrainerArguments {
                     throw TrainerError.invalidArgument("--validation-fraction must be >= 0 and < 0.5")
                 }
                 arguments.validationFraction = fraction
+            case "--split-seed":
+                let rawValue = try value(after: token)
+                guard let seed = UInt64(rawValue) else {
+                    throw TrainerError.invalidArgument("--split-seed must be a non-negative integer")
+                }
+                arguments.splitSeed = seed
             case "--per-label":
                 let rawValue = try value(after: token)
                 guard let count = Int(rawValue), count > 0 else {
@@ -212,6 +219,7 @@ enum TrainerError: Error, CustomStringConvertible {
       --algorithm <auto|bert|maxent>
                                   auto prefers Create ML BERT transfer learning, then falls back to MaxEnt.
       --validation-fraction <n>   Per-label holdout fraction. Defaults to 0.15.
+      --split-seed <n>            Deterministic per-label holdout seed. Defaults to 42.
       --install-ios              Copy .mlmodel and manifest into apps/ios/GeneratedModels.
       --skip-compile             Skip local .mlmodelc compilation smoke artifact.
     """
@@ -358,7 +366,7 @@ enum SiftAppleTrainer {
         let validLabels = try loadTaxonomyLabels(from: taxonomyURL)
         try validate(rows: rows, validLabels: validLabels)
 
-        let split = stratifiedSplit(rows: rows, validationFraction: arguments.validationFraction, seed: 42)
+        let split = stratifiedSplit(rows: rows, validationFraction: arguments.validationFraction, seed: arguments.splitSeed)
         let labels = Array(Set(rows.map(\.label))).sorted()
         let trainingLanguage = try resolveTrainingLanguage(hint: arguments.trainingLanguage, rows: rows)
         print("training language: \(trainingLanguage?.rawValue ?? "multilingual")")

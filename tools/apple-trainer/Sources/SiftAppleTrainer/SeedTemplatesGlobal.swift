@@ -61,7 +61,7 @@ enum SeedTemplatesGlobal {
             "Depósito en efectivo de ${amount} confirmado."
         ],
         "life.express": [
-            "Tu paquete llegó a {station}. Código de retiro {code}.",
+            "Tu paquete llegó a {station} y se prepara para la entrega.",
             "Pedido en reparto: llega hoy.",
             "{courier}: tu paquete está en camino con el repartidor.",
             "Entrega fallida; reintentaremos mañana.",
@@ -145,7 +145,7 @@ enum SeedTemplatesGlobal {
             "Depósito em dinheiro de R${amount} confirmado."
         ],
         "life.express": [
-            "Sua encomenda chegou em {station}. Código de retirada {code}.",
+            "Sua encomenda chegou em {station} e está sendo preparada para entrega.",
             "Pedido saiu para entrega: chega hoje.",
             "{courier}: seu pacote está com o entregador.",
             "Tentativa de entrega falhou; tentaremos amanhã.",
@@ -229,7 +229,7 @@ enum SeedTemplatesGlobal {
             "Dépôt d'espèces de {amount} € confirmé."
         ],
         "life.express": [
-            "Votre colis est arrivé au {station}. Code de retrait {code}.",
+            "Votre colis est arrivé au {station} et se prépare pour la livraison.",
             "Colis en cours de livraison : il arrive aujourd'hui.",
             "{courier} : votre colis est avec le livreur.",
             "Échec de livraison ; nouvelle tentative demain.",
@@ -313,7 +313,7 @@ enum SeedTemplatesGlobal {
             "Bareinzahlung von {amount} € bestätigt."
         ],
         "life.express": [
-            "Ihr Paket ist in der {station} angekommen. Abholcode {code}.",
+            "Ihr Paket ist in der {station} angekommen und wird für die Zustellung vorbereitet.",
             "Paket in Zustellung: es kommt heute an.",
             "{courier}: Ihr Paket ist beim Zusteller.",
             "Zustellung fehlgeschlagen; neuer Versuch morgen.",
@@ -397,7 +397,7 @@ enum SeedTemplatesGlobal {
             "Внесение наличных {amount} ₽ подтверждено."
         ],
         "life.express": [
-            "Посылка прибыла в {station}. Код получения {code}.",
+            "Посылка прибыла в {station} и готовится к доставке.",
             "Заказ передан курьеру: доставка сегодня.",
             "{courier}: ваша посылка у курьера.",
             "Доставка не удалась; повторим завтра.",
@@ -481,7 +481,7 @@ enum SeedTemplatesGlobal {
             "현금 {amount}원 입금이 확인되었습니다."
         ],
         "life.express": [
-            "택배가 {station}에 도착했습니다. 수령 코드 {code}.",
+            "택배가 {station}에 도착해 배송 준비 중입니다.",
             "오늘 배송 예정입니다. 상품을 받아주세요.",
             "{courier}: 기사님이 배송 중입니다.",
             "배송에 실패했습니다. 내일 다시 시도합니다.",
@@ -565,7 +565,7 @@ enum SeedTemplatesGlobal {
             "Setoran tunai Rp{amount}.000 dikonfirmasi."
         ],
         "life.express": [
-            "Paket Anda tiba di {station}. Kode ambil {code}.",
+            "Paket Anda tiba di {station} dan sedang disiapkan untuk pengiriman.",
             "Paket sedang diantar: tiba hari ini.",
             "{courier}: paket Anda bersama kurir.",
             "Pengiriman gagal; akan dicoba lagi besok.",
@@ -649,7 +649,7 @@ enum SeedTemplatesGlobal {
             "Nộp tiền mặt {amount}.000đ thành công."
         ],
         "life.express": [
-            "Bưu kiện đã đến {station}. Mã nhận hàng {code}.",
+            "Bưu kiện đã đến {station} và đang chuẩn bị giao.",
             "Đơn hàng đang giao: đến trong hôm nay.",
             "{courier}: shipper đang giao hàng cho bạn.",
             "Giao hàng không thành công; sẽ giao lại vào ngày mai.",
@@ -733,7 +733,7 @@ enum SeedTemplatesGlobal {
             "ฝากเงินสด {amount} บาท เรียบร้อยแล้ว"
         ],
         "life.express": [
-            "พัสดุถึง {station} แล้ว รหัสรับ {code}",
+            "พัสดุถึง {station} แล้ว และกำลังเตรียมจัดส่ง",
             "พัสดุกำลังนำส่ง: ถึงวันนี้",
             "{courier}: พนักงานกำลังนำส่งพัสดุของคุณ",
             "นำส่งไม่สำเร็จ จะส่งใหม่พรุ่งนี้",

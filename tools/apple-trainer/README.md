@@ -33,12 +33,16 @@ Train from the generic corpus with Apple's native stack and install the raw mode
 swift run SiftAppleTrainer \
   --input ../../build/public-corpus.ndjson \
   --out ../../build/apple-model \
-  --algorithm auto \
+  --algorithm maxent \
   --version corpus-0.1 \
   --install-ios
 ```
 
-`--algorithm auto` prefers Create ML BERT transfer learning and falls back to MaxEnt if the local environment cannot run BERT. Use `--algorithm maxent` for fast smoke tests.
+`--algorithm maxent` is the validated default for the current 50-label SMS
+corpus: it trains in seconds, produces a tiny model, and outperforms Create ML
+BERT transfer learning on the local validation splits. Use `--algorithm bert`
+or `--algorithm auto` only for comparison runs. Use `--split-seed` to repeat
+validation on alternate deterministic per-label holdout splits.
 
 Training language: `--language auto` (default) inspects the corpus — a ≥90%
 single-language corpus trains with that language hint, anything mixed trains

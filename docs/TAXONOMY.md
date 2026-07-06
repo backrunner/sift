@@ -15,12 +15,13 @@
 
 | 边界 | 判定 |
 | --- | --- |
-| `finance.bank` vs `finance.income` vs `finance.consumption` | 银行=账户/管理类通知(余额、卡片、网点);入账=**钱进来**(工资、转账到账、报销);消费=**钱出去且面向商户**(POS、扫码、订阅扣费)。银行动账短信按资金方向归入后两者,纯管理类才是 bank。 |
+| `finance.bank` vs `finance.income` vs `finance.consumption` | 银行=账户/管理类通知(余额、卡片、网点、贷款申请/审批进度);入账=**钱进来**(工资、转账到账、报销);消费=**钱出去且面向商户**(POS、扫码、订阅扣费)。银行动账短信按资金方向归入后两者,纯管理类才是 bank。 |
 | `life.express` vs `life.logistics` vs `life.pickup_code` | 快递=面向收件人的派送状态;物流=干线/仓配/货运视角(分拨、装车、冷链);取件码=**含取件凭证码**的到件通知(有码优先归取件码)。 |
 | `promotion` vs `carrier.promotion` vs `spam` | promotion=一般商户营销(可含退订);carrier.promotion=**运营商自营**套餐/流量/宽带营销;spam=违法违规或欺诈(仿冒、贷款诈骗、刷单、色情、钓鱼链接)。"烦人但合法"是 promotion,"骗人/违法"才是 spam。 |
 | `verification` vs `transaction.account_security` | 有一次性验证码=verification;无码的登录提醒/密码变更/异地登录=账号安全。 |
 | `transaction.message` vs `transaction.other` | 平台消息=站内信/评论/客服回复等**内容型**通知;other=状态型兜底。 |
 | `government.notice` vs `government.policy` | notice=针对个人事项的办理进度;policy=面向公众的政策发布。 |
+| `finance.bank` vs `government.social_security` | 贷款申请/贷款审批/住宅ローン=银行业务;社保医保=社保/医保缴费、待遇、凭证、公积金缴存/证明。 |
 
 ## 统计口径
 

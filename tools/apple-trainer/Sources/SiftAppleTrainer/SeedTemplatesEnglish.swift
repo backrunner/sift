@@ -10,6 +10,8 @@ enum SeedTemplatesEnglish {
             "{bank}: your transfer of ${amount} has been submitted and should arrive within {minutes} minutes.",
             "Debit card ending {tail} was used for ${amount} on {date}.",
             "Your e-receipt is ready. View transaction {order} in mobile banking.",
+            "Housing loan review progress updated. Visit the counter to confirm.",
+            "Mortgage application status updated. Check mobile banking for details.",
             "ATM withdrawal of ${amount} from account ending {tail}. If unauthorized, call the number on your card.",
             "{bank}: your new debit card has shipped and should arrive within {days} days."
         ],
@@ -109,10 +111,13 @@ enum SeedTemplatesEnglish {
             "{platform}: support replied to your ticket.",
             "You have a new comment reply.",
             "System message: a service you follow has an update.",
+            "A campaign page has a new in-app message. Open the app to view details.",
             "An item on your wishlist just dropped in price."
         ],
         "transaction.account_security": [
             "Security alert: new device sign-in detected. Was this you?",
+            "Security alert: unusual sign-in attempts detected.",
+            "Login security alert: abnormal sign-in attempt detected. Was this you?",
             "Login protection enabled. If this wasn't you, change your password now.",
             "Your password was changed at {time}.",
             "Verification passed. This device is now trusted.",
@@ -138,7 +143,7 @@ enum SeedTemplatesEnglish {
             "Your order was left at the front desk / delivery locker. Enjoy!"
         ],
         "life.express": [
-            "Your parcel has arrived at {station}. Pickup code {code}.",
+            "Your parcel reached {station} and is being prepared for delivery.",
             "Package out for delivery — expect it today.",
             "{courier}: your package is with the driver for delivery.",
             "Your parcel was delivered to {station}.",
@@ -166,6 +171,7 @@ enum SeedTemplatesEnglish {
             "Your mover accepted the job — truck ending {tail} arrives in {minutes} minutes."
         ],
         "life.pickup_code": [
+            "Your parcel has arrived at {station}. Pickup code {code}.",
             "Parcel at {station}. Pickup code {code}.",
             "Locker drop-off complete. Your code is {code}.",
             "{station}: collect your parcel with code {code}.",
@@ -245,7 +251,7 @@ enum SeedTemplatesEnglish {
             "System alert: {task} failed. Immediate action required.",
             "Monitoring: API latency exceeded the threshold.",
             "Resolved: service {task} is back to normal.",
-            "Security alert: unusual sign-in attempts detected.",
+            "Security scanner alert: service {task} failed policy checks.",
             "Disk space is running low on the production server.",
             "Job failure count hit the alert threshold.",
             "Pager: on-call engineer, please ack P{count} now.",
@@ -372,7 +378,7 @@ enum SeedTemplatesEnglish {
             "Housing fund: this month's contribution has posted.",
             "Benefits transfer completed. Review the details online.",
             "Your digital insurance credential is active for hospital checkout.",
-            "Housing loan review progress updated. Visit the counter to confirm."
+            "Housing fund contribution certificate request was received."
         ],
         "government.court": [
             "Court notice: case {order}, appear on {date}.",
