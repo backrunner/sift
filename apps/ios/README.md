@@ -80,9 +80,16 @@ Developer, upload a TestFlight build from the repository root with:
 pnpm upload:ios-testflight --build-number 2 -allowProvisioningUpdates
 ```
 
+For local or CI defaults, copy `.env.testflight.example` to `.env.testflight`
+and fill in the non-commented values. The script loads `.env.testflight`
+automatically when present; use `--env-file /path/to/file` for another dotenv
+path or `--no-env-file` to skip loading.
+
 `-allowProvisioningUpdates` lets Xcode create or download managed certificates
 and provisioning profiles for App Store Connect. For CI, pass the usual
-`xcodebuild` App Store Connect API-key flags through the script:
+`xcodebuild` App Store Connect API-key flags through the script, or set
+`SIFT_APPSTORE_CONNECT_API_KEY_PATH`, `SIFT_APPSTORE_CONNECT_API_KEY_ID`, and
+`SIFT_APPSTORE_CONNECT_API_KEY_ISSUER_ID` in the dotenv file:
 
 ```bash
 pnpm upload:ios-testflight \
