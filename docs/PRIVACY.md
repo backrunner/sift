@@ -11,10 +11,13 @@ app's CloudKit **public database** containing only:
 
 - sanitized SMS text;
 - selected label and its taxonomy group;
+- the app's own predicted label, confidence, and user/model agreement flag
+  used to weigh data quality during training;
 - model version;
 - schema version;
 - a coarse language/region tag (for example `zh-CN`) used to balance
   multilingual training corpora;
+- a coarse detected text language and source marker (`ios`);
 - a client timestamp used for incremental exports.
 
 The payload carries no sender, account ID, device ID, phone, email, contact,

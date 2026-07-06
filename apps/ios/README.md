@@ -18,7 +18,7 @@ NDJSON corpus:
 ```bash
 cd ../../tools/apple-trainer
 swift run SiftAppleTrainer --build-public-corpus ../../build/public-corpus.ndjson --per-label 80 --public-per-label 500
-swift run SiftAppleTrainer --input ../../build/public-corpus.ndjson --out ../../build/apple-model --algorithm auto --install-ios
+swift run SiftAppleTrainer --input ../../build/public-corpus.ndjson --out ../../build/apple-model --algorithm maxent --install-ios
 ```
 
 ## Model variants
@@ -55,6 +55,10 @@ local model's own coarse classification (`predictedLabel`,
 `predictedConfidence`, `agreement`) so the training pipeline can weigh
 disagreements; a high-confidence mismatch shows a non-blocking hint after
 submitting.
+
+The PII model artifacts are not part of the default TestFlight build. Keep the
+app rules-only unless the trainer produces an accepted model, then wire the
+generated `SiftPIIDetector.*` files into `project.yml` for that release.
 
 When full Xcode is installed:
 
