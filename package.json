@@ -8,6 +8,7 @@
     "typecheck": "pnpm -r --if-present typecheck",
     "export:training": "pnpm --filter @sift/cloudkit-tools export",
     "pipeline": "python3 tools/pipeline/sift_pipeline.py",
+    "upload:ios-testflight": "./tools/upload_ios_testflight.sh",
     "upload:transformer-model": "python3 tools/transformer-trainer/upload_transformer_model.py"
   }
 }

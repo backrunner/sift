@@ -77,7 +77,7 @@ After the App IDs and message-filtering entitlement are ready in Apple
 Developer, upload a TestFlight build from the repository root with:
 
 ```bash
-./tools/upload_ios_testflight.sh --build-number 2 -allowProvisioningUpdates
+pnpm upload:ios-testflight --build-number 2 -allowProvisioningUpdates
 ```
 
 `-allowProvisioningUpdates` lets Xcode create or download managed certificates
@@ -85,7 +85,7 @@ and provisioning profiles for App Store Connect. For CI, pass the usual
 `xcodebuild` App Store Connect API-key flags through the script:
 
 ```bash
-./tools/upload_ios_testflight.sh \
+pnpm upload:ios-testflight \
   --build-number 2 \
   -allowProvisioningUpdates \
   -authenticationKeyPath /path/to/AuthKey.p8 \
