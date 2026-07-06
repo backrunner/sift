@@ -473,6 +473,21 @@ def file_sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+def remote_artifacts(paths: list[Path], root: Path) -> list[dict]:
+    artifacts: list[dict] = []
+    for path in paths:
+        files = sorted(item for item in path.rglob("*") if item.is_file()) if path.is_dir() else [path]
+        for file in files:
+            artifacts.append(
+                {
+                    "path": file.relative_to(root).as_posix(),
+                    "sha256": file_sha256(file),
+                    "byteCount": file.stat().st_size,
+                }
+            )
+    return sorted(artifacts, key=lambda item: item["path"])
+
+
 
 def make_loss_recorder():
     """TrainerCallback capturing per-step losses; None when the installed
@@ -712,6 +727,7 @@ def main() -> None:
     vocab_path.write_text("\n".join(tokens) + "\n", encoding="utf-8")
 
     do_lower_case = bool(getattr(tokenizer, "do_lower_case", False))
+    downloadable_artifacts = remote_artifacts([package_path, vocab_path], out)
     manifest = {
         "version": arguments.version,
         "trainedAt": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z",
@@ -725,6 +741,8 @@ def main() -> None:
         "modelArtifact": package_path.name,
         "sha256": directory_sha256(package_path),
         "taxonomyHash": file_sha256(repo_root / "packages/taxonomy/taxonomy.json"),
+        "remoteArtifacts": downloadable_artifacts,
+        "downloadBytes": sum(item["byteCount"] for item in downloadable_artifacts),
         "validationAccuracy": accuracy,
         "trainingCount": len(training_rows),
         "validationCount": len(validation_rows),

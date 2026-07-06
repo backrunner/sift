@@ -17,7 +17,7 @@ Stages (run individually with `--only`, or drop some with `--skip`):
                      dedupe + optional embedding label-noise filter
                      (uv run curate_dataset.py), then coverage audit
   train-classic      Create ML model (swift run SiftAppleTrainer --input …)
-  train-transformer  frozen SetFit Core ML model (uv run train_setfit.py),
+  train-transformer  frozen mmBERT Core ML model (uv run train_mmbert.py),
                      resumable via --resume-from / auto checkpoints
   finetune           incremental update: resume the latest transformer
                      checkpoint on the freshly curated corpus with a low
@@ -81,15 +81,27 @@ def parse_arguments() -> argparse.Namespace:
 
     training = parser.add_argument_group("training")
     training.add_argument("--version-classic", default="corpus-0.2")
-    training.add_argument("--version-transformer", default="setfit-0.2")
+    training.add_argument(
+        "--algorithm-classic",
+        choices=["maxent", "bert", "auto"],
+        default="maxent",
+        help="Create ML classic algorithm; maxent is the current validated default",
+    )
+    training.add_argument("--split-seed-classic", type=int, default=42, help="classic model holdout split seed")
+    training.add_argument("--version-transformer", default="mmbert-0.1")
+    training.add_argument("--backbone", default="jhu-clsp/mmBERT-small", help="transformer backbone")
     training.add_argument("--device", choices=["auto", "cpu", "cuda", "mps"], default="auto")
     training.add_argument("--quantize", choices=["fp16", "int8"], default="int8")
-    training.add_argument("--prune-vocab", action="store_true", default=True)
+    training.add_argument("--prune-vocab", action="store_true", default=True, help="legacy SetFit option; ignored by mmBERT")
     training.add_argument("--no-prune-vocab", dest="prune_vocab", action="store_false")
     training.add_argument("--truncate-layers", type=int, default=0)
-    training.add_argument("--resume-from", type=Path, default=None, help="SetFit checkpoint dir (e.g. build/pipeline/transformer-model/checkpoint)")
-    training.add_argument("--body-learning-rate", type=float, default=None, help="contrastive-phase LR; finetune defaults to 1e-5")
-    training.add_argument("--head-only", action="store_true", help="fast transformer smoke run (frozen body)")
+    training.add_argument("--resume-from", type=Path, default=None, help="mmBERT checkpoint dir (e.g. build/pipeline/transformer-model/checkpoint)")
+    training.add_argument("--learning-rate", type=float, default=None, help="supervised fine-tuning LR; finetune defaults to 1e-5")
+    training.add_argument("--body-learning-rate", type=float, default=None, help="deprecated alias for --learning-rate")
+    training.add_argument("--num-epochs", type=int, default=3)
+    training.add_argument("--batch-size", type=int, default=8)
+    training.add_argument("--warmup-ratio", type=float, default=0.06)
+    training.add_argument("--head-only", action="store_true", help="legacy SetFit option; ignored by mmBERT")
     training.add_argument("--install-ios", action="store_true", help="install trained artifacts into apps/ios/GeneratedModels")
 
     return parser.parse_args()
@@ -185,7 +197,8 @@ def stage_train_classic(arguments: argparse.Namespace) -> None:
         "swift", "run", "-q", "SiftAppleTrainer",
         "--input", str(TRAIN_SET),
         "--out", str(CLASSIC_OUT),
-        "--algorithm", "auto",
+        "--algorithm", arguments.algorithm_classic,
+        "--split-seed", str(arguments.split_seed_classic),
         "--version", arguments.version_classic,
     ]
     if arguments.install_ios:
@@ -199,7 +212,7 @@ def stage_train_transformer(arguments: argparse.Namespace, finetune: bool = Fals
         raise SystemExit(f"error: {TRAIN_SET} missing; run the curate stage first")
 
     resume_from = arguments.resume_from
-    body_learning_rate = arguments.body_learning_rate
+    learning_rate = arguments.learning_rate if arguments.learning_rate is not None else arguments.body_learning_rate
     if finetune:
         resume_from = resume_from or (TRANSFORMER_OUT / "checkpoint")
         if not resume_from.exists():
@@ -207,26 +220,26 @@ def stage_train_transformer(arguments: argparse.Namespace, finetune: bool = Fals
                 f"error: no checkpoint to finetune from ({resume_from}); "
                 "run train-transformer once or pass --resume-from"
             )
-        body_learning_rate = body_learning_rate if body_learning_rate is not None else 1e-5
+        learning_rate = learning_rate if learning_rate is not None else 1e-5
+    learning_rate = learning_rate if learning_rate is not None else 2e-5
 
     command = [
-        "uv", "run", "train_setfit.py",
+        "uv", "run", "train_mmbert.py",
         "--input", str(TRAIN_SET),
         "--out", str(TRANSFORMER_OUT),
         "--version", arguments.version_transformer,
+        "--backbone", arguments.backbone,
         "--device", arguments.device,
         "--quantize", arguments.quantize,
+        "--learning-rate", str(learning_rate),
+        "--num-epochs", str(arguments.num_epochs),
+        "--batch-size", str(arguments.batch_size),
+        "--warmup-ratio", str(arguments.warmup_ratio),
     ]
-    if arguments.prune_vocab:
-        command.append("--prune-vocab")
     if arguments.truncate_layers > 0:
         command.extend(["--truncate-layers", str(arguments.truncate_layers)])
     if resume_from is not None:
         command.extend(["--resume-from", str(resume_from.expanduser().resolve())])
-    if body_learning_rate is not None:
-        command.extend(["--body-learning-rate", str(body_learning_rate)])
-    if arguments.head_only:
-        command.append("--head-only")
     if arguments.install_ios:
         command.append("--install-ios")
     run(command, cwd=TRANSFORMER_TRAINER)

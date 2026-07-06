@@ -23,8 +23,14 @@ re-run in isolation; artifacts live under `build/pipeline/`.
   `tools/transformer-trainer/curate_dataset.py`) and audits that every
   taxonomy label has enough zh / en / ja rows; `--strict-audit` turns
   coverage gaps into pipeline failures.
-- `train-transformer` picks cuda (NVIDIA/ROCm) → mps (Apple Silicon) → cpu
-  automatically, always writes a resumable checkpoint, and emits
+- `train-classic` uses Create ML MaxEnt by default (`--algorithm-classic
+  maxent`) because it is the validated high-accuracy, tiny-model baseline for
+  the current 50-label SMS corpus; pass `--algorithm-classic bert` or `auto`
+  only for comparison runs. Use `--split-seed-classic` to repeat validation
+  on alternate deterministic per-label holdout splits.
+- `train-transformer` fine-tunes `jhu-clsp/mmBERT-small` by default, picks
+  cuda (NVIDIA/ROCm) → mps (Apple Silicon) → cpu automatically, always writes
+  a resumable checkpoint, and emits
   `training-report.html` (loss curve, per-label accuracy, confusion pairs).
 - `finetune` is the incremental path after new data lands: it resumes the
   latest checkpoint with a low learning rate (default 1e-5) instead of

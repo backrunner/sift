@@ -1,7 +1,7 @@
 [project]
 name = "sift-transformer-trainer"
 version = "0.1.0"
-description = "Train a multilingual SetFit SMS classifier and export it as a frozen Core ML model for Sift."
+description = "Train multilingual transformer SMS classifiers and export frozen Core ML models for Sift."
 requires-python = ">=3.10,<3.13"
 dependencies = [
     "setfit>=1.1.0,<2",
@@ -9,9 +9,10 @@ dependencies = [
     "transformers>=4.44,<4.50",
     "datasets>=2.20,<4",
     "torch>=2.3,<2.6",
-    "coremltools>=8.0,<9",
+    "coremltools>=9.0,<10",
     "numpy>=1.26,<3",
-    "scikit-learn>=1.4,<2",
+    "scikit-learn>=1.4,<=1.5.1",
+    "accelerate>=1.0,<2",
 ]
 
 [tool.uv]
