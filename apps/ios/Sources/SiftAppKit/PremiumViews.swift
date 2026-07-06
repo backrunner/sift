@@ -281,10 +281,6 @@ struct PremiumPaywallView: View {
                     }
                     if model.premium.isUnlocked {
                         dismiss()
-                        // 购买即用:产物在包内时直接切到 Transformer。
-                        if model.isModelVariantAvailable(.transformer) {
-                            model.selectModelVariant(.transformer)
-                        }
                     }
                 }
             }

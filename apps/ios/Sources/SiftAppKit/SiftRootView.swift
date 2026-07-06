@@ -114,7 +114,7 @@ private struct DashboardHero: View {
                 isShowingModelPicker = true
             } label: {
                 HStack(spacing: 5) {
-                    if model.isSwitchingModelVariant {
+                    if model.isSwitchingModelVariant || model.isTransformerDownloadActive {
                         ProgressView()
                             .controlSize(.mini)
                             .tint(.white)
@@ -123,7 +123,7 @@ private struct DashboardHero: View {
                             .font(.caption2.weight(.bold))
                             .foregroundStyle(.white.opacity(0.85))
                     }
-                    Text(model.selectedModelVariant.title)
+                    Text(modelSwitchTitle)
                         .font(.caption2.weight(.semibold))
                         .foregroundStyle(.white.opacity(0.85))
                     Text(formattedModelVersion)
@@ -181,6 +181,16 @@ private struct DashboardHero: View {
             .presentationDragIndicator(.visible)
         }
     }
+
+    private var modelSwitchTitle: String {
+        if model.isTransformerDownloadActive {
+            if let progress = model.transformerDownloadProgressText {
+                return String(localized: "下载") + " \(progress)"
+            }
+            return String(localized: "下载中")
+        }
+        return model.selectedModelVariant.title
+    }
 }
 
 private struct ModelPickerView: View {
@@ -192,22 +202,27 @@ private struct ModelPickerView: View {
             VStack(alignment: .leading, spacing: 12) {
                 ForEach(model.availableModelVariants) { variant in
                     let isLocked = variant == .transformer && !model.premium.isUnlocked
+                    let shouldDismissAfterTap = variant == .classic
+                        || (variant == .transformer && model.isTransformerModelAvailable && model.premium.isUnlocked)
                     ModelVariantCard(
                         variant: variant,
                         isSelected: model.selectedModelVariant == variant,
                         isAvailable: model.isModelVariantAvailable(variant),
                         isLockedByPremium: isLocked,
-                        version: model.modelVersion(for: variant).map(formatModelVersion)
+                        version: model.modelVersion(for: variant).map(formatModelVersion),
+                        downloadPhase: variant == .transformer ? model.transformerDownloadPhase : nil,
+                        downloadProgress: variant == .transformer ? model.transformerDownloadProgress : nil,
+                        downloadSizeText: variant == .transformer ? model.transformerDownloadByteCountText : nil
                     ) {
                         // 未购买时 selectModelVariant 会转为打开购买引导:
                         // 此时保持选择器在场,paywall 作为嵌套 sheet 叠加展示,
-                        // 购买成功后自动切换、返回时选中态已就绪。
+                        // 购买成功后用户再次点 Transformer 才开始下载/切换。
                         model.selectModelVariant(variant)
-                        if !(isLocked && model.isModelVariantAvailable(variant)) {
+                        if shouldDismissAfterTap {
                             dismiss()
                         }
                     }
-                    .disabled(model.isSwitchingModelVariant)
+                    .disabled(model.isSwitchingModelVariant || model.isTransformerDownloadActive)
                 }
 
                 HStack(alignment: .top, spacing: 8) {
@@ -236,6 +251,19 @@ private struct ModelPickerView: View {
             .presentationDetents([.large])
             .presentationDragIndicator(.visible)
         }
+        .alert(
+            String(localized: "使用计费网络下载高级模型？"),
+            isPresented: $model.isShowingMeteredTransformerDownloadConfirmation
+        ) {
+            Button(String(localized: "继续下载")) {
+                model.confirmMeteredTransformerDownload()
+            }
+            Button(String(localized: "取消"), role: .cancel) {
+                model.cancelPendingTransformerDownload()
+            }
+        } message: {
+            Text(model.meteredTransformerDownloadMessage)
+        }
         .navigationTitle(String(localized: "选择模型"))
         .toolbarTitleDisplayMode(.inline)
         .toolbar {
@@ -255,6 +283,9 @@ private struct ModelVariantCard: View {
     let isAvailable: Bool
     var isLockedByPremium: Bool = false
     let version: String?
+    var downloadPhase: TransformerModelDownloadPhase?
+    var downloadProgress: TransformerModelDownloadProgress?
+    var downloadSizeText: String?
     let action: () -> Void
 
     var body: some View {
@@ -306,6 +337,7 @@ private struct ModelVariantCard: View {
                     Text(variant.subtitle)
                         .font(.caption)
                         .foregroundStyle(.secondary)
+                    downloadStatusView
                 }
 
                 Spacer(minLength: 0)
@@ -325,6 +357,128 @@ private struct ModelVariantCard: View {
         .buttonStyle(.plain)
         .disabled(!isAvailable)
     }
+
+    @ViewBuilder
+    private var downloadStatusView: some View {
+        if variant == .transformer, let downloadPhase {
+            switch downloadPhase {
+            case .notDownloaded:
+                if !isLockedByPremium && !isSelected {
+                    downloadLine(
+                        icon: "arrow.down.circle",
+                        text: String(localized: "切换时下载") + downloadSizeSuffix,
+                        tint: Color.siftHalo,
+                        progress: nil
+                    )
+                }
+            case .checking:
+                downloadLine(
+                    icon: nil,
+                    text: String(localized: "正在准备下载…"),
+                    tint: Color.siftHalo,
+                    progress: nil,
+                    showsSpinner: true
+                )
+            case .waitingForTrafficConfirmation:
+                    downloadLine(
+                        icon: "exclamationmark.triangle.fill",
+                        text: String(localized: "计费网络待确认") + downloadSizeSuffix,
+                        tint: Color.siftAmber,
+                        progress: nil
+                    )
+            case .downloading:
+                downloadLine(
+                    icon: nil,
+                    text: downloadingText,
+                    tint: Color.siftMint,
+                    progress: downloadProgress?.fractionCompleted,
+                    showsSpinner: downloadProgress?.fractionCompleted == nil
+                )
+            case .installing:
+                downloadLine(
+                    icon: nil,
+                    text: String(localized: "正在安装模型…"),
+                    tint: Color.siftMint,
+                    progress: nil,
+                    showsSpinner: true
+                )
+            case .ready:
+                if !isSelected {
+                    downloadLine(
+                        icon: "checkmark.circle.fill",
+                        text: String(localized: "已下载，可离线使用"),
+                        tint: Color.siftMint,
+                        progress: nil
+                    )
+                }
+            case let .failed(message):
+                downloadLine(
+                    icon: "exclamationmark.circle.fill",
+                    text: message,
+                    tint: Color.siftAmber,
+                    progress: nil
+                )
+            }
+        }
+    }
+
+    private var downloadSizeSuffix: String {
+        guard let downloadSizeText else {
+            return ""
+        }
+        return " · \(downloadSizeText)"
+    }
+
+    private var downloadingText: String {
+        guard let progress = downloadProgress else {
+            return String(localized: "正在下载…")
+        }
+        if let fraction = progress.fractionCompleted {
+            return String(localized: "正在下载") + " \(Int((fraction * 100).rounded()))%"
+        }
+        return String(localized: "正在下载") + " \(formatDownloadBytes(progress.receivedBytes))"
+    }
+
+    @ViewBuilder
+    private func downloadLine(
+        icon: String?,
+        text: String,
+        tint: Color,
+        progress: Double?,
+        showsSpinner: Bool = false
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 5) {
+            HStack(spacing: 5) {
+                if showsSpinner {
+                    ProgressView()
+                        .controlSize(.mini)
+                        .tint(tint)
+                } else if let icon {
+                    Image(systemName: icon)
+                        .font(.caption2.weight(.bold))
+                }
+                Text(text)
+                    .font(.caption2.weight(.semibold))
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .foregroundStyle(tint)
+
+            if let progress {
+                ProgressView(value: progress)
+                    .tint(tint)
+                    .controlSize(.mini)
+            }
+        }
+        .padding(.top, 3)
+    }
+}
+
+private func formatDownloadBytes(_ bytes: Int64) -> String {
+    let formatter = ByteCountFormatter()
+    formatter.allowedUnits = [.useMB, .useGB]
+    formatter.countStyle = .file
+    return formatter.string(fromByteCount: bytes)
 }
 
 /// 从 manifest 里的 `<codename>-<major>.<minor>` 格式（如 `corpus-0.1`）

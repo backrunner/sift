@@ -28,6 +28,10 @@
 	<string>iCloud.com.alkinum.sift</string>
 	<key>SiftPremiumProductIdentifier</key>
 	<string>com.alkinum.sift.premium</string>
+	<key>SiftTransformerModelEstimatedBytes</key>
+	<integer>176160768</integer>
+	<key>SiftTransformerModelManifestURL</key>
+	<string>https://sift.alkinum.io/models/SiftTransformerClassifier.manifest.json</string>
 	<key>SiftPrivacyPolicyURL</key>
 	<string>https://sift.alkinum.io/privacy</string>
 	<key>SiftTermsOfServiceURL</key>

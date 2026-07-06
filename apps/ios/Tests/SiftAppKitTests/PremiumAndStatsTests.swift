@@ -88,6 +88,61 @@ private struct MockPremiumBackend: PremiumPurchasing {
     }
 }
 
+private struct MockTransformerDownloader: TransformerModelDownloading {
+    let plan: TransformerModelDownloadPlan
+
+    func prepareDownload() async throws -> TransformerModelDownloadPlan {
+        plan
+    }
+
+    func download(
+        _ plan: TransformerModelDownloadPlan,
+        progress: @Sendable @escaping (TransformerModelDownloadProgress) -> Void
+    ) async throws {
+        progress(TransformerModelDownloadProgress(receivedBytes: plan.displayByteCount ?? 1, totalBytes: plan.displayByteCount))
+    }
+}
+
+private func mockTransformerDownloadPlan(
+    networkCondition: TransformerNetworkCondition = TransformerNetworkCondition()
+) -> TransformerModelDownloadPlan {
+    let manifest = TransformerModelManifest(
+        version: "remote-0.1",
+        trainedAt: "2026-07-07T08:00:00.000Z",
+        algorithm: "supervised-sequence-classification",
+        backbone: "jhu-clsp/mmBERT-small",
+        languages: ["zh", "en", "ja"],
+        labels: ["spam", "promotion"],
+        maxSequenceLength: 8,
+        doLowerCase: false,
+        tokenizerKind: "bpe",
+        tokenizerArtifact: "SiftTransformerClassifier.tokenizer.json",
+        modelArtifact: "SiftTransformerClassifier.mlpackage",
+        remoteArtifacts: [
+            TransformerRemoteArtifact(
+                path: "SiftTransformerClassifier.tokenizer.json",
+                sha256: nil,
+                byteCount: 1024
+            )
+        ],
+        downloadBytes: 176_160_768
+    )
+    return TransformerModelDownloadPlan(
+        manifest: manifest,
+        manifestURL: URL(string: "https://example.com/SiftTransformerClassifier.manifest.json")!,
+        artifacts: [
+            TransformerModelDownloadArtifact(
+                remoteURL: URL(string: "https://example.com/SiftTransformerClassifier.tokenizer.json")!,
+                relativePath: "SiftTransformerClassifier.tokenizer.json",
+                byteCount: 1024
+            )
+        ],
+        exactByteCount: 176_160_768,
+        estimatedByteCount: nil,
+        networkCondition: networkCondition
+    )
+}
+
 @MainActor
 @Test
 func lockedTransformerSelectionOpensPaywallInsteadOfSwitching() async throws {
@@ -101,6 +156,44 @@ func lockedTransformerSelectionOpensPaywallInsteadOfSwitching() async throws {
     model.selectModelVariant(.transformer)
 
     #expect(model.isShowingPaywall)
+    #expect(model.selectedModelVariant == .classic)
+}
+
+@MainActor
+@Test
+func unlockedTransformerDoesNotDownloadUntilUserSelectsIt() async throws {
+    let model = SiftAppModel(
+        premiumBackend: MockPremiumBackend(entitled: true, outcome: .cancelled),
+        transformerAvailabilityOverride: false,
+        transformerDownloader: MockTransformerDownloader(plan: mockTransformerDownloadPlan())
+    )
+    try await waitForPremiumRefresh(model)
+
+    #expect(model.premium.isUnlocked)
+    #expect(model.transformerDownloadPhase == .notDownloaded)
+    #expect(model.selectedModelVariant == .classic)
+}
+
+@MainActor
+@Test
+func unlockedTransformerSelectionOnMeteredNetworkWaitsForConfirmation() async throws {
+    let model = SiftAppModel(
+        premiumBackend: MockPremiumBackend(entitled: true, outcome: .cancelled),
+        transformerAvailabilityOverride: false,
+        transformerDownloader: MockTransformerDownloader(
+            plan: mockTransformerDownloadPlan(
+                networkCondition: TransformerNetworkCondition(isExpensive: true)
+            )
+        )
+    )
+    try await waitForPremiumRefresh(model)
+
+    model.selectModelVariant(.transformer)
+    try await waitForTransformerDownloadPhase(model, .waitingForTrafficConfirmation)
+
+    #expect(model.isShowingMeteredTransformerDownloadConfirmation)
+    #expect(model.pendingTransformerDownloadPlan?.displayByteCount == 176_160_768)
+    #expect(model.meteredTransformerDownloadMessage.contains("168") || model.meteredTransformerDownloadMessage.contains("176"))
     #expect(model.selectedModelVariant == .classic)
 }
 
@@ -150,6 +243,20 @@ private func waitForPremiumRefresh(_ model: SiftAppModel) async throws {
         }
         try await Task.sleep(nanoseconds: 10_000_000)
     }
+}
+
+@MainActor
+private func waitForTransformerDownloadPhase(
+    _ model: SiftAppModel,
+    _ phase: TransformerModelDownloadPhase
+) async throws {
+    for _ in 0..<100 {
+        if model.transformerDownloadPhase == phase {
+            return
+        }
+        try await Task.sleep(nanoseconds: 10_000_000)
+    }
+    Issue.record("Timed out waiting for transformer download phase \(phase)")
 }
 
 // MARK: - Submission history paging

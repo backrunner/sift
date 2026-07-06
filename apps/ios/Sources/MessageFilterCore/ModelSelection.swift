@@ -4,7 +4,7 @@ import Foundation
 ///
 /// - `classic`: Create ML text classifier plus the on-device personalization
 ///   adapter. Supports local fine-tuning.
-/// - `transformer`: SetFit-style sentence-transformer exported to Core ML.
+/// - `transformer`: multilingual transformer classifier exported to Core ML.
 ///   Trained offline for multilingual coverage; **not** fine-tunable on
 ///   device, so all personalization UI is hidden while it is active.
 public enum ModelVariant: String, CaseIterable, Codable, Sendable, Identifiable {

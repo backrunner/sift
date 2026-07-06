@@ -30,13 +30,12 @@ the `group.com.alkinum.sift` app group):
 - **经典模型 (classic)** — the Create ML text classifier above plus the
   on-device personalization adapter. Supports local fine-tuning from the
   "仅本地微调" sample queue.
-- **Transformer** — a frozen multilingual SetFit model exported by
-  `tools/transformer-trainer` (`SiftTransformerClassifier.mlpackage` +
-  `.vocab.txt` + `.manifest.json` in `GeneratedModels/`). It is **not**
-  fine-tunable on device; while selected, the app hides local fine-tuning UI
-  and only offers anonymous CloudKit contribution. The capsule shows the
-  variant as 未内置 when the artifacts are absent (they are optional in
-  `project.yml`, so debug builds work without them).
+- **Transformer** — a frozen multilingual mmBERT model exported by
+  `tools/transformer-trainer` and uploaded to the public model CDN. It is
+  downloaded into the shared App Group only after a Premium user explicitly
+  switches to the Transformer variant. It is **not** fine-tunable on device;
+  while selected, the app hides local fine-tuning UI and only offers anonymous
+  CloudKit contribution.
 
 The message-filter extension re-reads the shared selection (and custom rules)
 on every query, so switching models in the app takes effect in the system

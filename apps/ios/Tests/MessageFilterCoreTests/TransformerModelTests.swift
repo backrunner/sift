@@ -107,6 +107,62 @@ func vocabularyFileKeepsIdAlignmentAroundBlankLines() throws {
     #expect(Array(encoded.inputIDs.prefix(4)) == [2, 6, 4, 3])
 }
 
+// MARK: - BPETokenizer
+
+private func makeBPETokenizer(maxSequenceLength: Int = 8) throws -> BPETokenizer {
+    let json = """
+    {
+      "model": {
+        "type": "BPE",
+        "vocab": {
+          "<pad>": 0, "<eos>": 1, "<bos>": 2, "<unk>": 3,
+          "▁": 4,
+          "h": 5, "e": 6, "l": 7, "o": 8,
+          "w": 9, "r": 10, "d": 11,
+          "▁h": 12, "▁he": 13, "▁hel": 14, "▁hell": 15, "▁hello": 16,
+          "▁w": 17, "▁wo": 18, "▁wor": 19, "▁worl": 20, "▁world": 21
+        },
+        "merges": [
+          ["▁", "h"], ["▁h", "e"], ["▁he", "l"], ["▁hel", "l"], ["▁hell", "o"],
+          ["▁", "w"], ["▁w", "o"], ["▁wo", "r"], ["▁wor", "l"], ["▁worl", "d"]
+        ],
+        "byte_fallback": false,
+        "unk_token": "<unk>"
+      },
+      "post_processor": {
+        "special_tokens": {
+          "<bos>": { "ids": [2], "tokens": ["<bos>"] },
+          "<eos>": { "ids": [1], "tokens": ["<eos>"] }
+        }
+      }
+    }
+    """
+    let url = FileManager.default.temporaryDirectory
+        .appendingPathComponent("sift-bpe-\(UUID().uuidString).json")
+    try json.write(to: url, atomically: true, encoding: .utf8)
+    defer { try? FileManager.default.removeItem(at: url) }
+    return try BPETokenizer(
+        tokenizerJSONURL: url,
+        configuration: BPETokenizer.Configuration(maxSequenceLength: maxSequenceLength)
+    )
+}
+
+@Test
+func bpeTokenizerAppliesMetaspaceMergesAndSpecialTokens() throws {
+    let tokenizer = try makeBPETokenizer()
+    #expect(tokenizer.tokens("hello world") == ["▁hello", "▁world"])
+
+    let encoded = tokenizer.tokenizeText("hello world")
+    #expect(encoded.inputIDs == [2, 16, 21, 1, 0, 0, 0, 0])
+    #expect(encoded.attentionMask == [1, 1, 1, 1, 0, 0, 0, 0])
+}
+
+@Test
+func bpeTokenizerPreservesRepeatedSpacesAsMetaspaceTokens() throws {
+    let tokenizer = try makeBPETokenizer()
+    #expect(tokenizer.tokens("  hello") == ["▁", "▁hello"])
+}
+
 // MARK: - SharedRuleStore
 
 @Test
@@ -184,7 +240,88 @@ func transformerManifestDecodesTrainerOutput() throws {
 }
 
 @Test
+func transformerManifestDecodesMmbertTrainerOutput() throws {
+    let json = """
+    {
+      "version": "mmbert-0.1",
+      "trainedAt": "2026-07-05T08:00:00.000Z",
+      "algorithm": "supervised-sequence-classification",
+      "backbone": "jhu-clsp/mmBERT-small",
+      "languages": ["zh", "en", "ja"],
+      "labels": ["spam", "promotion", "verification"],
+      "maxSequenceLength": 96,
+      "doLowerCase": false,
+      "tokenizerKind": "bpe",
+      "tokenizerArtifact": "SiftTransformerClassifier.tokenizer.json",
+      "modelArtifact": "SiftTransformerClassifier.mlpackage",
+      "sha256": "abc",
+      "taxonomyHash": "def"
+    }
+    """
+    let manifest = try JSONDecoder().decode(TransformerModelManifest.self, from: Data(json.utf8))
+    #expect(manifest.version == "mmbert-0.1")
+    #expect(manifest.tokenizerKind == "bpe")
+    #expect(manifest.tokenizerArtifact == "SiftTransformerClassifier.tokenizer.json")
+    #expect(manifest.vocabularyArtifact == nil)
+}
+
+@Test
 func transformerLoaderReportsUnavailableWithoutBundledArtifacts() {
-    #expect(!TransformerClassifierLoader.isAvailable(bundles: [.main]))
+    #expect(!TransformerClassifierLoader.isAvailable(bundles: [.main], includeDownloaded: false))
+}
+
+@Test
+func transformerModelStoreValidatesInstalledDirectory() throws {
+    let directory = FileManager.default.temporaryDirectory
+        .appendingPathComponent("sift-transformer-store-\(UUID().uuidString)", isDirectory: true)
+    defer { try? FileManager.default.removeItem(at: directory) }
+    try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+
+    let vocabURL = directory.appendingPathComponent("SiftTransformerClassifier.vocab.txt")
+    try "[PAD]\n[UNK]\n[CLS]\n[SEP]\nhello\n".write(to: vocabURL, atomically: true, encoding: .utf8)
+
+    let modelURL = directory.appendingPathComponent("SiftTransformerClassifier.mlmodel")
+    try Data("fake-model".utf8).write(to: modelURL)
+
+    let manifest = TransformerModelManifest(
+        version: "remote-0.1",
+        trainedAt: "2026-07-07T08:00:00.000Z",
+        algorithm: "supervised-sequence-classification",
+        backbone: "jhu-clsp/mmBERT-small",
+        languages: ["zh", "en", "ja"],
+        labels: ["spam", "promotion"],
+        maxSequenceLength: 8,
+        doLowerCase: false,
+        vocabularyArtifact: vocabURL.lastPathComponent,
+        modelArtifact: modelURL.lastPathComponent,
+        sha256: try TransformerModelStore.fileSHA256(at: modelURL),
+        remoteArtifacts: [
+            TransformerRemoteArtifact(
+                path: vocabURL.lastPathComponent,
+                sha256: try TransformerModelStore.fileSHA256(at: vocabURL),
+                byteCount: Int64((try Data(contentsOf: vocabURL)).count)
+            ),
+            TransformerRemoteArtifact(
+                path: modelURL.lastPathComponent,
+                sha256: try TransformerModelStore.fileSHA256(at: modelURL),
+                byteCount: Int64((try Data(contentsOf: modelURL)).count)
+            )
+        ],
+        downloadBytes: 42
+    )
+    let manifestURL = TransformerModelStore.manifestURL(in: directory)
+    try JSONEncoder().encode(manifest).write(to: manifestURL)
+
+    let installed = try #require(TransformerModelStore.model(in: directory))
+    #expect(installed.manifest.version == "remote-0.1")
+    #expect(installed.tokenizerURL.lastPathComponent == vocabURL.lastPathComponent)
+    #expect(installed.modelURL.lastPathComponent == modelURL.lastPathComponent)
+}
+
+@Test
+func transformerModelStoreRejectsUnsafeArtifactPaths() {
+    #expect(TransformerModelStore.isSafeRelativePath("SiftTransformerClassifier.mlpackage/Data/model.mlmodel"))
+    #expect(!TransformerModelStore.isSafeRelativePath("../model.mlpackage"))
+    #expect(!TransformerModelStore.isSafeRelativePath("/tmp/model.mlpackage"))
 }
 #endif

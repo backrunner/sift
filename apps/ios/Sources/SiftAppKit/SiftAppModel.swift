@@ -88,7 +88,11 @@ public final class SiftAppModel {
     public var modelVersion: String = "corpus-0.1"
     public private(set) var selectedModelVariant: ModelVariant = .classic
     public private(set) var isSwitchingModelVariant: Bool = false
-    public let isTransformerModelAvailable: Bool
+    public private(set) var isTransformerModelAvailable: Bool
+    public private(set) var transformerDownloadPhase: TransformerModelDownloadPhase = .notDownloaded
+    public private(set) var transformerDownloadProgress: TransformerModelDownloadProgress?
+    public private(set) var pendingTransformerDownloadPlan: TransformerModelDownloadPlan?
+    public var isShowingMeteredTransformerDownloadConfirmation: Bool = false
     public var submissionDestination: SubmissionDestination = .local
     public var testBody: String = ""
     public var submissionText: String = ""
@@ -166,6 +170,12 @@ public final class SiftAppModel {
     private let personalizationTrainer = PersonalizationTrainer()
 
     @ObservationIgnored
+    private let transformerDownloader: (any TransformerModelDownloading)?
+
+    @ObservationIgnored
+    private var transformerDownloadTask: Task<Void, Never>?
+
+    @ObservationIgnored
     private let statisticsStore = FilterStatisticsStore()
 
     /// 注入口:测试用独立 UserDefaults suite 隔离贡献计数。
@@ -176,6 +186,7 @@ public final class SiftAppModel {
         remoteSampleClient: (any RemoteSampleSubmitting)? = nil,
         premiumBackend: (any PremiumPurchasing)? = nil,
         transformerAvailabilityOverride: Bool? = nil,
+        transformerDownloader: (any TransformerModelDownloading)? = TransformerModelDownloadClient.configured(),
         ledgerDefaults: UserDefaults? = nil
     ) {
         self.ledgerDefaults = ledgerDefaults
@@ -183,10 +194,12 @@ public final class SiftAppModel {
         self.remoteSampleClient = remoteSampleClient ?? CloudKitSampleClient(
             containerIdentifier: CloudKitSampleClient.configuredContainerIdentifier()
         )
+        self.transformerDownloader = transformerDownloader
         self.premium = PremiumStore(backend: premiumBackend)
 
         let transformerAvailable = transformerAvailabilityOverride ?? TransformerClassifierLoader.isAvailable()
         self.isTransformerModelAvailable = transformerAvailable
+        self.transformerDownloadPhase = transformerAvailable ? .ready : .notDownloaded
         let storedVariant = ModelSelectionStore.load()
         let variant: ModelVariant = (storedVariant == .transformer && !transformerAvailable) ? .classic : storedVariant
         self.selectedModelVariant = variant
@@ -217,7 +230,11 @@ public final class SiftAppModel {
 
         // 高级版被退款/撤销时,若正在使用 Transformer 则回退经典模型。
         premium.onEntitlementChange = { [weak self] unlocked in
-            guard let self, !unlocked, self.selectedModelVariant == .transformer else {
+            guard let self, !unlocked else {
+                return
+            }
+            self.cancelPendingTransformerDownload()
+            guard self.selectedModelVariant == .transformer else {
                 return
             }
             self.selectModelVariant(.classic)
@@ -242,7 +259,10 @@ public final class SiftAppModel {
     }
 
     public func isModelVariantAvailable(_ variant: ModelVariant) -> Bool {
-        variant != .transformer || isTransformerModelAvailable
+        variant != .transformer
+            || isTransformerModelAvailable
+            || transformerDownloader != nil
+            || !premium.isUnlocked
     }
 
     /// Manifest version for a variant, for display in the model picker.
@@ -251,7 +271,7 @@ public final class SiftAppModel {
         case .classic:
             return BundledModelManifest.load()?.version
         case .transformer:
-            return TransformerClassifierLoader.manifest()?.version
+            return TransformerClassifierLoader.manifest()?.version ?? pendingTransformerDownloadPlan?.manifest.version
         }
     }
 
@@ -259,16 +279,20 @@ public final class SiftAppModel {
         guard variant != selectedModelVariant, !isSwitchingModelVariant else {
             return
         }
-        guard isModelVariantAvailable(variant) else {
-            showToast(.info, String(localized: "Transformer 模型未包含在当前构建中"))
-            return
-        }
         if variant == .transformer, !premium.isUnlocked {
             // 高级版付费项:未解锁时打开购买引导,而不是直接切换。
             isShowingPaywall = true
             return
         }
+        if variant == .transformer, !isTransformerModelAvailable {
+            beginTransformerDownloadAndSwitch(allowMeteredNetwork: false)
+            return
+        }
 
+        switchToModelVariant(variant)
+    }
+
+    private func switchToModelVariant(_ variant: ModelVariant) {
         selectedModelVariant = variant
         ModelSelectionStore.save(variant)
         refreshModelMetadataDisplay()
@@ -302,6 +326,142 @@ public final class SiftAppModel {
             }
             showToast(.success, String(localized: "已切换至\(variant.title)"))
         }
+    }
+
+    public var isTransformerDownloadActive: Bool {
+        switch transformerDownloadPhase {
+        case .checking, .downloading, .installing:
+            return true
+        case .notDownloaded, .waitingForTrafficConfirmation, .ready, .failed:
+            return false
+        }
+    }
+
+    public var transformerDownloadProgressText: String? {
+        guard let progress = transformerDownloadProgress else {
+            return nil
+        }
+        if let fraction = progress.fractionCompleted {
+            return "\(Int((fraction * 100).rounded()))%"
+        }
+        return Self.formatByteCount(progress.receivedBytes)
+    }
+
+    public var transformerDownloadByteCountText: String? {
+        pendingTransformerDownloadPlan?.displayByteCount.map(Self.formatByteCount)
+    }
+
+    public var meteredTransformerDownloadMessage: String {
+        let size = transformerDownloadByteCountText ?? String(localized: "约 168 MB")
+        return String(
+            format: String(localized: "高级模型需要下载 %@ 数据。当前网络可能按流量计费或处于低数据模式，继续下载可能产生流量费用。"),
+            size
+        )
+    }
+
+    public func confirmMeteredTransformerDownload() {
+        isShowingMeteredTransformerDownloadConfirmation = false
+        guard let pendingTransformerDownloadPlan else {
+            beginTransformerDownloadAndSwitch(allowMeteredNetwork: true)
+            return
+        }
+        downloadPreparedTransformerPlan(pendingTransformerDownloadPlan)
+    }
+
+    public func cancelPendingTransformerDownload() {
+        transformerDownloadTask?.cancel()
+        transformerDownloadTask = nil
+        pendingTransformerDownloadPlan = nil
+        transformerDownloadProgress = nil
+        transformerDownloadPhase = isTransformerModelAvailable ? .ready : .notDownloaded
+        isShowingMeteredTransformerDownloadConfirmation = false
+    }
+
+    private func beginTransformerDownloadAndSwitch(allowMeteredNetwork: Bool) {
+        guard transformerDownloadTask == nil else {
+            return
+        }
+        guard let transformerDownloader else {
+            let message = TransformerModelDownloadError.missingRemoteManifestURL.localizedDescription
+            transformerDownloadPhase = .failed(message)
+            showToast(.error, message)
+            return
+        }
+
+        transformerDownloadPhase = .checking
+        transformerDownloadProgress = nil
+        transformerDownloadTask = Task { [weak self] in
+            guard let self else { return }
+            do {
+                let plan = try await transformerDownloader.prepareDownload()
+                guard !Task.isCancelled else { return }
+                pendingTransformerDownloadPlan = plan
+                if plan.networkCondition.requiresTrafficConfirmation && !allowMeteredNetwork {
+                    transformerDownloadPhase = .waitingForTrafficConfirmation
+                    isShowingMeteredTransformerDownloadConfirmation = true
+                    transformerDownloadTask = nil
+                    return
+                }
+                transformerDownloadTask = nil
+                downloadPreparedTransformerPlan(plan)
+            } catch {
+                guard !Task.isCancelled else { return }
+                handleTransformerDownloadFailure(error)
+            }
+        }
+    }
+
+    private func downloadPreparedTransformerPlan(_ plan: TransformerModelDownloadPlan) {
+        guard transformerDownloadTask == nil else {
+            return
+        }
+        guard let transformerDownloader else {
+            let message = TransformerModelDownloadError.missingRemoteManifestURL.localizedDescription
+            transformerDownloadPhase = .failed(message)
+            showToast(.error, message)
+            return
+        }
+
+        pendingTransformerDownloadPlan = plan
+        transformerDownloadPhase = .downloading
+        transformerDownloadTask = Task { [weak self] in
+            guard let self else { return }
+            let progressSink = TransformerDownloadProgressSink(model: self)
+            do {
+                try await transformerDownloader.download(plan) { progress in
+                    progressSink.update(progress)
+                }
+                guard !Task.isCancelled else { return }
+                await MainActor.run { [weak self] in
+                    guard let self else { return }
+                    transformerDownloadPhase = .installing
+                    isTransformerModelAvailable = TransformerClassifierLoader.isAvailable()
+                    transformerDownloadPhase = isTransformerModelAvailable ? .ready : .failed(String(localized: "高级模型安装失败"))
+                    transformerDownloadTask = nil
+                    if isTransformerModelAvailable {
+                        switchToModelVariant(.transformer)
+                    } else {
+                        showToast(.error, String(localized: "高级模型安装失败"))
+                    }
+                }
+            } catch {
+                guard !Task.isCancelled else { return }
+                await MainActor.run { [weak self] in
+                    self?.handleTransformerDownloadFailure(error)
+                }
+            }
+        }
+    }
+
+    private func handleTransformerDownloadFailure(_ error: Error) {
+        let message = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+        transformerDownloadPhase = .failed(message)
+        transformerDownloadTask = nil
+        showToast(.error, message)
+    }
+
+    fileprivate func updateTransformerDownloadProgress(_ progress: TransformerModelDownloadProgress) {
+        transformerDownloadProgress = progress
     }
 
     /// Builds the classifier stack for a variant, layering the persisted
@@ -908,6 +1068,13 @@ public final class SiftAppModel {
         return formatter.string(from: date)
     }
 
+    private static func formatByteCount(_ bytes: Int64) -> String {
+        let formatter = ByteCountFormatter()
+        formatter.allowedUnits = [.useMB, .useGB]
+        formatter.countStyle = .file
+        return formatter.string(fromByteCount: bytes)
+    }
+
     private static func configuredPrivacyPolicyURL() -> URL {
         let keys = ["SiftPrivacyPolicyURL", "SIFT_PRIVACY_POLICY_URL"]
         for key in keys {
@@ -1037,5 +1204,20 @@ public final class SiftAppModel {
 
     private func isValidRegex(_ pattern: String) -> Bool {
         (try? NSRegularExpression(pattern: pattern, options: [.caseInsensitive])) != nil
+    }
+}
+
+private final class TransformerDownloadProgressSink: @unchecked Sendable {
+    weak var model: SiftAppModel?
+
+    @MainActor
+    init(model: SiftAppModel) {
+        self.model = model
+    }
+
+    func update(_ progress: TransformerModelDownloadProgress) {
+        Task { @MainActor in
+            self.model?.updateTransformerDownloadProgress(progress)
+        }
     }
 }
