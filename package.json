@@ -15,6 +15,7 @@
     "format": "pnpm -r format",
     "export:training": "pnpm --filter @sift/cloudkit-tools export",
     "pipeline": "python3 tools/pipeline/sift_pipeline.py",
+    "upload:transformer-model": "python3 tools/transformer-trainer/upload_transformer_model.py",
     "dev:legal": "pnpm --filter @sift/legal-site dev",
     "build:legal": "pnpm --filter @sift/legal-site build",
     "check:legal": "pnpm --filter @sift/legal-site check"

@@ -1,9 +1,8 @@
 # Sift transformer trainer
 
 Trains the **frozen multilingual Transformer variant** of the Sift SMS
-classifier with [SetFit](https://github.com/huggingface/setfit) (contrastive
-sentence-transformer fine-tuning + logistic head) and exports one fused
-Core ML classifier.
+classifier with supervised mmBERT fine-tuning and exports one fused Core ML
+classifier.
 
 The exported model is intentionally **not fine-tunable on device** — the iOS
 app hides all local personalization UI while this variant is selected. The
@@ -15,28 +14,29 @@ variant.
 | file | purpose |
 | --- | --- |
 | `SiftTransformerClassifier.mlpackage` | fused body + head, Core ML classifier (`input_ids`/`attention_mask` int32 `[1, maxLength]` → label + probability dict) |
-| `SiftTransformerClassifier.vocab.txt` | WordPiece vocabulary consumed by the Swift `WordPieceTokenizer` |
-| `SiftTransformerClassifier.manifest.json` | metadata read by `TransformerClassifierLoader` (labels, max length, casing, version) |
+| `SiftTransformerClassifier.tokenizer.json` | Hugging Face BPE tokenizer consumed by the Swift `BPETokenizer` |
+| `SiftTransformerClassifier.manifest.json` | metadata read by `TransformerClassifierLoader` (labels, max length, casing, version, remote file list, download size) |
 
-Copy all three into `apps/ios/GeneratedModels/` (`--install-ios` does this) and
-regenerate the Xcode project; the app's model capsule then offers the
-Transformer variant.
+Do **not** ship these files inside the app. Upload the manifest, tokenizer,
+and every file inside the `.mlpackage` to the public model CDN with
+`upload_transformer_model.py`; the iOS app downloads them only when a Premium
+user explicitly switches to the Transformer variant.
 
 ## Backbone requirements
 
-The on-device tokenizer implements **WordPiece** only, so pick an
-mBERT/DistilmBERT-family backbone. The default is
-`sentence-transformers/distiluse-base-multilingual-cased-v2` (50+ languages,
-WordPiece, 512-dim embeddings). SentencePiece backbones (XLM-R/MiniLM-L12
-multilingual, e5, gte, …) are rejected at startup.
+The default backbone is `jhu-clsp/mmBERT-small` (ModernBERT architecture,
+metaspace BPE tokenizer). The iOS runtime now supports the legacy WordPiece
+artifact shape and the mmBERT BPE tokenizer JSON; new transformer exports use
+`tokenizerKind: "bpe"` in the manifest.
 
 Size levers for the message-filter extension's tight memory budget:
 
 - `--quantize int8` — linear weight quantization (default is fp16)
-- `--prune-vocab` — drop embedding rows for tokens never seen in the corpus
-  (keeps all single-character tokens as decomposition fallback)
-- `--truncate-layers N` — keep only the first N encoder layers *before*
-  training so the contrastive phase adapts the remaining stack
+- `--truncate-layers N` — keep only the first N encoder layers before training
+  for smaller spike builds
+
+The old SetFit trainer remains as `train_setfit.py` for comparison and
+rollback; the pipeline calls `train_mmbert.py`.
 
 ## Device support (Apple Silicon MPS / NVIDIA CUDA / AMD ROCm)
 
@@ -44,10 +44,10 @@ The trainer picks the fastest available device automatically and always
 exports on CPU (Core ML tracing requires it):
 
 ```bash
-uv run train_setfit.py --input ... --device auto   # default: cuda → mps → cpu
-uv run train_setfit.py --input ... --device mps    # force Apple Silicon GPU
-uv run train_setfit.py --input ... --device cuda   # force NVIDIA CUDA or AMD ROCm
-uv run train_setfit.py --input ... --device cpu
+uv run train_mmbert.py --input ... --device auto   # default: cuda → mps → cpu
+uv run train_mmbert.py --input ... --device mps    # force Apple Silicon GPU
+uv run train_mmbert.py --input ... --device cuda   # force NVIDIA CUDA or AMD ROCm
+uv run train_mmbert.py --input ... --device cpu
 ```
 
 - **Apple Silicon (M-series)**: works out of the box with the default PyPI
@@ -62,7 +62,7 @@ uv run train_setfit.py --input ... --device cpu
   ```bash
   uv sync
   uv pip install --upgrade torch --index-url https://download.pytorch.org/whl/rocm6.2
-  uv run train_setfit.py --input ... --device auto
+  uv run train_mmbert.py --input ... --device auto
   ```
 
   The startup line confirms what was picked, e.g.
@@ -102,14 +102,14 @@ mislabeled-submission case.
 
 ## Checkpoints & resuming
 
-Every training run saves a resumable checkpoint (full vocabulary, body +
-head) to `<out>/checkpoint` before export-time transforms like vocab pruning:
+Every training run saves a resumable checkpoint to `<out>/checkpoint` before
+Core ML export-time transforms:
 
 ```bash
-uv run train_setfit.py --input train.ndjson                  # writes <out>/checkpoint
-uv run train_setfit.py --input more.ndjson \
+uv run train_mmbert.py --input train.ndjson                  # writes <out>/checkpoint
+uv run train_mmbert.py --input more.ndjson \
   --resume-from ../../build/transformer-model/checkpoint     # continue training
-uv run train_setfit.py --input train.ndjson --save-checkpoint off
+uv run train_mmbert.py --input train.ndjson --save-checkpoint off
 ```
 
 ## Usage
@@ -119,15 +119,21 @@ cd tools/transformer-trainer
 uv sync
 
 # full run on the multilingual public corpus
-uv run train_setfit.py \
+uv run train_mmbert.py \
   --input ../../build/public-corpus.ndjson \
   --out ../../build/transformer-model \
-  --quantize int8 --prune-vocab --truncate-layers 3 \
-  --version setfit-0.1 \
-  --install-ios
+  --quantize int8 \
+  --version mmbert-0.1
 
-# fast smoke run (frozen body, logistic head only)
-uv run train_setfit.py --input ../../build/public-corpus.ndjson --head-only
+# validate and upload to the public model URL used by the iOS app
+python3 upload_transformer_model.py \
+  --model-dir ../../build/transformer-model \
+  --base-url https://sift.alkinum.io/models \
+  --dry-run
+
+# fast export smoke run
+uv run train_mmbert.py --input ../../build/public-corpus.ndjson \
+  --num-epochs 0 --max-rows 80 --max-length 8 --truncate-layers 1
 ```
 
 Input is the same framework-neutral `{"text": ..., "label": ...}` NDJSON the
