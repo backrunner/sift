@@ -112,8 +112,9 @@ public database of `iCloud.com.alkinum.sift` (configurable through the
 `SiftCloudKitContainerIdentifier` Info.plist key; the schema lives in
 `infra/cloudkit/schema.ckdb`). Contribution requires an iCloud session on the
 device.
-The privacy policy URL defaults to `https://sift.alkinum.io/privacy`, and the
-terms URL defaults to `https://sift.alkinum.io/tos`.
+The privacy policy URL defaults to the GitHub-hosted
+`docs/legal/PRIVACY_POLICY.md`, and the terms URL defaults to
+`docs/legal/TERMS_OF_SERVICE.md`.
 
 Remote sample contribution is gated by an in-app privacy notice and consent
 toggle. The main dashboard also keeps the privacy policy and terms links visible

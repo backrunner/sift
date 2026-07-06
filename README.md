@@ -1,11 +1,18 @@
 <div align="center">
 
-# Sift
+<img
+  src="docs/assets/sift-icon-rounded.png"
+  alt="Sift app icon"
+  width="128"
+/>
 
-**Privacy-first on-device SMS filtering for iOS**
+<h1>Sift</h1>
 
-On-device classification · Anonymous and revocable sample contribution ·
-First-class zh/en/ja support
+<p><strong>Privacy-first SMS filtering for iOS.</strong></p>
+<p>
+  On-device classification · Consent-gated sample contribution ·
+  First-class zh/en/ja taxonomy
+</p>
 
 [![Platform](https://img.shields.io/badge/platform-iOS%2018%2B-black?logo=apple)](apps/ios)
 [![Swift 6](https://img.shields.io/badge/Swift-6.0-F05138?logo=swift&logoColor=white)](apps/ios/Package.swift)
@@ -17,23 +24,26 @@ First-class zh/en/ja support
 
 ---
 
-Your SMS inbox should not be a junk drawer. Sift classifies messages into
-50 fine-grained categories on your iPhone, so message contents never need to
-leave the device. When users choose to help improve the model, they can submit
-an anonymized, sanitized sample and later review, export, or erase everything
-they contributed.
+Sift keeps your SMS inbox from becoming a junk drawer. It classifies messages
+into 50 fine-grained categories directly on the iPhone, so filtering does not
+send message contents to a server. If users choose to help improve future
+models, they can submit a sanitized sample, then review, export, or erase every
+remote contribution from inside the app.
 
-## Highlights
+> Status: pre-release. The app is not on the App Store yet, and the project does
+> not preserve backward compatibility while the product is still taking shape.
+
+## What Makes It Different
 
 | | |
 | --- | --- |
-| **Dual-model architecture** | A classic Create ML model with on-device personalization plus an on-demand Premium mmBERT transformer model. |
-| **First-class trilingual support** | The taxonomy and app UI fully support zh/en/ja; training data also covers es, pt, fr, de, ru, ko, id, vi, and th for core categories. |
-| **Two-track redaction** | Deterministic rules plus an optional on-device Core ML PII detector. The union is used, so rules remain the floor. |
-| **Anonymous, revocable contribution** | CloudKit public database samples contain no identity fields; receipt-based deletion, history deletion, GDPR erasure, and JSON export are supported. |
-| **Local statistics** | Daily filtering counts contain no message content and are backed up to the user's private iCloud database. |
-| **Automated training pipeline** | `pnpm pipeline -- all --install-ios` fetches data, curates it, audits language coverage, trains models, and emits HTML reports. |
-| **Isolated tests** | Swift, TypeScript, and Python tests avoid external services and isolate shared state. |
+| **Local-first filtering** | The IdentityLookup extension classifies messages on device. No network defer path is configured. |
+| **50-leaf taxonomy** | One source of truth powers zh/en/ja UI labels, model training, and system buckets. |
+| **Dual model path** | A classic Create ML model supports on-device personalization; an optional Premium transformer model is downloaded on demand. |
+| **PII-aware samples** | Deterministic redaction rules always run, and an optional Core ML PII detector can widen recall. |
+| **Revocable contribution** | CloudKit samples carry no identity fields; users can delete the latest sample, browse history, export JSON, or erase all submissions. |
+| **Private statistics** | Daily counts never include message content and back up only to the user's private iCloud database. |
+| **One-command training** | `pnpm pipeline -- all --install-ios` fetches, curates, audits, trains, installs, and reports. |
 
 ## Quick Start
 
@@ -42,7 +52,7 @@ git clone <repo> && cd sift
 pnpm install
 
 # iOS core: build, tests, and smoke tests
-cd apps/ios && swift test && swift run CoreSmokeTests
+cd apps/ios && swift build && swift test && swift run CoreSmokeTests
 
 # Open the Xcode project (requires XcodeGen)
 xcodegen generate && open Sift.xcodeproj
@@ -51,11 +61,18 @@ xcodegen generate && open Sift.xcodeproj
 pnpm pipeline -- all --skip fetch-remote --install-ios
 ```
 
+Useful day-to-day commands:
+
+```bash
+pnpm typecheck
+pnpm --filter @sift/taxonomy generate:swift
+pnpm export:training
+```
+
 ## Repository Layout
 
 ```text
 apps/ios                  SwiftUI app and IdentityLookup extension
-apps/legal-site           Static privacy policy and terms site
 packages/taxonomy         50-leaf multilingual taxonomy source of truth
 tools/apple-trainer       Create ML trainer and multilingual synthetic corpus
 tools/transformer-trainer mmBERT/Core ML trainer and data curation tools
@@ -63,20 +80,23 @@ tools/pii-trainer         Optional on-device PII redaction model trainer
 tools/cloudkit            CloudKit sample export tools
 tools/pipeline            One-command automated training orchestration
 infra/cloudkit            CloudKit container schema for cktool import
-docs                      Training, taxonomy, privacy, and legal documents
+docs                      Training, taxonomy, privacy, and GitHub-hosted legal documents
 ```
 
-Further reading:
-[Training Guide](docs/TRAINING.md) ·
-[Architecture Overview](agents/architecture.md) ·
-[Development Guide](AGENTS.md) ·
-[Taxonomy Guide](docs/TAXONOMY.md) ·
-[Privacy Notes](docs/PRIVACY.md)
+## Reading Map
+
+| Start here | When you need |
+| --- | --- |
+| [Architecture Overview](agents/architecture.md) | Module boundaries, model flow, CloudKit shape |
+| [Development Guide](AGENTS.md) | Hard project rules for agents and maintainers |
+| [Training Guide](docs/TRAINING.md) | Dataset curation, Create ML, transformer, and PII training |
+| [Taxonomy Guide](docs/TAXONOMY.md) | Label semantics and taxonomy edit workflow |
+| [Privacy Notes](docs/PRIVACY.md) | App Store privacy posture and CloudKit details |
 
 ## Privacy Commitments
 
-- Filtering always runs on device; the extension process does not use the
-  network.
+- Filtering always runs on device; the extension process does not use network
+  classification.
 - Contributions require explicit consent and a redaction preview. Payloads have
   no identity fields.
 - Statistics are numeric counts only and live in the user's private iCloud
@@ -87,7 +107,6 @@ Further reading:
 Full documents:
 [Privacy Policy](docs/legal/PRIVACY_POLICY.md) ·
 [Terms of Service](docs/legal/TERMS_OF_SERVICE.md)
-(public copies at `sift.alkinum.io/privacy` and `/tos`).
 
 ## License And Trademarks
 

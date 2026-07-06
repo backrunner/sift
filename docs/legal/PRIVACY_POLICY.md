@@ -8,9 +8,9 @@ features. Sift is designed to be **local-first**: SMS filtering, custom
 rules, statistics counting, and on-device personalization all run on your
 device by default.
 
-The public copy of this policy is served at
-`https://sift.alkinum.io/privacy`. If this document and the in-app summary
-ever differ, this document controls.
+The public copy of this policy is served from the open-source repository at
+`https://github.com/alkinum/sift/blob/main/docs/legal/PRIVACY_POLICY.md`. If
+this document and the in-app summary ever differ, this document controls.
 
 ## 1. Summary
 

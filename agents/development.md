@@ -18,7 +18,7 @@ Run the relevant checks before committing:
 | Corpus templates | Trainer smoke test plus `curate --audit-only --strict-audit` |
 | Curation or training scripts | `python3 -m py_compile` plus `python3 -m unittest discover -s tools/transformer-trainer/tests` |
 | TypeScript tooling | `pnpm typecheck && pnpm test` |
-| Legal or privacy behavior | Update `docs/PRIVACY.md`, `docs/legal/*`, and `apps/legal-site` together |
+| Legal or privacy behavior | Update `docs/PRIVACY.md` and `docs/legal/*` together |
 
 ## Testing Rules
 
