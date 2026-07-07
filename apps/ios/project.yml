@@ -9,6 +9,9 @@ settings:
   GENERATE_INFOPLIST_FILE: YES
   MARKETING_VERSION: "1.0"
   CURRENT_PROJECT_VERSION: "1"
+  SUPPORTED_PLATFORMS: "iphoneos iphonesimulator"
+  SUPPORTS_MACCATALYST: NO
+  SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD: NO
 targets:
   MessageFilterCore:
     type: framework
@@ -18,7 +21,11 @@ targets:
       - path: Privacy/MessageFilterCore/PrivacyInfo.xcprivacy
         buildPhase: resources
     settings:
+      CODE_SIGN_IDENTITY: Apple Development
+      CODE_SIGN_STYLE: Automatic
+      DEVELOPMENT_TEAM: PB8H83VL3Z
       PRODUCT_BUNDLE_IDENTIFIER: com.alkinum.sift.MessageFilterCore
+      PROVISIONING_PROFILE_SPECIFIER: ""
   SiftAppKit:
     type: framework
     platform: iOS
@@ -29,7 +36,11 @@ targets:
     dependencies:
       - target: MessageFilterCore
     settings:
+      CODE_SIGN_IDENTITY: Apple Development
+      CODE_SIGN_STYLE: Automatic
+      DEVELOPMENT_TEAM: PB8H83VL3Z
       PRODUCT_BUNDLE_IDENTIFIER: com.alkinum.sift.SiftAppKit
+      PROVISIONING_PROFILE_SPECIFIER: ""
   MessageFilterExtensionKit:
     type: framework
     platform: iOS
@@ -38,7 +49,11 @@ targets:
     dependencies:
       - target: MessageFilterCore
     settings:
+      CODE_SIGN_IDENTITY: Apple Development
+      CODE_SIGN_STYLE: Automatic
+      DEVELOPMENT_TEAM: PB8H83VL3Z
       PRODUCT_BUNDLE_IDENTIFIER: com.alkinum.sift.MessageFilterExtensionKit
+      PROVISIONING_PROFILE_SPECIFIER: ""
   SiftApp:
     type: application
     platform: iOS
