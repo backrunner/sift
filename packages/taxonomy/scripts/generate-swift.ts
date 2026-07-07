@@ -6,6 +6,7 @@ interface RawLeaf {
   readonly id: string;
   readonly title: string;
   readonly titles?: Readonly<Record<string, string>>;
+  readonly systemAction?: "transaction" | "promotion" | "junk";
 }
 
 interface RawGroup {
@@ -48,8 +49,10 @@ const groups = taxonomy.groups
   .map((group) => {
     const leaves = group.leaves
       .map(
-        (leaf) =>
-          `                .init(id: ${swiftString(leaf.id)}, titles: ${titlesDict(leaf)}, groupId: ${swiftString(group.id)}, groupTitles: ${titlesDict(group)}, systemAction: ${systemAction(group.systemAction)})`
+        (leaf) => {
+          const leafSystemAction = leaf.systemAction ?? group.systemAction;
+          return `                .init(id: ${swiftString(leaf.id)}, titles: ${titlesDict(leaf)}, groupId: ${swiftString(group.id)}, groupTitles: ${titlesDict(group)}, systemAction: ${systemAction(leafSystemAction)})`;
+        }
       )
       .join(",\n");
 

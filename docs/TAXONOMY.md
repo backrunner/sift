@@ -1,10 +1,11 @@
 # Sift SMS Taxonomy And Labeling Guide
 
-The taxonomy has 50 leaf labels across 9 groups. Each group determines the
+The taxonomy has 50 leaf labels across 9 groups. Each group sets the default
 system filter action (`systemAction`): `spam -> junk`, `promotion -> promotion`,
-and everything else -> `transaction` (the iOS IdentityLookup API exposes only
-those three buckets plus allow). Leaf granularity is for statistics and model
-training; it does not change the system-level filtering bucket.
+and ordinary service messages -> `transaction`. Individual leaves may override
+that default when the user-facing intent differs from the group, such as
+`carrier.promotion -> promotion`. Leaf granularity is used for statistics,
+model training, and iOS 16+ IdentityLookup sub-action mapping.
 
 ## Design Principles
 
@@ -26,6 +27,26 @@ training; it does not change the system-level filtering bucket.
 | `transaction.message` vs `transaction.other` | `transaction.message` is content-style platform messaging such as inbox messages, comments, and support replies. `transaction.other` is the status-style fallback. |
 | `government.notice` vs `government.policy` | `government.notice` is a personal case or service-progress notice. `government.policy` is a public policy announcement. |
 | `finance.bank` vs `government.social_security` | Loan applications, loan approvals, and mortgage notices are banking. Social insurance, medical insurance, benefit, certificate, and housing-fund contribution notices are `government.social_security`. |
+
+## iOS Message Filter Mapping
+
+The IdentityLookup extension returns the top-level action plus the closest
+iOS 16+ sub-action:
+
+| Sift labels | `ILMessageFilterAction` | `ILMessageFilterSubAction` |
+| --- | --- | --- |
+| `spam` | `junk` | `none` |
+| `promotion`, `carrier.promotion` | `promotion` | `promotionalOffers` |
+| future/unknown promotional leaves | `promotion` | `promotionalOthers` |
+| `finance.*` | `transaction` | `transactionalFinance` |
+| `transaction.order`, delivery and ticket leaves | `transaction` | `transactionalOrders` |
+| `transaction.points`, `transaction.member` | `transaction` | `transactionalRewards` |
+| work reminders, meetings, training, and transport leaves | `transaction` | `transactionalReminders` |
+| `life.medical` | `transaction` | `transactionalHealth` |
+| `life.weather` | `transaction` | `transactionalWeather` |
+| non-promotional `carrier.*` | `transaction` | `transactionalCarrier` |
+| `government.*` | `transaction` | `transactionalPublicServices` |
+| all other transactional leaves | `transaction` | `transactionalOthers` |
 
 ## Statistics Scope
 

@@ -145,7 +145,7 @@ public enum SiftTaxonomy {
                 .init(id: "carrier.call_reminder", titles: ["zh": "来电提醒", "en": "Missed Calls", "ja": "不在着信"], groupId: "carrier", groupTitles: ["zh": "运营商", "en": "Carrier", "ja": "通信キャリア"], systemAction: .transaction),
                 .init(id: "carrier.data_reminder", titles: ["zh": "流量提醒", "en": "Data & Balance", "ja": "データ残量"], groupId: "carrier", groupTitles: ["zh": "运营商", "en": "Carrier", "ja": "通信キャリア"], systemAction: .transaction),
                 .init(id: "carrier.service", titles: ["zh": "业务办理", "en": "Carrier Services", "ja": "契約手続き"], groupId: "carrier", groupTitles: ["zh": "运营商", "en": "Carrier", "ja": "通信キャリア"], systemAction: .transaction),
-                .init(id: "carrier.promotion", titles: ["zh": "推广", "en": "Carrier Offers", "ja": "キャリア特典"], groupId: "carrier", groupTitles: ["zh": "运营商", "en": "Carrier", "ja": "通信キャリア"], systemAction: .transaction),
+                .init(id: "carrier.promotion", titles: ["zh": "推广", "en": "Carrier Offers", "ja": "キャリア特典"], groupId: "carrier", groupTitles: ["zh": "运营商", "en": "Carrier", "ja": "通信キャリア"], systemAction: .promotion),
                 .init(id: "carrier.other", titles: ["zh": "其他", "en": "Other Carrier", "ja": "その他（キャリア）"], groupId: "carrier", groupTitles: ["zh": "运营商", "en": "Carrier", "ja": "通信キャリア"], systemAction: .transaction)
             ]
         ),

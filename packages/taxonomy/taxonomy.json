@@ -411,6 +411,7 @@
         {
           "id": "carrier.promotion",
           "title": "推广",
+          "systemAction": "promotion",
           "titles": {
             "zh": "推广",
             "en": "Carrier Offers",

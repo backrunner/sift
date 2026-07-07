@@ -3,7 +3,7 @@ import MessageFilterCore
 import MessageFilterExtensionKit
 
 @objc(MessageFilterExtension)
-final class MessageFilterExtension: ILMessageFilterExtension, ILMessageFilterQueryHandling {
+final class MessageFilterExtension: ILMessageFilterExtension, ILMessageFilterQueryHandling, ILMessageFilterCapabilitiesQueryHandling {
     /// Honors the model variant the user picked in the app; the selection and
     /// custom rules are shared through the app-group defaults. iOS may keep
     /// this process alive across queries, so the selection is re-checked per
@@ -35,6 +35,14 @@ final class MessageFilterExtension: ILMessageFilterExtension, ILMessageFilterQue
 
         let response = ILMessageFilterQueryResponse()
         response.action = MessageFilterActionMapper.filterAction(for: decision)
+        response.subAction = MessageFilterActionMapper.filterSubAction(for: decision)
+        completion(response)
+    }
+
+    func handle(_ capabilitiesQueryRequest: ILMessageFilterCapabilitiesQueryRequest, context: ILMessageFilterExtensionContext, completion: @escaping (ILMessageFilterCapabilitiesQueryResponse) -> Void) {
+        let response = ILMessageFilterCapabilitiesQueryResponse()
+        response.transactionalSubActions = MessageFilterActionMapper.filterTransactionalSubActions
+        response.promotionalSubActions = MessageFilterActionMapper.filterPromotionalSubActions
         completion(response)
     }
 

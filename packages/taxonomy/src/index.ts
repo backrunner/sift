@@ -25,6 +25,7 @@ export interface TaxonomyDocument {
 interface RawLeafLabel {
   readonly id: string;
   readonly title: string;
+  readonly systemAction?: Exclude<SystemAction, "none">;
 }
 
 interface RawLabelGroup {
@@ -49,7 +50,7 @@ const document: TaxonomyDocument = {
       ...leaf,
       groupId: group.id,
       groupTitle: group.title,
-      systemAction: group.systemAction
+      systemAction: leaf.systemAction ?? group.systemAction
     }))
   }))
 };
