@@ -269,7 +269,7 @@ public final class SiftAppModel {
     public func modelVersion(for variant: ModelVariant) -> String? {
         switch variant {
         case .classic:
-            return BundledModelManifest.load()?.version
+            return nil
         case .transformer:
             return TransformerClassifierLoader.manifest()?.version ?? pendingTransformerDownloadPlan?.manifest.version
         }
