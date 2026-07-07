@@ -111,8 +111,11 @@ private struct DashboardHero: View {
     @State private var isShowingModelPicker = false
     @State private var isShowingSettings = false
 
-    private var formattedModelVersion: String {
-        formatModelVersion(model.modelVersion)
+    private var displayedModelVersion: String? {
+        guard model.selectedModelVariant != .classic, !model.isTransformerDownloadActive else {
+            return nil
+        }
+        return formatModelVersion(model.modelVersion)
     }
 
     var body: some View {
@@ -139,9 +142,11 @@ private struct DashboardHero: View {
                     Text(modelSwitchTitle)
                         .font(.caption2.weight(.semibold))
                         .foregroundStyle(.white.opacity(0.85))
-                    Text(formattedModelVersion)
-                        .font(.caption2.weight(.bold).monospaced())
-                        .foregroundStyle(.white)
+                    if let displayedModelVersion {
+                        Text(displayedModelVersion)
+                            .font(.caption2.weight(.bold).monospaced())
+                            .foregroundStyle(.white)
+                    }
                     Image(systemName: "chevron.up.chevron.down")
                         .font(.system(size: 8, weight: .bold))
                         .foregroundStyle(.white.opacity(0.7))

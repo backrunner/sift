@@ -669,13 +669,17 @@ struct SettingsView: View {
 
             SettingsRowContent(
                 title: String(localized: "模型版本"),
-                subtitle: model.selectedModelVariant.title,
                 icon: model.selectedModelVariant.symbol,
                 tint: .siftMint
             ) {
-                Text(formatModelVersion(model.modelVersion))
-                    .font(.callout.weight(.semibold).monospacedDigit())
-                    .foregroundStyle(Color.siftMint)
+                VStack(alignment: .trailing, spacing: 2) {
+                    Text(formatModelVersion(model.modelVersion))
+                        .font(.callout.monospacedDigit())
+                        .foregroundStyle(.secondary)
+                    Text(model.selectedModelVariant.title)
+                        .font(.caption2.weight(.medium))
+                        .foregroundStyle(.tertiary)
+                }
             }
             .insetSurface(cornerRadius: 12)
         }
