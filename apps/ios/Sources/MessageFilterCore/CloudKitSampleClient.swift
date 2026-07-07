@@ -23,6 +23,8 @@ public struct RemoteSampleReceipt: Codable, Hashable, Sendable {
 /// Anything that can receive anonymous sanitized samples. Production uses
 /// CloudKit; tests inject an in-memory double.
 public protocol RemoteSampleSubmitting: Sendable {
+    func accountStatus() async -> RemoteSampleAccountStatus
+
     func submit(
         sanitizedText: String,
         labelID: String,
@@ -43,6 +45,21 @@ public protocol RemoteSampleSubmitting: Sendable {
     /// GDPR right-of-erasure support: deletes every sample the current user
     /// contributed. Returns the number of deleted records.
     func eraseAllSubmissions() async throws -> Int
+}
+
+public extension RemoteSampleSubmitting {
+    func accountStatus() async -> RemoteSampleAccountStatus {
+        .available
+    }
+}
+
+public enum RemoteSampleAccountStatus: Hashable, Sendable {
+    case checking
+    case available
+    case noAccount
+    case restricted
+    case unknown
+    case unavailable
 }
 
 /// A user-owned submission as returned by the access/erasure APIs.
@@ -122,13 +139,26 @@ public struct CloudKitSampleClient: RemoteSampleSubmitting {
         return defaultContainerIdentifier
     }
 
+    public func accountStatus() async -> RemoteSampleAccountStatus {
+        #if canImport(CloudKit) && os(iOS) && !targetEnvironment(simulator)
+        let container = CKContainer(identifier: containerIdentifier)
+        do {
+            return Self.accountStatus(from: try await container.accountStatus())
+        } catch {
+            return .unknown
+        }
+        #else
+        return .unavailable
+        #endif
+    }
+
     public func submit(
         sanitizedText: String,
         labelID: String,
         modelVersion: String?,
         assessment: LocalAssessment?
     ) async throws -> RemoteSampleReceipt {
-        #if canImport(CloudKit)
+        #if canImport(CloudKit) && os(iOS) && !targetEnvironment(simulator)
         let container = CKContainer(identifier: containerIdentifier)
         try await ensureWritableAccount(container: container)
 
@@ -170,7 +200,7 @@ public struct CloudKitSampleClient: RemoteSampleSubmitting {
     }
 
     public func delete(receiptToken: String) async throws -> Bool {
-        #if canImport(CloudKit)
+        #if canImport(CloudKit) && os(iOS) && !targetEnvironment(simulator)
         let container = CKContainer(identifier: containerIdentifier)
         do {
             _ = try await container.publicCloudDatabase.deleteRecord(withID: CKRecord.ID(recordName: receiptToken))
@@ -184,7 +214,7 @@ public struct CloudKitSampleClient: RemoteSampleSubmitting {
     }
 
     public func fetchMySubmissions() async throws -> [RemoteSubmissionSummary] {
-        #if canImport(CloudKit)
+        #if canImport(CloudKit) && os(iOS) && !targetEnvironment(simulator)
         let container = CKContainer(identifier: containerIdentifier)
         var summaries: [RemoteSubmissionSummary] = []
         for record in try await fetchMyRecords(container: container) {
@@ -197,7 +227,7 @@ public struct CloudKitSampleClient: RemoteSampleSubmitting {
     }
 
     public func fetchMySubmissions(before createdAtMillis: Int64?, limit: Int) async throws -> [RemoteSubmissionSummary] {
-        #if canImport(CloudKit)
+        #if canImport(CloudKit) && os(iOS) && !targetEnvironment(simulator)
         let container = CKContainer(identifier: containerIdentifier)
         try await ensureWritableAccount(container: container)
         let userRecordID = try await container.userRecordID()
@@ -241,7 +271,7 @@ public struct CloudKitSampleClient: RemoteSampleSubmitting {
     #endif
 
     public func eraseAllSubmissions() async throws -> Int {
-        #if canImport(CloudKit)
+        #if canImport(CloudKit) && os(iOS) && !targetEnvironment(simulator)
         let container = CKContainer(identifier: containerIdentifier)
         let recordIDs = try await fetchMyRecords(container: container).map(\.recordID)
         guard !recordIDs.isEmpty else {
@@ -294,17 +324,30 @@ public struct CloudKitSampleClient: RemoteSampleSubmitting {
 
     private func ensureWritableAccount(container: CKContainer) async throws {
         let status = try await container.accountStatus()
-        switch status {
+        switch Self.accountStatus(from: status) {
         case .available:
             return
         case .noAccount:
             throw RemoteSampleClientError.noAccount
         case .restricted:
             throw RemoteSampleClientError.accountRestricted
+        case .unknown, .checking, .unavailable:
+            throw RemoteSampleClientError.accountUnknown
+        }
+    }
+
+    private static func accountStatus(from status: CKAccountStatus) -> RemoteSampleAccountStatus {
+        switch status {
+        case .available:
+            return .available
+        case .noAccount:
+            return .noAccount
+        case .restricted:
+            return .restricted
         case .couldNotDetermine, .temporarilyUnavailable:
-            throw RemoteSampleClientError.accountUnknown
+            return .unknown
         @unknown default:
-            throw RemoteSampleClientError.accountUnknown
+            return .unknown
         }
     }
     #endif

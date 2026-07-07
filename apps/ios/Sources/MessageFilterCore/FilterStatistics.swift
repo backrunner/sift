@@ -173,7 +173,7 @@ public struct CloudKitStatsSync: Sendable {
     /// local counters are ahead. Returns the number of pushed days.
     @discardableResult
     public func sync() async -> Int {
-        #if canImport(CloudKit)
+        #if canImport(CloudKit) && os(iOS) && !targetEnvironment(simulator)
         let container = CKContainer(identifier: containerIdentifier)
         guard (try? await container.accountStatus()) == .available else {
             return 0
@@ -209,7 +209,7 @@ public struct CloudKitStatsSync: Sendable {
     /// Returns the number of deleted records.
     @discardableResult
     public func eraseBackup() async throws -> Int {
-        #if canImport(CloudKit)
+        #if canImport(CloudKit) && os(iOS) && !targetEnvironment(simulator)
         let container = CKContainer(identifier: containerIdentifier)
         let database = container.privateCloudDatabase
         var deleted = 0

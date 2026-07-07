@@ -147,6 +147,10 @@ public final class SiftAppModel {
     public private(set) var submissionHistory: [RemoteSubmissionSummary] = []
     public private(set) var isLoadingHistory: Bool = false
     public private(set) var historyFullyLoaded: Bool = false
+    public private(set) var submissionHistoryErrorMessage: String?
+    public private(set) var remoteAccountStatus: RemoteSampleAccountStatus = .checking
+    public private(set) var isCheckingRemoteAccountStatus: Bool = false
+    public var remoteAccountAlertMessage: String?
 
     /// 高级版(IAP)状态与购买流程。
     public let premium: PremiumStore
@@ -222,7 +226,7 @@ public final class SiftAppModel {
         // 统计云备份是 best-effort:失败静默,永不打扰用户。仅在真机 App
         // 环境执行——单测/命令行环境没有 CloudKit entitlement,构造
         // CKContainer 会直接抛 ObjC 异常。
-        #if os(iOS)
+        #if os(iOS) && !targetEnvironment(simulator)
         Task.detached(priority: .utility) { [containerIdentifier = CloudKitSampleClient.configuredContainerIdentifier()] in
             await CloudKitStatsSync(containerIdentifier: containerIdentifier).sync()
         }
@@ -239,6 +243,12 @@ public final class SiftAppModel {
             }
             self.selectModelVariant(.classic)
             self.showToast(.info, String(localized: "高级版授权已失效，已切换回经典模型"))
+        }
+
+        if remoteSampleClient == nil {
+            refreshRemoteAccountStatus()
+        } else {
+            remoteAccountStatus = .available
         }
     }
 
@@ -349,6 +359,48 @@ public final class SiftAppModel {
 
     public var transformerDownloadByteCountText: String? {
         pendingTransformerDownloadPlan?.displayByteCount.map(Self.formatByteCount)
+    }
+
+    public var canUseRemoteSubmission: Bool {
+        remoteAccountStatus == .available
+    }
+
+    public var remoteAccountUnavailableMessage: String {
+        switch remoteAccountStatus {
+        case .available:
+            return ""
+        case .checking, .unknown:
+            return String(localized: "暂时无法确认 iCloud 状态，请稍后重试")
+        case .noAccount:
+            return String(localized: "请先在系统设置中登录 iCloud，再匿名共享样本")
+        case .restricted:
+            return String(localized: "此设备的 iCloud 账户受限，无法提交样本")
+        case .unavailable:
+            return String(localized: "iCloud 服务暂不可用，请稍后重试")
+        }
+    }
+
+    public func refreshRemoteAccountStatus() {
+        guard !isCheckingRemoteAccountStatus else {
+            return
+        }
+        isCheckingRemoteAccountStatus = true
+        if remoteAccountStatus != .available {
+            remoteAccountStatus = .checking
+        }
+        Task {
+            let status = await remoteSampleClient.accountStatus()
+            remoteAccountStatus = status
+            isCheckingRemoteAccountStatus = false
+        }
+    }
+
+    public func showRemoteAccountRequiredAlert() {
+        remoteAccountAlertMessage = remoteAccountUnavailableMessage
+    }
+
+    public func dismissRemoteAccountAlert() {
+        remoteAccountAlertMessage = nil
     }
 
     public var meteredTransformerDownloadMessage: String {
@@ -537,6 +589,9 @@ public final class SiftAppModel {
         if submissionDestination == .remote && !hasAcceptedRemoteSamplePrivacy {
             return false
         }
+        if submissionDestination == .remote && !canUseRemoteSubmission {
+            return false
+        }
         return true
     }
 
@@ -678,6 +733,10 @@ public final class SiftAppModel {
                 }
             }
         case .remote:
+            guard canUseRemoteSubmission else {
+                showRemoteAccountRequiredAlert()
+                return
+            }
             guard hasAcceptedRemoteSamplePrivacy else {
                 showSubmissionFeedback(.error, String(localized: "请先阅读并同意匿名提交隐私说明"))
                 return
@@ -729,6 +788,10 @@ public final class SiftAppModel {
         guard let receiptToken = lastReceiptToken else {
             return
         }
+        guard canUseRemoteSubmission else {
+            showRemoteAccountRequiredAlert()
+            return
+        }
 
         Task {
             do {
@@ -757,9 +820,13 @@ public final class SiftAppModel {
         }
     }
 
-    /// GDPR 擦除权:删除当前用户在云端的全部提交样本与统计备份。
+    /// 删除当前用户在云端的全部提交样本与统计备份。
     public func eraseAllRemoteData() {
         guard !isErasingRemoteData else {
+            return
+        }
+        guard canUseRemoteSubmission else {
+            showRemoteAccountRequiredAlert()
             return
         }
         isErasingRemoteData = true
@@ -793,6 +860,7 @@ public final class SiftAppModel {
     /// 重置提交历史(下次进入列表重新从第一页加载)。
     public func resetSubmissionHistory() {
         submissionHistory = []
+        submissionHistoryErrorMessage = nil
         historyFullyLoaded = false
     }
 
@@ -800,6 +868,12 @@ public final class SiftAppModel {
     /// `historyMaxItems` 条。
     public func loadMoreSubmissionHistory() {
         guard !isLoadingHistory, !historyFullyLoaded else {
+            return
+        }
+        guard canUseRemoteSubmission else {
+            submissionHistory = []
+            submissionHistoryErrorMessage = remoteAccountUnavailableMessage
+            historyFullyLoaded = true
             return
         }
         isLoadingHistory = true
@@ -813,6 +887,7 @@ public final class SiftAppModel {
                 )
                 let known = Set(submissionHistory.map(\.recordName))
                 submissionHistory.append(contentsOf: page.filter { !known.contains($0.recordName) })
+                submissionHistoryErrorMessage = nil
                 if submissionHistory.count >= Self.historyMaxItems {
                     submissionHistory = Array(submissionHistory.prefix(Self.historyMaxItems))
                     historyFullyLoaded = true
@@ -824,13 +899,22 @@ public final class SiftAppModel {
                     submittedSampleCount = submissionHistory.count
                 }
             } catch {
-                showToast(.error, remoteDeletionErrorMessage(for: error))
+                let message = remoteDeletionErrorMessage(for: error)
+                submissionHistoryErrorMessage = message
+                if submissionHistory.isEmpty {
+                    historyFullyLoaded = true
+                }
+                showToast(.error, message)
             }
         }
     }
 
     /// 单条抹除:从云端删除指定提交并同步列表/计数/回执。
     public func deleteSubmission(_ summary: RemoteSubmissionSummary) {
+        guard canUseRemoteSubmission else {
+            showRemoteAccountRequiredAlert()
+            return
+        }
         Task {
             do {
                 let deleted = try await remoteSampleClient.delete(receiptToken: summary.recordName)
@@ -851,8 +935,12 @@ public final class SiftAppModel {
         }
     }
 
-    /// GDPR 访问权:把当前用户的全部云端提交导出为 JSON 文本。
+    /// 把当前用户的全部云端提交导出为 JSON 文本。
     public func exportMySubmissionsJSON() async -> String? {
+        guard canUseRemoteSubmission else {
+            showRemoteAccountRequiredAlert()
+            return nil
+        }
         do {
             let submissions = try await remoteSampleClient.fetchMySubmissions()
             guard !submissions.isEmpty else {

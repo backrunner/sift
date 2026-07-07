@@ -358,6 +358,22 @@
         }
       }
     },
+    "会通过 iCloud 共享脱敏后的样本文本、分类、模型版本和粗粒度语言地区（如 zh-CN）；不发送发送方、账号或设备标识。你可以用回执删除最近一次远程样本。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Shares the sanitized sample text, category, model version, and a coarse language/region tag (e.g. zh-CN) via iCloud. No sender, account, or device identifiers are sent. A receipt lets you delete your latest remote sample."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iCloud経由でマスキング済みサンプル本文・カテゴリ・モデルバージョン・大まかな言語地域タグ（例: ja-JP）を共有します。送信者・アカウント・端末の識別子は送信しません。レシートで直近のリモート提出を削除できます。"
+          }
+        }
+      }
+    },
     "使用计费网络下载高级模型？" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1497,6 +1513,22 @@
         }
       }
     },
+    "抹除会删除云端所有由本 Apple ID 提交的匿名样本与统计备份。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Erasure deletes every anonymous sample and statistics backup submitted by this Apple ID."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "消去すると、このApple IDから提出されたすべての匿名サンプルと統計バックアップが削除されます。"
+          }
+        }
+      }
+    },
     "抹除全部云端数据" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -2075,6 +2107,22 @@
         }
       }
     },
+    "模型版本" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Model Version"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "モデルバージョン"
+          }
+        }
+      }
+    },
     "样本过长（%lld/%lld 字符），请拆分或截取关键内容" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -2309,6 +2357,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "この端末のiCloudアカウントは制限されているため、サンプルを%@できません"
+          }
+        }
+      }
+    },
+    "此设备的 iCloud 账户受限，无法提交样本" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This device's iCloud account is restricted; can't submit samples"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "この端末のiCloudアカウントは制限されているため、サンプルを提出できません"
           }
         }
       }
@@ -2598,6 +2662,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "ネットワークに接続できません。確認して再度お試しください"
+          }
+        }
+      }
+    },
+    "无法加载提交记录" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unable to Load Submissions"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "提出記録を読み込めません"
           }
         }
       }
