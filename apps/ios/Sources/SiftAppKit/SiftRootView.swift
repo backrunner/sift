@@ -29,6 +29,13 @@ public struct SiftRootView: View {
         .overlay(alignment: .top) {
             ToastOverlay(toast: $model.currentToast)
         }
+        .alert("iCloud", isPresented: remoteAccountAlertBinding) {
+            Button(String(localized: "关闭"), role: .cancel) {
+                model.dismissRemoteAccountAlert()
+            }
+        } message: {
+            Text(model.remoteAccountAlertMessage ?? "")
+        }
     }
 
     @ViewBuilder
@@ -42,7 +49,6 @@ public struct SiftRootView: View {
             TestSamplePanel(model: model)
             SubmitSamplePanel(model: model)
             RulesPanel(model: model)
-            LegalLinksPanel(model: model)
         }
         .padding(.horizontal, 16)
         .padding(.top, safeAreaTop + 14)
@@ -58,6 +64,13 @@ public struct SiftRootView: View {
         #else
         0
         #endif
+    }
+
+    private var remoteAccountAlertBinding: Binding<Bool> {
+        Binding(
+            get: { model.remoteAccountAlertMessage != nil },
+            set: { if !$0 { model.dismissRemoteAccountAlert() } }
+        )
     }
 }
 
@@ -648,7 +661,12 @@ private struct SubmitSamplePanel: View {
             }
 
             if model.supportsLocalPersonalization {
-                SubmissionModeSelector(selection: $model.submissionDestination)
+                SubmissionModeSelector(
+                    selection: $model.submissionDestination,
+                    isRemoteEnabled: model.canUseRemoteSubmission
+                ) {
+                    model.showRemoteAccountRequiredAlert()
+                }
                     .onChange(of: model.submissionDestination) { _, _ in
                         model.sampleSubmissionFeedback = nil
                     }
@@ -660,7 +678,8 @@ private struct SubmitSamplePanel: View {
                 RemoteSubmissionPrivacyCard(
                     isAccepted: $model.hasAcceptedRemoteSamplePrivacy,
                     privacyPolicyURL: model.privacyPolicyURL,
-                    termsOfServiceURL: model.termsOfServiceURL
+                    termsOfServiceURL: model.termsOfServiceURL,
+                    isEnabled: model.canUseRemoteSubmission
                 ) { url in
                     openURL(url)
                 }
@@ -694,15 +713,21 @@ private struct SubmitSamplePanel: View {
 
             CategoryMenu(selectedLabelID: $model.selectedLabelID)
 
+            let isRemoteSubmissionBlocked = model.submissionDestination == .remote && !model.canUseRemoteSubmission
             ActionButton(
                 title: model.submissionDestination == .local ? String(localized: "加入本地微调队列") : String(localized: "匿名提交脱敏样本"),
                 icon: "checkmark.shield",
                 style: .primary,
-                isEnabled: model.canSubmitSample && !model.isSubmittingSample,
+                isEnabled: (model.canSubmitSample || isRemoteSubmissionBlocked) && !model.isSubmittingSample,
                 isLoading: model.isSubmittingSample
             ) {
-                model.submitSample()
+                if isRemoteSubmissionBlocked {
+                    model.showRemoteAccountRequiredAlert()
+                } else {
+                    model.submitSample()
+                }
             }
+            .opacity(isRemoteSubmissionBlocked ? 0.52 : 1)
 
             if let feedback = model.sampleSubmissionFeedback {
                 SubmissionFeedbackStrip(feedback: feedback)
@@ -722,10 +747,16 @@ private struct SubmitSamplePanel: View {
                     ActionButton(
                         title: String(localized: "删除远程样本"),
                         icon: "trash",
-                        style: .danger
+                        style: .danger,
+                        isEnabled: !model.isSubmittingSample
                     ) {
-                        model.deleteLastRemoteSample()
+                        if model.canUseRemoteSubmission {
+                            model.deleteLastRemoteSample()
+                        } else {
+                            model.showRemoteAccountRequiredAlert()
+                        }
                     }
+                    .opacity(model.canUseRemoteSubmission ? 1 : 0.52)
                 }
                 .padding(12)
                 .insetSurface()
@@ -733,6 +764,7 @@ private struct SubmitSamplePanel: View {
         }
         .padding(18)
         .cardSurface()
+        .onAppear { model.refreshRemoteAccountStatus() }
         .animation(.snappy(duration: 0.22), value: model.sampleSubmissionFeedback?.id)
         .animation(.snappy(duration: 0.22), value: model.submissionDestination)
         .animation(.snappy(duration: 0.22), value: model.selectedModelVariant)
@@ -765,45 +797,11 @@ private struct TransformerSubmissionNotice: View {
     }
 }
 
-private struct LegalLinksPanel: View {
-    let model: SiftAppModel
-    @Environment(\.openURL) private var openURL
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            SectionHeader(
-                title: String(localized: "隐私与条款"),
-                subtitle: String(localized: "查看匿名贡献、数据保留和服务范围。"),
-                icon: "doc.text.magnifyingglass"
-            )
-
-            HStack(spacing: 10) {
-                ActionButton(
-                    title: String(localized: "隐私说明"),
-                    icon: "hand.raised.fill",
-                    style: .secondary
-                ) {
-                    openURL(model.privacyPolicyURL)
-                }
-
-                ActionButton(
-                    title: String(localized: "服务条款"),
-                    icon: "checkmark.seal",
-                    style: .neutral
-                ) {
-                    openURL(model.termsOfServiceURL)
-                }
-            }
-        }
-        .padding(18)
-        .cardSurface()
-    }
-}
-
 private struct RemoteSubmissionPrivacyCard: View {
     @Binding var isAccepted: Bool
     let privacyPolicyURL: URL
     let termsOfServiceURL: URL
+    let isEnabled: Bool
     let openPrivacyPolicy: (URL) -> Void
 
     var body: some View {
@@ -817,7 +815,7 @@ private struct RemoteSubmissionPrivacyCard: View {
                     Text(String(localized: "匿名贡献隐私说明"))
                         .font(.footnote.weight(.bold))
                         .foregroundStyle(.primary)
-                    Text(String(localized: "会通过 iCloud 共享脱敏后的样本文本、分类、模型版本和粗粒度语言地区（如 zh-CN）；不发送发送方、账号或设备标识。需设备已登录 iCloud，你可以用回执删除最近一次远程样本。"))
+                    Text(String(localized: "会通过 iCloud 共享脱敏后的样本文本、分类、模型版本和粗粒度语言地区（如 zh-CN）；不发送发送方、账号或设备标识。你可以用回执删除最近一次远程样本。"))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
@@ -828,6 +826,8 @@ private struct RemoteSubmissionPrivacyCard: View {
                 .font(.footnote.weight(.semibold))
                 .toggleStyle(.switch)
                 .tint(.siftMint)
+                .disabled(!isEnabled)
+                .opacity(isEnabled ? 1 : 0.5)
 
             HStack(spacing: 12) {
                 Button {
@@ -857,6 +857,8 @@ private struct RemoteSubmissionPrivacyCard: View {
 
 private struct SubmissionModeSelector: View {
     @Binding var selection: SubmissionDestination
+    let isRemoteEnabled: Bool
+    let onRemoteUnavailable: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -878,9 +880,14 @@ private struct SubmissionModeSelector: View {
                     title: String(localized: "匿名提交"),
                     subtitle: String(localized: "发送脱敏文本"),
                     icon: "icloud.and.arrow.up",
-                    isSelected: selection == .remote
+                    isSelected: selection == .remote,
+                    isEnabled: isRemoteEnabled
                 ) {
-                    selection = .remote
+                    if isRemoteEnabled {
+                        selection = .remote
+                    } else {
+                        onRemoteUnavailable()
+                    }
                 }
             }
         }
@@ -894,6 +901,7 @@ private struct SubmissionModeChip: View {
     let subtitle: String
     let icon: String
     let isSelected: Bool
+    var isEnabled: Bool = true
     let action: () -> Void
 
     var body: some View {
@@ -929,6 +937,7 @@ private struct SubmissionModeChip: View {
             .foregroundStyle(isSelected ? Color.primary : Color.primary.opacity(0.9))
             .pillSurface(cornerRadius: 14, isSelected: isSelected)
             .contentShape(Rectangle())
+            .opacity(isEnabled ? 1 : 0.5)
         }
         .buttonStyle(.plain)
     }

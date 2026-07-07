@@ -12,7 +12,7 @@ struct SubmissionHistoryView: View {
             if model.submissionHistory.isEmpty && model.isLoadingHistory {
                 ProgressView(String(localized: "正在加载提交记录…"))
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else if model.submissionHistory.isEmpty && model.historyFullyLoaded {
+            } else if model.submissionHistory.isEmpty && (model.historyFullyLoaded || model.submissionHistoryErrorMessage != nil) {
                 emptyState
             } else {
                 historyList
@@ -22,6 +22,7 @@ struct SubmissionHistoryView: View {
         .navigationTitle(String(localized: "我的提交"))
         .toolbarTitleDisplayMode(.inline)
         .onAppear {
+            model.refreshRemoteAccountStatus()
             if model.submissionHistory.isEmpty {
                 model.loadMoreSubmissionHistory()
             }
@@ -99,27 +100,42 @@ struct SubmissionHistoryView: View {
 
     private var emptyState: some View {
         VStack {
-            HStack(alignment: .top, spacing: 12) {
-                Image(systemName: "tray")
-                    .font(.headline.weight(.bold))
-                    .foregroundStyle(Color.siftMint)
-                    .frame(width: 32, height: 32)
-                    .background(Color.siftMint.opacity(0.12), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+            Spacer(minLength: 24)
 
-                VStack(alignment: .leading, spacing: 5) {
-                    Text(String(localized: "还没有提交过样本"))
-                        .font(.callout.weight(.semibold))
+            VStack(spacing: 14) {
+                ZStack {
+                    Circle()
+                        .fill(Color.siftMint.opacity(0.10))
+                        .frame(width: 74, height: 74)
+                    Image(systemName: model.submissionHistoryErrorMessage == nil ? "tray" : "icloud.slash")
+                        .font(.system(size: 28, weight: .semibold))
+                        .foregroundStyle(Color.siftMint)
+                }
+
+                VStack(spacing: 6) {
+                    Text(model.submissionHistoryErrorMessage == nil ? String(localized: "还没有提交过样本") : String(localized: "无法加载提交记录"))
+                        .font(.headline.weight(.semibold))
                         .foregroundStyle(.primary)
-                    Text(String(localized: "在首页「提交样本」里匿名贡献第一条脱敏样本吧。"))
+                    Text(model.submissionHistoryErrorMessage ?? String(localized: "在首页「提交样本」里匿名贡献第一条脱敏样本吧。"))
                         .font(.caption)
                         .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                if model.submissionHistoryErrorMessage != nil {
+                    ActionButton(title: String(localized: "重试"), icon: "arrow.clockwise", style: .secondary) {
+                        model.resetSubmissionHistory()
+                        model.refreshRemoteAccountStatus()
+                        model.loadMoreSubmissionHistory()
+                    }
+                    .frame(maxWidth: 180)
                 }
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(16)
+            .frame(maxWidth: .infinity)
+            .padding(22)
             .cardSurface()
             .padding(.horizontal, 16)
-            .padding(.top, 16)
 
             Spacer(minLength: 0)
         }

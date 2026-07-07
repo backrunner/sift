@@ -37,6 +37,7 @@ struct StatisticsPanel: View {
                         .fixedSize(horizontal: false, vertical: true)
                 }
                 .padding(12)
+                .frame(maxWidth: .infinity, alignment: .leading)
                 .insetSurface(cornerRadius: 12)
             }
         }
@@ -53,6 +54,62 @@ struct StatisticsPanel: View {
 
     private static func dayLabel(_ day: String) -> String {
         String(day.suffix(5)).replacingOccurrences(of: "-", with: "/")
+    }
+}
+
+private struct SettingsRowContent<Trailing: View>: View {
+    let title: String
+    var subtitle: String?
+    let icon: String
+    var tint: Color = .siftMint
+    var isEnabled: Bool = true
+    @ViewBuilder var trailing: Trailing
+
+    var body: some View {
+        HStack(alignment: .center, spacing: 12) {
+            Image(systemName: icon)
+                .font(.callout.weight(.semibold))
+                .foregroundStyle(tint)
+                .frame(width: 32, height: 32)
+                .background(tint.opacity(0.12), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.callout.weight(.semibold))
+                    .foregroundStyle(.primary)
+                if let subtitle {
+                    Text(subtitle)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(2)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+
+            HStack(spacing: 8) {
+                trailing
+            }
+            .foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity, minHeight: subtitle == nil ? 44 : 52, alignment: .leading)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
+        .contentShape(Rectangle())
+        .opacity(isEnabled ? 1 : 0.5)
+    }
+}
+
+private extension SettingsRowContent where Trailing == EmptyView {
+    init(
+        title: String,
+        subtitle: String? = nil,
+        icon: String,
+        tint: Color = .siftMint,
+        isEnabled: Bool = true
+    ) {
+        self.init(title: title, subtitle: subtitle, icon: icon, tint: tint, isEnabled: isEnabled) {
+            EmptyView()
+        }
     }
 }
 
@@ -106,6 +163,7 @@ private struct WeeklyTrend: View {
             }
         }
         .padding(12)
+        .frame(maxWidth: .infinity, alignment: .leading)
         .insetSurface(cornerRadius: 12)
     }
 }
@@ -354,6 +412,14 @@ struct SettingsView: View {
         }
         .scrollIndicators(.hidden)
         .background(AtmosphericBackground())
+        .onAppear { model.refreshRemoteAccountStatus() }
+        .alert("iCloud", isPresented: remoteAccountAlertBinding) {
+            Button(String(localized: "关闭"), role: .cancel) {
+                model.dismissRemoteAccountAlert()
+            }
+        } message: {
+            Text(model.remoteAccountAlertMessage ?? "")
+        }
         .sheet(isPresented: $model.isShowingPaywall) {
             NavigationStack {
                 PremiumPaywallView(model: model)
@@ -383,6 +449,13 @@ struct SettingsView: View {
         }
     }
 
+    private var remoteAccountAlertBinding: Binding<Bool> {
+        Binding(
+            get: { model.remoteAccountAlertMessage != nil },
+            set: { if !$0 { model.dismissRemoteAccountAlert() } }
+        )
+    }
+
     private var premiumSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             SectionHeader(title: String(localized: "高级版"), icon: "crown.fill")
@@ -391,18 +464,12 @@ struct SettingsView: View {
                 guard !model.premium.isUnlocked else { return }
                 model.isShowingPaywall = true
             } label: {
-                HStack(spacing: 10) {
-                    Image(systemName: model.premium.isUnlocked ? "checkmark.seal.fill" : "crown.fill")
-                        .foregroundStyle(model.premium.isUnlocked ? Color.siftMint : Color.siftAmber)
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(model.premium.isUnlocked ? String(localized: "已解锁") : String(localized: "未解锁"))
-                            .font(.callout.weight(.semibold))
-                            .foregroundStyle(.primary)
-                        Text(model.premium.isUnlocked ? String(localized: "Transformer 多语言模型永久可用") : String(localized: "解锁 Transformer 多语言模型"))
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                    Spacer(minLength: 0)
+                SettingsRowContent(
+                    title: model.premium.isUnlocked ? String(localized: "已解锁") : String(localized: "未解锁"),
+                    subtitle: model.premium.isUnlocked ? String(localized: "Transformer 多语言模型永久可用") : String(localized: "解锁 Transformer 多语言模型"),
+                    icon: model.premium.isUnlocked ? "checkmark.seal.fill" : "crown.fill",
+                    tint: model.premium.isUnlocked ? .siftMint : .siftAmber
+                ) {
                     if !model.premium.isUnlocked {
                         if case .available(let product) = model.premium.productState {
                             Text(product.isFree ? String(localized: "限时免费") : product.displayPrice)
@@ -414,8 +481,6 @@ struct SettingsView: View {
                             .foregroundStyle(.tertiary)
                     }
                 }
-                .padding(12)
-                .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
             .insetSurface(cornerRadius: 12)
@@ -426,16 +491,15 @@ struct SettingsView: View {
                     model.showToast(feedback.kind, feedback.message)
                 }
             } label: {
-                HStack {
-                    Label(String(localized: "恢复购买"), systemImage: "arrow.clockwise")
-                        .font(.callout.weight(.semibold))
-                    Spacer()
+                SettingsRowContent(
+                    title: String(localized: "恢复购买"),
+                    icon: "arrow.clockwise",
+                    isEnabled: !model.premium.isRestoring
+                ) {
                     if model.premium.isRestoring {
                         ProgressView().controlSize(.small)
                     }
                 }
-                .padding(12)
-                .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
             .foregroundStyle(.primary)
@@ -454,33 +518,31 @@ struct SettingsView: View {
                 icon: "hand.raised.fill"
             )
 
-            NavigationLink {
-                SubmissionHistoryView(model: model)
-            } label: {
-                HStack {
-                    Label(String(localized: "我的提交"), systemImage: "tray.full")
-                        .font(.callout.weight(.semibold))
-                    Spacer()
-                    if model.submittedSampleCount > 0 {
-                        Text("\(model.submittedSampleCount)")
-                            .font(.caption.weight(.bold).monospacedDigit())
-                            .foregroundStyle(Color.siftMint)
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 3)
-                            .background(Color.siftMint.opacity(0.12), in: Capsule())
-                    }
-                    Image(systemName: "chevron.right")
-                        .font(.caption2.weight(.bold))
-                        .foregroundStyle(.tertiary)
+            if model.canUseRemoteSubmission {
+                NavigationLink {
+                    SubmissionHistoryView(model: model)
+                } label: {
+                    mySubmissionsRow(isEnabled: true)
                 }
-                .padding(12)
-                .contentShape(Rectangle())
+                .buttonStyle(.plain)
+                .foregroundStyle(.primary)
+                .insetSurface(cornerRadius: 12)
+            } else {
+                Button {
+                    model.showRemoteAccountRequiredAlert()
+                } label: {
+                    mySubmissionsRow(isEnabled: false)
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(.primary)
+                .insetSurface(cornerRadius: 12)
             }
-            .buttonStyle(.plain)
-            .foregroundStyle(.primary)
-            .insetSurface(cornerRadius: 12)
 
             Button {
+                guard model.canUseRemoteSubmission else {
+                    model.showRemoteAccountRequiredAlert()
+                    return
+                }
                 guard !isExporting else { return }
                 isExporting = true
                 Task {
@@ -488,16 +550,15 @@ struct SettingsView: View {
                     exportedJSON = await model.exportMySubmissionsJSON()
                 }
             } label: {
-                HStack {
-                    Label(String(localized: "导出我的全部提交"), systemImage: "square.and.arrow.up")
-                        .font(.callout.weight(.semibold))
-                    Spacer()
+                SettingsRowContent(
+                    title: String(localized: "导出我的全部提交"),
+                    icon: "square.and.arrow.up",
+                    isEnabled: model.canUseRemoteSubmission && !isExporting
+                ) {
                     if isExporting {
                         ProgressView().controlSize(.small)
                     }
                 }
-                .padding(12)
-                .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
             .foregroundStyle(.primary)
@@ -521,25 +582,29 @@ struct SettingsView: View {
             }
 
             Button {
+                guard model.canUseRemoteSubmission else {
+                    model.showRemoteAccountRequiredAlert()
+                    return
+                }
                 isConfirmingErase = true
             } label: {
-                HStack {
-                    Label(String(localized: "抹除全部已提交数据"), systemImage: "trash.fill")
-                        .font(.callout.weight(.semibold))
-                    Spacer()
+                SettingsRowContent(
+                    title: String(localized: "抹除全部已提交数据"),
+                    icon: "trash.fill",
+                    tint: .red,
+                    isEnabled: model.canUseRemoteSubmission && !model.isErasingRemoteData
+                ) {
                     if model.isErasingRemoteData {
                         ProgressView().controlSize(.small)
                     }
                 }
-                .padding(12)
-                .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
             .foregroundStyle(.red)
             .insetSurface(cornerRadius: 12)
             .disabled(model.isErasingRemoteData)
 
-            Text(String(localized: "抹除会删除云端所有由本 Apple ID 提交的匿名样本与统计备份（GDPR 擦除权）。需要设备已登录 iCloud。"))
+            Text(String(localized: "抹除会删除云端所有由本 Apple ID 提交的匿名样本与统计备份。"))
                 .font(.caption2)
                 .foregroundStyle(.tertiary)
         }
@@ -550,31 +615,68 @@ struct SettingsView: View {
     private var legalSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             SectionHeader(title: String(localized: "法律"), icon: "doc.text.magnifyingglass")
-            HStack(spacing: 10) {
-                ActionButton(title: String(localized: "隐私政策"), icon: "hand.raised.fill", style: .secondary) {
+            VStack(spacing: 10) {
+                Button {
                     openURL(model.privacyPolicyURL)
+                } label: {
+                    SettingsRowContent(title: String(localized: "隐私说明"), icon: "hand.raised.fill", tint: .siftMint)
                 }
-                ActionButton(title: String(localized: "服务条款"), icon: "checkmark.seal", style: .neutral) {
+                .buttonStyle(.plain)
+                .insetSurface(cornerRadius: 12)
+
+                Button {
                     openURL(model.termsOfServiceURL)
+                } label: {
+                    SettingsRowContent(title: String(localized: "服务条款"), icon: "checkmark.seal", tint: .siftHalo)
                 }
+                .buttonStyle(.plain)
+                .insetSurface(cornerRadius: 12)
             }
         }
         .padding(18)
         .cardSurface()
     }
 
+    private func mySubmissionsRow(isEnabled: Bool) -> some View {
+        SettingsRowContent(
+            title: String(localized: "我的提交"),
+            icon: "tray.full",
+            isEnabled: isEnabled
+        ) {
+            if model.submittedSampleCount > 0 {
+                Text("\(model.submittedSampleCount)")
+                    .font(.caption.weight(.bold).monospacedDigit())
+                    .foregroundStyle(Color.siftMint)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 3)
+                    .background(Color.siftMint.opacity(0.12), in: Capsule())
+            }
+            Image(systemName: "chevron.right")
+                .font(.caption2.weight(.bold))
+                .foregroundStyle(.tertiary)
+        }
+    }
+
     private var aboutSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             SectionHeader(title: String(localized: "关于"), icon: "info.circle")
-            HStack {
-                Text(String(localized: "版本"))
-                    .font(.callout.weight(.semibold))
-                Spacer()
+            SettingsRowContent(title: String(localized: "版本"), icon: "app.badge") {
                 Text(Self.appVersion)
                     .font(.callout.monospacedDigit())
                     .foregroundStyle(.secondary)
             }
-            .padding(12)
+            .insetSurface(cornerRadius: 12)
+
+            SettingsRowContent(
+                title: String(localized: "模型版本"),
+                subtitle: model.selectedModelVariant.title,
+                icon: model.selectedModelVariant.symbol,
+                tint: .siftMint
+            ) {
+                Text(formatModelVersion(model.modelVersion))
+                    .font(.callout.weight(.semibold).monospacedDigit())
+                    .foregroundStyle(Color.siftMint)
+            }
             .insetSurface(cornerRadius: 12)
         }
         .padding(18)
