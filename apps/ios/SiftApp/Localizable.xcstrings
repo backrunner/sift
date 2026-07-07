@@ -1,3254 +1,3457 @@
 {
-  "sourceLanguage": "zh-Hans",
-  "strings": {
-    "%@失败：iCloud 返回错误（%lld）": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%1$@ failed: iCloud returned an error (%2$lld)"
+  "sourceLanguage" : "zh-Hans",
+  "strings" : {
+    "%@失败：iCloud 返回错误（%lld）" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ failed: iCloud returned an error (%2$lld)"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%1$@に失敗しました：iCloudエラー（%2$lld）"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@に失敗しました：iCloudエラー（%2$lld）"
           }
         }
       }
     },
-    "%@超时，请稍后重试": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@ timed out. Please try again later"
+    "%@超时，请稍后重试" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ timed out. Please try again later"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@がタイムアウトしました。後ほどお試しください"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@がタイムアウトしました。後ほどお試しください"
           }
         }
       }
     },
-    "Sift 提交数据导出": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Sift Submission Export"
+    "iCloud 存储配额不足，样本未%@" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iCloud storage is full; the sample was not %@"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Sift 提出データのエクスポート"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iCloudの容量が不足しているため、サンプルを%@できませんでした"
           }
         }
       }
     },
-    "Sift 高级版": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Sift Premium"
+    "iCloud 服务暂不可用，请稍后重试" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iCloud is temporarily unavailable. Please try again later"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Sift プレミアム"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iCloudが一時的に利用できません。後ほどお試しください"
           }
         }
       }
     },
-    "Transformer 多语言模型": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Transformer multilingual model"
+    "iCloud 权限不足，样本未%@" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Insufficient iCloud permissions; the sample was not %@"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Transformer 多言語モデル"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iCloudの権限が不足しているため、サンプルを%@できませんでした"
           }
         }
       }
     },
-    "Transformer 多语言模型永久可用": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Transformer multilingual model unlocked forever"
+    "Sift 提交数据导出" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sift Submission Export"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Transformer 多言語モデルを永久にご利用いただけます"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sift 提出データのエクスポート"
           }
         }
       }
     },
-    "Transformer 模型不支持本地微调": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "The Transformer model doesn't support on-device fine-tuning"
+    "Sift 高级版" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sift Premium"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "TransformerモデルはデバイスでのFine-tuningに対応していません"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sift プレミアム"
           }
         }
       }
     },
-    "Transformer 模型未包含在当前构建中": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "The Transformer model isn't included in this build"
+    "Transformer 多语言模型" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Transformer multilingual model"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "このビルドにはTransformerモデルが含まれていません"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Transformer 多言語モデル"
           }
         }
       }
     },
-    "下载": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Download"
+    "Transformer 多语言模型永久可用" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Transformer multilingual model unlocked forever"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ダウンロード"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Transformer 多言語モデルを永久にご利用いただけます"
           }
         }
       }
     },
-    "下载中": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Downloading"
+    "Transformer 模型不支持本地微调" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The Transformer model doesn't support on-device fine-tuning"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ダウンロード中"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "TransformerモデルはデバイスでのFine-tuningに対応していません"
           }
         }
       }
     },
-    "使用计费网络下载高级模型？": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Download the premium model on a metered network?"
+    "Transformer 模型未包含在当前构建中" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The Transformer model isn't included in this build"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "従量制ネットワークでプレミアムモデルをダウンロードしますか？"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "このビルドにはTransformerモデルが含まれていません"
           }
         }
       }
     },
-    "切换时下载": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Downloads when selected"
+    "一次性买断 · 无订阅 · 全家庭共享跟随 Apple ID" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "One-time purchase · No subscription · Follows your Apple ID with Family Sharing"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "選択時にダウンロード"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "買い切り · サブスクなし · Apple IDのファミリー共有に対応"
           }
         }
       }
     },
-    "已下载，可离线使用": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Downloaded for offline use"
+    "一次购买，永久解锁" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Buy once, unlock forever"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ダウンロード済み、オフラインで利用できます"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "一度の購入で永久にアンロック"
           }
         }
       }
     },
-    "正在下载": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Downloading"
+    "下载" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Download"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ダウンロード中"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ダウンロード"
           }
         }
       }
     },
-    "正在下载…": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Downloading…"
+    "下载中" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Downloading"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ダウンロード中…"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ダウンロード中"
           }
         }
       }
     },
-    "正在准备下载…": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Preparing download…"
+    "云端没有找到你提交的数据" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No submitted data found in the cloud"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ダウンロードを準備中…"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "クラウドに提出データが見つかりませんでした"
           }
         }
       }
     },
-    "正在安装模型…": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Installing model…"
+    "云端没有找到你提交的样本" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No submitted samples found in the cloud"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "モデルをインストール中…"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "クラウドに提出サンプルが見つかりませんでした"
           }
         }
       }
     },
-    "继续下载": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Continue Download"
+    "仅本地" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Local only"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ダウンロードを続行"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ローカルのみ"
           }
         }
       }
     },
-    "约 168 MB": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "about 168 MB"
+    "仅本地微调" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Local fine-tuning only"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "約168 MB"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ローカルFine-tuningのみ"
           }
         }
       }
     },
-    "计费网络待确认": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Metered network confirmation needed"
+    "以 %@ 购买" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Buy for %@"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "従量制ネットワークの確認が必要です"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@で購入"
           }
         }
       }
     },
-    "高级模型下载地址未配置": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Premium model download URL is not configured"
+    "会通过 iCloud 共享脱敏后的样本文本、分类、模型版本和粗粒度语言地区（如 zh-CN）；不发送发送方、账号或设备标识。需设备已登录 iCloud，你可以用回执删除最近一次远程样本。" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Shares the sanitized sample text, category, model version, and a coarse language/region tag (e.g. zh-CN) via iCloud. No sender, account, or device identifiers are sent. Requires an iCloud session; a receipt lets you delete your latest submission."
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "プレミアムモデルのダウンロードURLが設定されていません"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iCloud経由でマスキング済みサンプル本文・カテゴリ・モデルバージョン・大まかな言語地域タグ（例: ja-JP）を共有します。送信者・アカウント・端末の識別子は送信しません。iCloudへのサインインが必要で、レシートで直近の提出を削除できます。"
           }
         }
       }
     },
-    "高级模型安装失败": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Premium model installation failed"
+    "使用计费网络下载高级模型？" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Download the premium model on a metered network?"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "プレミアムモデルのインストールに失敗しました"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "従量制ネットワークでプレミアムモデルをダウンロードしますか？"
           }
         }
       }
     },
-    "高级模型文件校验失败：%@": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Premium model file verification failed: %@"
+    "保存" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Save"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "プレミアムモデルファイルの検証に失敗しました：%@"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "保存"
           }
         }
       }
     },
-    "高级模型文件路径不安全：%@": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Premium model file path is unsafe: %@"
+    "先在上面的表单里添加一条子串或正则规则。" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add a substring or regex rule using the form above."
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "プレミアムモデルファイルのパスが安全ではありません：%@"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "上のフォームから部分一致または正規表現のルールを追加してください。"
           }
         }
       }
     },
-    "高级模型清单不可用": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Premium model manifest is unavailable"
+    "免费获取" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Get for Free"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "プレミアムモデルのマニフェストを利用できません"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "無料で入手"
           }
         }
       }
     },
-    "高级模型清单格式不正确": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Premium model manifest is invalid"
+    "关于" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "About"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "プレミアムモデルのマニフェスト形式が正しくありません"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "情報"
           }
         }
       }
     },
-    "高级模型缺少可下载文件清单": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Premium model is missing its downloadable file list"
+    "关键词" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Keyword"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "プレミアムモデルにダウンロード可能なファイル一覧がありません"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "キーワード"
           }
         }
       }
     },
-    "高级模型需要下载 %@ 数据。当前网络可能按流量计费或处于低数据模式，继续下载可能产生流量费用。": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "The premium model needs to download %@ of data. The current network may be metered or in Low Data Mode, so continuing may use paid data."
+    "关闭" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Close"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "プレミアムモデルは%@のデータをダウンロードします。現在のネットワークは従量制または低データモードの可能性があり、続行すると通信量が発生する場合があります。"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "閉じる"
           }
         }
       }
     },
-    "iCloud 存储配额不足，样本未%@": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "iCloud storage is full; the sample was not %@"
+    "最多显示最近 %lld 条；更早的提交仍可通过「导出/抹除全部」管理。" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Shows the most recent %lld items; older submissions can still be managed via Export / Erase All."
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "iCloudの容量が不足しているため、サンプルを%@できませんでした"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最新%lld件まで表示します。それ以前の提出は「エクスポート／すべて消去」から管理できます。"
           }
         }
       }
     },
-    "iCloud 服务暂不可用，请稍后重试": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "iCloud is temporarily unavailable. Please try again later"
+    "出差、留学场景下的外语短信同样精准分类" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Accurate classification of foreign-language SMS while traveling or studying abroad"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "iCloudが一時的に利用できません。後ほどお試しください"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "出張や留学先での外国語SMSも正確に分類"
           }
         }
       }
     },
-    "iCloud 权限不足，样本未%@": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Insufficient iCloud permissions; the sample was not %@"
+    "分享导出内容（JSON）" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Share Export (JSON)"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "iCloudの権限が不足しているため、サンプルを%@できませんでした"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "エクスポートを共有（JSON）"
           }
         }
       }
     },
-    "一次性买断 · 无订阅 · 全家庭共享跟随 Apple ID": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "One-time purchase · No subscription · Follows your Apple ID with Family Sharing"
+    "分类" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Category"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "買い切り · サブスクなし · Apple IDのファミリー共有に対応"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "カテゴリ"
           }
         }
       }
     },
-    "一次购买，永久解锁": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Buy once, unlock forever"
+    "切换时下载" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Downloads when selected"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "一度の購入で永久にアンロック"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "選択時にダウンロード"
           }
         }
       }
     },
-    "云端没有找到你提交的数据": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "No submitted data found in the cloud"
+    "删除" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "クラウドに提出データが見つかりませんでした"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "削除"
           }
         }
       }
     },
-    "云端没有找到你提交的样本": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "No submitted samples found in the cloud"
+    "删除失败：%@" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete failed: %@"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "クラウドに提出サンプルが見つかりませんでした"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "削除に失敗しました：%@"
           }
         }
       }
     },
-    "仅本地": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Local only"
+    "删除远程样本" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete Remote Sample"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ローカルのみ"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "リモートサンプルを削除"
           }
         }
       }
     },
-    "仅本地微调": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Local fine-tuning only"
+    "前往设置" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open Settings"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ローカルFine-tuningのみ"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "設定を開く"
           }
         }
       }
     },
-    "以 %@ 购买": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Buy for %@"
+    "前缀" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prefix"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@で購入"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "前方一致"
           }
         }
       }
     },
-    "会通过 iCloud 共享脱敏后的样本文本、分类、模型版本和粗粒度语言地区（如 zh-CN）；不发送发送方、账号或设备标识。需设备已登录 iCloud，你可以用回执删除最近一次远程样本。": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Shares the sanitized sample text, category, model version, and a coarse language/region tag (e.g. zh-CN) via iCloud. No sender, account, or device identifiers are sent. Requires an iCloud session; a receipt lets you delete your latest submission."
+    "加入本地微调队列" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add to Local Fine-tuning Queue"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "iCloud経由でマスキング済みサンプル本文・カテゴリ・モデルバージョン・大まかな言語地域タグ（例: ja-JP）を共有します。送信者・アカウント・端末の識別子は送信しません。iCloudへのサインインが必要で、レシートで直近の提出を削除できます。"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ローカルFine-tuningキューに追加"
           }
         }
       }
     },
-    "保存": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Save"
+    "匹配位置" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Match Field"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "保存"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "対象フィールド"
           }
         }
       }
     },
-    "先在上面的表单里添加一条子串或正则规则。": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Add a substring or regex rule using the form above."
+    "匹配内容" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pattern"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "上のフォームから部分一致または正規表現のルールを追加してください。"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "パターン"
           }
         }
       }
     },
-    "免费获取": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Get for Free"
+    "匹配方式" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Match Type"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "無料で入手"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "一致方法"
           }
         }
       }
     },
-    "关于": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "About"
+    "匿名提交" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Anonymous Contribution"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "情報"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "匿名で提出"
           }
         }
       }
     },
-    "关键词": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Keyword"
+    "匿名提交脱敏样本" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Submit Sanitized Sample Anonymously"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "キーワード"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "マスキング済みサンプルを匿名提出"
           }
         }
       }
     },
-    "关闭": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Close"
+    "匿名贡献隐私说明" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Anonymous Contribution Privacy Notice"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "閉じる"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "匿名提出のプライバシーについて"
           }
         }
       }
     },
-    "出差、留学场景下的外语短信同样精准分类": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Accurate classification of foreign-language SMS while traveling or studying abroad"
+    "发送方" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sender"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "出張や留学先での外国語SMSも正確に分類"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "送信者"
           }
         }
       }
     },
-    "分享导出内容（JSON）": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Share Export (JSON)"
+    "发送脱敏文本" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sends sanitized text"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "エクスポートを共有（JSON）"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "マスキング済み本文を送信"
           }
         }
       }
     },
-    "分类": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Category"
+    "取件码" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "pickup code"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "カテゴリ"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "受取コード"
           }
         }
       }
     },
-    "删除": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Delete"
+    "取消" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cancel"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "削除"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "キャンセル"
           }
         }
       }
     },
-    "删除失败：%@": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Delete failed: %@"
+    "启用 Sift" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enable Sift"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "削除に失敗しました：%@"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Siftを有効にする"
           }
         }
       }
     },
-    "删除远程样本": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Delete Remote Sample"
+    "商品暂不可用" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Product is currently unavailable"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "リモートサンプルを削除"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "現在このアイテムは利用できません"
           }
         }
       }
     },
-    "前往设置": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Open Settings"
+    "回执" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Receipt"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "設定を開く"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "レシート"
           }
         }
       }
     },
-    "前缀": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Prefix"
+    "在首页「提交样本」里匿名贡献第一条脱敏样本吧。" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Contribute your first sanitized sample from “Contribute a Sample” on the dashboard."
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "前方一致"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ホームの「サンプルを提出」から最初のサンプルを匿名で提出してみましょう。"
           }
         }
       }
     },
-    "加入本地微调队列": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Add to Local Fine-tuning Queue"
+    "垃圾拦截" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Junk Blocked"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ローカルFine-tuningキューに追加"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "迷惑をブロック"
           }
         }
       }
     },
-    "匹配位置": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Match Field"
+    "多语言 · 不支持本地微调" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Multilingual · No on-device fine-tuning"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "対象フィールド"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "多言語 · 端末Fine-tuning非対応"
           }
         }
       }
     },
-    "匹配内容": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Pattern"
+    "子串" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Substring"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "パターン"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "部分一致"
           }
         }
       }
     },
-    "匹配方式": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Match Type"
+    "完成" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Done"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "一致方法"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "完了"
           }
         }
       }
     },
-    "匿名提交": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Anonymous Contribution"
+    "导出我的全部提交" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Export All My Submissions"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "匿名で提出"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "提出データをすべてエクスポート"
           }
         }
       }
     },
-    "匿名提交脱敏样本": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Submit Sanitized Sample Anonymously"
+    "将从云端删除你匿名提交的全部样本与统计备份，此操作不可撤销，不影响本地功能。" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deletes every anonymously submitted sample and statistics backup from the cloud. This cannot be undone and does not affect local features."
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "マスキング済みサンプルを匿名提出"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "匿名で提出したすべてのサンプルと統計バックアップをクラウドから削除します。取り消せませんが、ローカル機能には影響しません。"
           }
         }
       }
     },
-    "匿名贡献隐私说明": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Anonymous Contribution Privacy Notice"
+    "将从云端删除这条匿名样本，不可撤销。" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deletes this anonymous sample from the cloud. This cannot be undone."
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "匿名提出のプライバシーについて"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "この匿名サンプルをクラウドから削除します。取り消せません。"
           }
         }
       }
     },
-    "发送方": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Sender"
+    "已下载，可离线使用" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Downloaded for offline use"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "送信者"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ダウンロード済み、オフラインで利用できます"
           }
         }
       }
     },
-    "发送脱敏文本": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Sends sanitized text"
+    "已切换至%@" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Switched to %@"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "マスキング済み本文を送信"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@に切り替えました"
           }
         }
       }
     },
-    "取件码": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "pickup code"
+    "已删除 %lld 条规则" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deleted %lld rules"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "受取コード"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld件のルールを削除しました"
           }
         }
       }
     },
-    "取消": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Cancel"
+    "已完成" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Done"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "キャンセル"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "完了しました"
           }
         }
       }
     },
-    "启用 Sift": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Enable Sift"
+    "已恢复高级版购买" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Premium purchase restored"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Siftを有効にする"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "プレミアム購入を復元しました"
           }
         }
       }
     },
-    "商品暂不可用": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Product is currently unavailable"
+    "已抹除 %lld 条提交样本" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Erased %lld submitted samples"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "現在このアイテムは利用できません"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld件の提出サンプルを消去しました"
           }
         }
       }
     },
-    "回执": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Receipt"
+    "已抹除 %lld 条提交样本及统计备份" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Erased %lld submitted samples and statistics backups"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "レシート"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld件の提出サンプルと統計バックアップを消去しました"
           }
         }
       }
     },
-    "在首页「提交样本」里匿名贡献第一条脱敏样本吧。": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Contribute your first sanitized sample from “Contribute a Sample” on the dashboard."
+    "已抹除该条提交" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Submission erased"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ホームの「サンプルを提出」から最初のサンプルを匿名で提出してみましょう。"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "この提出を消去しました"
           }
         }
       }
     },
-    "垃圾拦截": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Junk Blocked"
+    "已按你的选择提交。本地模型倾向于「%@」，若确认无误请忽略。" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Submitted with your label. The on-device model leans toward “%@” — ignore this if you're sure."
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "迷惑をブロック"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "選択したラベルで提出しました。端末のモデルは「%@」と判断しています。問題なければ無視してください。"
           }
         }
       }
     },
-    "多语言 · 不支持本地微调": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Multilingual · No on-device fine-tuning"
+    "已添加规则" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rule added"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "多言語 · 端末Fine-tuning非対応"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ルールを追加しました"
           }
         }
       }
     },
-    "子串": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Substring"
+    "已清除云端统计备份" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cloud statistics backup cleared"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "部分一致"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "クラウドの統計バックアップを消去しました"
           }
         }
       }
     },
-    "完成": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Done"
+    "已解锁" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unlocked"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "完了"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "アンロック済み"
           }
         }
       }
     },
-    "导出我的全部提交": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Export All My Submissions"
+    "已解锁高级版" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Premium Unlocked"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "提出データをすべてエクスポート"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "プレミアム解除済み"
           }
         }
       }
     },
-    "将从云端删除你匿名提交的全部样本与统计备份，此操作不可撤销，不影响本地功能。": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Deletes every anonymously submitted sample and statistics backup from the cloud. This cannot be undone and does not affect local features."
+    "已贡献 %lld 条" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld contributed"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "匿名で提出したすべてのサンプルと統計バックアップをクラウドから削除します。取り消せませんが、ローカル機能には影響しません。"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "提出済み %lld件"
           }
         }
       }
     },
-    "将从云端删除这条匿名样本，不可撤销。": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Deletes this anonymous sample from the cloud. This cannot be undone."
+    "已通过 iCloud 匿名共享脱敏样本，可用回执删除。" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sanitized sample shared anonymously via iCloud. Use the receipt to delete it."
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "この匿名サンプルをクラウドから削除します。取り消せません。"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "マスキング済みサンプルをiCloud経由で匿名共有しました。レシートで削除できます。"
           }
         }
       }
     },
-    "已切换至%@": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Switched to %@"
+    "开始测试" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Run Test"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@に切り替えました"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "テスト実行"
           }
         }
       }
     },
-    "已删除 %lld 条规则": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Deleted %lld rules"
+    "当前商店区域暂不提供此商品" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This item isn't available in your storefront"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld件のルールを削除しました"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "お住まいのストアでは現在この商品を購入できません"
           }
         }
       }
     },
-    "已完成": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Done"
+    "当前模型不支持本地微调，请使用匿名提交" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The current model doesn't support local fine-tuning; use anonymous contribution"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "完了しました"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "現在のモデルはローカルFine-tuningに対応していません。匿名提出をご利用ください"
           }
         }
       }
     },
-    "已恢复高级版购买": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Premium purchase restored"
+    "当前环境不支持 iCloud，样本未%@" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iCloud isn't supported in this environment; the sample was not %@"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "プレミアム購入を復元しました"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "この環境はiCloudに対応していないため、サンプルを%@できませんでした"
           }
         }
       }
     },
-    "已抹除 %lld 条提交样本": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Erased %lld submitted samples"
+    "恢复购买" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Restore Purchases"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld件の提出サンプルを消去しました"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "購入を復元"
           }
         }
       }
     },
-    "已抹除 %lld 条提交样本及统计备份": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Erased %lld submitted samples and statistics backups"
+    "恢复购买失败：%@" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Restore failed: %@"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld件の提出サンプルと統計バックアップを消去しました"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "購入の復元に失敗しました：%@"
           }
         }
       }
     },
-    "已抹除该条提交": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Submission erased"
+    "我同意匿名贡献" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I agree to contribute anonymously"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "この提出を消去しました"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "匿名での提出に同意します"
           }
         }
       }
     },
-    "已按你的选择提交。本地模型倾向于「%@」，若确认无误请忽略。": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Submitted with your label. The on-device model leans toward “%@” — ignore this if you're sure."
+    "我的提交" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "My Submissions"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "選択したラベルで提出しました。端末のモデルは「%@」と判断しています。問題なければ無視してください。"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "提出履歴"
           }
         }
       }
     },
-    "已添加规则": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Rule added"
+    "打开筛选并允许 Sift 参与拦截。" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Turn on filtering and allow Sift to screen messages."
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ルールを追加しました"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "フィルタリングをオンにして、Siftによる振り分けを許可します。"
           }
         }
       }
     },
-    "已清除云端统计备份": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Cloud statistics backup cleared"
+    "打开系统设置" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open the Settings app"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "クラウドの統計バックアップを消去しました"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "設定アプリを開く"
           }
         }
       }
     },
-    "已解锁": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Unlocked"
+    "找到信息" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Find Messages"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "アンロック済み"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "「メッセージ」を探す"
           }
         }
       }
     },
-    "已解锁高级版": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Premium Unlocked"
+    "抹除" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Erase"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "プレミアム解除済み"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "消去"
           }
         }
       }
     },
-    "已贡献 %lld 条": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld contributed"
+    "抹除会删除云端所有由本 Apple ID 提交的匿名样本与统计备份（GDPR 擦除权）。需要设备已登录 iCloud。" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Erasure deletes every anonymous sample and statistics backup submitted by this Apple ID (GDPR right to erasure). Requires an iCloud session."
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "提出済み %lld件"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "消去すると、このApple IDから提出されたすべての匿名サンプルと統計バックアップが削除されます（GDPR消去権）。iCloudへのサインインが必要です。"
           }
         }
       }
     },
-    "已通过 iCloud 匿名共享脱敏样本，可用回执删除。": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Sanitized sample shared anonymously via iCloud. Use the receipt to delete it."
+    "抹除全部云端数据" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Erase All Cloud Data"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "マスキング済みサンプルをiCloud経由で匿名共有しました。レシートで削除できます。"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "クラウドデータをすべて消去"
           }
         }
       }
     },
-    "开始测试": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Run Test"
+    "抹除全部已提交数据" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Erase All Submitted Data"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "テスト実行"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "提出データをすべて消去"
           }
         }
       }
     },
-    "当前商店区域暂不提供此商品": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "This item isn't available in your storefront"
+    "抹除全部已提交数据？" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Erase all submitted data?"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "お住まいのストアでは現在この商品を購入できません"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "提出データをすべて消去しますか？"
           }
         }
       }
     },
-    "当前模型不支持本地微调，请使用匿名提交": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "The current model doesn't support local fine-tuning; use anonymous contribution"
+    "抹除这条提交？" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Erase this submission?"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "現在のモデルはローカルFine-tuningに対応していません。匿名提出をご利用ください"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "この提出を消去しますか？"
           }
         }
       }
     },
-    "当前环境不支持 iCloud，样本未%@": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "iCloud isn't supported in this environment; the sample was not %@"
+    "拦截统计" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Filtering Stats"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "この環境はiCloudに対応していないため、サンプルを%@できませんでした"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "フィルタ統計"
           }
         }
       }
     },
-    "恢复购买": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Restore Purchases"
+    "推广归类" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Promos Sorted"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "購入を復元"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "プロモ分類"
           }
         }
       }
     },
-    "恢复购买失败：%@": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Restore failed: %@"
+    "提交" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Submit"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "購入の復元に失敗しました：%@"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "提出"
           }
         }
       }
     },
-    "我同意匿名贡献": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "I agree to contribute anonymously"
+    "提交失败：%@" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Submission failed: %@"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "匿名での提出に同意します"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "提出に失敗しました：%@"
           }
         }
       }
     },
-    "我的提交": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "My Submissions"
+    "提交方式" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Destination"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "提出履歴"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "提出先"
           }
         }
       }
     },
-    "打开筛选并允许 Sift 参与拦截。": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Turn on filtering and allow Sift to screen messages."
+    "提交样本" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Contribute a Sample"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "フィルタリングをオンにして、Siftによる振り分けを許可します。"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "サンプルを提出"
           }
         }
       }
     },
-    "打开系统设置": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Open the Settings app"
+    "操作过于频繁，请稍后重试" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Too many requests. Please try again later"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "設定アプリを開く"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "操作が集中しています。後ほどお試しください"
           }
         }
       }
     },
-    "找到信息": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Find Messages"
+    "数据与隐私" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Data & Privacy"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "「メッセージ」を探す"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "データとプライバシー"
           }
         }
       }
     },
-    "抹除": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Erase"
+    "数据留在设备" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Data stays on device"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "消去"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "データは端末内に保持"
           }
         }
       }
     },
-    "抹除会删除云端所有由本 Apple ID 提交的匿名样本与统计备份（GDPR 擦除权）。需要设备已登录 iCloud。": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Erasure deletes every anonymous sample and statistics backup submitted by this Apple ID (GDPR right to erasure). Requires an iCloud session."
+    "新建规则" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New Rule"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "消去すると、このApple IDから提出されたすべての匿名サンプルと統計バックアップが削除されます（GDPR消去権）。iCloudへのサインインが必要です。"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新規ルール"
           }
         }
       }
     },
-    "抹除全部云端数据": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Erase All Cloud Data"
+    "暂时无法确认 iCloud 状态，请稍后重试" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Can't confirm iCloud status right now. Please try again later"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "クラウドデータをすべて消去"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iCloudの状態を確認できません。後ほどお試しください"
           }
         }
       }
     },
-    "抹除全部已提交数据": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Erase All Submitted Data"
+    "暂时无法获取商品信息，请稍后重试" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Can't load product info right now. Please try again later"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "提出データをすべて消去"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "商品情報を取得できません。後ほどお試しください"
           }
         }
       }
     },
-    "抹除全部已提交数据？": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Erase all submitted data?"
+    "服务条款" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Terms of Service"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "提出データをすべて消去しますか？"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "利用規約"
           }
         }
       }
     },
-    "抹除这条提交？": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Erase this submission?"
+    "未内置" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not bundled"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "この提出を消去しますか？"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未同梱"
           }
         }
       }
     },
-    "拦截统计": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Filtering Stats"
+    "未找到可删除的远程样本" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No remote sample found to delete"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "フィルタ統計"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "削除できるリモートサンプルが見つかりません"
           }
         }
       }
     },
-    "推广归类": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Promos Sorted"
+    "未知的购买结果" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unknown purchase result"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "プロモ分類"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "不明な購入結果です"
           }
         }
       }
     },
-    "提交": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Submit"
+    "未解锁" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Locked"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "提出"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未購入"
           }
         }
       }
     },
-    "提交失败：%@": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Submission failed: %@"
+    "本地个性化层已更新" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Local personalization layer updated"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "提出に失敗しました：%@"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ローカルパーソナライズ層を更新しました"
           }
         }
       }
     },
-    "提交方式": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Destination"
+    "本地保存失败：%@" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Local save failed: %@"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "提出先"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ローカル保存に失敗しました：%@"
           }
         }
       }
     },
-    "提交样本": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Contribute a Sample"
+    "查看" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "View"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "サンプルを提出"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "表示"
           }
         }
       }
     },
-    "操作过于频繁，请稍后重试": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Too many requests. Please try again later"
+    "查看匿名贡献、数据保留和服务范围。" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Review anonymous contribution, retention, and service scope."
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "操作が集中しています。後ほどお試しください"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "匿名提出・データ保持・サービス範囲をご確認ください。"
           }
         }
       }
     },
-    "数据与隐私": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Data & Privacy"
+    "样本匿名存储于 iCloud，你可以随时导出或彻底抹除。" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Samples are stored anonymously in iCloud; export or erase them anytime."
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "データとプライバシー"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "サンプルはiCloudに匿名で保存され、いつでもエクスポート・完全消去できます。"
           }
         }
       }
     },
-    "数据留在设备": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Data stays on device"
+    "样本可继续通过 iCloud 匿名共享，用于云端训练下一版模型；切回经典模型可恢复本地微调。" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Samples can still be shared anonymously via iCloud to train the next model; switch back to Classic to restore local fine-tuning."
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "データは端末内に保持"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "サンプルは引き続きiCloud経由で匿名共有され、次期モデルの学習に使われます。クラシックモデルに戻すとローカルFine-tuningを再開できます。"
           }
         }
       }
     },
-    "新建规则": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "New Rule"
+    "样本已保存，当前系统暂不支持本地训练" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sample saved; this system doesn't support local training yet"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "新規ルール"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "サンプルを保存しました。このシステムはローカル学習に未対応です"
           }
         }
       }
     },
-    "暂时无法确认 iCloud 状态，请稍后重试": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Can't confirm iCloud status right now. Please try again later"
+    "样本已保存，本地训练稍后重试" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sample saved; local training will retry later"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "iCloudの状態を確認できません。後ほどお試しください"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "サンプルを保存しました。ローカル学習は後ほど再試行します"
           }
         }
       }
     },
-    "暂时无法获取商品信息，请稍后重试": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Can't load product info right now. Please try again later"
+    "样本已保存，等待基座模型" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sample saved; waiting for the base model"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "商品情報を取得できません。後ほどお試しください"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "サンプルを保存しました。ベースモデルを待っています"
           }
         }
       }
     },
-    "最多显示最近 %lld 条；更早的提交仍可通过「导出/抹除全部」管理。": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Shows the most recent %lld items; older submissions can still be managed via Export / Erase All."
+    "样本已保存到本地，仅用于设备上的个性化微调。" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sample saved locally; used only for on-device personalization."
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "最新%lld件まで表示します。それ以前の提出は「エクスポート／すべて消去」から管理できます。"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "サンプルをローカルに保存しました。端末上のパーソナライズにのみ使用されます。"
           }
         }
       }
     },
-    "服务条款": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Terms of Service"
+    "样本已加入本地队列" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sample added to the local queue"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "利用規約"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "サンプルをローカルキューに追加しました"
           }
         }
       }
     },
-    "未内置": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Not bundled"
+    "样本文本" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sample Text"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "未同梱"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "サンプル本文"
           }
         }
       }
     },
-    "未找到可删除的远程样本": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "No remote sample found to delete"
+    "样本未被接收，请稍后重试" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The sample wasn't accepted. Please try again later"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "削除できるリモートサンプルが見つかりません"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "サンプルが受け付けられませんでした。後ほどお試しください"
           }
         }
       }
     },
-    "未知的购买结果": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Unknown purchase result"
+    "样本过长（%lld/%lld 字符），请拆分或截取关键内容" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sample too long (%1$lld/%2$lld characters); split it or keep the key part"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "不明な購入結果です"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "サンプルが長すぎます（%1$lld/%2$lld文字）。分割するか要点のみにしてください"
           }
         }
       }
     },
-    "未解锁": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Locked"
+    "正则" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Regex"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "未購入"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正規表現"
           }
         }
       }
     },
-    "本地个性化层已更新": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Local personalization layer updated"
+    "正则表达式格式不正确" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invalid regular expression"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ローカルパーソナライズ層を更新しました"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正規表現の形式が正しくありません"
           }
         }
       }
     },
-    "本地保存失败：%@": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Local save failed: %@"
+    "正在下载" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Downloading"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ローカル保存に失敗しました：%@"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ダウンロード中"
           }
         }
       }
     },
-    "查看": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "View"
+    "正在下载…" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Downloading…"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "表示"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ダウンロード中…"
           }
         }
       }
     },
-    "查看匿名贡献、数据保留和服务范围。": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Review anonymous contribution, retention, and service scope."
+    "正在准备下载…" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Preparing download…"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "匿名提出・データ保持・サービス範囲をご確認ください。"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ダウンロードを準備中…"
           }
         }
       }
     },
-    "样本匿名存储于 iCloud，你可以随时导出或彻底抹除。": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Samples are stored anonymously in iCloud; export or erase them anytime."
+    "正在加载提交记录…" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Loading submissions…"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "サンプルはiCloudに匿名で保存され、いつでもエクスポート・完全消去できます。"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "提出履歴を読み込み中…"
           }
         }
       }
     },
-    "样本可继续通过 iCloud 匿名共享，用于云端训练下一版模型；切回经典模型可恢复本地微调。": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Samples can still be shared anonymously via iCloud to train the next model; switch back to Classic to restore local fine-tuning."
+    "正在安装模型…" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Installing model…"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "サンプルは引き続きiCloud経由で匿名共有され、次期モデルの学習に使われます。クラシックモデルに戻すとローカルFine-tuningを再開できます。"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "モデルをインストール中…"
           }
         }
       }
     },
-    "样本已保存到本地，仅用于设备上的个性化微调。": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Sample saved locally; used only for on-device personalization."
+    "正在恢复购买…" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Restoring purchases…"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "サンプルをローカルに保存しました。端末上のパーソナライズにのみ使用されます。"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "購入を復元中…"
           }
         }
       }
     },
-    "样本已保存，当前系统暂不支持本地训练": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Sample saved; this system doesn't support local training yet"
+    "正在获取价格…" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Loading price…"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "サンプルを保存しました。このシステムはローカル学習に未対応です"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "価格を取得中…"
           }
         }
       }
     },
-    "样本已保存，本地训练稍后重试": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Sample saved; local training will retry later"
+    "正常放行" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Allowed"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "サンプルを保存しました。ローカル学習は後ほど再試行します"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "通常許可"
           }
         }
       }
     },
-    "样本已保存，等待基座模型": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Sample saved; waiting for the base model"
+    "此 Apple 账户下没有可恢复的购买" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No purchases to restore on this Apple ID"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "サンプルを保存しました。ベースモデルを待っています"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "このApple IDに復元できる購入はありません"
           }
         }
       }
     },
-    "样本已加入本地队列": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Sample added to the local queue"
+    "此平台不支持内购" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In-app purchases aren't supported on this platform"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "サンプルをローカルキューに追加しました"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "このプラットフォームはアプリ内課金に対応していません"
           }
         }
       }
     },
-    "样本文本": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Sample Text"
+    "此设备的 iCloud 账户受限，无法%@样本" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This device's iCloud account is restricted; can't %@ the sample"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "サンプル本文"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "この端末のiCloudアカウントは制限されているため、サンプルを%@できません"
           }
         }
       }
     },
-    "样本未被接收，请稍后重试": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "The sample wasn't accepted. Please try again later"
+    "永久可用" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Yours forever"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "サンプルが受け付けられませんでした。後ほどお試しください"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "永久に利用可能"
           }
         }
       }
     },
-    "样本过长（%lld/%lld 字符），请拆分或截取关键内容": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Sample too long (%1$lld/%2$lld characters); split it or keep the key part"
+    "法律" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Legal"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "サンプルが長すぎます（%1$lld/%2$lld文字）。分割するか要点のみにしてください"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "法的情報"
           }
         }
       }
     },
-    "正则": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Regex"
+    "测试样本" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Test a Message"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "正規表現"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "メッセージをテスト"
           }
         }
       }
     },
-    "正则表达式格式不正确": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Invalid regular expression"
+    "添加规则" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add Rule"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "正規表現の形式が正しくありません"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ルールを追加"
           }
         }
       }
     },
-    "正在加载提交记录…": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Loading submissions…"
+    "版本" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Version"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "提出履歴を読み込み中…"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "バージョン"
           }
         }
       }
     },
-    "正在恢复购买…": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Restoring purchases…"
+    "短信拦截设置" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SMS Filtering Setup"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "購入を復元中…"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SMSフィルタ設定"
           }
         }
       }
     },
-    "正在获取价格…": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Loading price…"
+    "短信正文" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Message Body"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "価格を取得中…"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "本文"
           }
         }
       }
     },
-    "正常放行": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Allowed"
+    "管理规则" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Manage Rules"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "通常許可"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ルールを管理"
           }
         }
       }
     },
-    "此 Apple 账户下没有可恢复的购买": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "No purchases to restore on this Apple ID"
+    "粘贴一条待标注短信" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Paste an SMS to label"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "このApple IDに復元できる購入はありません"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ラベル付けするSMSを貼り付け"
           }
         }
       }
     },
-    "此平台不支持内购": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "In-app purchases aren't supported on this platform"
+    "精确" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Exact"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "このプラットフォームはアプリ内課金に対応していません"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "完全一致"
           }
         }
       }
     },
-    "此设备的 iCloud 账户受限，无法%@样本": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "This device's iCloud account is restricted; can't %@ the sample"
+    "约 168 MB" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "about 168 MB"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "この端末のiCloudアカウントは制限されているため、サンプルを%@できません"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "約168 MB"
           }
         }
       }
     },
-    "永久可用": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Yours forever"
+    "经典模型" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Classic Model"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "永久に利用可能"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "クラシックモデル"
           }
         }
       }
     },
-    "法律": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Legal"
+    "经典模型可通过本地样本在设备上微调；Transformer 模型面向多语言场景离线训练，不支持设备端微调，切换后本地微调入口将隐藏。" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The Classic model fine-tunes on-device with local samples; the Transformer model is trained offline for multilingual use and can't be fine-tuned on device — switching hides local fine-tuning."
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "法的情報"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "クラシックモデルはローカルサンプルで端末上のFine-tuningが可能です。Transformerモデルは多言語向けにオフライン学習されており端末Fine-tuning非対応のため、切り替えるとFine-tuning入口は非表示になります。"
           }
         }
       }
     },
-    "测试样本": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Test a Message"
+    "继续下载" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Continue Download"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "メッセージをテスト"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ダウンロードを続行"
           }
         }
       }
     },
-    "添加规则": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Add Rule"
+    "编辑规则" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edit Rule"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ルールを追加"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ルールを編集"
           }
         }
       }
     },
-    "版本": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Version"
+    "网络不可用，样本未%@" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Network unavailable; the sample was not %@"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "バージョン"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ネットワークに接続できないため、サンプルを%@できませんでした"
           }
         }
       }
     },
-    "短信拦截设置": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "SMS Filtering Setup"
+    "网络不可用，请检查网络后重试" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Network unavailable. Check your connection and try again"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "SMSフィルタ設定"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ネットワークに接続できません。確認して再度お試しください"
           }
         }
       }
     },
-    "短信正文": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Message Body"
+    "脱敏预览" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sanitized Preview"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "本文"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "マスキングプレビュー"
           }
         }
       }
     },
-    "管理规则": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Manage Rules"
+    "自定义规则" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Custom Rules"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ルールを管理"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "カスタムルール"
           }
         }
       }
     },
-    "粘贴一条待标注短信": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Paste an SMS to label"
+    "规则 %lld" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rule %lld"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ラベル付けするSMSを貼り付け"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ルール %lld"
           }
         }
       }
     },
-    "精确": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Exact"
+    "规则列表" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rule List"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "完全一致"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ルール一覧"
           }
         }
       }
     },
-    "经典模型": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Classic Model"
+    "规则名称（可选）" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rule Name (optional)"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "クラシックモデル"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ルール名（任意）"
           }
         }
       }
     },
-    "经典模型可通过本地样本在设备上微调；Transformer 模型面向多语言场景离线训练，不支持设备端微调，切换后本地微调入口将隐藏。": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "The Classic model fine-tunes on-device with local samples; the Transformer model is trained offline for multilingual use and can't be fine-tuned on device — switching hides local fine-tuning."
+    "规则已删除" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rule deleted"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "クラシックモデルはローカルサンプルで端末上のFine-tuningが可能です。Transformerモデルは多言語向けにオフライン学習されており端末Fine-tuning非対応のため、切り替えるとFine-tuning入口は非表示になります。"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ルールを削除しました"
           }
         }
       }
     },
-    "编辑规则": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Edit Rule"
+    "规则已更新" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rule updated"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ルールを編集"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ルールを更新しました"
           }
         }
       }
     },
-    "网络不可用，样本未%@": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Network unavailable; the sample was not %@"
+    "规则管理" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rule Management"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ネットワークに接続できないため、サンプルを%@できませんでした"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ルール管理"
           }
         }
       }
     },
-    "网络不可用，请检查网络后重试": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Network unavailable. Check your connection and try again"
+    "规则顺序已更新" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rule order updated"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ネットワークに接続できません。確認して再度お試しください"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ルールの順序を更新しました"
           }
         }
       }
     },
-    "脱敏预览": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Sanitized Preview"
+    "解锁 Transformer 多语言模型" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unlock the Transformer multilingual model"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "マスキングプレビュー"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Transformer多言語モデルをアンロック"
           }
         }
       }
     },
-    "自定义规则": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Custom Rules"
+    "计费网络待确认" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Metered network confirmation needed"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "カスタムルール"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "従量制ネットワークの確認が必要です"
           }
         }
       }
     },
-    "规则 %lld": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Rule %lld"
+    "设置" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Settings"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ルール %lld"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "設定"
           }
         }
       }
     },
-    "规则列表": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Rule List"
+    "该条提交已不存在，列表已同步" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "That submission no longer exists; the list is now in sync"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ルール一覧"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "この提出は既に存在しません。一覧を同期しました"
           }
         }
       }
     },
-    "规则名称（可选）": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Rule Name (optional)"
+    "请先在系统设置中登录 iCloud，再匿名共享样本" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sign in to iCloud in Settings before sharing samples anonymously"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ルール名（任意）"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "匿名共有の前に、設定でiCloudにサインインしてください"
           }
         }
       }
     },
-    "规则已删除": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Rule deleted"
+    "请先阅读并同意匿名提交隐私说明" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Please read and accept the anonymous contribution privacy notice first"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ルールを削除しました"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "先に匿名提出のプライバシーについてを読み、同意してください"
           }
         }
       }
     },
-    "规则已更新": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Rule updated"
+    "请输入匹配内容" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enter a pattern"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ルールを更新しました"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "パターンを入力してください"
           }
         }
       }
     },
-    "规则管理": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Rule Management"
+    "请输入样本文本" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enter sample text"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ルール管理"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "サンプル本文を入力してください"
           }
         }
       }
     },
-    "规则顺序已更新": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Rule order updated"
+    "购买" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Buy"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ルールの順序を更新しました"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "購入"
           }
         }
       }
     },
-    "解锁 Transformer 多语言模型": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Unlock the Transformer multilingual model"
+    "购买凭证校验失败，请通过恢复购买重试" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Purchase verification failed; try Restore Purchases"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Transformer多言語モデルをアンロック"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "購入の検証に失敗しました。「購入を復元」をお試しください"
           }
         }
       }
     },
-    "设置": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Settings"
+    "购买失败：%@" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Purchase failed: %@"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "設定"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "購入に失敗しました：%@"
           }
         }
       }
     },
-    "该条提交已不存在，列表已同步": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "That submission no longer exists; the list is now in sync"
+    "购买等待批准中（家长/管理者审批通过后自动解锁）" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Purchase pending approval (unlocks automatically once approved)"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "この提出は既に存在しません。一覧を同期しました"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "購入は承認待ちです（承認後に自動でアンロックされます）"
           }
         }
       }
     },
-    "请先在系统设置中登录 iCloud，再匿名共享样本": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Sign in to iCloud in Settings before sharing samples anonymously"
+    "跨语种垃圾短信识别" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cross-language spam detection"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "匿名共有の前に、設定でiCloudにサインインしてください"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "多言語の迷惑SMS検出"
           }
         }
       }
     },
-    "请先阅读并同意匿名提交隐私说明": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Please read and accept the anonymous contribution privacy notice first"
+    "轻量算法 · 支持本地微调" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lightweight · On-device fine-tuning"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "先に匿名提出のプライバシーについてを読み、同意してください"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "軽量 · 端末Fine-tuning対応"
           }
         }
       }
     },
-    "请输入匹配内容": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Enter a pattern"
+    "输入短信正文" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enter the message body"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "パターンを入力してください"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "本文を入力"
           }
         }
       }
     },
-    "请输入样本文本": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Enter sample text"
+    "过滤器开始工作后，这里会展示每日拦截趋势。统计只记录数量，不保存短信内容。" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Once the filter starts working, daily trends appear here. Statistics count only — message content is never stored."
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "サンプル本文を入力してください"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "フィルタが動き始めると、ここに日別の推移が表示されます。統計は件数のみで、本文は保存されません。"
           }
         }
       }
     },
-    "购买": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Buy"
+    "近 7 天" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Last 7 Days"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "購入"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "過去7日間"
           }
         }
       }
     },
-    "购买凭证校验失败，请通过恢复购买重试": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Purchase verification failed; try Restore Purchases"
+    "还没有提交过样本" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No submissions yet"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "購入の検証に失敗しました。「購入を復元」をお試しください"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "まだ提出はありません"
           }
         }
       }
     },
-    "购买失败：%@": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Purchase failed: %@"
+    "还没有自定义规则" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No custom rules yet"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "購入に失敗しました：%@"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "カスタムルールはまだありません"
           }
         }
       }
     },
-    "购买等待批准中（家长/管理者审批通过后自动解锁）": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Purchase pending approval (unlocks automatically once approved)"
+    "进入 iPhone 的设置应用。" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open the Settings app on your iPhone."
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "購入は承認待ちです（承認後に自動でアンロックされます）"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iPhoneの設定アプリを開きます。"
           }
         }
       }
     },
-    "跨语种垃圾短信识别": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Cross-language spam detection"
+    "进入「信息」里的未知与垃圾信息。" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Go to Messages → Unknown & Spam."
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "多言語の迷惑SMS検出"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "「メッセージ」の「不明な差出人とフィルタ」に進みます。"
           }
         }
       }
     },
-    "轻量算法 · 支持本地微调": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Lightweight · On-device fine-tuning"
+    "远程样本已删除" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remote sample deleted"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "軽量 · 端末Fine-tuning対応"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "リモートサンプルを削除しました"
           }
         }
       }
     },
-    "输入短信正文": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Enter the message body"
+    "选择模型" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose Model"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "本文を入力"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "モデルを選択"
           }
         }
       }
     },
-    "过滤器开始工作后，这里会展示每日拦截趋势。统计只记录数量，不保存短信内容。": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Once the filter starts working, daily trends appear here. Statistics count only — message content is never stored."
+    "重试" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Retry"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "フィルタが動き始めると、ここに日別の推移が表示されます。統計は件数のみで、本文は保存されません。"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "再試行"
           }
         }
       }
     },
-    "近 7 天": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Last 7 Days"
+    "针对中·英·日等 12 种语言离线训练，识别更准" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trained offline for 12 languages incl. Chinese, English & Japanese"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "過去7日間"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "中・英・日を含む12言語でオフライン学習し、より正確に識別"
           }
         }
       }
     },
-    "还没有提交过样本": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "No submissions yet"
+    "限时免费" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Free for a limited time"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "まだ提出はありません"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "期間限定無料"
           }
         }
       }
     },
-    "还没有自定义规则": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "No custom rules yet"
+    "隐私与条款" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Privacy & Terms"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "カスタムルールはまだありません"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "プライバシーと規約"
           }
         }
       }
     },
-    "进入 iPhone 的设置应用。": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Open the Settings app on your iPhone."
+    "隐私政策" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Privacy Policy"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "iPhoneの設定アプリを開きます。"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "プライバシーポリシー"
           }
         }
       }
     },
-    "进入「信息」里的未知与垃圾信息。": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Go to Messages → Unknown & Spam."
+    "隐私说明" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Privacy Notice"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "「メッセージ」の「不明な差出人とフィルタ」に進みます。"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "プライバシーについて"
           }
         }
       }
     },
-    "远程样本已删除": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Remote sample deleted"
+    "非订阅制，一次购买长期有效，支持在新设备恢复" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not a subscription — one purchase, restorable on new devices"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "リモートサンプルを削除しました"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "サブスクではなく買い切り。新しい端末でも復元できます"
           }
         }
       }
     },
-    "选择模型": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Choose Model"
+    "高级模型下载地址未配置" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Premium model download URL is not configured"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "モデルを選択"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "プレミアムモデルのダウンロードURLが設定されていません"
           }
         }
       }
     },
-    "重试": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Retry"
+    "高级模型安装失败" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Premium model installation failed"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "再試行"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "プレミアムモデルのインストールに失敗しました"
           }
         }
       }
     },
-    "针对中·英·日等 12 种语言离线训练，识别更准": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Trained offline for 12 languages incl. Chinese, English & Japanese"
+    "高级模型文件校验失败：%@" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Premium model file verification failed: %@"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "中・英・日を含む12言語でオフライン学習し、より正確に識別"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "プレミアムモデルファイルの検証に失敗しました：%@"
           }
         }
       }
     },
-    "限时免费": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Free for a limited time"
+    "高级模型文件路径不安全：%@" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Premium model file path is unsafe: %@"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "期間限定無料"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "プレミアムモデルファイルのパスが安全ではありません：%@"
           }
         }
       }
     },
-    "隐私与条款": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Privacy & Terms"
+    "高级模型清单不可用" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Premium model manifest is unavailable"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "プライバシーと規約"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "プレミアムモデルのマニフェストを利用できません"
           }
         }
       }
     },
-    "隐私政策": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Privacy Policy"
+    "高级模型清单格式不正确" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Premium model manifest is invalid"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "プライバシーポリシー"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "プレミアムモデルのマニフェスト形式が正しくありません"
           }
         }
       }
     },
-    "隐私说明": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Privacy Notice"
+    "高级模型缺少可下载文件清单" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Premium model is missing its downloadable file list"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "プライバシーについて"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "プレミアムモデルにダウンロード可能なファイル一覧がありません"
           }
         }
       }
     },
-    "非订阅制，一次购买长期有效，支持在新设备恢复": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Not a subscription — one purchase, restorable on new devices"
+    "高级模型需要下载 %@ 数据。当前网络可能按流量计费或处于低数据模式，继续下载可能产生流量费用。" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The premium model needs to download %@ of data. The current network may be metered or in Low Data Mode, so continuing may use paid data."
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "サブスクではなく買い切り。新しい端末でも復元できます"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "プレミアムモデルは%@のデータをダウンロードします。現在のネットワークは従量制または低データモードの可能性があり、続行すると通信量が発生する場合があります。"
           }
         }
       }
     },
-    "高级版": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Premium"
+    "高级版" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Premium"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "プレミアム"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "プレミアム"
           }
         }
       }
     },
-    "高级版已解锁，感谢支持！": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Premium unlocked — thank you!"
+    "高级版已解锁，感谢支持！" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Premium unlocked — thank you!"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "プレミアムをアンロックしました。ありがとうございます！"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "プレミアムをアンロックしました。ありがとうございます！"
           }
         }
       }
     },
-    "高级版授权已失效，已切换回经典模型": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Premium entitlement ended; switched back to the Classic model"
+    "高级版授权已失效，已切换回经典模型" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Premium entitlement ended; switched back to the Classic model"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "プレミアムの権利が失効したため、クラシックモデルに戻しました"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "プレミアムの権利が失効したため、クラシックモデルに戻しました"
           }
         }
       }
     }
   },
-  "version": "1.0"
+  "version" : "1.0"
 }
