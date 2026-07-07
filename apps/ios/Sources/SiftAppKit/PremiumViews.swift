@@ -77,6 +77,8 @@ private struct SettingsRowContent<Trailing: View>: View {
                 Text(title)
                     .font(.callout.weight(.semibold))
                     .foregroundStyle(.primary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.88)
                 if let subtitle {
                     Text(subtitle)
                         .font(.caption)
@@ -85,11 +87,13 @@ private struct SettingsRowContent<Trailing: View>: View {
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
+            .layoutPriority(1)
 
             HStack(spacing: 8) {
                 trailing
             }
             .foregroundStyle(.secondary)
+            .layoutPriority(0)
         }
         .frame(maxWidth: .infinity, minHeight: subtitle == nil ? 44 : 52, alignment: .leading)
         .padding(.horizontal, 12)
@@ -676,10 +680,13 @@ struct SettingsView: View {
                     Text(formatModelVersion(model.modelVersion))
                         .font(.callout.monospacedDigit())
                         .foregroundStyle(.secondary)
+                        .lineLimit(1)
                     Text(model.selectedModelVariant.title)
                         .font(.caption2.weight(.medium))
                         .foregroundStyle(.tertiary)
+                        .lineLimit(1)
                 }
+                .frame(minWidth: 76, alignment: .trailing)
             }
             .insetSurface(cornerRadius: 12)
         }
