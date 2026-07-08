@@ -18,6 +18,7 @@ The product is not launched yet; backward compatibility is not required.
 | Path | Contents |
 | --- | --- |
 | `apps/ios` | SwiftPM modules (`MessageFilterCore`, `SiftAppKit`, `MessageFilterExtensionKit`) plus the XcodeGen project |
+| `apps/site` | SvelteKit/svedocs public website for `sift.alkinum.io`; do not use the default svedocs pixel theme |
 | `packages/taxonomy` | Taxonomy source of truth (`taxonomy.json`); `generate:swift` emits `Taxonomy.swift` |
 | `tools/apple-trainer` | Create ML trainer plus multilingual synthetic corpora |
 | `tools/transformer-trainer` | mmBERT/Core ML trainer and `curate_dataset.py` quality audit tooling |
@@ -68,5 +69,7 @@ The product is not launched yet; backward compatibility is not required.
 pnpm pipeline -- all --install-ios      # Full automated training pipeline
 pnpm pipeline -- finetune               # Incremental fine-tuning from checkpoint
 pnpm export:training                    # Export CloudKit samples
+pnpm -C apps/site dev                   # Run the public website locally
+pnpm -C apps/site build                 # Build the public website
 cd apps/ios && xcodegen generate        # Regenerate the Xcode project
 ```

@@ -48,9 +48,9 @@
 	<key>SiftTransformerModelManifestURL</key>
 	<string>https://sift.alkinum.io/models/SiftTransformerClassifier.manifest.json</string>
 	<key>SiftPrivacyPolicyURL</key>
-	<string>https://github.com/backrunner/sift/blob/main/docs/legal/PRIVACY_POLICY.md</string>
+	<string>https://sift.alkinum.io/privacy</string>
 	<key>SiftTermsOfServiceURL</key>
-	<string>https://github.com/backrunner/sift/blob/main/docs/legal/TERMS_OF_SERVICE.md</string>
+	<string>https://sift.alkinum.io/terms</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

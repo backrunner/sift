@@ -41,9 +41,8 @@ identities.
   training; corpora are exported as snapshots via
   `tools/cloudkit/export-training-set.ts`, so deleted samples drop out of all
   future exports.
-- Transparency: the public privacy policy is served from the open-source
-  repository at
-  `https://github.com/backrunner/sift/blob/main/docs/legal/PRIVACY_POLICY.md`.
+- Transparency: the public privacy policy is served at
+  `https://sift.alkinum.io/privacy`.
 
 ## Apple review checklist
 
@@ -52,9 +51,9 @@ identities.
   so the privacy policy is easy to reach even before the user chooses remote
   contribution.
 - Set the App Store Connect privacy policy URL to
-  `https://github.com/backrunner/sift/blob/main/docs/legal/PRIVACY_POLICY.md`.
+  `https://sift.alkinum.io/privacy`.
 - Link to
-  `https://github.com/backrunner/sift/blob/main/docs/legal/TERMS_OF_SERVICE.md`
+  `https://sift.alkinum.io/terms`
   wherever product or store metadata needs Terms of Service.
 - Keep `PrivacyInfo.xcprivacy` in the app/framework bundles because the app uses
   `UserDefaults` for preferences, consent, custom rules, model selection, and
@@ -83,5 +82,6 @@ or delete their own record, and require authentication to read.
 Training exports authenticate with a CloudKit server-to-server key. Keep the
 private key PEM outside the repository and pass it via `$CLOUDKIT_PRIVATE_KEY`.
 
-The public legal pages are the Markdown documents in `docs/legal/`; there is no
-separate legal-site app to deploy.
+The public legal pages are served by the Svelte site under `apps/site` at
+`https://sift.alkinum.io/privacy` and `https://sift.alkinum.io/terms`. The
+Markdown documents in `docs/legal/` remain the repository source copy.

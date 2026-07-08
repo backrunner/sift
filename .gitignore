@@ -65,6 +65,9 @@ DerivedData/
 *.keychain
 *.keychain-db
 
+# Local release submission notes
+docs/APP_STORE_CONNECT_METADATA.md
+
 # Databases and local sample exports
 *.sqlite
 *.sqlite-shm

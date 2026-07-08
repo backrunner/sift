@@ -59,12 +59,16 @@ xcodegen generate && open Sift.xcodeproj
 
 # Train models and install local iOS artifacts
 pnpm pipeline -- all --skip fetch-remote --install-ios
+
+# Run the public website locally
+pnpm -C apps/site dev
 ```
 
 Useful day-to-day commands:
 
 ```bash
 pnpm typecheck
+pnpm -C apps/site build
 pnpm --filter @sift/taxonomy generate:swift
 pnpm export:training
 ```
@@ -73,6 +77,7 @@ pnpm export:training
 
 ```text
 apps/ios                  SwiftUI app and IdentityLookup extension
+apps/site                 SvelteKit/svedocs public website for sift.alkinum.io
 packages/taxonomy         50-leaf multilingual taxonomy source of truth
 tools/apple-trainer       Create ML trainer and multilingual synthetic corpus
 tools/transformer-trainer mmBERT/Core ML trainer and data curation tools
@@ -80,7 +85,7 @@ tools/pii-trainer         Optional on-device PII redaction model trainer
 tools/cloudkit            CloudKit sample export tools
 tools/pipeline            One-command automated training orchestration
 infra/cloudkit            CloudKit container schema for cktool import
-docs                      Training, taxonomy, privacy, and GitHub-hosted legal documents
+docs                      Training, taxonomy, privacy, and legal source documents
 ```
 
 ## Reading Map
