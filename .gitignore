@@ -44,6 +44,9 @@ secrets/
 .build/
 DerivedData/
 *.xcworkspace
+**/*.xcodeproj/project.xcworkspace/
+**/*.xcodeproj/xcuserdata/
+*.xcuserdatad/
 *.xcuserstate
 *.xcscmblueprint
 *.moved-aside
