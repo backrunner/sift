@@ -79,7 +79,7 @@ DerivedData/
 
 # Core ML / trainer working artifacts
 *.mlmodel
-!apps/ios/GeneratedModels/SiftSMSClassifier.mlmodel
+apps/ios/GeneratedModels/
 *.mlmodelc/
 *.mlpackage/
 *.mlarchive

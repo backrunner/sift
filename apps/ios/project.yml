@@ -64,8 +64,10 @@ targets:
       - path: Privacy/SiftApp/PrivacyInfo.xcprivacy
         buildPhase: resources
       - path: GeneratedModels/SiftSMSClassifier.mlmodel
+        optional: true
       - path: GeneratedModels/SiftSMSClassifier.manifest.json
         buildPhase: resources
+        optional: true
     dependencies:
       - target: SiftAppKit
       - target: MessageFilterCore
@@ -89,8 +91,10 @@ targets:
     sources:
       - MessageFilterExtension
       - path: GeneratedModels/SiftSMSClassifier.mlmodel
+        optional: true
       - path: GeneratedModels/SiftSMSClassifier.manifest.json
         buildPhase: resources
+        optional: true
     dependencies:
       - target: MessageFilterCore
       - target: MessageFilterExtensionKit
