@@ -28,16 +28,57 @@ current user's own records — no identity is ever stored in the payload.
 mirrors into each user's **private database** as a backup. It contains counts
 only, never message content, and is invisible to the developer.
 
-Import into the development environment with Xcode's `cktool`:
+## Syncing the schema
+
+CloudKit does not read `schema.ckdb` from git automatically. Treat this file as
+the repo source of truth, then push it to the CloudKit **development**
+environment and deploy the accepted changes to **production** from the CloudKit
+Console.
+
+Validate the checked-in schema against the development environment:
 
 ```bash
-xcrun cktool save-schema \
+xcrun cktool validate-schema \
   --team-id <TEAM_ID> \
   --container-id iCloud.com.alkinum.sift \
   --environment development \
   --file infra/cloudkit/schema.ckdb
 ```
 
-then promote development → production from the CloudKit Console once
-verified. Record-level security roles (`GRANT` lines) currently need a
-one-time review in the Console after the first import.
+Import it into the development environment with Xcode's `cktool`:
+
+```bash
+xcrun cktool import-schema \
+  --team-id <TEAM_ID> \
+  --container-id iCloud.com.alkinum.sift \
+  --environment development \
+  --validate \
+  --file infra/cloudkit/schema.ckdb
+```
+
+After importing, open the [CloudKit Console](https://icloud.developer.apple.com/)
+for `iCloud.com.alkinum.sift`, verify the record types and security roles in
+Development, then deploy/promote the development schema changes to Production.
+Record-level security roles (`GRANT` lines) currently need a one-time review in
+the Console after the first import.
+
+For release sanity checks, export both environments and diff them:
+
+```bash
+mkdir -p build/cloudkit
+xcrun cktool export-schema \
+  --team-id <TEAM_ID> \
+  --container-id iCloud.com.alkinum.sift \
+  --environment development \
+  --output-file build/cloudkit/development.ckdb
+xcrun cktool export-schema \
+  --team-id <TEAM_ID> \
+  --container-id iCloud.com.alkinum.sift \
+  --environment production \
+  --output-file build/cloudkit/production.ckdb
+diff -u build/cloudkit/development.ckdb build/cloudkit/production.ckdb
+```
+
+Production TestFlight/App Store builds write to the production CloudKit
+environment, so schema changes must be deployed to Production before relying on
+new record types, fields, indexes, or permissions in TestFlight.

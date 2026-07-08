@@ -9,7 +9,7 @@ rules, statistics counting, and on-device personalization all run on your
 device by default.
 
 The public copy of this policy is served from the open-source repository at
-`https://github.com/alkinum/sift/blob/main/docs/legal/PRIVACY_POLICY.md`. If
+`https://github.com/backrunner/sift/blob/main/docs/legal/PRIVACY_POLICY.md`. If
 this document and the in-app summary ever differ, this document controls.
 
 ## 1. Summary

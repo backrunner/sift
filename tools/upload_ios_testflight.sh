@@ -62,6 +62,14 @@ fail() {
   exit 1
 }
 
+run_xcodebuild() {
+  local -a command=("$@")
+  if (( ${#XCODEBUILD_ARGUMENTS[@]} > 0 )); then
+    command+=("${XCODEBUILD_ARGUMENTS[@]}")
+  fi
+  "${command[@]}"
+}
+
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --build-number)
@@ -92,6 +100,14 @@ while [[ $# -gt 0 ]]; do
     -h|--help)
       usage
       exit 0
+      ;;
+    --)
+      shift
+      while [[ $# -gt 0 ]]; do
+        XCODEBUILD_ARGUMENTS+=("$1")
+        shift
+      done
+      break
       ;;
     *)
       XCODEBUILD_ARGUMENTS+=("$1")
@@ -128,19 +144,17 @@ fi
 
 cd "$ROOT_DIR"
 
-xcodebuild archive \
+run_xcodebuild xcodebuild archive \
   -project "$PROJECT_PATH" \
   -scheme "$SCHEME" \
   -configuration "$CONFIGURATION" \
   -destination "generic/platform=iOS" \
   -archivePath "$ARCHIVE_PATH" \
-  "${archive_build_settings[@]}" \
-  "${XCODEBUILD_ARGUMENTS[@]}"
+  "${archive_build_settings[@]}"
 
-xcodebuild -exportArchive \
+run_xcodebuild xcodebuild -exportArchive \
   -archivePath "$ARCHIVE_PATH" \
   -exportPath "$EXPORT_PATH" \
-  -exportOptionsPlist "$runtime_export_options" \
-  "${XCODEBUILD_ARGUMENTS[@]}"
+  -exportOptionsPlist "$runtime_export_options"
 
 echo "Uploaded Sift iOS archive to App Store Connect."

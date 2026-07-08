@@ -115,10 +115,10 @@ public final class PremiumStore {
                 if let product = try await backend.loadProduct(identifier: identifier) {
                     productState = .available(product)
                 } else {
-                    productState = .unavailable(String(localized: "暂时无法获取商品信息，请稍后重试"))
+                    productState = .unavailable(Self.priceUnavailableMessage)
                 }
             } catch {
-                productState = .unavailable(Self.storefrontErrorMessage(for: error))
+                productState = .unavailable(Self.priceUnavailableMessage)
             }
         }
     }
@@ -180,6 +180,10 @@ public final class PremiumStore {
         if changed {
             onEntitlementChange?(unlocked)
         }
+    }
+
+    private static var priceUnavailableMessage: String {
+        String(localized: "价格信息不可用，请稍后再试")
     }
 
     private static func storefrontErrorMessage(for error: Error) -> String {

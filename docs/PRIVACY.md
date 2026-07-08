@@ -43,7 +43,7 @@ identities.
   future exports.
 - Transparency: the public privacy policy is served from the open-source
   repository at
-  `https://github.com/alkinum/sift/blob/main/docs/legal/PRIVACY_POLICY.md`.
+  `https://github.com/backrunner/sift/blob/main/docs/legal/PRIVACY_POLICY.md`.
 
 ## Apple review checklist
 
@@ -52,9 +52,9 @@ identities.
   so the privacy policy is easy to reach even before the user chooses remote
   contribution.
 - Set the App Store Connect privacy policy URL to
-  `https://github.com/alkinum/sift/blob/main/docs/legal/PRIVACY_POLICY.md`.
+  `https://github.com/backrunner/sift/blob/main/docs/legal/PRIVACY_POLICY.md`.
 - Link to
-  `https://github.com/alkinum/sift/blob/main/docs/legal/TERMS_OF_SERVICE.md`
+  `https://github.com/backrunner/sift/blob/main/docs/legal/TERMS_OF_SERVICE.md`
   wherever product or store metadata needs Terms of Service.
 - Keep `PrivacyInfo.xcprivacy` in the app/framework bundles because the app uses
   `UserDefaults` for preferences, consent, custom rules, model selection, and
@@ -75,7 +75,7 @@ live in `docs/legal/PRIVACY_POLICY.md` and `docs/legal/TERMS_OF_SERVICE.md`.
 ## CloudKit configuration
 
 The container is `iCloud.com.alkinum.sift`; the schema lives in
-`infra/cloudkit/schema.ckdb` and is imported with `xcrun cktool save-schema`
+`infra/cloudkit/schema.ckdb` and is imported with `xcrun cktool import-schema`
 (see `infra/cloudkit/README.md`). Public-database permissions allow any
 signed-in user to create `SmsSample` records, allow only the creator to modify
 or delete their own record, and require authentication to read.

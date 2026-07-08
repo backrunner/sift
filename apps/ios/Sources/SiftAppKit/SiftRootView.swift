@@ -1695,18 +1695,66 @@ private struct ResultStrip: View {
             Image(systemName: decision.source == .rule ? "scope" : "brain.head.profile")
                 .font(.title3.weight(.bold))
                 .foregroundStyle(Color.siftMint)
+                .frame(width: 28)
+
             VStack(alignment: .leading, spacing: 3) {
+                Text(String(localized: "模型测试"))
+                    .font(.footnote.weight(.bold))
+                    .foregroundStyle(.primary)
+                Text("\(sourceTitle) · \(systemActionTitle)")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            .layoutPriority(0)
+
+            Spacer(minLength: 10)
+
+            VStack(alignment: .trailing, spacing: 3) {
                 Text("\(decision.groupTitle) / \(decision.labelTitle)")
                     .font(.headline.weight(.bold))
                     .foregroundStyle(.primary)
-                Text("\(decision.source.rawValue) · \(Int(decision.confidence * 100))% · \(decision.systemAction.rawValue)")
-                    .font(.caption.monospaced())
+                    .lineLimit(2)
+                    .multilineTextAlignment(.trailing)
+                    .minimumScaleFactor(0.82)
+                Text(String(localized: "置信度 \(confidenceText)"))
+                    .font(.caption2.weight(.semibold).monospacedDigit())
                     .foregroundStyle(.secondary)
             }
-            Spacer()
+            .layoutPriority(1)
         }
         .padding(14)
         .insetSurface(cornerRadius: 14)
+        .accessibilityElement(children: .combine)
+    }
+
+    private var confidenceText: String {
+        "\(Int((decision.confidence * 100).rounded()))%"
+    }
+
+    private var sourceTitle: String {
+        switch decision.source {
+        case .rule:
+            return String(localized: "规则命中")
+        case .model:
+            return String(localized: "模型判断")
+        case .personalization:
+            return String(localized: "本地微调")
+        case .fallback:
+            return String(localized: "兜底判断")
+        }
+    }
+
+    private var systemActionTitle: String {
+        switch decision.systemAction {
+        case .none:
+            return String(localized: "正常放行")
+        case .transaction:
+            return String(localized: "交易通知")
+        case .promotion:
+            return String(localized: "推广归类")
+        case .junk:
+            return String(localized: "垃圾拦截")
+        }
     }
 }
 

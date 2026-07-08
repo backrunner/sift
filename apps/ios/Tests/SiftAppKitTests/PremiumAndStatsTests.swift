@@ -66,9 +66,19 @@ private func decision(labelID: String, groupID: String, action: SystemAction) ->
 private struct MockPremiumBackend: PremiumPurchasing {
     let entitled: Bool
     let outcome: PremiumPurchaseOutcome
+    var product: PremiumProductInfo? = PremiumProductInfo(
+        identifier: "com.alkinum.sift.premium",
+        displayName: "高级版",
+        displayPrice: "¥18.00",
+        price: 18
+    )
+    var loadError: (any Error & Sendable)?
 
     func loadProduct(identifier: String) async throws -> PremiumProductInfo? {
-        PremiumProductInfo(identifier: identifier, displayName: "高级版", displayPrice: "¥18.00", price: 18)
+        if let loadError {
+            throw loadError
+        }
+        return product
     }
 
     func purchase(identifier: String) async -> PremiumPurchaseOutcome {
@@ -221,6 +231,21 @@ func purchaseOutcomesProduceUserFacingFeedback() async throws {
 
 @MainActor
 @Test
+func missingPremiumPriceUsesFallbackMessage() async throws {
+    let model = SiftAppModel(
+        premiumBackend: MockPremiumBackend(entitled: false, outcome: .cancelled, product: nil)
+    )
+    try await waitForPremiumUnavailable(model)
+
+    guard case .unavailable(let message) = model.premium.productState else {
+        Issue.record("Expected unavailable premium product state")
+        return
+    }
+    #expect(message == String(localized: "价格信息不可用，请稍后再试"))
+}
+
+@MainActor
+@Test
 func submissionLengthValidationBlocksOverlongSamples() {
     let model = SiftAppModel(
         remoteSampleClient: nil,
@@ -243,6 +268,17 @@ private func waitForPremiumRefresh(_ model: SiftAppModel) async throws {
         }
         try await Task.sleep(nanoseconds: 10_000_000)
     }
+}
+
+@MainActor
+private func waitForPremiumUnavailable(_ model: SiftAppModel) async throws {
+    for _ in 0..<100 {
+        if case .unavailable = model.premium.productState {
+            return
+        }
+        try await Task.sleep(nanoseconds: 10_000_000)
+    }
+    Issue.record("Timed out waiting for premium unavailable state")
 }
 
 @MainActor

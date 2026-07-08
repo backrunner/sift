@@ -70,6 +70,8 @@ targets:
       - target: SiftAppKit
       - target: MessageFilterCore
         embed: true
+      - target: MessageFilterExtensionKit
+        embed: true
       - target: MessageFilterExtension
         embed: true
     settings:
@@ -91,9 +93,7 @@ targets:
         buildPhase: resources
     dependencies:
       - target: MessageFilterCore
-        embed: true
       - target: MessageFilterExtensionKit
-        embed: true
     settings:
       CODE_SIGN_STYLE: Automatic
       DEVELOPMENT_TEAM: PB8H83VL3Z

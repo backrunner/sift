@@ -8,7 +8,6 @@
 
 /* Begin PBXBuildFile section */
 		00DB5ADC9F0CE9D1B178F56F /* MessageFilterCore.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = DE9062B3BA12FA49279965C9 /* MessageFilterCore.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
-		087E1091F7B71960B9DB576B /* MessageFilterExtensionKit.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 6CBD4DFE2D496DF56947A303 /* MessageFilterExtensionKit.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		0C531EFADABA41DCC6083EB8 /* MessageFilterExtensionKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6CBD4DFE2D496DF56947A303 /* MessageFilterExtensionKit.framework */; };
 		0C78DF462A5FAC3F6A6AA4FB /* MessageFilterExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = F580BBE41F0C66D0E4695772 /* MessageFilterExtension.swift */; };
 		13988EDB6F5E1DCE2DA7FD70 /* SiftAppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F43A09AA5745101A244CF132 /* SiftAppModel.swift */; };
@@ -26,6 +25,7 @@
 		5825DED50EE74D98B233C0DA /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = F94B8A23D8B6D58EDFE4D12B /* PrivacyInfo.xcprivacy */; };
 		58F0198193B053CD63CE0944 /* SiftSMSClassifier.mlmodel in Sources */ = {isa = PBXBuildFile; fileRef = 20B9AC80820B87C5D1C1A9F4 /* SiftSMSClassifier.mlmodel */; };
 		5AEDA33C9EA687897EC905C6 /* RuleEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 753C8AF04FE9FA5CE3C68EC1 /* RuleEngine.swift */; };
+		5D86B8A6E3FDA9322E315FA0 /* MessageFilterExtensionKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6CBD4DFE2D496DF56947A303 /* MessageFilterExtensionKit.framework */; };
 		5F3D38AECFF72DFFCE517F45 /* SiftApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94BE665417F14F6013BCD08F /* SiftApp.swift */; };
 		632A870ACC0BF0C36277286E /* Taxonomy.swift in Sources */ = {isa = PBXBuildFile; fileRef = E646B03461B9CD0523D39416 /* Taxonomy.swift */; };
 		68E9C0CAAEE4F4719B65EBDD /* ModelManifest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6552BE571000D043A0B5FEC8 /* ModelManifest.swift */; };
@@ -33,10 +33,10 @@
 		80EA440A0B3377EEBF648BA7 /* Classifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 91A2208F6DF258C04BFA1DBF /* Classifier.swift */; };
 		8BB645CC14EFDD4FF2C4F3A3 /* PrivacySanitizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85A81258E948F5F731486B23 /* PrivacySanitizer.swift */; };
 		9432635D3D3C7B4052D34978 /* PIIDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7618B89E17DF7C4ABFB2C888 /* PIIDetector.swift */; };
-		963B035935077DD1AA645701 /* MessageFilterCore.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = DE9062B3BA12FA49279965C9 /* MessageFilterCore.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		9C33A935CBCD37F0BE95309C /* MessageFilterActionMapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90D8C514C04E418B11B62568 /* MessageFilterActionMapper.swift */; };
 		A08F823208268F7EBE0DA032 /* SiftSMSClassifier.manifest.json in Resources */ = {isa = PBXBuildFile; fileRef = 03A3CC79E2485F5F94485559 /* SiftSMSClassifier.manifest.json */; };
 		A597B3E2DE38645AFDF3E2B1 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 3621E146033750FC68CED506 /* PrivacyInfo.xcprivacy */; };
+		A77C4C165DF3190A800A90FC /* MessageFilterExtensionKit.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 6CBD4DFE2D496DF56947A303 /* MessageFilterExtensionKit.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		AAC82133210D1D4DAA00A4F6 /* TransformerModelDownload.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A2F30DFD01633E2520EBBAA /* TransformerModelDownload.swift */; };
 		B03AD5D16E2BB20888D457DA /* PremiumStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36F6A1D8E3C1E952689092F2 /* PremiumStore.swift */; };
 		BD98F94128FED4D69A01C995 /* MessageModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27DA7D06EC28D68B6A037EB8 /* MessageModels.swift */; };
@@ -71,6 +71,13 @@
 			proxyType = 1;
 			remoteGlobalIDString = C7B074B15045AF82A82E305E;
 			remoteInfo = MessageFilterExtension;
+		};
+		30DF7BE9B90CB6B3080DD012 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = DF5A71E18F356690F069FA36 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 4F533FA55A5F48A7B79AA24A;
+			remoteInfo = MessageFilterExtensionKit;
 		};
 		4975289FB7E036C09C721D20 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -129,18 +136,7 @@
 			files = (
 				4D90C615FA1371A4048092D5 /* SiftAppKit.framework in Embed Frameworks */,
 				00DB5ADC9F0CE9D1B178F56F /* MessageFilterCore.framework in Embed Frameworks */,
-			);
-			name = "Embed Frameworks";
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		AE2BAC32E0FB058E67581537 /* Embed Frameworks */ = {
-			isa = PBXCopyFilesBuildPhase;
-			buildActionMask = 2147483647;
-			dstPath = "";
-			dstSubfolderSpec = 10;
-			files = (
-				963B035935077DD1AA645701 /* MessageFilterCore.framework in Embed Frameworks */,
-				087E1091F7B71960B9DB576B /* MessageFilterExtensionKit.framework in Embed Frameworks */,
+				A77C4C165DF3190A800A90FC /* MessageFilterExtensionKit.framework in Embed Frameworks */,
 			);
 			name = "Embed Frameworks";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -160,7 +156,7 @@
 		2D1291EF99B315F04D4B0758 /* SiftApp.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = SiftApp.entitlements; sourceTree = "<group>"; };
 		2F94E7D7E6D9B2D3624A6493 /* FeatureHasher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeatureHasher.swift; sourceTree = "<group>"; };
 		3567C7E3C28918AC491F49A2 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
-		3621E146033750FC68CED506 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		3621E146033750FC68CED506 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		36F6A1D8E3C1E952689092F2 /* PremiumStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PremiumStore.swift; sourceTree = "<group>"; };
 		414E55D72A3C1BB0973F2C21 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		484100600463D6DE7C77A4EC /* TransformerClassifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransformerClassifier.swift; sourceTree = "<group>"; };
@@ -173,11 +169,11 @@
 		7D5C960A4586578B74DD045F /* SampleStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SampleStore.swift; sourceTree = "<group>"; };
 		7EA84B55EFAA05AB592B06F3 /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
 		85A81258E948F5F731486B23 /* PrivacySanitizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivacySanitizer.swift; sourceTree = "<group>"; };
-		874872CE3C4DDB3875720851 /* SiftApp.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = SiftApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		874872CE3C4DDB3875720851 /* SiftApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SiftApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		90D8C514C04E418B11B62568 /* MessageFilterActionMapper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessageFilterActionMapper.swift; sourceTree = "<group>"; };
 		91A2208F6DF258C04BFA1DBF /* Classifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Classifier.swift; sourceTree = "<group>"; };
 		94BE665417F14F6013BCD08F /* SiftApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SiftApp.swift; sourceTree = "<group>"; };
-		95714DBDDEB14E7636B61DEB /* MessageFilterExtension.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = MessageFilterExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		95714DBDDEB14E7636B61DEB /* MessageFilterExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = MessageFilterExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		A106E2DC9BA09A3E71EBD4BB /* AppleModelClassifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleModelClassifier.swift; sourceTree = "<group>"; };
 		AF3A58DEA3DAEB51EA8F59D7 /* FilterStatistics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FilterStatistics.swift; sourceTree = "<group>"; };
 		B01E8E89CED9145777F73B53 /* PremiumViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PremiumViews.swift; sourceTree = "<group>"; };
@@ -188,10 +184,10 @@
 		DF0856AE1DE18210A3372A0A /* MessageFilterExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = MessageFilterExtension.entitlements; sourceTree = "<group>"; };
 		DF848914EC70ED6F39C774C3 /* CoreMLBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoreMLBridge.swift; sourceTree = "<group>"; };
 		E646B03461B9CD0523D39416 /* Taxonomy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Taxonomy.swift; sourceTree = "<group>"; };
-		F3453A1235E4C653C2B05667 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		F3453A1235E4C653C2B05667 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		F43A09AA5745101A244CF132 /* SiftAppModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SiftAppModel.swift; sourceTree = "<group>"; };
 		F580BBE41F0C66D0E4695772 /* MessageFilterExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessageFilterExtension.swift; sourceTree = "<group>"; };
-		F94B8A23D8B6D58EDFE4D12B /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		F94B8A23D8B6D58EDFE4D12B /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -226,6 +222,7 @@
 			files = (
 				CCE0687DC8B943DCBEE3C8EF /* SiftAppKit.framework in Frameworks */,
 				E698229663809AC1761A38C1 /* MessageFilterCore.framework in Frameworks */,
+				5D86B8A6E3FDA9322E315FA0 /* MessageFilterExtensionKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -443,6 +440,7 @@
 			dependencies = (
 				FC2ECD62D9410F6DBD51408B /* PBXTargetDependency */,
 				509A55D752DCA9843E4CAC5B /* PBXTargetDependency */,
+				914FD641C618E1E96514C239 /* PBXTargetDependency */,
 				9E7AED55F3CEE561F560EEEE /* PBXTargetDependency */,
 			);
 			name = SiftApp;
@@ -459,7 +457,6 @@
 				A56AB23510DB575D7AE2FF00 /* Sources */,
 				84142D5F3F22B4E50C11CF85 /* Resources */,
 				5352F83E58428945FDEF2879 /* Frameworks */,
-				AE2BAC32E0FB058E67581537 /* Embed Frameworks */,
 			);
 			buildRules = (
 			);
@@ -481,7 +478,7 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
-				LastUpgradeCheck = 1430;
+				LastUpgradeCheck = 2660;
 				TargetAttributes = {
 					4F533FA55A5F48A7B79AA24A = {
 						DevelopmentTeam = PB8H83VL3Z;
@@ -652,6 +649,11 @@
 			target = BCBE6147C7CD01829DD2F984 /* MessageFilterCore */;
 			targetProxy = 58D8C7D4DE3CA356102880F3 /* PBXContainerItemProxy */;
 		};
+		914FD641C618E1E96514C239 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 4F533FA55A5F48A7B79AA24A /* MessageFilterExtensionKit */;
+			targetProxy = 30DF7BE9B90CB6B3080DD012 /* PBXContainerItemProxy */;
+		};
 		9E7AED55F3CEE561F560EEEE /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = C7B074B15045AF82A82E305E /* MessageFilterExtension */;
@@ -678,19 +680,20 @@
 		0C909DD6E7855F3CF73870D5 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_IDENTITY = "";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEFINES_MODULE = YES;
-				DEVELOPMENT_TEAM = PB8H83VL3Z;
 				DYLIB_COMPATIBILITY_VERSION = 1;
 				DYLIB_CURRENT_VERSION = 1;
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				ENABLE_MODULE_VERIFIER = YES;
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
+				MODULE_VERIFIER_SUPPORTED_LANGUAGE_STANDARDS = "gnu11 gnu++14";
 				PRODUCT_BUNDLE_IDENTIFIER = com.alkinum.sift.MessageFilterExtensionKit;
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SDKROOT = iphoneos;
@@ -703,19 +706,20 @@
 		1D3A0652B13453B1F38572DB /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_IDENTITY = "";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEFINES_MODULE = YES;
-				DEVELOPMENT_TEAM = PB8H83VL3Z;
 				DYLIB_COMPATIBILITY_VERSION = 1;
 				DYLIB_CURRENT_VERSION = 1;
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				ENABLE_MODULE_VERIFIER = YES;
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
+				MODULE_VERIFIER_SUPPORTED_LANGUAGE_STANDARDS = "gnu11 gnu++14";
 				PRODUCT_BUNDLE_IDENTIFIER = com.alkinum.sift.SiftAppKit;
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SDKROOT = iphoneos;
@@ -728,19 +732,20 @@
 		223A21D117175B240F3CE6C3 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_IDENTITY = "";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEFINES_MODULE = YES;
-				DEVELOPMENT_TEAM = PB8H83VL3Z;
 				DYLIB_COMPATIBILITY_VERSION = 1;
 				DYLIB_CURRENT_VERSION = 1;
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				ENABLE_MODULE_VERIFIER = YES;
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
+				MODULE_VERIFIER_SUPPORTED_LANGUAGE_STANDARDS = "gnu11 gnu++14";
 				PRODUCT_BUNDLE_IDENTIFIER = com.alkinum.sift.SiftAppKit;
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SDKROOT = iphoneos;
@@ -757,7 +762,6 @@
 				CODE_SIGN_ENTITLEMENTS = SiftApp/SiftApp.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = PB8H83VL3Z;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = SiftApp/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -776,7 +780,6 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = MessageFilterExtension/MessageFilterExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = PB8H83VL3Z;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = MessageFilterExtension/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -794,19 +797,20 @@
 		667FCBDD600473532899E29C /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_IDENTITY = "";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEFINES_MODULE = YES;
-				DEVELOPMENT_TEAM = PB8H83VL3Z;
 				DYLIB_COMPATIBILITY_VERSION = 1;
 				DYLIB_CURRENT_VERSION = 1;
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				ENABLE_MODULE_VERIFIER = YES;
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
+				MODULE_VERIFIER_SUPPORTED_LANGUAGE_STANDARDS = "gnu11 gnu++14";
 				PRODUCT_BUNDLE_IDENTIFIER = com.alkinum.sift.MessageFilterCore;
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SDKROOT = iphoneos;
@@ -820,6 +824,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
@@ -852,8 +857,10 @@
 				COPY_PHASE_STRIP = NO;
 				CURRENT_PROJECT_VERSION = 1;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = PB8H83VL3Z;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
@@ -869,6 +876,7 @@
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SUPPORTS_MACCATALYST = NO;
 				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
@@ -881,19 +889,20 @@
 		C8204BBE142407A10E33235C /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_IDENTITY = "";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEFINES_MODULE = YES;
-				DEVELOPMENT_TEAM = PB8H83VL3Z;
 				DYLIB_COMPATIBILITY_VERSION = 1;
 				DYLIB_CURRENT_VERSION = 1;
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				ENABLE_MODULE_VERIFIER = YES;
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
+				MODULE_VERIFIER_SUPPORTED_LANGUAGE_STANDARDS = "gnu11 gnu++14";
 				PRODUCT_BUNDLE_IDENTIFIER = com.alkinum.sift.MessageFilterCore;
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SDKROOT = iphoneos;
@@ -910,7 +919,6 @@
 				CODE_SIGN_ENTITLEMENTS = SiftApp/SiftApp.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = PB8H83VL3Z;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = SiftApp/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -928,6 +936,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
@@ -960,8 +969,10 @@
 				COPY_PHASE_STRIP = NO;
 				CURRENT_PROJECT_VERSION = 1;
 				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = PB8H83VL3Z;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_NO_COMMON_BLOCKS = YES;
@@ -984,6 +995,7 @@
 				ONLY_ACTIVE_ARCH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SUPPORTS_MACCATALYST = NO;
 				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
@@ -998,7 +1010,6 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = MessageFilterExtension/MessageFilterExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = PB8H83VL3Z;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = MessageFilterExtension/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -1016,19 +1027,20 @@
 		F8A36C31D5F9CF61C5E01980 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_IDENTITY = "";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEFINES_MODULE = YES;
-				DEVELOPMENT_TEAM = PB8H83VL3Z;
 				DYLIB_COMPATIBILITY_VERSION = 1;
 				DYLIB_CURRENT_VERSION = 1;
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				ENABLE_MODULE_VERIFIER = YES;
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
+				MODULE_VERIFIER_SUPPORTED_LANGUAGE_STANDARDS = "gnu11 gnu++14";
 				PRODUCT_BUNDLE_IDENTIFIER = com.alkinum.sift.MessageFilterExtensionKit;
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SDKROOT = iphoneos;

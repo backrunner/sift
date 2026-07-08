@@ -48,7 +48,7 @@ remote contribution from inside the app.
 ## Quick Start
 
 ```bash
-git clone <repo> && cd sift
+git clone https://github.com/backrunner/sift.git && cd sift
 pnpm install
 
 # iOS core: build, tests, and smoke tests

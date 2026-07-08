@@ -6,9 +6,9 @@ These Terms of Service ("Terms") govern your use of the Sift iOS application
 ("the App") and its optional hosted features (anonymous sample contribution
 and iCloud-backed statistics). By downloading or using the App you agree to
 these Terms and to the
-[Privacy Policy](https://github.com/alkinum/sift/blob/main/docs/legal/PRIVACY_POLICY.md).
+[Privacy Policy](https://github.com/backrunner/sift/blob/main/docs/legal/PRIVACY_POLICY.md).
 The public copy of these Terms is served from the open-source repository at
-`https://github.com/alkinum/sift/blob/main/docs/legal/TERMS_OF_SERVICE.md`.
+`https://github.com/backrunner/sift/blob/main/docs/legal/TERMS_OF_SERVICE.md`.
 
 If you obtained the App through the Apple App Store, Apple's standard
 Licensed Application End User License Agreement also applies to the extent it

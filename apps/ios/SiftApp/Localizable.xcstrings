@@ -2,7 +2,6 @@
   "sourceLanguage" : "zh-Hans",
   "strings" : {
     "%@失败：iCloud 返回错误（%lld）" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -19,7 +18,6 @@
       }
     },
     "%@超时，请稍后重试" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -36,7 +34,6 @@
       }
     },
     "iCloud 存储配额不足，样本未%@" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -53,7 +50,6 @@
       }
     },
     "iCloud 服务暂不可用，请稍后重试" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -70,7 +66,6 @@
       }
     },
     "iCloud 权限不足，样本未%@" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -87,7 +82,6 @@
       }
     },
     "Sift 提交数据导出" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -104,7 +98,6 @@
       }
     },
     "Sift 高级版" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -121,7 +114,6 @@
       }
     },
     "Transformer 多语言模型" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -138,7 +130,6 @@
       }
     },
     "Transformer 多语言模型永久可用" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -155,7 +146,6 @@
       }
     },
     "Transformer 模型不支持本地微调" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -172,7 +162,6 @@
       }
     },
     "Transformer 模型未包含在当前构建中" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -189,7 +178,6 @@
       }
     },
     "一次性买断 · 无订阅 · 全家庭共享跟随 Apple ID" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -206,7 +194,6 @@
       }
     },
     "一次购买，永久解锁" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -223,7 +210,6 @@
       }
     },
     "下载" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -240,7 +226,6 @@
       }
     },
     "下载中" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -257,7 +242,6 @@
       }
     },
     "云端没有找到你提交的数据" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -274,7 +258,6 @@
       }
     },
     "云端没有找到你提交的样本" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -290,8 +273,23 @@
         }
       }
     },
+    "交易通知" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Transaction"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "取引通知"
+          }
+        }
+      }
+    },
     "仅本地" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -308,7 +306,6 @@
       }
     },
     "仅本地微调" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -325,7 +322,6 @@
       }
     },
     "以 %@ 购买" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -341,19 +337,18 @@
         }
       }
     },
-    "会通过 iCloud 共享脱敏后的样本文本、分类、模型版本和粗粒度语言地区（如 zh-CN）；不发送发送方、账号或设备标识。需设备已登录 iCloud，你可以用回执删除最近一次远程样本。" : {
-      "extractionState" : "stale",
+    "价格信息不可用，请稍后再试" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Shares the sanitized sample text, category, model version, and a coarse language/region tag (e.g. zh-CN) via iCloud. No sender, account, or device identifiers are sent. Requires an iCloud session; a receipt lets you delete your latest submission."
+            "value" : "Price information is unavailable. Please try again later"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "iCloud経由でマスキング済みサンプル本文・カテゴリ・モデルバージョン・大まかな言語地域タグ（例: ja-JP）を共有します。送信者・アカウント・端末の識別子は送信しません。iCloudへのサインインが必要で、レシートで直近の提出を削除できます。"
+            "value" : "価格情報を利用できません。後ほどお試しください"
           }
         }
       }
@@ -374,8 +369,23 @@
         }
       }
     },
+    "会通过 iCloud 共享脱敏后的样本文本、分类、模型版本和粗粒度语言地区（如 zh-CN）；不发送发送方、账号或设备标识。需设备已登录 iCloud，你可以用回执删除最近一次远程样本。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Shares the sanitized sample text, category, model version, and a coarse language/region tag (e.g. zh-CN) via iCloud. No sender, account, or device identifiers are sent. Requires an iCloud session; a receipt lets you delete your latest submission."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iCloud経由でマスキング済みサンプル本文・カテゴリ・モデルバージョン・大まかな言語地域タグ（例: ja-JP）を共有します。送信者・アカウント・端末の識別子は送信しません。iCloudへのサインインが必要で、レシートで直近の提出を削除できます。"
+          }
+        }
+      }
+    },
     "使用计费网络下载高级模型？" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -392,7 +402,6 @@
       }
     },
     "保存" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -409,7 +418,6 @@
       }
     },
     "先在上面的表单里添加一条子串或正则规则。" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -426,7 +434,6 @@
       }
     },
     "免费获取" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -442,8 +449,23 @@
         }
       }
     },
+    "兜底判断" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fallback"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "フォールバック判定"
+          }
+        }
+      }
+    },
     "关于" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -460,7 +482,6 @@
       }
     },
     "关键词" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -477,7 +498,6 @@
       }
     },
     "关闭" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -494,7 +514,6 @@
       }
     },
     "最多显示最近 %lld 条；更早的提交仍可通过「导出/抹除全部」管理。" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -511,7 +530,6 @@
       }
     },
     "出差、留学场景下的外语短信同样精准分类" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -528,7 +546,6 @@
       }
     },
     "分享导出内容（JSON）" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -545,7 +562,6 @@
       }
     },
     "分类" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -562,7 +578,6 @@
       }
     },
     "切换时下载" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -579,7 +594,6 @@
       }
     },
     "删除" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -596,7 +610,6 @@
       }
     },
     "删除失败：%@" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -613,7 +626,6 @@
       }
     },
     "删除远程样本" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -630,7 +642,6 @@
       }
     },
     "前往设置" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -647,7 +658,6 @@
       }
     },
     "前缀" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -664,7 +674,6 @@
       }
     },
     "加入本地微调队列" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -681,7 +690,6 @@
       }
     },
     "匹配位置" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -698,7 +706,6 @@
       }
     },
     "匹配内容" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -715,7 +722,6 @@
       }
     },
     "匹配方式" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -732,7 +738,6 @@
       }
     },
     "匿名提交" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -749,7 +754,6 @@
       }
     },
     "匿名提交脱敏样本" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -766,7 +770,6 @@
       }
     },
     "匿名贡献隐私说明" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -783,7 +786,6 @@
       }
     },
     "发送方" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -800,7 +802,6 @@
       }
     },
     "发送脱敏文本" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -817,7 +818,6 @@
       }
     },
     "取件码" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -834,7 +834,6 @@
       }
     },
     "取消" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -851,7 +850,6 @@
       }
     },
     "启用 Sift" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -868,7 +866,6 @@
       }
     },
     "商品暂不可用" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -885,7 +882,6 @@
       }
     },
     "回执" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -902,7 +898,6 @@
       }
     },
     "在首页「提交样本」里匿名贡献第一条脱敏样本吧。" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -919,7 +914,6 @@
       }
     },
     "垃圾拦截" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -936,7 +930,6 @@
       }
     },
     "多语言 · 不支持本地微调" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -953,7 +946,6 @@
       }
     },
     "子串" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -970,7 +962,6 @@
       }
     },
     "完成" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -987,7 +978,6 @@
       }
     },
     "导出我的全部提交" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1004,7 +994,6 @@
       }
     },
     "将从云端删除你匿名提交的全部样本与统计备份，此操作不可撤销，不影响本地功能。" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1021,7 +1010,6 @@
       }
     },
     "将从云端删除这条匿名样本，不可撤销。" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1038,7 +1026,6 @@
       }
     },
     "已下载，可离线使用" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1055,7 +1042,6 @@
       }
     },
     "已切换至%@" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1072,7 +1058,6 @@
       }
     },
     "已删除 %lld 条规则" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1089,7 +1074,6 @@
       }
     },
     "已完成" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1106,7 +1090,6 @@
       }
     },
     "已恢复高级版购买" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1123,7 +1106,6 @@
       }
     },
     "已抹除 %lld 条提交样本" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1140,7 +1122,6 @@
       }
     },
     "已抹除 %lld 条提交样本及统计备份" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1157,7 +1138,6 @@
       }
     },
     "已抹除该条提交" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1174,7 +1154,6 @@
       }
     },
     "已按你的选择提交。本地模型倾向于「%@」，若确认无误请忽略。" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1191,7 +1170,6 @@
       }
     },
     "已添加规则" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1208,7 +1186,6 @@
       }
     },
     "已清除云端统计备份" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1225,7 +1202,6 @@
       }
     },
     "已解锁" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1242,7 +1218,6 @@
       }
     },
     "已解锁高级版" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1259,7 +1234,6 @@
       }
     },
     "已贡献 %lld 条" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1276,7 +1250,6 @@
       }
     },
     "已通过 iCloud 匿名共享脱敏样本，可用回执删除。" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1293,7 +1266,6 @@
       }
     },
     "开始测试" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1310,7 +1282,6 @@
       }
     },
     "当前商店区域暂不提供此商品" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1327,7 +1298,6 @@
       }
     },
     "当前模型不支持本地微调，请使用匿名提交" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1344,7 +1314,6 @@
       }
     },
     "当前环境不支持 iCloud，样本未%@" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1361,7 +1330,6 @@
       }
     },
     "恢复购买" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1378,7 +1346,6 @@
       }
     },
     "恢复购买失败：%@" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1395,7 +1362,6 @@
       }
     },
     "我同意匿名贡献" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1412,7 +1378,6 @@
       }
     },
     "我的提交" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1429,7 +1394,6 @@
       }
     },
     "打开筛选并允许 Sift 参与拦截。" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1446,7 +1410,6 @@
       }
     },
     "打开系统设置" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1463,7 +1426,6 @@
       }
     },
     "找到信息" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1480,7 +1442,6 @@
       }
     },
     "抹除" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1492,23 +1453,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "消去"
-          }
-        }
-      }
-    },
-    "抹除会删除云端所有由本 Apple ID 提交的匿名样本与统计备份（GDPR 擦除权）。需要设备已登录 iCloud。" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Erasure deletes every anonymous sample and statistics backup submitted by this Apple ID (GDPR right to erasure). Requires an iCloud session."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "消去すると、このApple IDから提出されたすべての匿名サンプルと統計バックアップが削除されます（GDPR消去権）。iCloudへのサインインが必要です。"
           }
         }
       }
@@ -1529,8 +1473,23 @@
         }
       }
     },
+    "抹除会删除云端所有由本 Apple ID 提交的匿名样本与统计备份（GDPR 擦除权）。需要设备已登录 iCloud。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Erasure deletes every anonymous sample and statistics backup submitted by this Apple ID (GDPR right to erasure). Requires an iCloud session."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "消去すると、このApple IDから提出されたすべての匿名サンプルと統計バックアップが削除されます（GDPR消去権）。iCloudへのサインインが必要です。"
+          }
+        }
+      }
+    },
     "抹除全部云端数据" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1547,7 +1506,6 @@
       }
     },
     "抹除全部已提交数据" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1564,7 +1522,6 @@
       }
     },
     "抹除全部已提交数据？" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1581,7 +1538,6 @@
       }
     },
     "抹除这条提交？" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1598,7 +1554,6 @@
       }
     },
     "拦截统计" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1615,7 +1570,6 @@
       }
     },
     "推广归类" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1632,7 +1586,6 @@
       }
     },
     "提交" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1649,7 +1602,6 @@
       }
     },
     "提交失败：%@" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1666,7 +1618,6 @@
       }
     },
     "提交方式" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1683,7 +1634,6 @@
       }
     },
     "提交样本" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1700,7 +1650,6 @@
       }
     },
     "操作过于频繁，请稍后重试" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1717,7 +1666,6 @@
       }
     },
     "数据与隐私" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1734,7 +1682,6 @@
       }
     },
     "数据留在设备" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1751,7 +1698,6 @@
       }
     },
     "新建规则" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1767,8 +1713,23 @@
         }
       }
     },
+    "无法加载提交记录" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unable to Load Submissions"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "提出記録を読み込めません"
+          }
+        }
+      }
+    },
     "暂时无法确认 iCloud 状态，请稍后重试" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1785,7 +1746,6 @@
       }
     },
     "暂时无法获取商品信息，请稍后重试" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1802,7 +1762,6 @@
       }
     },
     "服务条款" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1819,7 +1778,6 @@
       }
     },
     "未内置" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1836,7 +1794,6 @@
       }
     },
     "未找到可删除的远程样本" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1853,7 +1810,6 @@
       }
     },
     "未知的购买结果" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1870,7 +1826,6 @@
       }
     },
     "未解锁" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1887,7 +1842,6 @@
       }
     },
     "本地个性化层已更新" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1904,7 +1858,6 @@
       }
     },
     "本地保存失败：%@" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1920,8 +1873,23 @@
         }
       }
     },
+    "本地微调" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Local fine-tuning"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ローカル微調整"
+          }
+        }
+      }
+    },
     "查看" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1938,7 +1906,6 @@
       }
     },
     "查看匿名贡献、数据保留和服务范围。" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1955,7 +1922,6 @@
       }
     },
     "样本匿名存储于 iCloud，你可以随时导出或彻底抹除。" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1972,7 +1938,6 @@
       }
     },
     "样本可继续通过 iCloud 匿名共享，用于云端训练下一版模型；切回经典模型可恢复本地微调。" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1989,7 +1954,6 @@
       }
     },
     "样本已保存，当前系统暂不支持本地训练" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2006,7 +1970,6 @@
       }
     },
     "样本已保存，本地训练稍后重试" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2023,7 +1986,6 @@
       }
     },
     "样本已保存，等待基座模型" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2040,7 +2002,6 @@
       }
     },
     "样本已保存到本地，仅用于设备上的个性化微调。" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2057,7 +2018,6 @@
       }
     },
     "样本已加入本地队列" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2074,7 +2034,6 @@
       }
     },
     "样本文本" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2091,7 +2050,6 @@
       }
     },
     "样本未被接收，请稍后重试" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2103,6 +2061,54 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "サンプルが受け付けられませんでした。後ほどお試しください"
+          }
+        }
+      }
+    },
+    "样本过长（%lld/%lld 字符），请拆分或截取关键内容" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sample too long (%1$lld/%2$lld characters); split it or keep the key part"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "サンプルが長すぎます（%1$lld/%2$lld文字）。分割するか要点のみにしてください"
+          }
+        }
+      }
+    },
+    "模型判断" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Model"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "モデル判定"
+          }
+        }
+      }
+    },
+    "模型测试" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Model Test"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "モデルテスト"
           }
         }
       }
@@ -2123,25 +2129,7 @@
         }
       }
     },
-    "样本过长（%lld/%lld 字符），请拆分或截取关键内容" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sample too long (%1$lld/%2$lld characters); split it or keep the key part"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "サンプルが長すぎます（%1$lld/%2$lld文字）。分割するか要点のみにしてください"
-          }
-        }
-      }
-    },
     "正则" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2158,7 +2146,6 @@
       }
     },
     "正则表达式格式不正确" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2175,7 +2162,6 @@
       }
     },
     "正在下载" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2192,7 +2178,6 @@
       }
     },
     "正在下载…" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2209,7 +2194,6 @@
       }
     },
     "正在准备下载…" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2226,7 +2210,6 @@
       }
     },
     "正在加载提交记录…" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2243,7 +2226,6 @@
       }
     },
     "正在安装模型…" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2260,7 +2242,6 @@
       }
     },
     "正在恢复购买…" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2277,7 +2258,6 @@
       }
     },
     "正在获取价格…" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2294,7 +2274,6 @@
       }
     },
     "正常放行" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2311,7 +2290,6 @@
       }
     },
     "此 Apple 账户下没有可恢复的购买" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2328,7 +2306,6 @@
       }
     },
     "此平台不支持内购" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2345,7 +2322,6 @@
       }
     },
     "此设备的 iCloud 账户受限，无法%@样本" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2378,7 +2354,6 @@
       }
     },
     "永久可用" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2395,7 +2370,6 @@
       }
     },
     "法律" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2412,7 +2386,6 @@
       }
     },
     "测试样本" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2429,7 +2402,6 @@
       }
     },
     "添加规则" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2446,7 +2418,6 @@
       }
     },
     "版本" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2463,7 +2434,6 @@
       }
     },
     "短信拦截设置" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2480,7 +2450,6 @@
       }
     },
     "短信正文" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2497,7 +2466,6 @@
       }
     },
     "管理规则" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2514,7 +2482,6 @@
       }
     },
     "粘贴一条待标注短信" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2531,7 +2498,6 @@
       }
     },
     "精确" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2548,7 +2514,6 @@
       }
     },
     "约 168 MB" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2565,7 +2530,6 @@
       }
     },
     "经典模型" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2582,7 +2546,6 @@
       }
     },
     "经典模型可通过本地样本在设备上微调；Transformer 模型面向多语言场景离线训练，不支持设备端微调，切换后本地微调入口将隐藏。" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2599,7 +2562,6 @@
       }
     },
     "继续下载" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2616,7 +2578,6 @@
       }
     },
     "编辑规则" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2633,7 +2594,6 @@
       }
     },
     "网络不可用，样本未%@" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2650,7 +2610,6 @@
       }
     },
     "网络不可用，请检查网络后重试" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2666,24 +2625,23 @@
         }
       }
     },
-    "无法加载提交记录" : {
+    "置信度 %@" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Unable to Load Submissions"
+            "value" : "Confidence %@"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "提出記録を読み込めません"
+            "value" : "信頼度 %@"
           }
         }
       }
     },
     "脱敏预览" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2700,7 +2658,6 @@
       }
     },
     "自定义规则" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2717,7 +2674,6 @@
       }
     },
     "规则 %lld" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2734,7 +2690,6 @@
       }
     },
     "规则列表" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2751,7 +2706,6 @@
       }
     },
     "规则名称（可选）" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2767,8 +2721,23 @@
         }
       }
     },
+    "规则命中" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rule match"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ルール一致"
+          }
+        }
+      }
+    },
     "规则已删除" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2785,7 +2754,6 @@
       }
     },
     "规则已更新" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2802,7 +2770,6 @@
       }
     },
     "规则管理" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2819,7 +2786,6 @@
       }
     },
     "规则顺序已更新" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2836,7 +2802,6 @@
       }
     },
     "解锁 Transformer 多语言模型" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2853,7 +2818,6 @@
       }
     },
     "计费网络待确认" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2870,7 +2834,6 @@
       }
     },
     "设置" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2887,7 +2850,6 @@
       }
     },
     "该条提交已不存在，列表已同步" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2904,7 +2866,6 @@
       }
     },
     "请先在系统设置中登录 iCloud，再匿名共享样本" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2921,7 +2882,6 @@
       }
     },
     "请先阅读并同意匿名提交隐私说明" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2938,7 +2898,6 @@
       }
     },
     "请输入匹配内容" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2955,7 +2914,6 @@
       }
     },
     "请输入样本文本" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2972,7 +2930,6 @@
       }
     },
     "购买" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2989,7 +2946,6 @@
       }
     },
     "购买凭证校验失败，请通过恢复购买重试" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3006,7 +2962,6 @@
       }
     },
     "购买失败：%@" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3023,7 +2978,6 @@
       }
     },
     "购买等待批准中（家长/管理者审批通过后自动解锁）" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3040,7 +2994,6 @@
       }
     },
     "跨语种垃圾短信识别" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3057,7 +3010,6 @@
       }
     },
     "轻量算法 · 支持本地微调" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3074,7 +3026,6 @@
       }
     },
     "输入短信正文" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3091,7 +3042,6 @@
       }
     },
     "过滤器开始工作后，这里会展示每日拦截趋势。统计只记录数量，不保存短信内容。" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3108,7 +3058,6 @@
       }
     },
     "近 7 天" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3125,7 +3074,6 @@
       }
     },
     "还没有提交过样本" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3142,7 +3090,6 @@
       }
     },
     "还没有自定义规则" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3159,7 +3106,6 @@
       }
     },
     "进入 iPhone 的设置应用。" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3176,7 +3122,6 @@
       }
     },
     "进入「信息」里的未知与垃圾信息。" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3193,7 +3138,6 @@
       }
     },
     "远程样本已删除" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3210,7 +3154,6 @@
       }
     },
     "选择模型" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3227,7 +3170,6 @@
       }
     },
     "重试" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3244,7 +3186,6 @@
       }
     },
     "针对中·英·日等 12 种语言离线训练，识别更准" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3261,7 +3202,6 @@
       }
     },
     "限时免费" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3278,7 +3218,6 @@
       }
     },
     "隐私与条款" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3295,7 +3234,6 @@
       }
     },
     "隐私政策" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3312,7 +3250,6 @@
       }
     },
     "隐私说明" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3329,7 +3266,6 @@
       }
     },
     "非订阅制，一次购买长期有效，支持在新设备恢复" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3346,7 +3282,6 @@
       }
     },
     "高级模型下载地址未配置" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3363,7 +3298,6 @@
       }
     },
     "高级模型安装失败" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3380,7 +3314,6 @@
       }
     },
     "高级模型文件校验失败：%@" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3397,7 +3330,6 @@
       }
     },
     "高级模型文件路径不安全：%@" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3414,7 +3346,6 @@
       }
     },
     "高级模型清单不可用" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3431,7 +3362,6 @@
       }
     },
     "高级模型清单格式不正确" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3448,7 +3378,6 @@
       }
     },
     "高级模型缺少可下载文件清单" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3465,7 +3394,6 @@
       }
     },
     "高级模型需要下载 %@ 数据。当前网络可能按流量计费或处于低数据模式，继续下载可能产生流量费用。" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3482,7 +3410,6 @@
       }
     },
     "高级版" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3499,7 +3426,6 @@
       }
     },
     "高级版已解锁，感谢支持！" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3516,7 +3442,6 @@
       }
     },
     "高级版授权已失效，已切换回经典模型" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {

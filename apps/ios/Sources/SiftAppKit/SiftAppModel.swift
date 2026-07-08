@@ -1175,7 +1175,7 @@ public final class SiftAppModel {
             }
             return url
         }
-        return URL(string: "https://github.com/alkinum/sift/blob/main/docs/legal/PRIVACY_POLICY.md")!
+        return URL(string: "https://github.com/backrunner/sift/blob/main/docs/legal/PRIVACY_POLICY.md")!
     }
 
     private static func configuredTermsOfServiceURL() -> URL {
@@ -1190,7 +1190,7 @@ public final class SiftAppModel {
             }
             return url
         }
-        return URL(string: "https://github.com/alkinum/sift/blob/main/docs/legal/TERMS_OF_SERVICE.md")!
+        return URL(string: "https://github.com/backrunner/sift/blob/main/docs/legal/TERMS_OF_SERVICE.md")!
     }
 
     private func remoteSubmissionErrorMessage(for error: Error) -> String {

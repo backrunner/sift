@@ -77,6 +77,14 @@ The Xcode project is configured for Xcode-managed automatic signing on the
 matches the existing Alkinum App Store Connect setup used by sibling projects:
 `PB8H83VL3Z`. Override it with `SIFT_DEVELOPMENT_TEAM` or `--team-id` if needed.
 
+Detailed release runbooks live in:
+
+- [iOS command-line TestFlight upload](../../docs/IOS_CMD_TESTFLIGHT_UPLOAD.md)
+  for terminal uploads with
+  `tools/upload_ios_testflight.sh`
+- [iOS Xcode managed signing upload](../../docs/IOS_XCODE_MANAGED_SIGNING.md)
+  for Xcode Managed Signing and Organizer uploads
+
 After the App IDs and message-filtering entitlement are ready in Apple
 Developer, upload a TestFlight build from the repository root with:
 
