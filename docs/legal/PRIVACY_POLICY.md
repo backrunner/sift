@@ -35,6 +35,8 @@ contribute a sample:
 - Incoming SMS content evaluated by the message-filter extension.
 - Your custom filtering rules and preferences.
 - Locally queued samples used for on-device model personalization.
+- A local cache of the sanitized submission summaries shown in *My
+  Submissions*, so the screen can open without querying CloudKit every time.
 - Sanitization previews.
 
 ## 3. Information you choose to contribute (opt-in)

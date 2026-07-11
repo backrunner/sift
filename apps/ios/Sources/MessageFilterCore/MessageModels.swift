@@ -33,6 +33,24 @@ public struct ClassificationDecision: Codable, Hashable, Sendable {
         self.systemAction = systemAction
         self.source = source
     }
+
+    public func applying(categoryMappings: [String: CategoryMappingTarget]) -> ClassificationDecision {
+        guard
+            CategoryMappingPolicy.isEligibleSource(labelID: labelID),
+            let target = categoryMappings[labelID]
+        else {
+            return self
+        }
+        return ClassificationDecision(
+            labelID: labelID,
+            labelTitle: labelTitle,
+            groupID: groupID,
+            groupTitle: groupTitle,
+            confidence: confidence,
+            systemAction: target.systemAction,
+            source: source
+        )
+    }
 }
 
 public struct MessageDraft: Codable, Hashable, Sendable {

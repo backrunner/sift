@@ -95,11 +95,20 @@ public final class SiftAppModel {
     public var isShowingMeteredTransformerDownloadConfirmation: Bool = false
     public var submissionDestination: SubmissionDestination = .local
     public var testBody: String = ""
-    public var submissionText: String = ""
-    public var selectedLabelID: String = "life.pickup_code"
+    public var submissionText: String = "" {
+        didSet {
+            scheduleSubmissionLabelSuggestion()
+        }
+    }
+    public var selectedLabelID: String = SiftTaxonomy.leaves.first?.id ?? "finance.bank"
     public var rules: [CustomRule] {
         didSet {
             persistRules()
+        }
+    }
+    public var categoryMappings: [String: CategoryMappingTarget] {
+        didSet {
+            SharedCategoryMappingStore.save(categoryMappings, defaults: categoryMappingDefaults)
         }
     }
     public var ruleDraftName: String = ""
@@ -136,7 +145,9 @@ public final class SiftAppModel {
     public var isShowingPaywall: Bool = false
     public private(set) var isErasingRemoteData: Bool = false
     public private(set) var todayStats: DailyFilterStats = DailyFilterStats(day: FilterStatisticsStore.dayKey(for: .now))
+    public private(set) var totalStats: DailyFilterStats = DailyFilterStats(day: "total")
     public private(set) var weeklyStats: [DailyFilterStats] = []
+    public private(set) var isStatisticsFirstDay: Bool = true
 
     /// 本地记录的已贡献样本数(App Group 计数,云端历史列表为准)。
     public private(set) var submittedSampleCount: Int = 0
@@ -144,9 +155,11 @@ public final class SiftAppModel {
     // 提交历史(下拉无限加载,最多展示最近 historyMaxItems 条)。
     public static let historyPageSize = 30
     public static let historyMaxItems = 200
+    public static let historyCacheRefreshInterval: TimeInterval = 15 * 60
     public private(set) var submissionHistory: [RemoteSubmissionSummary] = []
     public private(set) var isLoadingHistory: Bool = false
     public private(set) var historyFullyLoaded: Bool = false
+    public private(set) var hasLoadedSubmissionHistory: Bool = false
     public private(set) var submissionHistoryErrorMessage: String?
     public private(set) var remoteAccountStatus: RemoteSampleAccountStatus = .checking
     public private(set) var isCheckingRemoteAccountStatus: Bool = false
@@ -180,21 +193,38 @@ public final class SiftAppModel {
     private var transformerDownloadTask: Task<Void, Never>?
 
     @ObservationIgnored
-    private let statisticsStore = FilterStatisticsStore()
+    private let statisticsStore: FilterStatisticsStore
 
     /// 注入口:测试用独立 UserDefaults suite 隔离贡献计数。
     @ObservationIgnored
     private let ledgerDefaults: UserDefaults?
+
+    @ObservationIgnored
+    private let categoryMappingDefaults: UserDefaults?
+
+    @ObservationIgnored
+    private var submissionLabelSuggestionTask: Task<Void, Never>?
+
+    @ObservationIgnored
+    private var hasManuallySelectedSubmissionLabel = false
+
+    @ObservationIgnored
+    private var submissionHistoryCacheUpdatedAt: Date?
 
     public init(
         remoteSampleClient: (any RemoteSampleSubmitting)? = nil,
         premiumBackend: (any PremiumPurchasing)? = nil,
         transformerAvailabilityOverride: Bool? = nil,
         transformerDownloader: (any TransformerModelDownloading)? = TransformerModelDownloadClient.configured(),
-        ledgerDefaults: UserDefaults? = nil
+        ledgerDefaults: UserDefaults? = nil,
+        categoryMappingDefaults: UserDefaults? = nil,
+        sampleStore: LocalSampleStore? = nil,
+        statisticsStore: FilterStatisticsStore = FilterStatisticsStore()
     ) {
         self.ledgerDefaults = ledgerDefaults
-        self.sampleStore = LocalSampleStore(fileURL: LocalSampleStore.defaultFileURL())
+        self.categoryMappingDefaults = categoryMappingDefaults
+        self.statisticsStore = statisticsStore
+        self.sampleStore = sampleStore ?? LocalSampleStore(fileURL: LocalSampleStore.defaultFileURL())
         self.remoteSampleClient = remoteSampleClient ?? CloudKitSampleClient(
             containerIdentifier: CloudKitSampleClient.configuredContainerIdentifier()
         )
@@ -212,6 +242,14 @@ public final class SiftAppModel {
         self.baseClassifier = stack.base
         self.pipeline = stack.pipeline
         self.rules = Self.loadPersistedRules()
+        self.categoryMappings = SharedCategoryMappingStore.load(defaults: categoryMappingDefaults)
+
+        if let cachedHistory = SubmissionHistoryCache.load(defaults: ledgerDefaults) {
+            self.submissionHistory = Array(cachedHistory.submissions.prefix(Self.historyMaxItems))
+            self.historyFullyLoaded = cachedHistory.fullyLoaded
+            self.hasLoadedSubmissionHistory = true
+            self.submissionHistoryCacheUpdatedAt = cachedHistory.updatedAt
+        }
 
         refreshModelMetadataDisplay()
         if !variant.supportsLocalPersonalization {
@@ -221,7 +259,9 @@ public final class SiftAppModel {
         classifyCurrentDraft()
         Task { await refreshLocalSampleCount() }
 
-        submittedSampleCount = SubmissionLedger.count(defaults: ledgerDefaults)
+        reconcileSubmittedSampleCount(
+            historyIsComplete: historyFullyLoaded && submissionHistory.count < Self.historyMaxItems
+        )
         refreshStatistics()
         // 统计云备份是 best-effort:失败静默,永不打扰用户。仅在真机 App
         // 环境执行——单测/命令行环境没有 CloudKit entitlement,构造
@@ -252,10 +292,12 @@ public final class SiftAppModel {
         }
     }
 
-    /// 刷新仪表盘统计(今日 + 近 7 天)。
+    /// 刷新仪表盘统计(累计计数 + 近 7 天逐日图表)。
     public func refreshStatistics() {
         todayStats = statisticsStore.stats()
+        totalStats = statisticsStore.totals()
         weeklyStats = statisticsStore.recent(days: 7)
+        isStatisticsFirstDay = statisticsStore.isFirstDashboardDay()
     }
 
     /// Whether the active model variant allows on-device fine-tuning. The
@@ -561,12 +603,37 @@ public final class SiftAppModel {
         SiftTaxonomy.leaf(id: selectedLabelID) ?? SiftTaxonomy.leaves[0]
     }
 
+    public func selectSubmissionLabel(_ labelID: String) {
+        guard SiftTaxonomy.leaf(id: labelID) != nil else {
+            return
+        }
+        submissionLabelSuggestionTask?.cancel()
+        hasManuallySelectedSubmissionLabel = true
+        selectedLabelID = labelID
+    }
+
     public var activeRuleCount: Int {
         rules.filter(\.enabled).count
     }
 
     public var customRuleCount: Int {
         rules.count
+    }
+
+    public var mappedCategoryCount: Int {
+        categoryMappings.count
+    }
+
+    public func categoryMapping(for labelID: String) -> CategoryMappingTarget? {
+        categoryMappings[labelID]
+    }
+
+    public func setCategoryMapping(_ target: CategoryMappingTarget?, for labelID: String) {
+        guard CategoryMappingPolicy.isEligibleSource(labelID: labelID) else {
+            return
+        }
+        categoryMappings[labelID] = target
+        classifyCurrentDraft()
     }
 
     public var customRuleIndices: [Int] {
@@ -590,6 +657,9 @@ public final class SiftAppModel {
             return false
         }
         if submissionDestination == .remote && !canUseRemoteSubmission {
+            return false
+        }
+        if submissionDestination == .remote && isErasingRemoteData {
             return false
         }
         return true
@@ -625,6 +695,46 @@ public final class SiftAppModel {
 
     public func refreshSanitizedPreview() {
         sanitizedPreview = sanitizer.sanitize(submissionText).text
+    }
+
+    private func scheduleSubmissionLabelSuggestion() {
+        submissionLabelSuggestionTask?.cancel()
+        let text = submissionText.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        guard !text.isEmpty else {
+            hasManuallySelectedSubmissionLabel = false
+            selectedLabelID = SiftTaxonomy.leaves.first?.id ?? "finance.bank"
+            return
+        }
+        guard !hasManuallySelectedSubmissionLabel else {
+            return
+        }
+
+        submissionLabelSuggestionTask = Task { [weak self] in
+            do {
+                try await Task.sleep(for: .milliseconds(280))
+            } catch {
+                return
+            }
+            guard let self, !Task.isCancelled else {
+                return
+            }
+
+            let classifier = self.pipeline.classifier
+            let decision = await Task.detached(priority: .userInitiated) {
+                classifier.classify(sender: nil, body: text)
+            }.value
+
+            guard
+                !Task.isCancelled,
+                !self.hasManuallySelectedSubmissionLabel,
+                self.submissionText.trimmingCharacters(in: .whitespacesAndNewlines) == text,
+                SiftTaxonomy.leaf(id: decision.labelID) != nil
+            else {
+                return
+            }
+            self.selectedLabelID = decision.labelID
+        }
     }
 
     public func clearCurrentDecision() {
@@ -664,10 +774,15 @@ public final class SiftAppModel {
         // Route through the full pipeline so the preview honors the user's
         // custom rules exactly like the message-filter extension does.
         lastDecision = pipeline.classify(sender: nil, body: body, rules: rules)
+            .applying(categoryMappings: categoryMappings)
     }
 
     public func submitSample() {
         guard !isSubmittingSample else { return }
+        guard submissionDestination != .remote || !isErasingRemoteData else {
+            showSubmissionFeedback(.info, String(localized: "请等待数据清空完成"))
+            return
+        }
         sampleSubmissionFeedback = nil
         refreshSanitizedPreview()
         let selectedLabel = selectedLabel
@@ -694,7 +809,10 @@ public final class SiftAppModel {
                         labelID: selectedLabel.id,
                         source: "local"
                     )
-                    try await sampleStore.append(sample)
+                    guard try await sampleStore.appendIfUnique(sample) else {
+                        showSubmissionFeedback(.info, String(localized: "您已提交过类似样本"))
+                        return
+                    }
                     let samples = try await sampleStore.loadAll()
                     localSampleCount = samples.count
                     let trainer = personalizationTrainer
@@ -733,6 +851,12 @@ public final class SiftAppModel {
                 }
             }
         case .remote:
+            guard !submissionHistory.contains(where: {
+                $0.label == selectedLabel.id && SubmissionSimilarity.isSimilar($0.text, sanitizedText)
+            }) else {
+                showSubmissionFeedback(.info, String(localized: "您已提交过类似样本"))
+                return
+            }
             guard canUseRemoteSubmission else {
                 showRemoteAccountRequiredAlert()
                 return
@@ -765,7 +889,11 @@ public final class SiftAppModel {
                         lastReceiptToken = receiptToken
                         SubmissionLedger.increment(defaults: self.ledgerDefaults)
                         submittedSampleCount = SubmissionLedger.count(defaults: self.ledgerDefaults)
-                        resetSubmissionHistory()
+                        cacheRemoteSubmission(
+                            recordName: receiptToken,
+                            text: sanitizedText,
+                            labelID: selectedLabel.id
+                        )
                         if assessment.predictedLabelID != selectedLabel.id, assessment.confidence >= 0.8 {
                             let predictedTitle = SiftTaxonomy.leaf(id: assessment.predictedLabelID)?.title ?? assessment.predictedLabelID
                             showSubmissionFeedback(.info, String(localized: "已按你的选择提交。本地模型倾向于「\(predictedTitle)」，若确认无误请忽略。"))
@@ -800,10 +928,13 @@ public final class SiftAppModel {
                     lastReceiptToken = nil
                     SubmissionLedger.decrement(defaults: self.ledgerDefaults)
                     submittedSampleCount = SubmissionLedger.count(defaults: self.ledgerDefaults)
-                    resetSubmissionHistory()
+                    removeCachedSubmission(recordName: receiptToken)
                     showSubmissionFeedback(.success, String(localized: "远程样本已删除"))
                 } else {
                     lastReceiptToken = nil
+                    SubmissionLedger.decrement(defaults: self.ledgerDefaults)
+                    submittedSampleCount = SubmissionLedger.count(defaults: self.ledgerDefaults)
+                    removeCachedSubmission(recordName: receiptToken)
                     showSubmissionFeedback(.info, String(localized: "未找到可删除的远程样本"))
                 }
             } catch {
@@ -829,7 +960,26 @@ public final class SiftAppModel {
             showRemoteAccountRequiredAlert()
             return
         }
+        guard !isSubmittingSample else {
+            showToast(.info, String(localized: "请等待当前提交完成"))
+            return
+        }
+
+        let previousHistory = submissionHistory
+        let previousHistoryFullyLoaded = historyFullyLoaded
+        let previousHasLoadedHistory = hasLoadedSubmissionHistory
+        let previousCount = submittedSampleCount
+        let previousReceiptToken = lastReceiptToken
+
         isErasingRemoteData = true
+        lastReceiptToken = nil
+        SubmissionLedger.reset(defaults: ledgerDefaults)
+        submittedSampleCount = 0
+        submissionHistory = []
+        historyFullyLoaded = true
+        hasLoadedSubmissionHistory = true
+        persistSubmissionHistoryCache()
+
         Task {
             defer { isErasingRemoteData = false }
             do {
@@ -837,11 +987,6 @@ public final class SiftAppModel {
                 let deletedStats = (try? await CloudKitStatsSync(
                     containerIdentifier: CloudKitSampleClient.configuredContainerIdentifier()
                 ).eraseBackup()) ?? 0
-                lastReceiptToken = nil
-                SubmissionLedger.reset(defaults: self.ledgerDefaults)
-                submittedSampleCount = 0
-                submissionHistory = []
-                historyFullyLoaded = true
                 if deletedSamples == 0 && deletedStats == 0 {
                     showToast(.info, String(localized: "云端没有找到你提交的数据"))
                 } else if deletedSamples == 0 {
@@ -852,6 +997,13 @@ public final class SiftAppModel {
                     showToast(.success, String(localized: "已抹除 \(deletedSamples) 条提交样本"))
                 }
             } catch {
+                lastReceiptToken = previousReceiptToken
+                SubmissionLedger.set(previousCount, defaults: self.ledgerDefaults)
+                submittedSampleCount = previousCount
+                submissionHistory = previousHistory
+                historyFullyLoaded = previousHistoryFullyLoaded
+                hasLoadedSubmissionHistory = previousHasLoadedHistory
+                persistSubmissionHistoryCache()
                 showToast(.error, remoteDeletionErrorMessage(for: error))
             }
         }
@@ -862,18 +1014,90 @@ public final class SiftAppModel {
         submissionHistory = []
         submissionHistoryErrorMessage = nil
         historyFullyLoaded = false
+        hasLoadedSubmissionHistory = false
+        submissionHistoryCacheUpdatedAt = nil
+        SubmissionHistoryCache.remove(defaults: ledgerDefaults)
+    }
+
+    /// Uses a fresh local snapshot immediately and only revalidates it after a
+    /// short TTL. The refresh replaces page one so remote deletions do not
+    /// remain in the cache indefinitely.
+    public func refreshSubmissionHistoryIfNeeded(now: Date = .now) {
+        guard hasLoadedSubmissionHistory else {
+            loadMoreSubmissionHistory()
+            return
+        }
+        guard
+            submissionHistoryCacheUpdatedAt.map({
+                now.timeIntervalSince($0) >= Self.historyCacheRefreshInterval
+            }) ?? true
+        else {
+            return
+        }
+        Task {
+            await refreshSubmissionHistory()
+        }
+    }
+
+    public func refreshSubmissionHistory() async {
+        guard !isLoadingHistory, !isErasingRemoteData else {
+            return
+        }
+        guard canUseRemoteSubmission else {
+            submissionHistoryErrorMessage = remoteAccountUnavailableMessage
+            return
+        }
+        isLoadingHistory = true
+        defer { isLoadingHistory = false }
+        do {
+            let page = try await remoteSampleClient.fetchMySubmissions(
+                before: nil,
+                limit: Self.historyPageSize
+            )
+            submissionHistory = Array(page.prefix(Self.historyMaxItems))
+            submissionHistoryErrorMessage = nil
+            let reachedRemoteEnd = page.count < Self.historyPageSize
+            historyFullyLoaded = reachedRemoteEnd
+            hasLoadedSubmissionHistory = true
+            reconcileSubmittedSampleCount(historyIsComplete: reachedRemoteEnd)
+            persistSubmissionHistoryCache()
+        } catch {
+            submissionHistoryErrorMessage = remoteDeletionErrorMessage(for: error)
+            showToast(.error, submissionHistoryErrorMessage ?? String(localized: "无法加载提交记录"))
+        }
+    }
+
+    public func retrySubmissionHistory() {
+        guard !isCheckingRemoteAccountStatus, !isLoadingHistory else {
+            return
+        }
+        isCheckingRemoteAccountStatus = true
+        remoteAccountStatus = .checking
+        Task {
+            let status = await remoteSampleClient.accountStatus()
+            remoteAccountStatus = status
+            isCheckingRemoteAccountStatus = false
+            guard status == .available else {
+                submissionHistoryErrorMessage = remoteAccountUnavailableMessage
+                hasLoadedSubmissionHistory = true
+                return
+            }
+            resetSubmissionHistory()
+            await refreshSubmissionHistory()
+        }
     }
 
     /// 下拉无限加载:按 createdAt 倒序取下一页,去重合并,封顶
     /// `historyMaxItems` 条。
     public func loadMoreSubmissionHistory() {
-        guard !isLoadingHistory, !historyFullyLoaded else {
+        guard !isLoadingHistory, !historyFullyLoaded, !isErasingRemoteData else {
             return
         }
         guard canUseRemoteSubmission else {
             submissionHistory = []
             submissionHistoryErrorMessage = remoteAccountUnavailableMessage
             historyFullyLoaded = true
+            hasLoadedSubmissionHistory = true
             return
         }
         isLoadingHistory = true
@@ -888,22 +1112,23 @@ public final class SiftAppModel {
                 let known = Set(submissionHistory.map(\.recordName))
                 submissionHistory.append(contentsOf: page.filter { !known.contains($0.recordName) })
                 submissionHistoryErrorMessage = nil
+                let reachedRemoteEnd = page.count < Self.historyPageSize
                 if submissionHistory.count >= Self.historyMaxItems {
                     submissionHistory = Array(submissionHistory.prefix(Self.historyMaxItems))
                     historyFullyLoaded = true
-                } else if page.count < Self.historyPageSize {
+                } else if reachedRemoteEnd {
                     historyFullyLoaded = true
                 }
-                // 首次拉取时用云端信息校准本地计数(本地计数可能因重装偏低)。
-                if anchor == nil, submissionHistory.count > submittedSampleCount {
-                    submittedSampleCount = submissionHistory.count
-                }
+                hasLoadedSubmissionHistory = true
+                reconcileSubmittedSampleCount(historyIsComplete: reachedRemoteEnd)
+                persistSubmissionHistoryCache()
             } catch {
                 let message = remoteDeletionErrorMessage(for: error)
                 submissionHistoryErrorMessage = message
                 if submissionHistory.isEmpty {
                     historyFullyLoaded = true
                 }
+                hasLoadedSubmissionHistory = true
                 showToast(.error, message)
             }
         }
@@ -915,24 +1140,92 @@ public final class SiftAppModel {
             showRemoteAccountRequiredAlert()
             return
         }
+
+        guard let index = submissionHistory.firstIndex(where: { $0.recordName == summary.recordName }) else {
+            return
+        }
+
+        let wasLastReceipt = lastReceiptToken == summary.recordName
+        submissionHistory.remove(at: index)
+        SubmissionLedger.decrement(defaults: ledgerDefaults)
+        submittedSampleCount = SubmissionLedger.count(defaults: ledgerDefaults)
+        if wasLastReceipt {
+            lastReceiptToken = nil
+        }
+        persistSubmissionHistoryCache()
+
         Task {
             do {
                 let deleted = try await remoteSampleClient.delete(receiptToken: summary.recordName)
-                submissionHistory.removeAll { $0.recordName == summary.recordName }
                 if deleted {
-                    SubmissionLedger.decrement(defaults: self.ledgerDefaults)
-                    submittedSampleCount = SubmissionLedger.count(defaults: self.ledgerDefaults)
-                    if lastReceiptToken == summary.recordName {
-                        lastReceiptToken = nil
-                    }
                     showToast(.success, String(localized: "已抹除该条提交"))
                 } else {
                     showToast(.info, String(localized: "该条提交已不存在，列表已同步"))
                 }
             } catch {
+                if !submissionHistory.contains(where: { $0.recordName == summary.recordName }) {
+                    submissionHistory.insert(summary, at: min(index, submissionHistory.endIndex))
+                }
+                SubmissionLedger.increment(defaults: self.ledgerDefaults)
+                submittedSampleCount = SubmissionLedger.count(defaults: self.ledgerDefaults)
+                if wasLastReceipt, lastReceiptToken == nil {
+                    lastReceiptToken = summary.recordName
+                }
+                persistSubmissionHistoryCache()
                 showToast(.error, remoteDeletionErrorMessage(for: error))
             }
         }
+    }
+
+    private func cacheRemoteSubmission(recordName: String, text: String, labelID: String) {
+        let now = Date.now
+        let summary = RemoteSubmissionSummary(
+            recordName: recordName,
+            text: text,
+            label: labelID,
+            submittedAt: now,
+            createdAtMillis: Int64((now.timeIntervalSince1970 * 1_000).rounded())
+        )
+        submissionHistory.removeAll { $0.recordName == recordName }
+        submissionHistory.insert(summary, at: 0)
+        submissionHistory = Array(submissionHistory.prefix(Self.historyMaxItems))
+        hasLoadedSubmissionHistory = true
+        persistSubmissionHistoryCache()
+    }
+
+    private func removeCachedSubmission(recordName: String) {
+        submissionHistory.removeAll { $0.recordName == recordName }
+        if hasLoadedSubmissionHistory {
+            persistSubmissionHistoryCache()
+        }
+    }
+
+    private func persistSubmissionHistoryCache() {
+        guard hasLoadedSubmissionHistory else {
+            SubmissionHistoryCache.remove(defaults: ledgerDefaults)
+            return
+        }
+        let updatedAt = Date.now
+        submissionHistoryCacheUpdatedAt = updatedAt
+        SubmissionHistoryCache.save(
+            SubmissionHistoryCacheSnapshot(
+                submissions: Array(submissionHistory.prefix(Self.historyMaxItems)),
+                fullyLoaded: historyFullyLoaded,
+                updatedAt: updatedAt
+            ),
+            defaults: ledgerDefaults
+        )
+    }
+
+    private func reconcileSubmittedSampleCount(historyIsComplete: Bool) {
+        let localCount = max(
+            submittedSampleCount,
+            SubmissionLedger.count(defaults: ledgerDefaults)
+        )
+        submittedSampleCount = historyIsComplete
+            ? submissionHistory.count
+            : max(localCount, submissionHistory.count)
+        SubmissionLedger.set(submittedSampleCount, defaults: ledgerDefaults)
     }
 
     /// 把当前用户的全部云端提交导出为 JSON 文本。

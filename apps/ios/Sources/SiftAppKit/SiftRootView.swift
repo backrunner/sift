@@ -49,6 +49,7 @@ public struct SiftRootView: View {
             TestSamplePanel(model: model)
             SubmitSamplePanel(model: model)
             RulesPanel(model: model)
+            CategoryMappingPanel(model: model)
         }
         .padding(.horizontal, 16)
         .padding(.top, safeAreaTop + 14)
@@ -716,7 +717,12 @@ private struct SubmitSamplePanel: View {
                 PrivacyPreview(text: model.sanitizedPreview)
             }
 
-            CategoryMenu(selectedLabelID: $model.selectedLabelID)
+            CategoryMenu(
+                selectedLabelID: Binding(
+                    get: { model.selectedLabelID },
+                    set: { model.selectSubmissionLabel($0) }
+                )
+            )
 
             let isRemoteSubmissionBlocked = model.submissionDestination == .remote && !model.canUseRemoteSubmission
             ActionButton(
@@ -1701,9 +1707,6 @@ private struct ResultStrip: View {
                 Text(String(localized: "模型测试"))
                     .font(.footnote.weight(.bold))
                     .foregroundStyle(.primary)
-                Text("\(sourceTitle) · \(systemActionTitle)")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
             }
             .layoutPriority(0)
 
@@ -1731,31 +1734,6 @@ private struct ResultStrip: View {
         "\(Int((decision.confidence * 100).rounded()))%"
     }
 
-    private var sourceTitle: String {
-        switch decision.source {
-        case .rule:
-            return String(localized: "规则命中")
-        case .model:
-            return String(localized: "模型判断")
-        case .personalization:
-            return String(localized: "本地微调")
-        case .fallback:
-            return String(localized: "兜底判断")
-        }
-    }
-
-    private var systemActionTitle: String {
-        switch decision.systemAction {
-        case .none:
-            return String(localized: "正常放行")
-        case .transaction:
-            return String(localized: "交易通知")
-        case .promotion:
-            return String(localized: "推广归类")
-        case .junk:
-            return String(localized: "垃圾拦截")
-        }
-    }
 }
 
 private struct GlassTextField: View {
@@ -1961,12 +1939,30 @@ private struct CategorySelectionView: View {
     let title: String
     @Binding var selectedLabelID: String
     @Environment(\.dismiss) private var dismiss
+    @State private var searchText = ""
 
     var body: some View {
         ScrollView {
-            categoryContent
+            LazyVStack(alignment: .leading, spacing: 16) {
+                ForEach(visibleGroups) { group in
+                    CategoryGroupCard(
+                        group: group,
+                        leaves: matchingLeaves(in: group),
+                        selectedLabelID: selectedLabelID
+                    ) { leaf in
+                        selectedLabelID = leaf.id
+                        dismiss()
+                    }
+                }
+            }
+            .padding(.horizontal, 16)
+            .padding(.top, 16)
+            .padding(.bottom, 16)
         }
         .scrollIndicators(.hidden)
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            TaxonomySearchBar(text: $searchText)
+        }
         .background(AtmosphericBackground())
         .navigationTitle(title)
         .toolbarTitleDisplayMode(.inline)
@@ -1978,29 +1974,32 @@ private struct CategorySelectionView: View {
                 .font(.callout.weight(.semibold))
             }
         }
-    }
-
-    @ViewBuilder
-    private var categoryContent: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            ForEach(SiftTaxonomy.groups) { group in
-                CategoryGroupCard(
-                    group: group,
-                    selectedLabelID: selectedLabelID
-                ) { leaf in
-                    selectedLabelID = leaf.id
-                    dismiss()
-                }
+        .overlay {
+            if !searchText.isEmpty, visibleGroups.isEmpty {
+                ContentUnavailableView.search(text: searchText)
             }
         }
-        .padding(.horizontal, 16)
-        .padding(.top, 16)
-        .padding(.bottom, 30)
+    }
+
+    private var visibleGroups: [LabelGroup] {
+        SiftTaxonomy.groups.filter { !matchingLeaves(in: $0).isEmpty }
+    }
+
+    private func matchingLeaves(in group: LabelGroup) -> [LeafLabel] {
+        guard !searchText.isEmpty else {
+            return group.leaves
+        }
+        return group.leaves.filter { leaf in
+            leaf.title.localizedCaseInsensitiveContains(searchText)
+                || leaf.groupTitle.localizedCaseInsensitiveContains(searchText)
+                || leaf.id.localizedCaseInsensitiveContains(searchText)
+        }
     }
 }
 
 private struct CategoryGroupCard: View {
     let group: LabelGroup
+    let leaves: [LeafLabel]
     let selectedLabelID: String
     let onSelect: (LeafLabel) -> Void
 
@@ -2012,7 +2011,7 @@ private struct CategoryGroupCard: View {
                 .padding(.horizontal, 4)
 
             VStack(spacing: 8) {
-                ForEach(group.leaves) { leaf in
+                ForEach(leaves) { leaf in
                     let isSelected = leaf.id == selectedLabelID
                     Button {
                         onSelect(leaf)
@@ -2120,6 +2119,7 @@ private struct PrivacyPreview: View {
 struct SectionHeader<Accessory: View>: View {
     let title: String
     var subtitle: String?
+    var subtitleLineLimit: Int = 2
     let icon: String
     @ViewBuilder var accessory: Accessory
 
@@ -2138,7 +2138,8 @@ struct SectionHeader<Accessory: View>: View {
                     Text(subtitle)
                         .font(.caption)
                         .foregroundStyle(.secondary)
-                        .lineLimit(2)
+                        .lineLimit(subtitleLineLimit)
+                        .minimumScaleFactor(subtitleLineLimit == 1 ? 0.86 : 1)
                 }
             }
             Spacer(minLength: 0)
@@ -2148,8 +2149,14 @@ struct SectionHeader<Accessory: View>: View {
 }
 
 extension SectionHeader where Accessory == EmptyView {
-    init(title: String, subtitle: String? = nil, icon: String) {
-        self.init(title: title, subtitle: subtitle, icon: icon, accessory: { EmptyView() })
+    init(title: String, subtitle: String? = nil, subtitleLineLimit: Int = 2, icon: String) {
+        self.init(
+            title: title,
+            subtitle: subtitle,
+            subtitleLineLimit: subtitleLineLimit,
+            icon: icon,
+            accessory: { EmptyView() }
+        )
     }
 }
 

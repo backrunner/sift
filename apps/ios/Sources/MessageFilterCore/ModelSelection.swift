@@ -95,6 +95,118 @@ public enum SharedRuleStore {
     }
 }
 
+/// User-selected destination for a taxonomy leaf. These overrides are applied
+/// after classification, so they work for both model decisions and custom
+/// rules without changing taxonomy IDs or retraining the model.
+public enum CategoryMappingTarget: String, CaseIterable, Codable, Sendable, Identifiable {
+    case promotion
+    case junk
+
+    public var id: String { rawValue }
+
+    public var title: String {
+        switch self {
+        case .promotion:
+            return String(localized: "推广信息")
+        case .junk:
+            return String(localized: "垃圾信息")
+        }
+    }
+
+    public var symbol: String {
+        switch self {
+        case .promotion:
+            return "megaphone.fill"
+        case .junk:
+            return "trash.fill"
+        }
+    }
+
+    public var systemAction: SystemAction {
+        switch self {
+        case .promotion:
+            return .promotion
+        case .junk:
+            return .junk
+        }
+    }
+}
+
+public enum CategoryMappingPolicy {
+    public static let targetLabelIDs: Set<String> = ["promotion", "spam"]
+
+    public static func isEligibleSource(labelID: String) -> Bool {
+        SiftTaxonomy.leaf(id: labelID) != nil && !targetLabelIDs.contains(labelID)
+    }
+}
+
+/// Persists per-category action overrides in App Group defaults so the app
+/// and the IdentityLookup extension make the same final routing decision.
+public enum SharedCategoryMappingStore {
+    static let mappingsKey = "Sift.categoryMappings.v1"
+
+    public static func save(_ mappings: [String: CategoryMappingTarget], defaults: UserDefaults? = nil) {
+        let validMappings = mappings.filter { CategoryMappingPolicy.isEligibleSource(labelID: $0.key) }
+        guard let data = try? JSONEncoder().encode(validMappings) else {
+            return
+        }
+        (defaults ?? ModelSelectionStore.sharedDefaults()).set(data, forKey: mappingsKey)
+    }
+
+    public static func load(defaults: UserDefaults? = nil) -> [String: CategoryMappingTarget] {
+        let store = defaults ?? ModelSelectionStore.sharedDefaults()
+        guard
+            let data = store.data(forKey: mappingsKey),
+            let mappings = try? JSONDecoder().decode([String: CategoryMappingTarget].self, from: data)
+        else {
+            return [:]
+        }
+        return mappings.filter { CategoryMappingPolicy.isEligibleSource(labelID: $0.key) }
+    }
+}
+
+/// A local, sanitized copy of the user's most recently loaded submission
+/// history. It avoids a CloudKit round-trip every time the history screen is
+/// opened and is updated immediately when the user submits or erases data.
+public struct SubmissionHistoryCacheSnapshot: Codable, Hashable, Sendable {
+    public let submissions: [RemoteSubmissionSummary]
+    public let fullyLoaded: Bool
+    public let updatedAt: Date
+
+    public init(
+        submissions: [RemoteSubmissionSummary],
+        fullyLoaded: Bool,
+        updatedAt: Date = .now
+    ) {
+        self.submissions = submissions
+        self.fullyLoaded = fullyLoaded
+        self.updatedAt = updatedAt
+    }
+}
+
+public enum SubmissionHistoryCache {
+    static let cacheKey = "Sift.submissionHistoryCache.v1"
+
+    public static func load(defaults: UserDefaults? = nil) -> SubmissionHistoryCacheSnapshot? {
+        let store = defaults ?? ModelSelectionStore.sharedDefaults()
+        guard let data = store.data(forKey: cacheKey) else {
+            return nil
+        }
+        return try? JSONDecoder().decode(SubmissionHistoryCacheSnapshot.self, from: data)
+    }
+
+    public static func save(_ snapshot: SubmissionHistoryCacheSnapshot, defaults: UserDefaults? = nil) {
+        guard let data = try? JSONEncoder().encode(snapshot) else {
+            return
+        }
+        (defaults ?? ModelSelectionStore.sharedDefaults()).set(data, forKey: cacheKey)
+    }
+
+    public static func remove(defaults: UserDefaults? = nil) {
+        (defaults ?? ModelSelectionStore.sharedDefaults()).removeObject(forKey: cacheKey)
+    }
+}
+
 
 /// Local counter of successfully contributed samples, kept in the shared
 /// app-group defaults so the dashboard can show "已贡献 N 条" without a
@@ -116,7 +228,11 @@ public enum SubmissionLedger {
         store.set(max(count(defaults: store) - 1, 0), forKey: countKey)
     }
 
+    public static func set(_ count: Int, defaults: UserDefaults? = nil) {
+        (defaults ?? ModelSelectionStore.sharedDefaults()).set(max(count, 0), forKey: countKey)
+    }
+
     public static func reset(defaults: UserDefaults? = nil) {
-        (defaults ?? ModelSelectionStore.sharedDefaults()).set(0, forKey: countKey)
+        set(0, defaults: defaults)
     }
 }

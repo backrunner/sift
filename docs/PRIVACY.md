@@ -1,7 +1,8 @@
 # Sift Privacy Notes
 
 Sift is designed as a local-first SMS filtering app. The default path keeps SMS
-classification, custom rules, and local personalization on device.
+classification, custom rules, local personalization, and the local cache of
+your sanitized submission history on device.
 
 ## Remote sample contribution
 
@@ -43,6 +44,17 @@ identities.
   future exports.
 - Transparency: the public privacy policy is served at
   `https://sift.alkinum.io/privacy`.
+
+## Local submission-history cache
+
+To make the "My Submissions" screen usable without a CloudKit round-trip on
+every visit, Sift keeps the most recently loaded **sanitized** submission
+summaries in App Group storage on the device. The cache contains the same
+sanitized text, category, and submission time that the screen displays; it
+never adds sender, account, device, or other identity fields. It refreshes
+periodically and after a manual pull-to-refresh, is updated immediately after
+you submit or erase a sample, and is cleared when you erase all submitted data
+or delete the app.
 
 ## Apple review checklist
 

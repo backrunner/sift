@@ -13,6 +13,7 @@ final class MessageFilterExtension: ILMessageFilterExtension, ILMessageFilterQue
     private var activeVariant: ModelVariant
     private var pipeline: ClassificationPipeline
     private var rules: [CustomRule]
+    private var categoryMappings: [String: CategoryMappingTarget]
     private let statistics = FilterStatisticsStore()
 
     override init() {
@@ -20,6 +21,7 @@ final class MessageFilterExtension: ILMessageFilterExtension, ILMessageFilterQue
         self.activeVariant = variant
         self.pipeline = ClassificationPipeline(classifier: AppleClassifierLoader.classifier(for: variant))
         self.rules = SharedRuleStore.load()
+        self.categoryMappings = SharedCategoryMappingStore.load()
         super.init()
     }
 
@@ -30,7 +32,7 @@ final class MessageFilterExtension: ILMessageFilterExtension, ILMessageFilterQue
             sender: queryRequest.sender,
             body: queryRequest.messageBody ?? "",
             rules: rules
-        )
+        ).applying(categoryMappings: categoryMappings)
         statistics.record(decision: decision)
 
         let response = ILMessageFilterQueryResponse()
@@ -53,5 +55,6 @@ final class MessageFilterExtension: ILMessageFilterExtension, ILMessageFilterQue
             pipeline = ClassificationPipeline(classifier: AppleClassifierLoader.classifier(for: variant))
         }
         rules = SharedRuleStore.load()
+        categoryMappings = SharedCategoryMappingStore.load()
     }
 }

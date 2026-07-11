@@ -34,7 +34,8 @@ public struct PIIDetection: Hashable, Sendable {
 }
 
 /// A model-based PII detector. The sanitizer unions these detections with its
-/// regex rules — the model widens recall, the rules guarantee a floor.
+/// regex rules. This widens recall but can add false positives, so bundled
+/// models must pass the trainer's clean-negative quality gate.
 public protocol PIIDetecting: Sendable {
     func detections(in text: String) -> [PIIDetection]
 }
@@ -61,7 +62,7 @@ public enum PIIDetectorLoader {
     public static func bundled(
         resourceName: String = defaultResourceName,
         bundles: [Bundle] = [.main],
-        confidenceThreshold: Double = 0.6
+        confidenceThreshold: Double = 0.85
     ) -> (any PIIDetecting)? {
         #if canImport(CoreML)
         guard
@@ -117,7 +118,7 @@ public final class CoreMLPIIDetector: PIIDetecting, @unchecked Sendable {
         modelURL: URL,
         tokenizer: WordPieceTokenizer,
         tags: [String],
-        confidenceThreshold: Double = 0.6
+        confidenceThreshold: Double = 0.85
     ) throws {
         let configuration = MLModelConfiguration()
         configuration.computeUnits = .cpuAndNeuralEngine
@@ -170,31 +171,45 @@ public final class CoreMLPIIDetector: PIIDetecting, @unchecked Sendable {
         return nil
     }
 
-    /// Majority tag across a word's pieces; a word counts as PII only when
-    /// its best piece clears the softmax confidence threshold.
+    /// Average tag probability across all pieces in a word. A non-PII tag
+    /// must beat the O probability and clear the confidence threshold, which
+    /// prevents one noisy subword from redacting the entire word.
     private func classifyWords(
         encoded: WordPieceTokenizer.EncodedTextWithOffsets,
         logits: MLMultiArray
     ) -> [PIIKind?] {
         var wordKinds: [PIIKind?] = Array(repeating: nil, count: encoded.wordRanges.count)
-        var bestConfidence: [Double] = Array(repeating: 0, count: encoded.wordRanges.count)
+        var probabilitySums = Array(
+            repeating: Array(repeating: 0.0, count: tags.count),
+            count: encoded.wordRanges.count
+        )
+        var pieceCounts = Array(repeating: 0, count: encoded.wordRanges.count)
 
         for position in 0..<encoded.wordIndices.count {
-            guard let wordIndex = encoded.wordIndices[position] else {
-                continue
+            guard let wordIndex = encoded.wordIndices[position] else { continue }
+            let probabilities = softmaxProbabilities(logits: logits, position: position)
+            for tagIndex in probabilities.indices {
+                probabilitySums[wordIndex][tagIndex] += probabilities[tagIndex]
             }
-            let (tagIndex, probability) = argmaxSoftmax(logits: logits, position: position)
+            pieceCounts[wordIndex] += 1
+        }
+
+        let outsideIndex = tags.firstIndex { normalizedTag($0) == "O" }
+        for wordIndex in wordKinds.indices where pieceCounts[wordIndex] > 0 {
+            let divisor = Double(pieceCounts[wordIndex])
+            let averages = probabilitySums[wordIndex].map { $0 / divisor }
+            let outsideProbability = outsideIndex.map { averages[$0] } ?? 0
+            guard let best = averages.indices
+                .filter({ $0 != outsideIndex })
+                .max(by: { averages[$0] < averages[$1] })
+            else { continue }
+            let probability = averages[best]
             guard
                 probability >= confidenceThreshold,
-                tagIndex < tags.count,
-                let kind = PIIKind(rawValue: normalizedTag(tags[tagIndex]))
-            else {
-                continue
-            }
-            if probability > bestConfidence[wordIndex] {
-                bestConfidence[wordIndex] = probability
-                wordKinds[wordIndex] = kind
-            }
+                probability > outsideProbability,
+                let kind = PIIKind(rawValue: normalizedTag(tags[best]))
+            else { continue }
+            wordKinds[wordIndex] = kind
         }
         return wordKinds
     }
@@ -207,10 +222,9 @@ public final class CoreMLPIIDetector: PIIDetecting, @unchecked Sendable {
         return tag
     }
 
-    private func argmaxSoftmax(logits: MLMultiArray, position: Int) -> (index: Int, probability: Double) {
+    private func softmaxProbabilities(logits: MLMultiArray, position: Int) -> [Double] {
         let offset = position * tags.count
         var maxLogit = -Double.infinity
-        var maxIndex = 0
         var values: [Double] = []
         values.reserveCapacity(tags.count)
         for tagIndex in 0..<tags.count {
@@ -218,11 +232,10 @@ public final class CoreMLPIIDetector: PIIDetecting, @unchecked Sendable {
             values.append(value)
             if value > maxLogit {
                 maxLogit = value
-                maxIndex = tagIndex
             }
         }
         let expSum = values.reduce(0) { $0 + exp($1 - maxLogit) }
-        return (maxIndex, 1.0 / expSum)
+        return values.map { exp($0 - maxLogit) / expSum }
     }
 
     private func mergeAdjacent(wordKinds: [PIIKind?], wordRanges: [Range<String.Index>]) -> [PIIDetection] {

@@ -56,6 +56,8 @@ public struct DailyFilterStats: Codable, Hashable, Sendable, Identifiable {
 /// `@unchecked`.
 public struct FilterStatisticsStore: @unchecked Sendable {
     static let storageKey = "Sift.filterStats.v1"
+    static let lifetimeTotalsKey = "Sift.filterStats.lifetimeTotals.v1"
+    static let firstDashboardDayKey = "Sift.filterStats.firstDashboardDay.v1"
     static let retentionDays = 90
 
     private let defaults: UserDefaults
@@ -66,20 +68,27 @@ public struct FilterStatisticsStore: @unchecked Sendable {
 
     public func record(decision: ClassificationDecision, date: Date = .now) {
         var buckets = loadAll()
+        var totals = loadLifetimeTotals(fallback: buckets)
         let key = Self.dayKey(for: date)
         var stats = buckets[key] ?? DailyFilterStats(day: key)
         stats.total += 1
+        totals.total += 1
         switch decision.systemAction {
         case .junk:
             stats.junk += 1
+            totals.junk += 1
         case .promotion:
             stats.promotion += 1
+            totals.promotion += 1
         case .transaction, .none:
             stats.transaction += 1
+            totals.transaction += 1
         }
         stats.byGroup[decision.groupID, default: 0] += 1
+        totals.byGroup[decision.groupID, default: 0] += 1
         buckets[key] = stats
         persist(prune(buckets, now: date))
+        persistLifetimeTotals(totals)
     }
 
     public func stats(for date: Date = .now) -> DailyFilterStats {
@@ -102,16 +111,49 @@ public struct FilterStatisticsStore: @unchecked Sendable {
 
     public func replace(day: DailyFilterStats) {
         var buckets = loadAll()
+        let previous = buckets[day.day] ?? DailyFilterStats(day: day.day)
+        var totals = loadLifetimeTotals(fallback: buckets)
+        totals.total = max(totals.total + day.total - previous.total, 0)
+        totals.junk = max(totals.junk + day.junk - previous.junk, 0)
+        totals.promotion = max(totals.promotion + day.promotion - previous.promotion, 0)
+        totals.transaction = max(totals.transaction + day.transaction - previous.transaction, 0)
+        for groupID in Set(previous.byGroup.keys).union(day.byGroup.keys) {
+            let adjusted = (totals.byGroup[groupID] ?? 0)
+                + (day.byGroup[groupID] ?? 0)
+                - (previous.byGroup[groupID] ?? 0)
+            totals.byGroup[groupID] = max(adjusted, 0)
+        }
         buckets[day.day] = day
         persist(buckets)
+        persistLifetimeTotals(totals)
     }
 
     public func allDays() -> [DailyFilterStats] {
         loadAll().values.sorted { $0.day < $1.day }
     }
 
+    /// Lifetime counters are stored separately from the 90-day chart buckets,
+    /// so the dashboard total never decreases when old daily rows are pruned.
+    public func totals() -> DailyFilterStats {
+        let buckets = loadAll()
+        return loadLifetimeTotals(fallback: buckets)
+    }
+
+    /// Records the first calendar day on which the dashboard was viewed and
+    /// returns whether `date` is still that day. This keeps the onboarding
+    /// hint to day one even when there are no messages to count yet.
+    public func isFirstDashboardDay(on date: Date = .now) -> Bool {
+        let day = Self.dayKey(for: date)
+        if let firstDay = defaults.string(forKey: Self.firstDashboardDayKey) {
+            return firstDay == day
+        }
+        defaults.set(day, forKey: Self.firstDashboardDayKey)
+        return true
+    }
+
     public func removeAll() {
         defaults.removeObject(forKey: Self.storageKey)
+        defaults.removeObject(forKey: Self.lifetimeTotalsKey)
     }
 
     // MARK: - Internals
@@ -129,6 +171,30 @@ public struct FilterStatisticsStore: @unchecked Sendable {
     private func persist(_ buckets: [String: DailyFilterStats]) {
         if let data = try? JSONEncoder().encode(buckets) {
             defaults.set(data, forKey: Self.storageKey)
+        }
+    }
+
+    private func loadLifetimeTotals(fallback buckets: [String: DailyFilterStats]) -> DailyFilterStats {
+        if
+            let data = defaults.data(forKey: Self.lifetimeTotalsKey),
+            let totals = try? JSONDecoder().decode(DailyFilterStats.self, from: data)
+        {
+            return totals
+        }
+        return buckets.values.reduce(into: DailyFilterStats(day: "total")) { result, day in
+            result.total += day.total
+            result.junk += day.junk
+            result.promotion += day.promotion
+            result.transaction += day.transaction
+            for (group, count) in day.byGroup {
+                result.byGroup[group, default: 0] += count
+            }
+        }
+    }
+
+    private func persistLifetimeTotals(_ totals: DailyFilterStats) {
+        if let data = try? JSONEncoder().encode(totals) {
+            defaults.set(data, forKey: Self.lifetimeTotalsKey)
         }
     }
 

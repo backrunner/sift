@@ -49,8 +49,11 @@ public struct HeuristicClassifier: MessageClassifier {
         // thin layer of high-precision English keywords for multilingual SMS.
         let rules: [(labelID: String, keywords: [String], confidence: Double)] = [
             ("verification", ["验证码", "动态码", "校验码", "verification code", "security code", "otp", "passcode", "認証コード", "確認コード", "ワンタイム"], 0.99),
-            ("spam", ["退订", "回复t", "推广", "营销", "广告", "you won", "winner", "claim your prize", "your account will be", "恭喜您"], 0.95),
-            ("promotion", ["优惠", "限时", "活动", "折扣", "领券", "促销", "% off", "flash sale", "discount", "voucher", "reply stop"], 0.94),
+            ("spam", ["刷单", "贷款秒批", "无视征信", "先交保证金", "安全账户", "涉嫌洗钱", "代办证件", "彩票内幕", "中奖通知", "点击链接完成认证", "you won", "winner", "claim your prize", "your account will be frozen", "guaranteed returns", "no credit check", "pay a deposit", "審査なし即日融資", "保証金", "当選しました", "至急ご確認ください"], 0.95),
+            ("transaction.points", ["积分到账", "获得积分", "积分余额已更新", "积分抵扣成功", "points added", "points earned", "reward balance updated", "ポイントが加算", "ポイント獲得", "ポイント利用"], 0.93),
+            ("carrier.promotion", ["电信积分", "移动积分", "联通积分", "通信积分", "运营商积分", "话费积分", "carrier rewards", "mobile rewards", "airtime voucher", "通信ポイント", "キャリアポイント"], 0.94),
+            ("transaction.order", ["游戏道具订单", "装备订单", "订单中的皮肤", "订单中的金币", "订单已支付", "订单已进入验号", "item order is paid", "gear order is paid", "items in your order", "trade is in verification", "アイテム注文", "装備注文", "注文したスキン", "取引は確認段階"], 0.95),
+            ("promotion", ["退订", "回复t", "推广", "营销", "广告", "优惠", "限时", "活动", "折扣", "领券", "促销", "积分商城", "银行商城", "积分兑换好礼", "首充双倍", "充值返利", "充值节", "赛季通行证", "限定皮肤", "游戏礼包", "游戏道具", "装备交易", "金币交易", "账号交易", "武库轮换", "武库换新", "更新货架", "即开即售", "寄售季", "新品发布", "新品上线", "新房源", "预约看房", "租金优惠", "贷款利率优惠", "服装折扣", "超市特卖", "% off", "flash sale", "discount", "voucher", "reply stop", "rewards mall", "bank marketplace", "game server", "top-up bonus", "game top-up", "season pass", "in-game item", "armory rotation", "armory refresh", "instant listing", "consignment event", "new product", "new rental", "loan rate offer", "fashion sale", "grocery member day", "supermarket sale", "ポイントモール", "銀行モール", "新サーバー", "初回チャージ", "ゲームチャージ", "武器庫ローテーション", "武器庫更新", "委託販売イベント", "新商品", "新着物件", "金利優遇", "ゲームアイテム", "衣料品セール", "スーパー特売"], 0.94),
             ("finance.refund", ["退款", "退回", "原路返回", "refund"], 0.96),
             ("finance.income", ["工资到账", "转账到账", "代发", "存入现金", "收到转账", "salary", "deposited"], 0.93),
             ("finance.bank", ["银行", "账户", "余额", "转账", "扣款", "debited", "credited", "balance"], 0.82),
@@ -71,14 +74,14 @@ public struct HeuristicClassifier: MessageClassifier {
             ("carrier.call_reminder", ["来电提醒", "missed call", "voicemail"], 0.95),
             ("carrier.data_reminder", ["流量", "套餐", "剩余", "已用", "data plan", "gb left", "top up"], 0.9),
             ("carrier.service", ["办理", "套餐", "变更", "服务", "roaming"], 0.84),
-            ("carrier.promotion", ["优惠", "专享", "推荐"], 0.78),
             ("government.traffic", ["交警", "12123", "违章", "驾驶证", "etc", "车辆年检", "toll charge"], 0.9),
             ("government.tax", ["税务", "电子税务", "增值税", "个税", "退税", "发票领用", "tax refund"], 0.9),
             ("government.social_security", ["社保", "医保", "公积金", "缴存", "social insurance"], 0.9),
             ("government.court", ["法院", "司法", "立案", "庭审", "执行通知", "court notice"], 0.9),
             ("government.policy", ["政策", "国务院", "新规", "条例", "通告"], 0.85),
             ("government.notice", ["通知", "政务", "公告"], 0.83),
-            ("transaction.account_security", ["new device", "sign-in detected", "password was changed"], 0.9)
+            ("transaction.account_security", ["new device", "sign-in detected", "password was changed"], 0.9),
+            ("transaction.message", ["游戏版本更新", "游戏客户端已更新", "版本维护完成", "game version update", "game client is up to date", "maintenance is complete", "ゲームのバージョン更新", "ゲームクライアントは最新版", "メンテナンスが完了"], 0.92)
         ]
 
         for item in rules {

@@ -73,8 +73,8 @@ func verificationClassifiesAsTransaction() {
 func promotionClassifiesAsJunkWhenItContainsUnsubscribe() {
     let decision = HeuristicClassifier().classify(sender: nil, body: "限时优惠，回复T退订。")
 
-    expect(decision.labelID == "spam", "unsubscribe promotions should be treated as spam")
-    expect(decision.systemAction == .junk, "spam maps to junk")
+    expect(decision.labelID == "promotion", "merchant offers with unsubscribe text should remain promotions")
+    expect(decision.systemAction == .promotion, "promotions map to the promotion action")
 }
 
 func hasherProducesStableBuckets() {

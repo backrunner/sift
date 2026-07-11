@@ -1,4 +1,5 @@
 import MessageFilterCore
+import Charts
 import SwiftUI
 
 // MARK: - 统计面板
@@ -12,20 +13,18 @@ struct StatisticsPanel: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             SectionHeader(title: String(localized: "拦截统计"), icon: "chart.bar.fill") {
-                Text(Self.dayLabel(model.todayStats.day))
+                Text(String(localized: "累计 \(model.totalStats.total) 条"))
                     .font(.caption2.weight(.semibold).monospacedDigit())
                     .foregroundStyle(.secondary)
             }
 
             HStack(spacing: 10) {
-                StatTile(title: String(localized: "垃圾拦截"), value: model.todayStats.junk, tint: .red)
-                StatTile(title: String(localized: "推广归类"), value: model.todayStats.promotion, tint: .siftAmber)
-                StatTile(title: String(localized: "正常放行"), value: model.todayStats.transaction, tint: .siftMint)
+                StatTile(title: String(localized: "垃圾拦截"), value: model.totalStats.junk, tint: .red)
+                StatTile(title: String(localized: "推广归类"), value: model.totalStats.promotion, tint: .siftAmber)
+                StatTile(title: String(localized: "正常放行"), value: model.totalStats.transaction, tint: .siftMint)
             }
 
-            if model.weeklyStats.contains(where: { $0.total > 0 }) {
-                WeeklyTrend(days: model.weeklyStats)
-            } else {
+            if model.isStatisticsFirstDay {
                 HStack(alignment: .top, spacing: 9) {
                     Image(systemName: "sparkles")
                         .font(.callout.weight(.semibold))
@@ -39,6 +38,8 @@ struct StatisticsPanel: View {
                 .padding(12)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .insetSurface(cornerRadius: 12)
+            } else {
+                WeeklyFilterChart(days: model.weeklyStats)
             }
         }
         .padding(18)
@@ -50,10 +51,6 @@ struct StatisticsPanel: View {
                 model.refreshStatistics()
             }
         }
-    }
-
-    private static func dayLabel(_ day: String) -> String {
-        String(day.suffix(5)).replacingOccurrences(of: "-", with: "/")
     }
 }
 
@@ -83,19 +80,20 @@ private struct SettingsRowContent<Trailing: View>: View {
                     Text(subtitle)
                         .font(.caption)
                         .foregroundStyle(.secondary)
-                        .lineLimit(2)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.86)
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .layoutPriority(1)
+            .layoutPriority(0)
 
             HStack(spacing: 8) {
                 trailing
             }
             .foregroundStyle(.secondary)
-            .layoutPriority(0)
+            .layoutPriority(1)
         }
-        .frame(maxWidth: .infinity, minHeight: subtitle == nil ? 44 : 52, alignment: .leading)
+        .frame(maxWidth: .infinity, minHeight: 52, alignment: .leading)
         .padding(.horizontal, 12)
         .padding(.vertical, 10)
         .contentShape(Rectangle())
@@ -139,32 +137,67 @@ private struct StatTile: View {
     }
 }
 
-private struct WeeklyTrend: View {
+private struct WeeklyFilterChart: View {
     let days: [DailyFilterStats]
 
     private var peak: Int {
         max(days.map(\.total).max() ?? 1, 1)
     }
 
+    private let junkTitle = String(localized: "垃圾拦截")
+    private let promotionTitle = String(localized: "推广归类")
+    private let regularTitle = String(localized: "正常放行")
+
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(String(localized: "近 7 天"))
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(.secondary)
-            HStack(alignment: .bottom, spacing: 8) {
-                ForEach(days) { day in
-                    VStack(spacing: 4) {
-                        Capsule()
-                            .fill(day.junk > 0 ? Color.siftAmber.opacity(0.85) : Color.siftMint.opacity(0.75))
-                            .frame(height: max(CGFloat(day.total) / CGFloat(peak) * 46, day.total > 0 ? 5 : 2))
-                            .frame(maxHeight: 46, alignment: .bottom)
-                        Text(String(day.day.suffix(2)))
-                            .font(.system(size: 9, weight: .semibold).monospacedDigit())
-                            .foregroundStyle(.tertiary)
+
+            Chart(days) { day in
+                BarMark(
+                    x: .value(String(localized: "日期"), day.day),
+                    y: .value(junkTitle, day.junk)
+                )
+                .foregroundStyle(by: .value(String(localized: "过滤结果"), junkTitle))
+
+                BarMark(
+                    x: .value(String(localized: "日期"), day.day),
+                    y: .value(promotionTitle, day.promotion)
+                )
+                .foregroundStyle(by: .value(String(localized: "过滤结果"), promotionTitle))
+
+                BarMark(
+                    x: .value(String(localized: "日期"), day.day),
+                    y: .value(regularTitle, day.transaction)
+                )
+                .foregroundStyle(by: .value(String(localized: "过滤结果"), regularTitle))
+            }
+            .chartForegroundStyleScale(
+                domain: [junkTitle, promotionTitle, regularTitle],
+                range: [Color.red, Color.siftAmber, Color.siftMint]
+            )
+            .chartYScale(domain: 0...peak)
+            .chartLegend(position: .top, alignment: .leading, spacing: 10)
+            .chartXAxis {
+                AxisMarks(values: days.map(\.day)) { value in
+                    AxisValueLabel {
+                        if let day = value.as(String.self) {
+                            Text(String(day.suffix(2)))
+                                .monospacedDigit()
+                        }
                     }
-                    .frame(maxWidth: .infinity)
                 }
             }
+            .chartYAxis {
+                AxisMarks(position: .leading, values: .automatic(desiredCount: 3)) {
+                    AxisGridLine()
+                        .foregroundStyle(Color.secondary.opacity(0.14))
+                    AxisValueLabel()
+                }
+            }
+            .frame(height: 150)
+            .accessibilityLabel(String(localized: "近 7 天过滤统计"))
         }
         .padding(12)
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -518,7 +551,8 @@ struct SettingsView: View {
         VStack(alignment: .leading, spacing: 12) {
             SectionHeader(
                 title: String(localized: "数据与隐私"),
-                subtitle: String(localized: "样本匿名存储于 iCloud，你可以随时导出或彻底抹除。"),
+                subtitle: String(localized: "匿名存储，随时导出或抹除。"),
+                subtitleLineLimit: 1,
                 icon: "hand.raised.fill"
             )
 
@@ -647,14 +681,13 @@ struct SettingsView: View {
             icon: "tray.full",
             isEnabled: isEnabled
         ) {
-            if model.submittedSampleCount > 0 {
-                Text("\(model.submittedSampleCount)")
-                    .font(.caption.weight(.bold).monospacedDigit())
-                    .foregroundStyle(Color.siftMint)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 3)
-                    .background(Color.siftMint.opacity(0.12), in: Capsule())
-            }
+            Text("\(model.submittedSampleCount)")
+                .font(.caption.weight(.bold).monospacedDigit())
+                .foregroundStyle(Color.siftMint)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 3)
+                .background(Color.siftMint.opacity(0.12), in: Capsule())
+                .contentTransition(.numericText())
             Image(systemName: "chevron.right")
                 .font(.caption2.weight(.bold))
                 .foregroundStyle(.tertiary)
@@ -677,21 +710,31 @@ struct SettingsView: View {
                 tint: .siftMint
             ) {
                 VStack(alignment: .trailing, spacing: 2) {
-                    Text(formatModelVersion(model.modelVersion))
+                    Text(model.modelVersion)
                         .font(.callout.monospacedDigit())
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
-                    Text(model.selectedModelVariant.title)
+                        .minimumScaleFactor(0.72)
+                    Text(settingsModelTypeTitle)
                         .font(.caption2.weight(.medium))
                         .foregroundStyle(.tertiary)
                         .lineLimit(1)
                 }
-                .frame(minWidth: 76, alignment: .trailing)
+                .frame(minWidth: 96, alignment: .trailing)
             }
             .insetSurface(cornerRadius: 12)
         }
         .padding(18)
         .cardSurface()
+    }
+
+    private var settingsModelTypeTitle: String {
+        switch model.selectedModelVariant {
+        case .classic:
+            return String(localized: "经典模型")
+        case .transformer:
+            return String(localized: "高级模型")
+        }
     }
 
     private static var appVersion: String {

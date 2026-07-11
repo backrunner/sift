@@ -68,6 +68,22 @@ targets:
       - path: GeneratedModels/SiftSMSClassifier.manifest.json
         buildPhase: resources
         optional: true
+      - path: GeneratedModels/SiftTransformerClassifier.mlpackage
+        optional: true
+      - path: GeneratedModels/SiftTransformerClassifier.tokenizer.json
+        buildPhase: resources
+        optional: true
+      - path: GeneratedModels/SiftTransformerClassifier.manifest.json
+        buildPhase: resources
+        optional: true
+      - path: GeneratedModels/SiftPIIDetector.mlpackage
+        optional: true
+      - path: GeneratedModels/SiftPIIDetector.vocab.txt
+        buildPhase: resources
+        optional: true
+      - path: GeneratedModels/SiftPIIDetector.manifest.json
+        buildPhase: resources
+        optional: true
     dependencies:
       - target: SiftAppKit
       - target: MessageFilterCore

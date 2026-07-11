@@ -143,6 +143,56 @@ func carrierPromotionIsPromotionEvenWhenStoredUnderCarrierGroup() throws {
     #expect(MessageFilterActionMapper.systemSubAction(for: decision) == .promotionalOffers)
 }
 
+@Test
+func categoryMappingPersistsAndOverridesFinalSystemAction() throws {
+    let suiteName = "SiftTests.categoryMapping.\(UUID().uuidString)"
+    let defaults = try #require(UserDefaults(suiteName: suiteName))
+    defer { defaults.removePersistentDomain(forName: suiteName) }
+    let mappings: [String: CategoryMappingTarget] = [
+        "finance.bank": .junk,
+        "life.express": .promotion
+    ]
+
+    SharedCategoryMappingStore.save(mappings, defaults: defaults)
+    let loaded = SharedCategoryMappingStore.load(defaults: defaults)
+    let bank = try taxonomyDecision(labelID: "finance.bank")
+        .applying(categoryMappings: loaded)
+    let express = try taxonomyDecision(labelID: "life.express")
+        .applying(categoryMappings: loaded)
+
+    #expect(loaded == mappings)
+    #expect(MessageFilterActionMapper.systemAction(for: bank) == .junk)
+    #expect(MessageFilterActionMapper.systemSubAction(for: bank) == .none)
+    #expect(MessageFilterActionMapper.systemAction(for: express) == .promotion)
+    #expect(MessageFilterActionMapper.systemSubAction(for: express) == .promotionalOthers)
+}
+
+@Test
+func categoryMappingTargetsCannotBeMappingSources() throws {
+    let suiteName = "SiftTests.categoryMappingTargets.\(UUID().uuidString)"
+    let defaults = try #require(UserDefaults(suiteName: suiteName))
+    defer { defaults.removePersistentDomain(forName: suiteName) }
+    let mappings: [String: CategoryMappingTarget] = [
+        "promotion": .junk,
+        "spam": .promotion,
+        "carrier.promotion": .junk
+    ]
+
+    SharedCategoryMappingStore.save(mappings, defaults: defaults)
+    let loaded = SharedCategoryMappingStore.load(defaults: defaults)
+    let promotion = try taxonomyDecision(labelID: "promotion")
+        .applying(categoryMappings: mappings)
+    let spam = try taxonomyDecision(labelID: "spam")
+        .applying(categoryMappings: mappings)
+
+    #expect(!CategoryMappingPolicy.isEligibleSource(labelID: "promotion"))
+    #expect(!CategoryMappingPolicy.isEligibleSource(labelID: "spam"))
+    #expect(CategoryMappingPolicy.isEligibleSource(labelID: "carrier.promotion"))
+    #expect(loaded == ["carrier.promotion": .junk])
+    #expect(promotion.systemAction == .promotion)
+    #expect(spam.systemAction == .junk)
+}
+
 // MARK: - SubmissionLedger
 
 @Test

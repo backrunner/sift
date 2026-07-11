@@ -83,11 +83,103 @@ func verificationClassifiesAsTransaction() {
 }
 
 @Test
-func promotionClassifiesAsJunkWhenItContainsUnsubscribe() {
+func merchantPromotionWithUnsubscribeRemainsPromotion() {
     let decision = HeuristicClassifier().classify(sender: nil, body: "限时优惠，回复T退订。")
 
-    #expect(decision.labelID == "spam")
-    #expect(decision.systemAction == .junk)
+    #expect(decision.labelID == "promotion")
+    #expect(decision.systemAction == .promotion)
+}
+
+private struct SubmissionSimilarityCase: Sendable {
+    let first: String
+    let second: String
+    let expected: Bool
+}
+
+@Test(arguments: [
+    SubmissionSimilarityCase(
+        first: "游戏2.8版本更新完成，新增地图并修复组队掉线问题。",
+        second: "游戏2.9版本更新完成，新增地图并修复组队掉线问题。",
+        expected: true
+    ),
+    SubmissionSimilarityCase(
+        first: "您的验证码为123456，请勿告知他人。",
+        second: "您的验证码为 654321，请勿告知他人！",
+        expected: true
+    ),
+    SubmissionSimilarityCase(
+        first: "银行商城积分兑换活动今日开始。",
+        second: "地铁二号线今天临时调整运行时间。",
+        expected: false
+    ),
+    SubmissionSimilarityCase(first: "新品上线", second: "新品发布", expected: false)
+])
+private func submissionSimilarityIsConservative(example: SubmissionSimilarityCase) {
+    #expect(SubmissionSimilarity.isSimilar(example.first, example.second) == example.expected)
+}
+
+@Test
+func localSampleStoreRejectsSimilarSamplesOnlyWithinTheSameLabel() async throws {
+    let directory = FileManager.default.temporaryDirectory
+        .appendingPathComponent("SiftTests.\(UUID().uuidString)", isDirectory: true)
+    let store = LocalSampleStore(fileURL: directory.appendingPathComponent("samples.ndjson"))
+    defer { try? FileManager.default.removeItem(at: directory) }
+
+    let first = StoredSample(sender: "", body: "游戏充值100元赠送20%钻石。", labelID: "promotion", source: "local")
+    let duplicate = StoredSample(sender: "", body: "游戏充值200元赠送30%钻石。", labelID: "promotion", source: "local")
+    let correction = StoredSample(sender: "", body: duplicate.body, labelID: "spam", source: "local")
+
+    #expect(try await store.appendIfUnique(first))
+    #expect(try await store.appendIfUnique(duplicate) == false)
+    #expect(try await store.appendIfUnique(correction))
+    #expect(try await store.loadAll().count == 2)
+}
+
+private struct PromotionClassificationCase: Sendable {
+    let text: String
+    let expectedLabelID: String
+}
+
+@Test(arguments: [
+    PromotionClassificationCase(text: "热门手游新服开启，首充双倍并赠送限定皮肤礼包。", expectedLabelID: "promotion"),
+    PromotionClassificationCase(text: "游戏道具和金币交易专区限时免手续费，认证商家再送券。", expectedLabelID: "promotion"),
+    PromotionClassificationCase(text: "银行卡积分商城上新，积分兑换家电再享抽奖机会。", expectedLabelID: "promotion"),
+    PromotionClassificationCase(text: "银行商城会员日，指定商品满500减80。", expectedLabelID: "promotion"),
+    PromotionClassificationCase(text: "服装店换季折扣，两件七折，回复T退订。", expectedLabelID: "promotion"),
+    PromotionClassificationCase(text: "周末超市特卖，粮油日用品第二件半价。", expectedLabelID: "promotion"),
+    PromotionClassificationCase(text: "New game server launch: first top-up bonus and limited in-game items.", expectedLabelID: "promotion"),
+    PromotionClassificationCase(text: "Bank rewards mall sale: redeem points for gift cards this weekend.", expectedLabelID: "promotion"),
+    PromotionClassificationCase(text: "ゲーム新サーバー開設、初回チャージで限定スキンをプレゼント。", expectedLabelID: "promotion"),
+    PromotionClassificationCase(text: "銀行ポイントモールで家電交換キャンペーン実施中。", expectedLabelID: "promotion"),
+    PromotionClassificationCase(text: "中国电信积分商城限时开放，可兑换流量包。", expectedLabelID: "carrier.promotion"),
+    PromotionClassificationCase(text: "本次消费获得积分500分，积分余额已更新。", expectedLabelID: "transaction.points"),
+    PromotionClassificationCase(text: "手游充值节开启，充值返利并赠送限定头像框。", expectedLabelID: "promotion"),
+    PromotionClassificationCase(text: "本行贷款利率优惠，请在官方App查看完整费用。", expectedLabelID: "promotion"),
+    PromotionClassificationCase(text: "游戏版本更新完成，新地图已经开放。", expectedLabelID: "transaction.message"),
+    PromotionClassificationCase(text: "春季新品上线，会员预订享优惠。", expectedLabelID: "promotion"),
+    PromotionClassificationCase(text: "地铁旁新房源出租，预约看房享租金优惠。", expectedLabelID: "promotion"),
+    PromotionClassificationCase(text: "无视征信，当天放款，先交保证金。", expectedLabelID: "spam")
+])
+private func expandedPromotionSegmentsClassifyCorrectly(example: PromotionClassificationCase) {
+    let decision = HeuristicClassifier().classify(sender: nil, body: example.text)
+
+    #expect(decision.labelID == example.expectedLabelID)
+}
+
+@Test
+func gameItemMarketplacePromotionAndOrderBoundaryIsPrecise() {
+    let classifier = HeuristicClassifier()
+    let promotion = classifier.classify(
+        sender: nil,
+        body: "【ECOSTEAM】武库轮换更新，一星起开，即开即售。请及时更新货架信息！"
+    )
+    let order = classifier.classify(
+        sender: nil,
+        body: "您的游戏道具订单 EC20260711 已支付，卖家正在准备交付。"
+    )
+
+    #expect(promotion.labelID == "promotion")
+    #expect(order.labelID == "transaction.order")
 }
 
 @Test

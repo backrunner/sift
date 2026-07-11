@@ -1,56 +1,102 @@
 import MessageFilterCore
 import SwiftUI
 
-/// 我的提交:下拉无限加载(最多最近 200 条),支持对任意一条单独抹除。
-/// 数据来自 CloudKit 按 creator 的分页查询;本地不缓存文本内容。
+/// 我的提交:优先展示本地缓存,下拉时从 CloudKit 刷新,最多最近 200 条。
 struct SubmissionHistoryView: View {
     @Bindable var model: SiftAppModel
-    @State private var pendingDeletion: RemoteSubmissionSummary?
+    @State private var pendingConfirmation: Confirmation?
+
+    private enum Confirmation {
+        case delete(RemoteSubmissionSummary)
+        case eraseAll
+    }
 
     var body: some View {
-        Group {
-            if model.submissionHistory.isEmpty && model.isLoadingHistory {
-                ProgressView(String(localized: "正在加载提交记录…"))
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else if model.submissionHistory.isEmpty && (model.historyFullyLoaded || model.submissionHistoryErrorMessage != nil) {
-                emptyState
-            } else {
-                historyList
+        historyList
+            .overlay {
+                if model.submissionHistory.isEmpty && model.isLoadingHistory {
+                    ProgressView(String(localized: "正在加载提交记录…"))
+                } else if model.submissionHistory.isEmpty && model.hasLoadedSubmissionHistory {
+                    emptyState
+                }
             }
-        }
         .background(AtmosphericBackground())
         .navigationTitle(String(localized: "我的提交"))
         .toolbarTitleDisplayMode(.inline)
         .onAppear {
             model.refreshRemoteAccountStatus()
-            if model.submissionHistory.isEmpty {
-                model.loadMoreSubmissionHistory()
-            }
+            model.refreshSubmissionHistoryIfNeeded()
         }
         .refreshable {
-            model.resetSubmissionHistory()
-            model.loadMoreSubmissionHistory()
+            await model.refreshSubmissionHistory()
+        }
+        .toolbar {
+            ToolbarItem(placement: .confirmationAction) {
+                Button(
+                    String(localized: "清空"),
+                    systemImage: "trash",
+                    role: .destructive
+                ) {
+                    pendingConfirmation = .eraseAll
+                }
+                .tint(.red)
+                .disabled(model.submittedSampleCount == 0 || model.isErasingRemoteData)
+            }
         }
         .confirmationDialog(
-            String(localized: "抹除这条提交？"),
-            isPresented: Binding(
-                get: { pendingDeletion != nil },
-                set: { if !$0 { pendingDeletion = nil } }
-            ),
+            confirmationTitle,
+            isPresented: isShowingConfirmation,
             titleVisibility: .visible
         ) {
-            Button(String(localized: "抹除"), role: .destructive) {
-                if let pendingDeletion {
-                    model.deleteSubmission(pendingDeletion)
+            switch pendingConfirmation {
+            case .delete(let summary):
+                Button(String(localized: "抹除"), role: .destructive) {
+                    model.deleteSubmission(summary)
+                    pendingConfirmation = nil
                 }
-                pendingDeletion = nil
+            case .eraseAll:
+                Button(String(localized: "抹除全部云端数据"), role: .destructive) {
+                    model.eraseAllRemoteData()
+                    pendingConfirmation = nil
+                }
+            case nil:
+                EmptyView()
             }
             Button(String(localized: "取消"), role: .cancel) {
-                pendingDeletion = nil
+                pendingConfirmation = nil
             }
         } message: {
-            Text(String(localized: "将从云端删除这条匿名样本，不可撤销。"))
+            switch pendingConfirmation {
+            case .delete:
+                Text(String(localized: "将从云端删除这条匿名样本，不可撤销。"))
+            case .eraseAll:
+                Text(String(localized: "将从云端删除你匿名提交的全部样本与统计备份，此操作不可撤销，不影响本地功能。"))
+            case nil:
+                EmptyView()
+            }
         }
+    }
+
+    private var confirmationTitle: String {
+        switch pendingConfirmation {
+        case .delete:
+            return String(localized: "抹除这条提交？")
+        case .eraseAll:
+            return String(localized: "抹除全部已提交数据？")
+        case nil:
+            return ""
+        }
+    }
+
+    private var isShowingConfirmation: Binding<Bool> {
+        Binding(
+            get: { pendingConfirmation != nil },
+            set: { isPresented in
+                if !isPresented {
+                    pendingConfirmation = nil
+                }
+            }
+        )
     }
 
     private var historyList: some View {
@@ -59,13 +105,14 @@ struct SubmissionHistoryView: View {
                 SubmissionRow(summary: summary)
                     .listRowBackground(Color.clear)
                     .listRowSeparator(.hidden)
-                    .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
+                    .listRowInsets(EdgeInsets(top: 6, leading: 0, bottom: 6, trailing: 0))
                     .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                         Button(role: .destructive) {
-                            pendingDeletion = summary
+                            pendingConfirmation = .delete(summary)
                         } label: {
-                            Label(String(localized: "抹除"), systemImage: "trash.fill")
+                            Label(String(localized: "抹除"), systemImage: "xmark")
                         }
+                        .tint(.red)
                     }
                     .onAppear {
                         if summary.recordName == model.submissionHistory.last?.recordName {
@@ -94,50 +141,31 @@ struct SubmissionHistoryView: View {
             }
         }
         .listStyle(.plain)
+        .contentMargins(.horizontal, 16, for: .scrollContent)
         .scrollContentBackground(.hidden)
         .animation(.snappy(duration: 0.22), value: model.submissionHistory.count)
     }
 
     private var emptyState: some View {
-        VStack {
-            Spacer(minLength: 24)
-
-            VStack(spacing: 14) {
-                ZStack {
-                    Circle()
-                        .fill(Color.siftMint.opacity(0.10))
-                        .frame(width: 74, height: 74)
-                    Image(systemName: model.submissionHistoryErrorMessage == nil ? "tray" : "icloud.slash")
-                        .font(.system(size: 28, weight: .semibold))
-                        .foregroundStyle(Color.siftMint)
+        ContentUnavailableView {
+            Label(
+                model.submissionHistoryErrorMessage == nil
+                    ? String(localized: "还没有提交过样本")
+                    : String(localized: "无法加载提交记录"),
+                systemImage: model.submissionHistoryErrorMessage == nil ? "tray" : "icloud.slash"
+            )
+        } description: {
+            Text(
+                model.submissionHistoryErrorMessage
+                    ?? String(localized: "在首页「提交样本」里匿名贡献第一条脱敏样本吧。")
+            )
+        } actions: {
+            if model.submissionHistoryErrorMessage != nil {
+                Button(String(localized: "重试"), systemImage: "arrow.clockwise") {
+                    model.retrySubmissionHistory()
                 }
-
-                VStack(spacing: 6) {
-                    Text(model.submissionHistoryErrorMessage == nil ? String(localized: "还没有提交过样本") : String(localized: "无法加载提交记录"))
-                        .font(.headline.weight(.semibold))
-                        .foregroundStyle(.primary)
-                    Text(model.submissionHistoryErrorMessage ?? String(localized: "在首页「提交样本」里匿名贡献第一条脱敏样本吧。"))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.center)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-
-                if model.submissionHistoryErrorMessage != nil {
-                    ActionButton(title: String(localized: "重试"), icon: "arrow.clockwise", style: .secondary) {
-                        model.resetSubmissionHistory()
-                        model.refreshRemoteAccountStatus()
-                        model.loadMoreSubmissionHistory()
-                    }
-                    .frame(maxWidth: 180)
-                }
+                .buttonStyle(.bordered)
             }
-            .frame(maxWidth: .infinity)
-            .padding(22)
-            .cardSurface()
-            .padding(.horizontal, 16)
-
-            Spacer(minLength: 0)
         }
     }
 }

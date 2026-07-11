@@ -49,6 +49,46 @@ func dailyStatsMergeTakesPerCounterMax() {
     #expect(local.byGroup["life"] == 2)
 }
 
+@Test
+func statisticsTotalsAndFirstDayHintPersistAcrossCalendarDays() throws {
+    let suiteName = "SiftTests.stats.firstDay.\(UUID().uuidString)"
+    let defaults = try #require(UserDefaults(suiteName: suiteName))
+    defer { defaults.removePersistentDomain(forName: suiteName) }
+    let store = FilterStatisticsStore(defaults: defaults)
+    let firstDay = Date(timeIntervalSince1970: 1_788_840_000)
+    let secondDay = firstDay.addingTimeInterval(86_400)
+
+    store.record(decision: decision(labelID: "spam", groupID: "spam", action: .junk), date: firstDay)
+    store.record(decision: decision(labelID: "promotion", groupID: "promotion", action: .promotion), date: secondDay)
+
+    let totals = store.totals()
+    #expect(totals.total == 2)
+    #expect(totals.junk == 1)
+    #expect(totals.promotion == 1)
+    #expect(store.isFirstDashboardDay(on: firstDay))
+    #expect(store.isFirstDashboardDay(on: firstDay))
+    #expect(store.isFirstDashboardDay(on: secondDay) == false)
+}
+
+@Test
+func lifetimeStatisticsDoNotRollBackWhenDailyBucketsArePruned() throws {
+    let suiteName = "SiftTests.stats.lifetime.\(UUID().uuidString)"
+    let defaults = try #require(UserDefaults(suiteName: suiteName))
+    defer { defaults.removePersistentDomain(forName: suiteName) }
+    let store = FilterStatisticsStore(defaults: defaults)
+    let firstDay = Date(timeIntervalSince1970: 1_788_840_000)
+    let junk = decision(labelID: "spam", groupID: "spam", action: .junk)
+
+    for offset in 0..<100 {
+        let day = firstDay.addingTimeInterval(TimeInterval(offset * 86_400))
+        store.record(decision: junk, date: day)
+    }
+
+    #expect(store.allDays().count < 100)
+    #expect(store.totals().total == 100)
+    #expect(store.totals().junk == 100)
+}
+
 private func decision(labelID: String, groupID: String, action: SystemAction) -> ClassificationDecision {
     ClassificationDecision(
         labelID: labelID,
@@ -327,6 +367,7 @@ func submissionHistoryPagesDeduplicatesAndDeletesSingleItems() async throws {
     #expect(model.submissionHistory.count == SiftAppModel.historyPageSize)
     #expect(!model.historyFullyLoaded)
     #expect(model.submissionHistory.first?.recordName == "record-0")
+    #expect(model.submittedSampleCount == 45)
 
     model.loadMoreSubmissionHistory()
     try await waitFor { model.historyFullyLoaded }
@@ -341,6 +382,201 @@ func submissionHistoryPagesDeduplicatesAndDeletesSingleItems() async throws {
     try await waitFor { model.submissionHistory.count == 44 }
     #expect(!model.submissionHistory.contains { $0.recordName == victim.recordName })
     #expect(model.submittedSampleCount == countBefore - 1)
+}
+
+@MainActor
+@Test
+func cachedSubmissionHistoryRestoresRowsAndCounterWithoutFetching() throws {
+    let suiteName = "SiftTests.history.cache.\(UUID().uuidString)"
+    let defaults = try #require(UserDefaults(suiteName: suiteName))
+    defer { defaults.removePersistentDomain(forName: suiteName) }
+    let cached = RemoteSubmissionSummary(
+        recordName: "cached-record",
+        text: "已脱敏的缓存样本",
+        label: "spam",
+        submittedAt: Date(timeIntervalSince1970: 1_788_840_000),
+        createdAtMillis: 1_788_840_000_000
+    )
+    SubmissionHistoryCache.save(
+        SubmissionHistoryCacheSnapshot(submissions: [cached], fullyLoaded: true),
+        defaults: defaults
+    )
+    SubmissionLedger.set(7, defaults: defaults)
+
+    let model = SiftAppModel(
+        remoteSampleClient: MockRemoteSampleClient(result: .failure(RemoteSampleClientError.noAccount)),
+        premiumBackend: MockPremiumBackend(entitled: false, outcome: .cancelled),
+        ledgerDefaults: defaults
+    )
+
+    #expect(model.hasLoadedSubmissionHistory)
+    #expect(model.historyFullyLoaded)
+    #expect(model.submissionHistory == [cached])
+    #expect(model.submittedSampleCount == 1)
+    #expect(SubmissionLedger.count(defaults: defaults) == 1)
+}
+
+@MainActor
+@Test
+func failedOptimisticSubmissionDeletionRestoresCacheAndCounter() async throws {
+    let suiteName = "SiftTests.history.deleteRollback.\(UUID().uuidString)"
+    let defaults = try #require(UserDefaults(suiteName: suiteName))
+    defer { defaults.removePersistentDomain(forName: suiteName) }
+    let cached = RemoteSubmissionSummary(
+        recordName: "rollback-record",
+        text: "回滚样本",
+        label: "promotion",
+        submittedAt: nil,
+        createdAtMillis: 123
+    )
+    SubmissionHistoryCache.save(
+        SubmissionHistoryCacheSnapshot(submissions: [cached], fullyLoaded: true),
+        defaults: defaults
+    )
+    SubmissionLedger.set(1, defaults: defaults)
+    let model = SiftAppModel(
+        remoteSampleClient: MockRemoteSampleClient(result: .failure(RemoteSampleClientError.noAccount)),
+        premiumBackend: MockPremiumBackend(entitled: false, outcome: .cancelled),
+        ledgerDefaults: defaults
+    )
+
+    model.deleteSubmission(cached)
+    #expect(model.submissionHistory.isEmpty)
+    #expect(model.submittedSampleCount == 0)
+
+    try await waitFor {
+        model.submissionHistory == [cached] && model.currentToast?.kind == .error
+    }
+    #expect(model.submittedSampleCount == 1)
+    #expect(SubmissionHistoryCache.load(defaults: defaults)?.submissions == [cached])
+}
+
+@MainActor
+@Test
+func failedOptimisticEraseAllRestoresCacheAndCounter() async throws {
+    let suiteName = "SiftTests.history.eraseRollback.\(UUID().uuidString)"
+    let defaults = try #require(UserDefaults(suiteName: suiteName))
+    defer { defaults.removePersistentDomain(forName: suiteName) }
+    let cached = RemoteSubmissionSummary(
+        recordName: "erase-rollback-record",
+        text: "清空回滚样本",
+        label: "spam",
+        submittedAt: nil,
+        createdAtMillis: 456
+    )
+    SubmissionHistoryCache.save(
+        SubmissionHistoryCacheSnapshot(submissions: [cached], fullyLoaded: true),
+        defaults: defaults
+    )
+    SubmissionLedger.set(1, defaults: defaults)
+    let model = SiftAppModel(
+        remoteSampleClient: MockRemoteSampleClient(result: .failure(RemoteSampleClientError.noAccount)),
+        premiumBackend: MockPremiumBackend(entitled: false, outcome: .cancelled),
+        ledgerDefaults: defaults
+    )
+
+    model.eraseAllRemoteData()
+    #expect(model.submissionHistory.isEmpty)
+    #expect(model.submittedSampleCount == 0)
+
+    try await waitFor {
+        model.submissionHistory == [cached] && model.isErasingRemoteData == false
+    }
+    #expect(model.submittedSampleCount == 1)
+    #expect(SubmissionHistoryCache.load(defaults: defaults)?.submissions == [cached])
+}
+
+@MainActor
+@Test
+func cachedHistoryRefreshesOnlyAfterTheRefreshInterval() async throws {
+    let suiteName = "SiftTests.history.ttl.\(UUID().uuidString)"
+    let defaults = try #require(UserDefaults(suiteName: suiteName))
+    defer { defaults.removePersistentDomain(forName: suiteName) }
+    let updatedAt = Date(timeIntervalSince1970: 1_788_840_000)
+    let cached = RemoteSubmissionSummary(
+        recordName: "cached-record",
+        text: "缓存样本",
+        label: "spam",
+        submittedAt: nil,
+        createdAtMillis: 100
+    )
+    let refreshed = RemoteSubmissionSummary(
+        recordName: "refreshed-record",
+        text: "刷新样本",
+        label: "promotion",
+        submittedAt: nil,
+        createdAtMillis: 200
+    )
+    SubmissionHistoryCache.save(
+        SubmissionHistoryCacheSnapshot(
+            submissions: [cached],
+            fullyLoaded: false,
+            updatedAt: updatedAt
+        ),
+        defaults: defaults
+    )
+    SubmissionLedger.set(5, defaults: defaults)
+    let client = MockRemoteSampleClient(result: .success("unused"), seededHistory: [refreshed])
+    let model = SiftAppModel(
+        remoteSampleClient: client,
+        premiumBackend: MockPremiumBackend(entitled: false, outcome: .cancelled),
+        ledgerDefaults: defaults
+    )
+    #expect(model.submittedSampleCount == 5)
+
+    model.refreshSubmissionHistoryIfNeeded(
+        now: updatedAt.addingTimeInterval(SiftAppModel.historyCacheRefreshInterval - 1)
+    )
+    try await Task.sleep(nanoseconds: 10_000_000)
+    #expect(await client.recorder.historyFetchCount == 0)
+
+    model.refreshSubmissionHistoryIfNeeded(
+        now: updatedAt.addingTimeInterval(SiftAppModel.historyCacheRefreshInterval)
+    )
+    try await waitFor { model.submissionHistory == [refreshed] }
+    #expect(await client.recorder.historyFetchCount == 1)
+    #expect(model.submittedSampleCount == 1)
+    #expect(SubmissionLedger.count(defaults: defaults) == 1)
+}
+
+@MainActor
+@Test
+func concurrentOptimisticDeletionsKeepTheSuccessfulDeletionApplied() async throws {
+    let suiteName = "SiftTests.history.concurrentDeletion.\(UUID().uuidString)"
+    let defaults = try #require(UserDefaults(suiteName: suiteName))
+    defer { defaults.removePersistentDomain(forName: suiteName) }
+    let failed = RemoteSubmissionSummary(
+        recordName: "fails",
+        text: "应回滚",
+        label: "spam",
+        submittedAt: nil,
+        createdAtMillis: 200
+    )
+    let succeeded = RemoteSubmissionSummary(
+        recordName: "succeeds",
+        text: "应删除",
+        label: "promotion",
+        submittedAt: nil,
+        createdAtMillis: 100
+    )
+    SubmissionHistoryCache.save(
+        SubmissionHistoryCacheSnapshot(submissions: [failed, succeeded], fullyLoaded: true),
+        defaults: defaults
+    )
+    SubmissionLedger.set(2, defaults: defaults)
+    let model = SiftAppModel(
+        remoteSampleClient: SelectiveDeletionClient(),
+        premiumBackend: MockPremiumBackend(entitled: false, outcome: .cancelled),
+        ledgerDefaults: defaults
+    )
+
+    model.deleteSubmission(failed)
+    model.deleteSubmission(succeeded)
+
+    try await waitFor {
+        model.submissionHistory == [failed] && model.submittedSampleCount == 1
+    }
+    #expect(SubmissionLedger.count(defaults: defaults) == 1)
 }
 
 @MainActor
