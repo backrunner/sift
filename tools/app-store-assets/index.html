@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="zh-Hans">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Sift App Store Screenshot</title>
+    <link rel="icon" href="../../apps/site/static/favicon.png" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="canvas" aria-label="Sift App Store screenshot">
+      <header class="header">
+        <div class="brand">
+          <img src="../../apps/site/static/sift-icon-rounded.png" alt="" />
+          <span>Sift</span>
+        </div>
+        <div class="sequence" aria-label="Screenshot sequence">
+          <span class="sequence-mark"></span>
+          <span id="sequence">01 / 06</span>
+        </div>
+        <h1 id="headline"></h1>
+        <div class="accent-rule"></div>
+      </header>
+
+      <section class="app-frame">
+        <img id="app-screenshot" alt="Sift running on iPhone Simulator" />
+      </section>
+    </main>
+
+    <script src="./screenshots.js"></script>
+  </body>
+</html>

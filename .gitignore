@@ -18,25 +18,34 @@ node_modules/
 # JavaScript / TypeScript build output
 dist/
 build/
+output/
 .svelte-kit/
 .vercel/
 .netlify/
 coverage/
-output/playwright/
+htmlcov/
+.coverage
+.playwright-cli/
 *.tsbuildinfo
 
 # Cloudflare Workers local state and secrets
 .wrangler/
+.dev.vars
+.dev.vars.*
+!.dev.vars.example
+!.dev.vars.*.example
 apps/site/worker.js
 apps/worker-*/wrangler.toml
-apps/worker-*/.dev.vars
-apps/worker-*/.dev.vars.*
 
 # Environment files and local secrets
 .env
 .env.*
 !.env.example
 !.env.*.example
+.npmrc
+.netrc
+credentials.json
+service-account*.json
 *.local
 *.secret
 *.secrets
@@ -44,6 +53,7 @@ secrets/
 
 # Swift / Xcode build products
 .build/
+.swiftpm/
 DerivedData/
 *.xcworkspace
 **/*.xcodeproj/project.xcworkspace/
@@ -56,6 +66,10 @@ DerivedData/
 *.ipa
 *.dSYM/
 *.xcarchive/
+*.xcresult/
+*.profraw
+*.profdata
+.xcode.env.local
 *.xcodeproj/*
 !*.xcodeproj/project.pbxproj
 
@@ -64,6 +78,10 @@ DerivedData/
 *.p12
 *.mobileprovision
 *.provisionprofile
+*.p8
+*.pem
+*.pfx
+*.jks
 *.keychain
 *.keychain-db
 
@@ -90,6 +108,14 @@ apps/ios/GeneratedModels/
 *.mlmodelc/
 *.mlpackage/
 *.mlarchive
+*.onnx
+*.onnx_data
+*.safetensors
+*.pt
+*.pth
+*.ckpt
+wandb/
+mlruns/
 
 # Python / tooling caches
 __pycache__/
