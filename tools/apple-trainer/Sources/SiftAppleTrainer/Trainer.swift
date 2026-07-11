@@ -39,6 +39,7 @@ enum TrainerMode {
 struct TrainerArguments {
     var mode: TrainerMode = .train
     var inputURL: URL?
+    var testInputURL: URL?
     var syntheticOutputURL: URL?
     var publicCorpusOutputURL: URL?
     var outputDirectory: URL?
@@ -81,6 +82,8 @@ struct TrainerArguments {
                 arguments.publicCorpusOutputURL = URL(fileURLWithPath: try value(after: token).expandedPath)
             case "--input":
                 arguments.inputURL = URL(fileURLWithPath: try value(after: token).expandedPath)
+            case "--test-input":
+                arguments.testInputURL = URL(fileURLWithPath: try value(after: token).expandedPath)
             case "--out":
                 arguments.outputDirectory = URL(fileURLWithPath: try value(after: token).expandedPath)
             case "--taxonomy":
@@ -212,6 +215,7 @@ enum TrainerError: Error, CustomStringConvertible {
       --language <code|auto>      Training language hint for Create ML. auto picks
                                   zh-Hans for pure-Chinese corpora and multilingual otherwise.
       --public-per-label <n>      Max public rows retained per leaf label. Defaults to 500.
+      --test-input <path>         Optional held-out NDJSON evaluated after training.
       --out <dir>                 Output directory. Defaults to <repo>/build/apple-model.
       --taxonomy <path>           Taxonomy JSON. Defaults to <repo>/packages/taxonomy/taxonomy.json.
       --version <version>         Model version written into metadata and manifest.
@@ -272,8 +276,10 @@ struct ReleaseManifest: Encodable {
     let labels: [String]
     let trainingCount: Int
     let validationCount: Int
+    let testCount: Int
     let trainingClassificationError: Double
     let validationClassificationError: Double?
+    let testAccuracy: Double?
 }
 
 @main
@@ -365,6 +371,13 @@ enum SiftAppleTrainer {
         let rows = try loadRows(from: inputURL)
         let validLabels = try loadTaxonomyLabels(from: taxonomyURL)
         try validate(rows: rows, validLabels: validLabels)
+        let testRows: [SampleRow]
+        if let testInputURL = arguments.testInputURL {
+            testRows = try loadRows(from: testInputURL)
+            try validate(rows: testRows, validLabels: validLabels, requiresMultipleLabels: false)
+        } else {
+            testRows = []
+        }
 
         let split = stratifiedSplit(rows: rows, validationFraction: arguments.validationFraction, seed: arguments.splitSeed)
         let labels = Array(Set(rows.map(\.label))).sorted()
@@ -413,8 +426,13 @@ enum SiftAppleTrainer {
             labels: labels,
             trainingCount: split.training.count,
             validationCount: split.validation.count,
+            testCount: testRows.count,
             trainingClassificationError: algorithmResult.classifier.trainingMetrics.classificationError,
-            validationClassificationError: algorithmResult.validationMetrics?.classificationError
+            validationClassificationError: algorithmResult.validationMetrics?.classificationError,
+            testAccuracy: classificationAccuracy(
+                classifier: algorithmResult.classifier,
+                rows: testRows
+            )
         )
 
         let manifestURL = outputDirectory.appendingPathComponent("\(arguments.modelName).manifest.json")
@@ -433,9 +451,15 @@ enum SiftAppleTrainer {
         print("algorithm: \(algorithmResult.algorithmName)")
         print("training samples: \(split.training.count)")
         print("validation samples: \(split.validation.count)")
-        printPerLabelValidationReport(
+        printPerLabelEvaluationReport(
             classifier: algorithmResult.classifier,
-            validationRows: split.validation
+            rows: split.validation,
+            name: "validation"
+        )
+        printPerLabelEvaluationReport(
+            classifier: algorithmResult.classifier,
+            rows: testRows,
+            name: "held-out test"
         )
         print("model: \(modelURL.path)")
         if let compiledURL {
@@ -1027,14 +1051,18 @@ func loadTaxonomyLabels(from url: URL) throws -> Set<String> {
     })
 }
 
-func validate(rows: [SampleRow], validLabels: Set<String>) throws {
+func validate(
+    rows: [SampleRow],
+    validLabels: Set<String>,
+    requiresMultipleLabels: Bool = true
+) throws {
     let unknown = Set(rows.map(\.label)).subtracting(validLabels)
     guard unknown.isEmpty else {
         throw TrainerError.invalidDataset("Unknown labels: \(unknown.sorted().joined(separator: ", "))")
     }
 
     let labels = Set(rows.map(\.label))
-    guard labels.count >= 2 else {
+    guard !requiresMultipleLabels || labels.count >= 2 else {
         throw TrainerError.invalidDataset("Training requires at least two labels.")
     }
 
@@ -1099,11 +1127,27 @@ func deduplicate(_ rows: [SampleRow]) -> [SampleRow] {
     return retained
 }
 
-/// Per-label validation report for the classic model: surfaces the weakest
+func classificationAccuracy(classifier: MLTextClassifier, rows: [SampleRow]) -> Double? {
+    guard !rows.isEmpty else {
+        return nil
+    }
+    let correct = rows.reduce(into: 0) { count, row in
+        if (try? classifier.prediction(from: row.text)) == row.label {
+            count += 1
+        }
+    }
+    return Double(correct) / Double(rows.count)
+}
+
+/// Per-label evaluation report for the classic model: surfaces the weakest
 /// labels and the most frequent confusion pairs so dataset supplementation
 /// can target them (the main accuracy lever for the Create ML variant).
-func printPerLabelValidationReport(classifier: MLTextClassifier, validationRows: [SampleRow]) {
-    guard !validationRows.isEmpty else {
+func printPerLabelEvaluationReport(
+    classifier: MLTextClassifier,
+    rows: [SampleRow],
+    name: String
+) {
+    guard !rows.isEmpty else {
         return
     }
 
@@ -1111,7 +1155,7 @@ func printPerLabelValidationReport(classifier: MLTextClassifier, validationRows:
     var corrects: [String: Int] = [:]
     var confusions: [String: Int] = [:]
 
-    for row in validationRows {
+    for row in rows {
         let predicted = (try? classifier.prediction(from: row.text)) ?? "<prediction-failed>"
         totals[row.label, default: 0] += 1
         if predicted == row.label {
@@ -1127,7 +1171,9 @@ func printPerLabelValidationReport(classifier: MLTextClassifier, validationRows:
         }
         .sorted { $0.accuracy < $1.accuracy }
 
-    print("weakest labels (validation accuracy):")
+    let accuracy = Double(corrects.values.reduce(0, +)) / Double(rows.count)
+    print(String(format: "%@ accuracy: %.1f%% (%d rows)", name, accuracy * 100, rows.count))
+    print("weakest labels (\(name) accuracy):")
     for item in scored.prefix(12) {
         print(String(format: "  %@: %.1f%% (%d rows)", item.label, item.accuracy * 100, item.total))
     }

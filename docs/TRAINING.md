@@ -26,9 +26,9 @@ pnpm pipeline -- all --install-ios
 
 This runs `fetch-public -> fetch-remote -> curate -> train-classic ->
 train-transformer`. Artifacts are written under `build/pipeline/`.
-`--install-ios` installs only the classic Create ML model into
-`apps/ios/GeneratedModels/`; the Premium transformer is not distributed with
-the app and must be uploaded after training as described in section 2.5.
+`--install-ios` installs the classic and a local bundled Premium transformer
+into `apps/ios/GeneratedModels/` for device validation. Production transformer
+distribution still uses the upload flow in section 2.5.
 Without CloudKit credentials, `fetch-remote` skips politely; use
 `--require-remote` to make missing credentials a hard failure.
 
@@ -101,6 +101,25 @@ comparison, but they underperformed MaxEnt on the current 50-label small SMS
 dataset. Change `--split-seed-classic` when rechecking generalization; do not
 trust only the default seed 42.
 
+Before training a release candidate, isolate both external holdouts:
+
+```bash
+python3 tools/apple-trainer/Scripts/prepare_classic_candidate.py \
+  --base build/pipeline/mmbert-fixed-train-dense60-boundary-v3.ndjson \
+  --supplement build/pipeline/synthetic-tri-180-promotion-v8.ndjson \
+  --holdout tools/apple-trainer/Evaluation/classification-regressions.ndjson \
+  --holdout tools/apple-trainer/Evaluation/promotion-regressions.ndjson \
+  --labels promotion,carrier.promotion,transaction.message,transaction.order,transaction.points,finance.bank,finance.insurance,carrier.data_reminder,travel.ticketing,spam \
+  --out build/pipeline/classic-transformer-promotion-v8.ndjson \
+  --report build/pipeline/classic-transformer-promotion-v8.report.json
+```
+
+The script rejects exact and digit-normalized near duplicates before either
+classic or transformer training. `maxent-boundary-v7` remains the accepted
+classic baseline at 98.95% on the
+fixed 474 rows. It scores 86.67% on the breadth-first 150-row promotion set;
+the expanded coverage is primarily optimized for the Premium transformer.
+
 Training prints the weakest 12 labels and the top confusion pairs. Use those
 reports as the main improvement loop: add targeted templates or samples, then
 retrain.
@@ -124,6 +143,11 @@ pnpm pipeline -- train-transformer \
 - The exported `SiftTransformerClassifier.manifest.json` includes
   `remoteArtifacts` and `downloadBytes`. `.mlpackage` is a directory package,
   so remote distribution downloads the listed files individually.
+- The accepted `mmbert-boundary-v8` checkpoint keeps 99.58% fixed-set accuracy
+  and reaches 98.00% on the breadth-first 150-row promotion boundary set after
+  one epoch at `1e-5`. The 96 added zh/en/ja variants cover game marketplaces,
+  retail, finance, carrier offers, travel, insurance, services, loans, housing,
+  and semantically adjacent transaction/normal-message/scam negatives.
 
 ### 2.5 Upload The Premium Transformer Model
 
@@ -230,8 +254,19 @@ cd tools/pii-trainer && uv sync
 uv run train_pii.py --input ../../build/pipeline/train.ndjson --install-ios
 ```
 
-The app unions model detections with deterministic redaction rules. If the PII
-model is absent, pure rules run; see `tools/pii-trainer/README.md`.
+The app unions model detections with context-aware deterministic rules. A union
+can increase false positives, so `--install-ios` refuses models below 0.90 PII
+micro F1 or above 2% clean-sentence FPR on either synthetic clean rows or the
+fixed `Evaluation/clean-negatives.ndjson` set. Runtime uses whole-word average
+probabilities with a 0.85 threshold. If the PII model is absent, pure rules run;
+see `tools/pii-trainer/README.md`.
+
+The accepted `pii-boundary-v5` result is 99.66% precision, 99.09% recall,
+99.37% F1, 0/498 synthetic clean false positives, and 0/45 fixed zh/en/ja
+hard-negative false positives. CODE positives are synthesized only with
+authentication context, while ordinary error codes, product codes, SKUs,
+build identifiers, and campaign references are clean negatives. Runtime also
+rejects model CODE detections without explicit verification/OTP context.
 
 ## 3. Multilingual Strategy Decision
 

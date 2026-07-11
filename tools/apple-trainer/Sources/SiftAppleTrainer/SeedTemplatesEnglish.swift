@@ -13,7 +13,10 @@ enum SeedTemplatesEnglish {
             "Housing loan review progress updated. Visit the counter to confirm.",
             "Mortgage application status updated. Check mobile banking for details.",
             "ATM withdrawal of ${amount} from account ending {tail}. If unauthorized, call the number on your card.",
-            "{bank}: your new debit card has shipped and should arrive within {days} days."
+            "{bank}: your new debit card has shipped and should arrive within {days} days.",
+            "Account ending {tail} was charged ${amount} by {merchant}; available balance ${amount2}.",
+            "Debit account {tail} recorded a ${amount} merchant purchase on {date}.",
+            "Bank activity alert: ${amount} spent from account {tail} through an in-store merchant."
         ],
         "finance.insurance": [
             "Your policy is now active. Coverage ${amount2}, effective {date}.",
@@ -87,7 +90,15 @@ enum SeedTemplatesEnglish {
             "Order {order} has been cancelled. Any charges will be reversed.",
             "The store accepted your order. Ready in about {minutes} minutes.",
             "Final payment received. Your invoice request has been submitted.",
-            "Your pre-order balance payment window opens {date}. Don't miss it."
+            "Your pre-order balance payment window opens {date}. Don't miss it.",
+            "Your in-game item order {order} is paid and the seller is preparing delivery.",
+            "The limited equipment you purchased has been delivered to your game inventory.",
+            "The skins and gold in your order have shipped and should arrive within {minutes} minutes.",
+            "Your game-account trade is in verification; the buyer will be notified when it completes.",
+            "The mount you purchased was delivered to the character selected at checkout.",
+            "Virtual-material order {order} is complete; verify the quantity in your character inventory.",
+            "Your purchased cosmetic has been delivered to the collection on the linked account.",
+            "Item trade complete: the seller sent the goods to your selected server character."
         ],
         "transaction.points": [
             "You earned {points} points on this purchase. Redeem at checkout.",
@@ -95,7 +106,11 @@ enum SeedTemplatesEnglish {
             "{brand}: {points} points added. Your balance has been updated.",
             "Points redemption confirmed. Your voucher code arrives shortly.",
             "{points} points expire on {date}.",
-            "Points applied: ${amount} discount on this order."
+            "Points applied: ${amount} discount on this order.",
+            "Your rewards-gift redemption is confirmed and ships within {days} business days.",
+            "The points redemption request is preparing for delivery; no second request is needed.",
+            "This redemption used {points} points and the gift order status was updated.",
+            "Rewards mall result: redemption accepted, with tracking available in your history."
         ],
         "transaction.member": [
             "You've been upgraded to {tier}! Exclusive perks are now active.",
@@ -112,7 +127,13 @@ enum SeedTemplatesEnglish {
             "You have a new comment reply.",
             "System message: a service you follow has an update.",
             "A campaign page has a new in-app message. Open the app to view details.",
-            "An item on your wishlist just dropped in price."
+            "An item on your wishlist just dropped in price.",
+            "Game version update complete: the new map and balance changes are now live.",
+            "The mobile game releases a new version on {date}; login is unavailable during maintenance.",
+            "Your game client is up to date. This release fixes crashes and matchmaking issues.",
+            "Routine maintenance is complete with fixes for voice chat and party connectivity.",
+            "The version patch finished installing and contains stability and performance changes only.",
+            "Game service update complete; no paid content was added in this maintenance release."
         ],
         "transaction.account_security": [
             "Security alert: new device sign-in detected. Was this you?",
@@ -320,7 +341,10 @@ enum SeedTemplatesEnglish {
             "Low balance: under ${amount}. Top up to stay connected.",
             "Voice usage: {count} minutes so far this month.",
             "Data cap protection is on — browsing pauses at your limit.",
-            "You've used {percent}% of your data. Overage rates apply beyond your plan."
+            "You've used {percent}% of your data. Overage rates apply beyond your plan.",
+            "Your plan has {remain}GB remaining, and rollover data clears at month end.",
+            "Usage notice: {remain}GB is available in this billing cycle and resets next month.",
+            "Current data balance is {remain}GB; this message is a usage reminder only."
         ],
         "carrier.service": [
             "Service request received. We'll text you the result.",
@@ -338,7 +362,10 @@ enum SeedTemplatesEnglish {
             "Home internet bundle discount ends {date}.",
             "Limited streaming perk — claim at your nearest store.",
             "{carrier}: prepay ${amount} airtime and get {count}GB monthly bonus data. Reply 1.",
-            "5G plan flash discount for switchers — device subsidy included, ask in store."
+            "5G plan flash discount for switchers — device subsidy included, ask in store.",
+            "{carrier} rewards mall is open: redeem {points} points for data packs and streaming perks.",
+            "Use your mobile rewards for a ${amount} airtime voucher before {date}: {url}",
+            "Earn {points} bonus carrier points on selected services and redeem device gifts."
         ],
         "carrier.other": [
             "Carrier notice: your account status was updated.",
@@ -440,7 +467,46 @@ enum SeedTemplatesEnglish {
             "Buy 4 get 1 free coffee at {merchant} through {date}.",
             "{brand} gym {city}: annual pass ${amount2} — details {url}",
             "Your {bank} points expire {date} — redeem gifts at {url}",
-            "Double-points day at {merchant}: earn {points} on every visit."
+            "Double-points day at {merchant}: earn {points} on every visit.",
+            "A new game server launches today — preregister for an exclusive hero and {points} gems.",
+            "First top-up bonus is back: buy ${amount} in game credits and receive double currency.",
+            "New season pass sale: limited skins and rare in-game items are {percent}% off.",
+            "Anniversary game bundle includes a mount, equipment, and bonus draw tickets.",
+            "In-game item marketplace sale: reduced fees on equipment and gold trades this week.",
+            "Verified game account and gear marketplace — complete a trade and get a ${amount} coupon.",
+            "{bank} card rewards mall: redeem {points} points for appliances and gift cards.",
+            "{bank} marketplace member day: spend ${amount2} and save ${amount} on selected items.",
+            "{brand} rewards mall offers double points plus a chance to win a ${amount} voucher.",
+            "Seasonal fashion sale at {merchant}: buy two styles and save {percent}%.",
+            "{merchant} grocery member day: save ${amount} when you spend ${amount2} on fresh food.",
+            "Weekend supermarket sale — household essentials are buy one, get one half price {url}",
+            "Game top-up week: buy ${amount} in credits and receive {points} bonus gems.",
+            "{bank} personal loan rate offer for eligible customers; apply only in the official app.",
+            "Licensed lender welcome offer: review the APR and fees before using your loan coupon.",
+            "{brand} launches its new collection tonight at {time}; preorders save ${amount}.",
+            "New products are live at {merchant}, with double points on selected releases.",
+            "Furnished one-bedroom apartment near the {city} metro; book a viewing for ${amount} off fees.",
+            "New rental listings from {brand} apartments include move-in and rent promotions {url}",
+            "This week's armory rotation is live: rare gear is available for instant listing and sale.",
+            "The game marketplace armory refresh adds limited weapons and skins with zero listing fees.",
+            "The equipment rotation sale is open; verified sellers earn a bonus on featured item trades.",
+            "Gold, materials, and rare mounts have new trading tiers with reduced fees this week.",
+            "Game-item seller offer: refresh your storefront and list selected gear to receive promotion credits.",
+            "Limited skins are ready for instant sale in today's armory drop, with discounts on bulk purchases.",
+            "The account-and-gear consignment event is live; verify and list an item to claim a coupon.",
+            "Virtual-item marketplace restock: rotating goods are on presale with double member points.",
+            "New phone launch trade-in combines extra device credit with a screen-protection bundle.",
+            "Airline member fare day offers discounted return routes plus bonus miles.",
+            "Hotel advance-booking package includes consecutive nights, breakfast, and a member rate.",
+            "Early auto-insurance renewal adds car-wash and roadside-assistance benefits to your quote.",
+            "Car-care member event includes a vehicle inspection and labor voucher with an oil service.",
+            "Cinema member revival week has limited savings on pair-ticket packages.",
+            "The late-night dining menu includes a snack and a future voucher with qualifying takeout.",
+            "Early enrollment for summer classes includes a trial lesson and project-course bundle.",
+            "New fitness club opening offer waives the joining fee and extends annual plans.",
+            "Home renovation showcase clients save the design fee and receive upgraded fittings.",
+            "Bank rewards mall redemption week lowers point prices and includes free shipping.",
+            "Card dining cashback season rewards qualifying spend at selected restaurants."
         ],
         "spam": [
             "High-yield investment club — join now for guaranteed returns. Reply STOP.",
@@ -464,7 +530,8 @@ enum SeedTemplatesEnglish {
             "Your Netflix payment failed. Update billing at {url}",
             "Crypto insider signals — 10x guaranteed, join {order}.",
             "Your number won the international lottery. Send a fee to release funds.",
-            "Unpaid parking fine: avoid penalties, pay now at {url}"
+            "Unpaid parking fine: avoid penalties, pay now at {url}",
+            "Pay a deposit before your loan is released — no credit check, same-day cash. Contact {order}."
         ]
     ]
 }

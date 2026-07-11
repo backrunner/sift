@@ -74,6 +74,8 @@ docs/APP_STORE_CONNECT_METADATA.md
 *.sqlite-wal
 *.db
 *.ndjson
+!tools/apple-trainer/Evaluation/*.ndjson
+!tools/pii-trainer/Evaluation/*.ndjson
 *.jsonl
 *.csv
 *.tsv

@@ -62,6 +62,32 @@ The product is not launched yet; backward compatibility is not required.
     plus `pnpm typecheck && pnpm test` for TypeScript changes, and
     `python3 -m unittest discover -s tools/transformer-trainer/tests` for
     corpus or curation changes.
+11. **Model selection must use leak-free external holdouts.** Before comparing
+    candidates, remove exact and digit-normalized near duplicates against both
+    `tools/apple-trainer/Evaluation/classification-regressions.ndjson` and
+    `tools/apple-trainer/Evaluation/promotion-regressions.ndjson`. Never select
+    a model from its internal validation score alone.
+12. **PII models have a false-positive gate.** `--install-ios` must keep PII
+    micro F1 >= 0.90 and clean-sentence FPR <= 0.02 on both the synthetic eval
+    and `tools/pii-trainer/Evaluation/clean-negatives.ndjson`.
+
+## Current Model Baselines (2026-07-11)
+
+| Variant | Version | Fixed 474 | Promotion 150 | Notes |
+| --- | --- | ---: | ---: | --- |
+| Classic | `maxent-boundary-v7` | 98.95% | 86.67% | 297.5 KB; retained as classic baseline |
+| Premium | `mmbert-boundary-v8` | 99.58% | 98.00% | int8 Core ML; 176,372,925 download bytes |
+| PII | `pii-boundary-v5` | n/a | n/a | F1 99.37%; clean FPR 0/498 and 0/45 |
+
+The shared leak-free Premium candidate contains 13,419 rows with complete zh/en/ja
+coverage. Its boundary-v3 source contained 54 exact and 9 near collisions with
+the fixed set; candidate preparation also removed 50 exact and 5 near
+collisions from the synthetic supplement against all 624 external holdout rows.
+The 150-row promotion boundary set spans game marketplaces, retail, finance,
+carrier offers, travel, insurance, services, loans, and housing, with paired
+order, points, bank, data-usage, update, and scam negatives. The previous
+`maxent-boundary-v2` scored only 45.65% on the expanded promotion set, so do
+not restore it based on fixed-set accuracy alone.
 
 ## Common Commands
 
@@ -69,6 +95,8 @@ The product is not launched yet; backward compatibility is not required.
 pnpm pipeline -- all --install-ios      # Full automated training pipeline
 pnpm pipeline -- finetune               # Incremental fine-tuning from checkpoint
 pnpm export:training                    # Export CloudKit samples
+python3 tools/apple-trainer/Scripts/prepare_classic_candidate.py --help
+                                            # Build a holdout-isolated corpus
 pnpm -C apps/site dev                   # Run the public website locally
 pnpm -C apps/site build                 # Build the public website
 cd apps/ios && xcodegen generate        # Regenerate the Xcode project

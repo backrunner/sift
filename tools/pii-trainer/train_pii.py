@@ -37,6 +37,7 @@ os.environ.setdefault("PYTORCH_ENABLE_MPS_FALLBACK", "1")
 
 TAGS = ["O", "PHONE", "URL", "EMAIL", "ADDRESS", "CARD", "ID", "ORDER_ID", "AMOUNT", "CODE", "NAME"]
 DEFAULT_BACKBONE = "distilbert-base-multilingual-cased"
+DEFAULT_CLEAN_TEST = Path(__file__).resolve().parent / "Evaluation/clean-negatives.ndjson"
 
 
 def parse_arguments() -> argparse.Namespace:
@@ -48,6 +49,7 @@ def parse_arguments() -> argparse.Namespace:
     parser.add_argument("--version", default="pii-0.1")
     parser.add_argument("--max-length", type=int, default=96)
     parser.add_argument("--samples", type=int, default=20000, help="synthetic training sentences to generate")
+    parser.add_argument("--clean-fraction", type=float, default=0.5, help="fraction of clean negative sentences")
     parser.add_argument("--epochs", type=int, default=2)
     parser.add_argument("--batch-size", type=int, default=32)
     parser.add_argument("--learning-rate", type=float, default=5e-5)
@@ -58,6 +60,10 @@ def parse_arguments() -> argparse.Namespace:
     parser.add_argument("--device", choices=["auto", "cpu", "cuda", "mps"], default="auto")
     parser.add_argument("--install-ios", action="store_true")
     parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument("--minimum-pii-f1", type=float, default=0.90)
+    parser.add_argument("--maximum-clean-fpr", type=float, default=0.02)
+    parser.add_argument("--clean-test-input", type=Path, default=DEFAULT_CLEAN_TEST)
+    parser.add_argument("--inference-threshold", type=float, default=0.85)
     return parser.parse_args()
 
 
@@ -129,6 +135,42 @@ def is_cjk(text: str) -> bool:
     return any("一" <= ch <= "鿿" or "぀" <= ch <= "ヿ" for ch in text)
 
 
+def contextualize_value(tag: str, value: str, carrier: str, rng: random.Random) -> tuple[str, int, int]:
+    """Render ambiguous values with the context needed to identify their PII kind."""
+    if tag != "CODE":
+        return value, 0, len(value)
+
+    if any("぀" <= ch <= "ヿ" for ch in carrier):
+        prefix = rng.choice(["認証コード ", "確認コード：", "ワンタイムパスワード "])
+    elif any("一" <= ch <= "鿿" for ch in carrier):
+        prefix = rng.choice(["验证码 ", "动态码：", "一次性口令 "])
+    else:
+        prefix = rng.choice(["verification code ", "security code: ", "OTP "])
+    rendered = prefix + value
+    return rendered, len(prefix), len(rendered)
+
+
+def ordinary_code_negative(rng: random.Random) -> str:
+    """Generate code-shaped identifiers that must remain visible."""
+    suffix = rng.randint(1000, 9999)
+    year = rng.randint(2024, 2032)
+    templates = [
+        f"故障代码 E{suffix} 已写入诊断日志，请交由技术人员排查。",
+        f"商品代码 SKU-{suffix} 已加入本周销售目录。",
+        f"内部构建编号 build-{year}.{rng.randint(1, 9)} 已通过测试。",
+        f"活动批次 CAM-{suffix} 对应本周游戏道具交易专场。",
+        f"Error code E{suffix} was recorded in the diagnostic log for support.",
+        f"Product code SKU-{suffix} is active in this week's catalog.",
+        f"Build identifier release-{year}.{rng.randint(1, 9)} passed all checks.",
+        f"Campaign reference CAM-{suffix} belongs to the game-item sale.",
+        f"障害コード E{suffix} を診断ログに記録しました。技術担当へお伝えください。",
+        f"商品コード SKU-{suffix} を今週の販売一覧に追加しました。",
+        f"ビルド番号 release-{year}.{rng.randint(1, 9)} はすべての検査に合格しました。",
+        f"企画番号 CAM-{suffix} はゲームアイテム取引セール用です。",
+    ]
+    return rng.choice(templates)
+
+
 def load_carriers(path: Path, limit: int, rng: random.Random) -> list[str]:
     carriers: list[str] = []
     with path.open(encoding="utf-8") as handle:
@@ -147,15 +189,30 @@ def load_carriers(path: Path, limit: int, rng: random.Random) -> list[str]:
     return carriers[:limit]
 
 
-def synthesize(carriers: list[str], rng: random.Random) -> list[dict]:
+def load_clean_test(path: Path) -> list[dict]:
+    examples: list[dict] = []
+    with path.open(encoding="utf-8") as handle:
+        for number, line in enumerate(handle, 1):
+            if not line.strip():
+                continue
+            text = str(json.loads(line).get("text", "")).strip()
+            if not text:
+                raise SystemExit(f"error: missing text at {path}:{number}")
+            examples.append({"text": text, "spans": []})
+    if not examples:
+        raise SystemExit(f"error: clean regression set is empty: {path}")
+    return examples
+
+
+def synthesize(carriers: list[str], rng: random.Random, clean_fraction: float = 0.5) -> list[dict]:
     """Injects fake PII into carrier sentences and records char spans."""
     factory = FakePII(rng)
     examples: list[dict] = []
 
     for carrier in carriers:
-        # ~30% stay clean so the model learns a solid "O" baseline.
-        if rng.random() < 0.3:
-            examples.append({"text": carrier, "spans": []})
+        if rng.random() < clean_fraction:
+            text = ordinary_code_negative(rng) if rng.random() < 0.35 else carrier
+            examples.append({"text": text, "spans": []})
             continue
 
         cjk = is_cjk(carrier)
@@ -170,11 +227,12 @@ def synthesize(carriers: list[str], rng: random.Random) -> list[dict]:
             if position_index < len(insert_positions) and insert_positions[position_index] == word_index:
                 tag = rng.choice(TAGS[1:])
                 value = factory.value(tag, cjk)
+                rendered, value_start, value_end = contextualize_value(tag, value, carrier, rng)
                 prefix = "" if not text_parts else " "
-                start = cursor + len(prefix)
-                text_parts.append(prefix + value)
-                cursor = start + len(value)
-                spans.append((start, cursor, tag))
+                rendered_start = cursor + len(prefix)
+                text_parts.append(prefix + rendered)
+                cursor = rendered_start + len(rendered)
+                spans.append((rendered_start + value_start, rendered_start + value_end, tag))
                 position_index += 1
             if word_index < len(words):
                 prefix = "" if not text_parts else " "
@@ -220,6 +278,17 @@ def encode_examples(examples: list[dict], tokenizer, max_length: int):
         torch.tensor(all_masks, dtype=torch.long),
         torch.tensor(all_labels, dtype=torch.long),
     )
+
+
+def threshold_predictions(logits, threshold: float):
+    """Apply the runtime-style non-O confidence gate to token logits."""
+    import torch
+
+    probabilities = logits.softmax(dim=-1)
+    best_probabilities, predictions = probabilities.max(dim=-1)
+    outside_probabilities = probabilities[..., 0]
+    keep = (predictions != 0) & (best_probabilities >= threshold) & (best_probabilities > outside_probabilities)
+    return torch.where(keep, predictions, torch.zeros_like(predictions))
 
 
 # --- Model surgery (shared ideas with train_setfit) ----------------------------
@@ -307,7 +376,9 @@ def main() -> None:
         raise SystemExit("error: backbone tokenizer must be WordPiece (mBERT/DistilmBERT family)")
 
     carriers = load_carriers(arguments.input, arguments.samples, rng)
-    examples = synthesize(carriers, rng)
+    if not 0 <= arguments.clean_fraction < 1:
+        raise SystemExit("error: --clean-fraction must be >= 0 and < 1")
+    examples = synthesize(carriers, rng, arguments.clean_fraction)
     holdout = max(len(examples) // 20, 50)
     train_examples, eval_examples = examples[holdout:], examples[:holdout]
     print(f"synthetic examples: {len(train_examples)} train, {len(eval_examples)} eval")
@@ -350,6 +421,11 @@ def main() -> None:
     eval_ids, eval_masks, eval_labels = encode_examples(eval_examples, tokenizer, arguments.max_length)
     correct: Counter = Counter()
     total: Counter = Counter()
+    true_positives = 0
+    false_positives = 0
+    false_negatives = 0
+    clean_sentence_count = 0
+    clean_sentence_false_positives = 0
     with torch.no_grad():
         for start in range(0, len(eval_ids), arguments.batch_size):
             stop = start + arguments.batch_size
@@ -357,9 +433,11 @@ def main() -> None:
                 input_ids=eval_ids[start:stop].to(device),
                 attention_mask=eval_masks[start:stop].to(device),
             ).logits
-            predictions = logits.argmax(dim=-1).cpu()
+            predictions = threshold_predictions(logits, arguments.inference_threshold).cpu()
             gold = eval_labels[start:stop]
-            for row_predictions, row_gold in zip(predictions, gold):
+            batch_examples = eval_examples[start:stop]
+            for row_predictions, row_gold, example in zip(predictions, gold, batch_examples):
+                sentence_has_false_positive = False
                 for predicted, expected in zip(row_predictions.tolist(), row_gold.tolist()):
                     if expected == -100:
                         continue
@@ -367,10 +445,67 @@ def main() -> None:
                     total[tag] += 1
                     if predicted == expected:
                         correct[tag] += 1
+                    expected_is_pii = expected != 0
+                    predicted_is_pii = predicted != 0
+                    if expected_is_pii:
+                        if predicted == expected:
+                            true_positives += 1
+                        else:
+                            false_negatives += 1
+                            false_positives += int(predicted_is_pii)
+                    elif predicted_is_pii:
+                        false_positives += 1
+                        sentence_has_false_positive = True
+                if not example["spans"]:
+                    clean_sentence_count += 1
+                    clean_sentence_false_positives += int(sentence_has_false_positive)
     print("token accuracy per tag:")
     for tag in TAGS:
         if total[tag]:
             print(f"  {tag}: {correct[tag] / total[tag]:.3f} ({total[tag]} tokens)")
+
+    precision = true_positives / max(true_positives + false_positives, 1)
+    recall = true_positives / max(true_positives + false_negatives, 1)
+    pii_f1 = 2 * precision * recall / max(precision + recall, 1e-12)
+    clean_fpr = clean_sentence_false_positives / max(clean_sentence_count, 1)
+    print(f"PII micro precision: {precision:.4f}")
+    print(f"PII micro recall: {recall:.4f}")
+    print(f"PII micro F1: {pii_f1:.4f}")
+    print(f"clean-sentence false-positive rate: {clean_fpr:.4f} ({clean_sentence_false_positives}/{clean_sentence_count})")
+
+    clean_test_examples = load_clean_test(arguments.clean_test_input.expanduser().resolve())
+    clean_ids, clean_masks, clean_labels = encode_examples(clean_test_examples, tokenizer, arguments.max_length)
+    clean_test_false_positives = 0
+    with torch.no_grad():
+        for start in range(0, len(clean_ids), arguments.batch_size):
+            stop = start + arguments.batch_size
+            logits = model(
+                input_ids=clean_ids[start:stop].to(device),
+                attention_mask=clean_masks[start:stop].to(device),
+            ).logits
+            predictions = threshold_predictions(logits, arguments.inference_threshold).cpu()
+            gold = clean_labels[start:stop]
+            for row_predictions, row_gold, example in zip(predictions, gold, clean_test_examples[start:stop]):
+                has_false_positive = any(
+                    expected != -100 and predicted != 0
+                    for predicted, expected in zip(row_predictions.tolist(), row_gold.tolist())
+                )
+                clean_test_false_positives += int(has_false_positive)
+                if has_false_positive:
+                    print(f"  clean regression false positive: {example['text']}")
+    clean_test_fpr = clean_test_false_positives / len(clean_test_examples)
+    print(
+        "clean regression false-positive rate: "
+        f"{clean_test_fpr:.4f} ({clean_test_false_positives}/{len(clean_test_examples)})"
+    )
+
+    effective_clean_fpr = max(clean_fpr, clean_test_fpr)
+    if arguments.install_ios and (pii_f1 < arguments.minimum_pii_f1 or effective_clean_fpr > arguments.maximum_clean_fpr):
+        raise SystemExit(
+            "error: refusing --install-ios because PII quality gate failed: "
+            f"F1 {pii_f1:.4f} (minimum {arguments.minimum_pii_f1:.4f}), "
+            f"clean FPR {effective_clean_fpr:.4f} (maximum {arguments.maximum_clean_fpr:.4f})"
+        )
 
     # Export (CPU-only from here).
     model.to("cpu").eval()
@@ -432,6 +567,17 @@ def main() -> None:
         "modelArtifact": package_path.name,
         "sha256": directory_sha256(package_path),
         "taxonomyHash": None,
+        "evaluation": {
+            "count": len(eval_examples),
+            "piiMicroPrecision": precision,
+            "piiMicroRecall": recall,
+            "piiMicroF1": pii_f1,
+            "cleanSentenceFalsePositiveRate": clean_fpr,
+            "cleanSentenceCount": clean_sentence_count,
+            "cleanRegressionFalsePositiveRate": clean_test_fpr,
+            "cleanRegressionCount": len(clean_test_examples),
+            "inferenceThreshold": arguments.inference_threshold,
+        },
     }
     manifest_path = out / f"{arguments.model_name}.manifest.json"
     manifest_path.write_text(json.dumps(manifest, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")

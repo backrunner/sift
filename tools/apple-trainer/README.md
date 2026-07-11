@@ -33,11 +33,17 @@ Train from the generic corpus with Apple's native stack and install the raw mode
 ```bash
 swift run SiftAppleTrainer \
   --input ../../build/public-corpus.ndjson \
+  --test-input Evaluation/promotion-regressions.ndjson \
   --out ../../build/apple-model \
   --algorithm maxent \
   --version corpus-0.1 \
   --install-ios
 ```
+
+`Evaluation/promotion-regressions.ndjson` is a fixed zh/en/ja holdout for
+merchant promotions, game offers, rewards malls, carrier points, and factual
+points notifications. It is never merged into training rows; both pipeline
+trainers evaluate it after validation to catch regressions at these boundaries.
 
 `--algorithm maxent` is the validated default for the current 50-label SMS
 corpus: it trains in seconds, produces a tiny model, and outperforms Create ML

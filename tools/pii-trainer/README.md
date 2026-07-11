@@ -15,7 +15,7 @@ sanitizer. Sanitization runs on two legs:
 
 Training data is synthesized: carrier sentences from the SMS corpus receive
 fake phone numbers / ID cards / emails / addresses / names at random word
-boundaries with exact span labels (30% of sentences stay clean). A WordPiece
+boundaries with exact span labels (50% of sentences stay clean by default). A WordPiece
 backbone (`distilbert-base-multilingual-cased` by default, truncated to 2
 encoder layers) is fine-tuned for per-token tagging, then exported as
 `logits [1, seq, tags]` with the same vocab format the Swift
@@ -33,6 +33,14 @@ uv run train_pii.py \
   --quantize int8 \
   --install-ios          # copies SiftPIIDetector.* into apps/ios/GeneratedModels
 ```
+
+The trainer reports PII micro precision/recall/F1 and clean-sentence false
+positive rate, including the fixed zh/en/ja hard-negative set under
+`Evaluation/clean-negatives.ndjson`. `--install-ios` is gated by
+`--minimum-pii-f1` (0.90) and
+`--maximum-clean-fpr` (0.02), so a high-recall but noisy detector is not
+silently shipped. Evaluation applies the same 0.85 non-PII confidence gate as
+the iOS detector (`--inference-threshold`).
 
 Device support matches the other trainers: `--device auto` picks
 cuda (NVIDIA CUDA / AMD ROCm builds) → mps (Apple Silicon) → cpu, and export

@@ -52,6 +52,7 @@ REJECTED_SET = PIPELINE_DIR / "rejected.ndjson"
 CURATION_REPORT = PIPELINE_DIR / "curation-report.json"
 CLASSIC_OUT = PIPELINE_DIR / "apple-model"
 TRANSFORMER_OUT = PIPELINE_DIR / "transformer-model"
+PROMOTION_TEST_SET = APPLE_TRAINER / "Evaluation" / "promotion-regressions.ndjson"
 
 
 def parse_arguments() -> argparse.Namespace:
@@ -200,6 +201,7 @@ def stage_train_classic(arguments: argparse.Namespace) -> None:
         "--algorithm", arguments.algorithm_classic,
         "--split-seed", str(arguments.split_seed_classic),
         "--version", arguments.version_classic,
+        "--test-input", str(PROMOTION_TEST_SET),
     ]
     if arguments.install_ios:
         command.append("--install-ios")
@@ -235,6 +237,7 @@ def stage_train_transformer(arguments: argparse.Namespace, finetune: bool = Fals
         "--num-epochs", str(arguments.num_epochs),
         "--batch-size", str(arguments.batch_size),
         "--warmup-ratio", str(arguments.warmup_ratio),
+        "--test-input", str(PROMOTION_TEST_SET),
     ]
     if arguments.truncate_layers > 0:
         command.extend(["--truncate-layers", str(arguments.truncate_layers)])

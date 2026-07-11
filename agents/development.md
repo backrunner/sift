@@ -15,8 +15,9 @@ Run the relevant checks before committing:
 | Swift app or core code | `swift build && swift test && swift run CoreSmokeTests` from `apps/ios` |
 | `project.yml` or resources | `xcodegen generate`, then build |
 | `taxonomy.json` | `pnpm --filter @sift/taxonomy generate:swift` plus iOS build and trainer synthetic-data smoke test |
-| Corpus templates | Trainer smoke test plus `curate --audit-only --strict-audit` |
+| Corpus templates | Trainer smoke test, holdout-isolated candidate build, and `curate --audit-only --strict-audit` |
 | Curation or training scripts | `python3 -m py_compile` plus `python3 -m unittest discover -s tools/transformer-trainer/tests` |
+| Sanitizer or PII trainer | `swift test --filter PIISanitizerTests`; PII install gate must pass the fixed clean-negative set |
 | TypeScript tooling | `pnpm typecheck && pnpm test` |
 | Legal or privacy behavior | Update `docs/PRIVACY.md` and `docs/legal/*` together |
 
@@ -49,7 +50,7 @@ and then production.
 
 - App: `tools/upload_ios_testflight.sh` for TestFlight uploads.
 - Models: `pnpm pipeline -- all --install-ios` produces and installs local
-  artifacts. Transformer and PII artifacts are optional; when absent, the app
-  falls back to the classic model or pure-rule redaction.
+  artifacts. Transformer and PII artifacts are optional and git-ignored; when
+  absent, the app falls back to the classic model or pure-rule redaction.
 - IAP: configure the non-consumable `com.alkinum.sift.premium` in App Store
   Connect.
