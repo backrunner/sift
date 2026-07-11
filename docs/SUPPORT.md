@@ -3,7 +3,9 @@
 Sift is a privacy-first iOS SMS filtering app. For support, bug reports, data
 privacy questions, or App Store review follow-up, contact:
 
-**privacy@sift.alkinum.io**
+**[support@alkinum.io](mailto:support@alkinum.io?subject=Sift%20Support)**
+
+Include `Sift` in the email subject and briefly describe the issue.
 
 You can also open a public issue after the repository is published:
 
@@ -32,4 +34,5 @@ Sift implements export and deletion controls in the app:
   toggle in the app.
 
 For anything that cannot be handled in the app, email
-privacy@sift.alkinum.io.
+[support@alkinum.io](mailto:support@alkinum.io?subject=Sift%20Support) and
+include `Sift` in the subject.

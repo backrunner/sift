@@ -11,20 +11,6 @@
   $: pageLocale = page.locale ?? config.i18n.defaultLocale ?? 'zh-Hans';
   $: locale = config.i18n.locales.find((candidate) => candidate.code === pageLocale);
   $: languageTag = locale?.hreflang ?? pageLocale;
-  $: translations = pages.filter((candidate) => (
-    !candidate.hidden
-    && candidate.kind === page.kind
-    && candidate.scopePath === page.scopePath
-  ));
-  $: localeOptions = config.i18n.locales.flatMap((candidate) => {
-    const translation = translations.find((item) => item.locale === candidate.code);
-    return translation ? [{ ...candidate, href: translation.routePath }] : [];
-  });
-  $: languageNavigationLabel = ({
-    'zh-Hans': '页面语言',
-    en: 'Page language',
-    ja: 'ページの言語'
-  } as Record<string, string>)[pageLocale] ?? 'Page language';
   $: metadata = createPageMetadata(config, page, pages);
   $: alternates = createPageAlternates(config, page, pages);
   $: jsonLdScript = createJsonLdScript(metadata.jsonLd);
@@ -61,24 +47,11 @@
 <main class="legal-page">
   <section class="legal-hero">
     <h1>{page.title}</h1>
-    {#if localeOptions.length > 1}
-      <nav class="language-switcher" aria-label={languageNavigationLabel}>
-        {#each localeOptions as option}
-          <a
-            href={option.href}
-            lang={option.hreflang ?? option.code}
-            aria-current={pageLocale === option.code ? 'page' : undefined}
-          >
-            {option.label}
-          </a>
-        {/each}
-      </nav>
-    {/if}
     {#if page.description}
       <span>{page.description}</span>
     {/if}
   </section>
-  <article class="legal-body" lang={languageTag} dir={locale?.dir ?? 'ltr'}>
+  <article class="legal-body sd-prose" lang={languageTag} dir={locale?.dir ?? 'ltr'}>
     {@html page.html}
   </article>
 </main>

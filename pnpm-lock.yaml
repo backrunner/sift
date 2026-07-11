@@ -26,8 +26,8 @@ importers:
         specifier: 7.1.2
         version: 7.1.2(svelte@5.55.7)(vite@8.0.13(@types/node@24.12.2)(esbuild@0.28.1)(tsx@4.21.0))
       svedocs:
-        specifier: 0.1.0-beta.5
-        version: 0.1.0-beta.5(@sveltejs/kit@2.60.1(@sveltejs/vite-plugin-svelte@7.1.2(svelte@5.55.7)(vite@8.0.13(@types/node@24.12.2)(esbuild@0.28.1)(tsx@4.21.0)))(svelte@5.55.7)(typescript@5.9.3)(vite@8.0.13(@types/node@24.12.2)(esbuild@0.28.1)(tsx@4.21.0)))(svelte@5.55.7)(vite@8.0.13(@types/node@24.12.2)(esbuild@0.28.1)(tsx@4.21.0))
+        specifier: 0.1.0-beta.7
+        version: 0.1.0-beta.7(@sveltejs/kit@2.60.1(@sveltejs/vite-plugin-svelte@7.1.2(svelte@5.55.7)(vite@8.0.13(@types/node@24.12.2)(esbuild@0.28.1)(tsx@4.21.0)))(svelte@5.55.7)(typescript@5.9.3)(vite@8.0.13(@types/node@24.12.2)(esbuild@0.28.1)(tsx@4.21.0)))(svelte@5.55.7)(vite@8.0.13(@types/node@24.12.2)(esbuild@0.28.1)(tsx@4.21.0))
       svelte:
         specifier: 5.55.7
         version: 5.55.7
@@ -1666,8 +1666,8 @@ packages:
     resolution: {integrity: sha512-SS+jx45GF1QjgEXQx4NJZV9ImqmO2NPz5FNsIHrsDjh2YsHnawpan7SNQ1o8NuhrbHZy9AZhIoCUiCeaW/C80g==, tarball: https://registry.npmjs.org/supports-color/-/supports-color-10.2.2.tgz}
     engines: {node: '>=18'}
 
-  svedocs@0.1.0-beta.5:
-    resolution: {integrity: sha512-mqndoEMmSSoipfXYYuM5Uw5m9R57fNCoSW7QhnmoOBfCrSiMhDryzrrgeUkUxzcyxrbhKFcbupJ/vFpll27BZg==, tarball: https://registry.npmjs.org/svedocs/-/svedocs-0.1.0-beta.5.tgz}
+  svedocs@0.1.0-beta.7:
+    resolution: {integrity: sha512-IRrNT8UbmTqSTw7VD522WHciJuvo2XDuCK8x2Gc1RA/f6lm+SU+Y0sQRWB1EtpNERbiATileYVKyX9w4RX+XCg==, tarball: https://registry.npmjs.org/svedocs/-/svedocs-0.1.0-beta.7.tgz}
     peerDependencies:
       '@sveltejs/kit': '>=2.0.0'
       svelte: '>=5.0.0'
@@ -3501,7 +3501,7 @@ snapshots:
 
   supports-color@10.2.2: {}
 
-  svedocs@0.1.0-beta.5(@sveltejs/kit@2.60.1(@sveltejs/vite-plugin-svelte@7.1.2(svelte@5.55.7)(vite@8.0.13(@types/node@24.12.2)(esbuild@0.28.1)(tsx@4.21.0)))(svelte@5.55.7)(typescript@5.9.3)(vite@8.0.13(@types/node@24.12.2)(esbuild@0.28.1)(tsx@4.21.0)))(svelte@5.55.7)(vite@8.0.13(@types/node@24.12.2)(esbuild@0.28.1)(tsx@4.21.0)):
+  svedocs@0.1.0-beta.7(@sveltejs/kit@2.60.1(@sveltejs/vite-plugin-svelte@7.1.2(svelte@5.55.7)(vite@8.0.13(@types/node@24.12.2)(esbuild@0.28.1)(tsx@4.21.0)))(svelte@5.55.7)(typescript@5.9.3)(vite@8.0.13(@types/node@24.12.2)(esbuild@0.28.1)(tsx@4.21.0)))(svelte@5.55.7)(vite@8.0.13(@types/node@24.12.2)(esbuild@0.28.1)(tsx@4.21.0)):
     dependencies:
       '@resvg/resvg-js': 2.6.2
       '@sveltejs/kit': 2.60.1(@sveltejs/vite-plugin-svelte@7.1.2(svelte@5.55.7)(vite@8.0.13(@types/node@24.12.2)(esbuild@0.28.1)(tsx@4.21.0)))(svelte@5.55.7)(typescript@5.9.3)(vite@8.0.13(@types/node@24.12.2)(esbuild@0.28.1)(tsx@4.21.0))

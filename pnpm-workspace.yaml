@@ -6,3 +6,5 @@ allowBuilds:
   esbuild: true
   sharp: true
   workerd: true
+minimumReleaseAgeExclude:
+  - svedocs@0.1.0-beta.7

@@ -1,6 +1,7 @@
 <script lang="ts">
   import { browser } from '$app/environment';
   import { page } from '$app/stores';
+  import 'svedocs/theme/base.css';
   import '$lib/styles.css';
   import { resolveSiteLocale } from '$lib/locale';
   import config from 'virtual:svedocs/config';
