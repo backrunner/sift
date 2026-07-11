@@ -52,9 +52,11 @@ The product is not launched yet; backward compatibility is not required.
    Objective-C exceptions.
 7. **XcodeGen is the project source of truth.** After editing `project.yml`,
    run `xcodegen generate`; do not hand-edit `project.pbxproj`.
-8. **Model artifacts do not go in git.** Transformer and PII artifacts under
-   `GeneratedModels/` are installed by trainers via `--install-ios` and marked
-   optional in `project.yml`.
+8. **Model artifacts do not go in git.** Trainers may install Transformer and
+   PII artifacts under `GeneratedModels/` for local validation. Production
+   targets must bundle the classic and PII models only; the Premium Transformer
+   must not appear in `project.yml` resources or an archive because it downloads
+   on demand after entitlement unlock and explicit user selection.
 9. Swift 6 strict concurrency applies: types crossing actor boundaries must be
    explicitly `Sendable`.
 10. Minimum pre-commit validation:

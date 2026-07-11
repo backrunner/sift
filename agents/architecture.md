@@ -64,8 +64,13 @@ train-classic (Create ML, --language auto)     train-transformer (mmBERT -> Core
    |                                           |
 per-label validation report                    checkpoint + finetune + HTML report
    |
---install-ios -> apps/ios/GeneratedModels/ for local classic/transformer builds
+--install-ios -> apps/ios/GeneratedModels/ for local model validation
 ```
+
+Production archives bundle the classic classifier and PII detector. The
+Premium Transformer artifacts may exist in `GeneratedModels/` locally, but are
+excluded from Xcode target resources and downloaded into the shared App Group
+only after entitlement unlock and explicit user selection.
 
 The optional PII pipeline separately trains a 2-layer Distil-mBERT token
 classifier with 50% clean negative sentences, then blocks installation unless

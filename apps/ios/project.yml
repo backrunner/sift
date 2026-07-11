@@ -10,6 +10,7 @@ settings:
   MARKETING_VERSION: "1.0"
   CURRENT_PROJECT_VERSION: "1"
   SUPPORTED_PLATFORMS: "iphoneos iphonesimulator"
+  TARGETED_DEVICE_FAMILY: "1"
   SUPPORTS_MACCATALYST: NO
   SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD: NO
 targets:
@@ -68,14 +69,6 @@ targets:
       - path: GeneratedModels/SiftSMSClassifier.manifest.json
         buildPhase: resources
         optional: true
-      - path: GeneratedModels/SiftTransformerClassifier.mlpackage
-        optional: true
-      - path: GeneratedModels/SiftTransformerClassifier.tokenizer.json
-        buildPhase: resources
-        optional: true
-      - path: GeneratedModels/SiftTransformerClassifier.manifest.json
-        buildPhase: resources
-        optional: true
       - path: GeneratedModels/SiftPIIDetector.mlpackage
         optional: true
       - path: GeneratedModels/SiftPIIDetector.vocab.txt
@@ -98,6 +91,7 @@ targets:
       PROVISIONING_PROFILE_SPECIFIER: ""
       CODE_SIGN_ENTITLEMENTS: SiftApp/SiftApp.entitlements
       PRODUCT_BUNDLE_IDENTIFIER: com.alkinum.sift
+      TARGETED_DEVICE_FAMILY: "1"
       GENERATE_INFOPLIST_FILE: NO
       INFOPLIST_FILE: SiftApp/Info.plist
       ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
@@ -120,5 +114,6 @@ targets:
       PROVISIONING_PROFILE_SPECIFIER: ""
       CODE_SIGN_ENTITLEMENTS: MessageFilterExtension/MessageFilterExtension.entitlements
       PRODUCT_BUNDLE_IDENTIFIER: com.alkinum.sift.MessageFilterExtension
+      TARGETED_DEVICE_FAMILY: "1"
       GENERATE_INFOPLIST_FILE: NO
       INFOPLIST_FILE: MessageFilterExtension/Info.plist

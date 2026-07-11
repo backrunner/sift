@@ -152,6 +152,23 @@ run_xcodebuild xcodebuild archive \
   -archivePath "$ARCHIVE_PATH" \
   "${archive_build_settings[@]}"
 
+archive_app="$ARCHIVE_PATH/Products/Applications/SiftApp.app"
+[[ -d "$archive_app" ]] || fail "archived app not found at $archive_app"
+bundled_transformer="$(find "$archive_app" -name 'SiftTransformerClassifier*' -print -quit)"
+if [[ -n "$bundled_transformer" ]]; then
+  fail "Premium Transformer must be downloaded on demand, but the archive contains $bundled_transformer"
+fi
+
+archive_extension="$archive_app/PlugIns/MessageFilterExtension.appex"
+for bundle in "$archive_app" "$archive_extension"; do
+  bundle_info="$bundle/Info.plist"
+  [[ -f "$bundle_info" ]] || fail "archived bundle info not found at $bundle_info"
+  device_family="$(plutil -extract UIDeviceFamily json -o - "$bundle_info")"
+  if [[ "$device_family" != "[1]" ]]; then
+    fail "Sift must be iPhone-only, but $bundle declares UIDeviceFamily $device_family"
+  fi
+done
+
 run_xcodebuild xcodebuild -exportArchive \
   -archivePath "$ARCHIVE_PATH" \
   -exportPath "$EXPORT_PATH" \
