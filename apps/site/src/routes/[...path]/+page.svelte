@@ -4,4 +4,4 @@
   export let data;
 </script>
 
-<LegalPage page={data.page} />
+<LegalPage page={data.page} pages={data.pages} config={data.config} />

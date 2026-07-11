@@ -1,11 +1,12 @@
 import { loadSvedocsRoute } from '$lib/loadPage';
+import config from 'virtual:svedocs/config';
 import pages from 'virtual:svedocs/page-index';
+import { createSvedocsRouteEntries } from 'svedocs/routes';
 import type { PageLoad } from './$types';
 
 export function entries() {
-  return pages
-    .filter((page) => page.routePath !== '/')
-    .map((page) => ({ path: page.routePath.replace(/^\//, '') }));
+  return createSvedocsRouteEntries(pages, config)
+    .map((path) => ({ path: path.replace(/^\//, '') }));
 }
 
 export const load: PageLoad = ({ params }) => {

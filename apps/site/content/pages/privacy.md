@@ -1,146 +1,90 @@
-# Sift Privacy Policy
+---
+title: Sift 隐私政策
+description: 了解 Sift 如何在本地处理短信、可选样本贡献与 iCloud 数据。
+---
 
-**Effective date: July 5, 2026**
+**生效日期：2026 年 7 月 5 日**
 
-This Privacy Policy describes how Sift ("the App", "we", "us") handles
-information when you use the Sift iOS application and its optional cloud
-features. Sift is designed to be **local-first**: SMS filtering, custom
-rules, statistics counting, and on-device personalization all run on your
-device by default.
+本隐私政策说明你使用 Sift iOS 应用及其可选云功能时，Sift（下称“本应用”或“我们”）如何处理信息。Sift 采用**本地优先**设计：短信过滤、自定义规则、统计计数和本地个性化默认都在你的设备上运行。
 
-The public copy of this policy is served at
-`https://sift.alkinum.io/privacy`. If this document and the in-app summary ever
-differ, this document controls.
+本政策的公开版本位于 `https://sift.alkinum.io/privacy`。如果本文与应用内摘要存在差异，以本文为准。
 
-## 1. Summary
+## 1. 概要
 
-- SMS messages are classified **on your device**. Message content is never
-  sent to us as part of filtering.
-- Contributing training samples is **strictly opt-in**, gated by an explicit
-  consent toggle, sanitized before upload, and reversible: you can delete
-  your most recent submission or **erase everything you ever submitted** from
-  inside the App (Settings → Data & Privacy).
-- Filtering statistics are **counters only** (never message content) and are
-  backed up to **your own iCloud private database**, which we cannot read.
-- The optional Premium upgrade is a one-time purchase processed entirely by
-  Apple. We never see your payment details.
-- We do not run our own servers, do not use third-party analytics or
-  advertising SDKs, and do not sell data.
+- 短信在**你的设备上**完成分类。过滤过程不会把短信正文发送给我们。
+- 训练样本贡献是**严格自愿加入**的功能，需要你明确开启同意开关；内容会在上传前脱敏，并可在应用内删除最近一次提交或**清空你提交过的全部内容**（设置 → 数据与隐私）。
+- 过滤统计只包含**计数**，不包含短信正文，并备份到**你自己的 iCloud 私有数据库**；我们无法读取这些数据。
+- 可选的 Premium 高级版为一次性购买，由 Apple 完成支付处理。我们不会看到你的支付信息。
+- 我们不运营自有服务器，不使用第三方分析或广告 SDK，也不出售数据。
 
-## 2. Information processed on your device only
+## 2. 仅在设备上处理的信息
 
-The following never leaves your device unless you explicitly choose to
-contribute a sample:
+除非你主动选择贡献样本，以下内容不会离开你的设备：
 
-- Incoming SMS content evaluated by the message-filter extension.
-- Your custom filtering rules and preferences.
-- Locally queued samples used for on-device model personalization.
-- Sanitization previews.
+- 短信过滤扩展评估的来信正文。
+- 你的自定义过滤规则和偏好。
+- 用于设备端模型个性化的本地待处理样本。
+- “我的提交”中显示的已脱敏提交摘要缓存；它让页面无需每次打开都查询 CloudKit。
+- 脱敏预览。
 
-## 3. Information you choose to contribute (opt-in)
+## 3. 你选择贡献的信息（自愿加入）
 
-If — and only if — you enable anonymous contribution and submit a sample, the
-App writes a single record to the App's CloudKit **public database**
-containing:
+只有当你开启匿名贡献并主动提交样本时，本应用才会向应用的 CloudKit **公共数据库**写入一条记录，其中包含：
 
-- the sanitized sample text (phone numbers, ID numbers, emails, URLs, bank
-  cards, addresses, codes, and names are replaced with placeholders before
-  upload; a preview shows you exactly what will be sent);
-- the category label you selected;
-- the App's own predicted category and confidence (used to weigh data
-  quality during training);
-- the classifier version, a payload schema version, a coarse language/region
-  tag (for example `zh-CN`), and a client timestamp.
+- 脱敏后的样本文本。电话号码、证件号码、电子邮件、网址、银行卡号、地址、验证码和姓名会在上传前替换为占位符；预览会准确展示即将发送的内容。
+- 你选择的分类标签。
+- 本应用预测的分类和置信度，用于训练时评估数据质量。
+- 分类器版本、数据结构版本、粗粒度语言或地区标签（例如 `zh-CN`）以及客户端时间戳。
 
-The payload contains **no** sender information, phone number, account
-identifier, device identifier, advertising identifier, or precise location.
-Submitting requires an iCloud session on your device (an Apple platform
-requirement). Apple's CloudKit internally associates the record with its
-creator; we use that association solely so **you** can delete your own
-records, and training exports never read creator identities.
+提交内容**不包含**发送方信息、电话号码、账户标识符、设备标识符、广告标识符或精确位置。提交需要设备已登录 iCloud，这是 Apple 平台要求。Apple 的 CloudKit 会在内部关联记录创建者；我们只使用该关联让**你本人**能够删除自己的记录，训练数据导出不会读取创建者身份。
 
-## 4. Filtering statistics (your private iCloud database)
+## 4. 过滤统计（你的 iCloud 私有数据库）
 
-The App keeps daily counters (how many messages were classified as junk,
-promotion, or regular) in shared on-device storage and mirrors them to the
-CloudKit **private database of your own iCloud account** so they survive
-reinstalls. Private-database data is stored under your Apple ID, counts
-against your iCloud storage, and is **not accessible to us**. You can erase
-these backups at any time from Settings → Data & Privacy.
+本应用在设备共享存储中保存每日计数，例如被判定为垃圾、推广或普通信息的数量，并将这些计数同步到你自己 iCloud 账户的 CloudKit **私有数据库**，以便重新安装后恢复。私有数据库中的数据归属于你的 Apple ID、占用你的 iCloud 存储空间，并且**我们无法访问**。你可以随时在“设置 → 数据与隐私”中删除这些备份。
 
-## 5. Purchases
+## 5. 购买
 
-The Premium upgrade is a non-consumable in-app purchase processed
-by Apple. We receive no name, address, or payment information. Purchase
-entitlement is verified on-device through StoreKit. See Apple's privacy
-policy for how Apple processes purchase data.
+Premium 高级版是由 Apple 处理的非消耗型应用内购买。我们不会获得你的姓名、地址或支付信息。购买权益通过 StoreKit 在设备上验证。Apple 如何处理购买数据，请参阅 Apple 的隐私政策。
 
-## 6. Legal bases (GDPR / UK GDPR)
+## 6. 法律依据（GDPR / UK GDPR）
 
-- **Consent (Art. 6(1)(a))** — anonymous sample contribution. You can
-  withdraw consent at any time by turning the toggle off; withdrawal does not
-  affect prior processing, and you can additionally erase past contributions
-  (Section 8).
-- **Legitimate interest / contract (Art. 6(1)(b), (f))** — operating the
-  local filtering features you install the App to use, and validating
-  Premium entitlements.
+- **同意（第 6(1)(a) 条）**：匿名样本贡献。你可以随时关闭开关撤回同意；撤回不影响此前的处理，同时你可以删除过去的贡献记录（见第 8 节）。
+- **合同履行或合法利益（第 6(1)(b)、(f) 条）**：提供你安装本应用所需的本地过滤功能，以及验证 Premium 权益。
 
-We treat sanitized sample text conservatively as personal data even though it
-is designed not to identify you.
+即使脱敏样本的设计目标是不识别个人，我们仍会以保守方式将其视为个人数据处理。
 
-## 7. Retention
+## 7. 保留期限
 
-- Contributed samples are retained while they remain useful for training.
-  Training corpora are rebuilt from the live database, so erased samples drop
-  out of all future model training.
-- Statistics backups persist in your private iCloud until you erase them or
-  delete the App's iCloud data from iOS Settings.
-- Local data lives on your device and is removed when you delete the App.
+- 已贡献样本会在仍对训练有用时保留。训练语料会从当前数据库重新构建，因此已删除样本不会进入未来的模型训练。
+- 统计备份会保留在你的 iCloud 私有数据库中，直到你主动删除，或在 iOS 设置中删除本应用的 iCloud 数据。
+- 本地数据存储在你的设备上，删除应用时会一并移除。
 
-## 8. Your rights
+## 8. 你的权利
 
-Where GDPR, UK GDPR, CCPA/CPRA, or similar laws apply, you have rights of
-access, rectification, erasure, restriction, portability, and objection, and
-the right not to be discriminated against for exercising them. Sift
-implements the most important ones **directly in the App**:
+在 GDPR、UK GDPR、CCPA/CPRA 或类似法律适用的地区，你可能享有访问、更正、删除、限制处理、数据可携带、反对处理以及不因行使权利而受到歧视的权利。Sift 将其中最重要的操作直接放在应用内：
 
-- **Access / portability**: Settings → Data & Privacy → *Export all my
-  submissions* produces a machine-readable JSON copy of every sample you
-  contributed.
-- **Erasure**: Settings → Data & Privacy → *Erase all submitted data*
-  permanently deletes every sample you contributed and your statistics
-  backups. *Delete last submission* is also available right after submitting.
-- **Withdrawal of consent**: turn off the anonymous-contribution toggle.
+- **访问与可携带**：“设置 → 数据与隐私 → 导出全部提交”会生成你贡献过的全部样本的机器可读 JSON 文件。
+- **删除**：“设置 → 数据与隐私 → 清空全部提交数据”会永久删除你贡献过的全部样本和统计备份。提交后也可以单独删除最近一次记录。
+- **撤回同意**：关闭匿名贡献开关。
 
-For anything else (including complaints), contact
-**privacy@sift.alkinum.io**. You also have the right to lodge a complaint
-with your local supervisory authority. We do not sell or share personal
-information as defined by the CCPA/CPRA.
+其他请求或投诉请联系 **privacy@sift.alkinum.io**。你也有权向所在地监管机构投诉。我们不会出售或分享 CCPA/CPRA 所定义的个人信息。
 
-## 9. International transfers
+## 9. 跨境传输
 
-Contributed samples and your private statistics are stored in Apple's
-CloudKit infrastructure, which may process data in multiple regions under
-Apple's data-transfer safeguards. We do not operate independent servers.
+已贡献样本和你的私有统计由 Apple 的 CloudKit 基础设施保存。Apple 可能依据其数据传输保障措施在多个地区处理这些数据。我们不运营独立服务器。
 
-## 10. Children
+## 10. 儿童
 
-Sift is not directed at children under 13 (or the equivalent minimum age in
-your jurisdiction), and we do not knowingly collect personal information from
-children. The anonymous-contribution feature requires an iCloud account.
+Sift 不面向 13 岁以下儿童（或你所在地区规定的其他最低年龄），我们也不会有意收集儿童的个人信息。匿名贡献功能需要 iCloud 账户。
 
-## 11. Security
+## 11. 安全
 
-Contributions are sanitized on-device before upload, transported over TLS by
-CloudKit, and carry no identity fields. Record-level permissions restrict
-modification and deletion of a sample to its creator. Local files use iOS
-data protection.
+贡献内容会在设备上完成脱敏，再通过 CloudKit 的 TLS 连接传输，并且不携带身份字段。记录级权限将样本的修改和删除限制为创建者本人。本地文件使用 iOS 数据保护能力。
 
-## 12. Changes to this policy
+## 12. 政策变更
 
-We will update this document when features change and adjust the effective
-date above. Material changes are additionally surfaced in the App.
+当功能发生变化时，我们会更新本文并调整生效日期。重大变更也会在应用内提示。
 
-## 13. Contact
+## 13. 联系方式
 
 Alkinum — privacy@sift.alkinum.io

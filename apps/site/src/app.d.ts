@@ -40,4 +40,11 @@ declare module 'virtual:svedocs/theme-components' {
   export default components;
 }
 
-declare namespace App {}
+declare namespace App {
+  interface Platform {
+    env: Env;
+    context: ExecutionContext;
+    caches: CacheStorage;
+    cf?: IncomingRequestCfProperties;
+  }
+}

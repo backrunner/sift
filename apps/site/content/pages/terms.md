@@ -1,118 +1,65 @@
-# Sift Terms of Service
+---
+title: Sift 服务条款
+description: 使用 Sift、Premium 高级版和可选云功能时适用的条款。
+---
 
-**Effective date: July 5, 2026**
+**生效日期：2026 年 7 月 5 日**
 
-These Terms of Service ("Terms") govern your use of the Sift iOS application
-("the App") and its optional hosted features (anonymous sample contribution
-and iCloud-backed statistics). By downloading or using the App you agree to
-these Terms and to the
-[Privacy Policy](https://sift.alkinum.io/privacy).
-The public copy of these Terms is served at `https://sift.alkinum.io/terms`.
+本服务条款（下称“条款”）适用于你使用 Sift iOS 应用（下称“本应用”）及其可选云功能，包括匿名样本贡献和 iCloud 统计备份。下载或使用本应用即表示你同意本条款和[隐私政策](/privacy)。本条款的公开版本位于 `https://sift.alkinum.io/terms`。
 
-If you obtained the App through the Apple App Store, Apple's standard
-Licensed Application End User License Agreement also applies to the extent it
-is not in conflict with these Terms, and Apple is a third-party beneficiary
-entitled to enforce them.
+如果你通过 Apple App Store 获取本应用，在不与本条款冲突的范围内，Apple 的标准《许可应用程序最终用户许可协议》同样适用；Apple 是该协议的第三方受益人，并有权执行相关条款。
 
-## 1. The service
+## 1. 服务内容
 
-Sift provides on-device SMS classification and filtering, user-defined rules,
-local statistics, optional on-device model personalization, and an optional,
-consent-gated pipeline for contributing anonymized training samples. Local
-functionality works without any account; contribution and statistics backup
-use your iCloud session.
+Sift 提供设备端短信分类和过滤、自定义规则、本地统计、可选的设备端模型个性化，以及在用户同意后贡献脱敏训练样本的可选流程。本地功能无需账户即可使用；样本贡献和统计备份使用你的 iCloud 会话。
 
-## 2. License
+## 2. 许可
 
-We grant you a personal, non-exclusive, non-transferable, revocable license
-to use the App on Apple devices you own or control, as permitted by the App
-Store usage rules. The App's source code may be separately available under
-its own open-source license; these Terms govern the distributed App and
-hosted features, not the source repository.
+在 App Store 使用规则允许的范围内，我们授予你一项个人的、非独占的、不可转让且可撤销的许可，用于在你拥有或控制的 Apple 设备上使用本应用。本应用源代码可能依据独立的开源许可提供；本条款适用于发行版应用及其云功能，不取代源代码仓库的许可。
 
-## 3. Premium (in-app purchase)
+## 3. Premium 高级版（应用内购买）
 
-- **Premium** is a one-time, non-consumable in-app purchase that
-  permanently unlocks the Transformer multilingual model on the Apple ID
-  used for the purchase.
-- Prices are set and displayed by the App Store for your storefront and may
-  change, including temporary discounts or free promotions; the price shown
-  at checkout is the price you pay.
-- Purchases can be restored on any device signed into the same Apple ID via
-  Settings → Restore Purchases.
-- Billing, receipts, and **refunds are handled exclusively by Apple** under
-  App Store policies; we cannot issue refunds directly.
-- If a purchase is refunded or revoked, Premium features are disabled and
-  the App reverts to the standard model.
+- **Premium 高级版**是一次性非消耗型应用内购买，会为购买所用的 Apple ID 永久解锁 Transformer 多语言模型。
+- 价格由 App Store 根据你的商店地区设置和展示，可能因临时折扣或免费活动而变化；结账时显示的价格就是实际支付价格。
+- 你可以在登录同一 Apple ID 的设备上，通过“设置 → 恢复购买”恢复权益。
+- 账单、收据和**退款均由 Apple 按 App Store 政策处理**，我们无法直接退款。
+- 如果购买被退款或撤销，Premium 功能会停用，本应用将恢复使用标准模型。
 
-## 4. Acceptable use
+## 4. 可接受的使用方式
 
-You agree not to:
+你同意不会：
 
-- submit content you do not have the right to share, or content that is
-  unlawful, or that contains someone else's personal data beyond what the
-  built-in sanitizer removes;
-- attempt to deanonymize other contributors, probe or disrupt the CloudKit
-  containers, or exceed reasonable use of the contribution APIs;
-- circumvent purchase entitlements or redistribute Premium model artifacts;
-- use the App where SMS filtering is prohibited by law or by your carrier.
+- 提交你无权分享的内容、违法内容，或包含超出内置脱敏功能处理范围的他人个人数据；
+- 尝试识别其他贡献者、探测或干扰 CloudKit 容器，或超出贡献接口的合理使用范围；
+- 绕过购买权益验证或重新分发 Premium 模型文件；
+- 在法律或运营商禁止短信过滤的场景使用本应用。
 
-We may throttle, reject, or remove contributions that violate these Terms.
+对于违反本条款的贡献内容，我们可以限流、拒绝或删除。
 
-## 5. Your content
+## 5. 你的内容
 
-You retain rights to text you contribute. By submitting a sample you grant us
-a worldwide, royalty-free, irrevocable (except as provided by data-protection
-law and the in-App erasure tools), sublicensable license to use, reproduce,
-process, and create derivative works from the sanitized sample **for the
-purpose of building and improving SMS-classification datasets and models**,
-including models distributed with the App. Erasing your data (Settings → Data
-& Privacy) removes your samples from the live database and from all future
-training runs; models already trained and released are not retrained
-retroactively.
+你保留对所贡献文本的权利。提交样本即表示你授予我们一项全球范围、免版税、不可撤销（数据保护法律和应用内删除工具另有规定的除外）且可再许可的权利，用于使用、复制、处理脱敏样本并创作衍生内容，**目的仅限于构建和改进短信分类数据集与模型**，包括随本应用发行的模型。通过“设置 → 数据与隐私”删除数据后，你的样本会从当前数据库和未来训练任务中移除；已经训练并发布的模型不会因此追溯重训。
 
-## 6. Disclaimers
+## 6. 免责声明
 
-THE APP IS PROVIDED "AS IS" AND "AS AVAILABLE" WITHOUT WARRANTIES OF ANY
-KIND, EXPRESS OR IMPLIED, INCLUDING MERCHANTABILITY, FITNESS FOR A PARTICULAR
-PURPOSE, AND NON-INFRINGEMENT. SMS CLASSIFICATION IS PROBABILISTIC:
-**messages may be misclassified**, important messages may be filtered, and
-unwanted messages may pass through. Do not rely on Sift as your sole
-safeguard against fraud; always verify important messages independently.
-Hosted features may change, pause, or be discontinued; local filtering is
-designed to keep working regardless.
+本应用按“现状”和“可用状态”提供。在法律允许的最大范围内，我们不提供任何明示或默示保证，包括适销性、特定用途适用性和不侵权保证。短信分类具有概率性：**信息可能被错误分类**，重要信息可能被过滤，不需要的信息也可能通过。请勿将 Sift 作为防范欺诈的唯一手段，并应独立核实重要信息。云功能可能调整、暂停或停止；本地过滤功能的设计目标是不受这些变化影响并继续运行。
 
-## 7. Limitation of liability
+## 7. 责任限制
 
-To the maximum extent permitted by law, our aggregate liability arising out
-of or relating to the App is limited to the greater of the amount you paid
-for Premium in the twelve months before the claim or USD 10. We are not
-liable for indirect, incidental, special, consequential, or punitive damages,
-or for lost profits, data, or goodwill. Some jurisdictions do not allow
-certain limitations; in those jurisdictions the limitations apply to the
-fullest extent permitted, and nothing in these Terms affects statutory
-consumer rights that cannot be waived.
+在法律允许的最大范围内，我们因本应用产生或与本应用有关的责任总额，以索赔前十二个月内你为 Premium 支付的金额与 10 美元两者中的较高者为限。我们不对间接、附带、特殊、后果性或惩罚性损害，以及利润、数据或商誉损失承担责任。部分司法管辖区不允许某些限制；在这些地区，上述限制按法律允许的最大范围适用，且不影响任何不得放弃的法定消费者权利。
 
-## 8. Termination
+## 8. 终止
 
-You may stop using the App at any time; deleting the App removes local data.
-We may suspend hosted features for violation of these Terms. Sections 5–7
-survive termination.
+你可以随时停止使用本应用；删除本应用会移除本地数据。如果你违反本条款，我们可以暂停相关云功能。第 5 至第 7 节在终止后继续有效。
 
-## 9. Changes
+## 9. 条款变更
 
-We may update these Terms as the product evolves. The effective date above
-changes with each revision, and material changes are surfaced in the App or
-on the website. Continued use after changes take effect constitutes
-acceptance.
+我们可能随产品发展更新本条款，并调整上方生效日期。重大变更会在本应用或网站中提示。变更生效后继续使用本应用，即表示接受更新后的条款。
 
-## 10. Governing law
+## 10. 适用法律
 
-These Terms are governed by the laws of the jurisdiction in which the App
-publisher is established, without regard to conflict-of-law rules, except
-where the consumer-protection law of your country of residence grants you
-mandatory protections or venue rights, which remain unaffected.
+本条款受应用发行方所在地法律管辖，不适用其法律冲突规则；但如果你居住地的消费者保护法律赋予你强制性保护或管辖权，这些权利不受影响。
 
-## 11. Contact
+## 11. 联系方式
 
 Alkinum — privacy@sift.alkinum.io

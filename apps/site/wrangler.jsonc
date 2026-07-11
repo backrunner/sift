@@ -1,0 +1,36 @@
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "sift-site",
+  "account_id": "b6754402d59fc29ee8b62119014fec89",
+  "main": "worker.js",
+  "compatibility_date": "2026-07-11",
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
+  "workers_dev": true,
+  "routes": [
+    {
+      "pattern": "sift.alkinum.io",
+      "custom_domain": true
+    }
+  ],
+  "assets": {
+    "directory": ".svelte-kit/cloudflare",
+    "binding": "ASSETS",
+    "html_handling": "drop-trailing-slash",
+    "not_found_handling": "none",
+    "run_worker_first": [
+      "/models/*"
+    ]
+  },
+  "r2_buckets": [
+    {
+      "binding": "MODEL_BUCKET",
+      "bucket_name": "sift-models"
+    }
+  ],
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1
+  }
+}

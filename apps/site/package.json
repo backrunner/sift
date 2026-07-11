@@ -7,6 +7,7 @@
   "scripts": {
     "dev": "vite dev --host 0.0.0.0",
     "build": "vite build",
+    "deploy": "pnpm build && wrangler deploy --no-autoconfig",
     "preview": "vite preview --host 0.0.0.0",
     "typecheck": "svelte-kit sync && tsc -p tsconfig.json --noEmit",
     "check": "svelte-kit sync && tsc -p tsconfig.json --noEmit"
@@ -17,12 +18,13 @@
     "@sveltejs/adapter-static": "3.0.10",
     "@sveltejs/kit": "2.60.1",
     "@sveltejs/vite-plugin-svelte": "7.1.2",
+    "svedocs": "0.1.0-beta.5",
     "svelte": "5.55.7",
-    "svedocs": "0.1.0-beta.3",
     "vite": "8.0.13"
   },
   "devDependencies": {
     "@types/node": "^24.12.2",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "wrangler": "4.110.0"
   }
 }

@@ -40,7 +40,29 @@ export default defineConfig({
   },
   search: false,
   ai: false,
-  i18n: false,
+  checks: {
+    translations: true
+  },
+  i18n: {
+    defaultLocale: 'zh-Hans',
+    prefixDefaultLocale: false,
+    locales: [
+      { code: 'zh-Hans', label: '中文', path: 'zh', hreflang: 'zh-CN', dir: 'ltr' },
+      { code: 'en', label: 'English', path: 'en', hreflang: 'en', dir: 'ltr' },
+      { code: 'ja', label: '日本語', path: 'ja', hreflang: 'ja', dir: 'ltr' }
+    ],
+    messages: {
+      'zh-Hans': {
+        'heading.anchor': '链接到此章节'
+      },
+      en: {
+        'heading.anchor': 'Link to this section'
+      },
+      ja: {
+        'heading.anchor': 'このセクションへのリンク'
+      }
+    }
+  },
   seo: {
     sitemap: true,
     robots: true,

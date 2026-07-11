@@ -22,10 +22,12 @@ build/
 .vercel/
 .netlify/
 coverage/
+output/playwright/
 *.tsbuildinfo
 
 # Cloudflare Workers local state and secrets
 .wrangler/
+apps/site/worker.js
 apps/worker-*/wrangler.toml
 apps/worker-*/.dev.vars
 apps/worker-*/.dev.vars.*

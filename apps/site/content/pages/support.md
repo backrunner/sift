@@ -1,35 +1,29 @@
-# Sift Support
+---
+title: Sift 技术支持
+description: 获取 Sift 使用支持、报告问题或处理数据与隐私请求。
+---
 
-Sift is a privacy-first iOS SMS filtering app. For support, bug reports, data
-privacy questions, or App Store review follow-up, contact:
+Sift 是一款隐私优先的 iOS 短信过滤应用。如需使用支持、报告问题、咨询数据隐私或跟进 App Store 审核，请联系：
 
 **privacy@sift.alkinum.io**
 
-You can also open a public issue after the repository is published:
+仓库公开后，你也可以提交公开 Issue：
 
 https://github.com/backrunner/sift/issues
 
-## Useful Links
+## 常用链接
 
-- Privacy Policy:
-  https://sift.alkinum.io/privacy
-- Terms of Service:
-  https://sift.alkinum.io/terms
-- Technical Support:
-  https://sift.alkinum.io/support
-- Source repository:
-  https://github.com/backrunner/sift
+- [隐私政策](/privacy)
+- [服务条款](/terms)
+- [技术支持](/support)
+- [源代码仓库](https://github.com/backrunner/sift)
 
-## Data And Privacy Requests
+## 数据与隐私请求
 
-Sift implements export and deletion controls in the app:
+Sift 已在应用内提供导出和删除功能：
 
-- Export contributed samples: Settings -> Data & Privacy -> Export all my
-  submissions.
-- Erase contributed samples and private statistics backups: Settings -> Data &
-  Privacy -> Erase all submitted data.
-- Withdraw anonymous contribution consent: turn off the anonymous contribution
-  toggle in the app.
+- 导出贡献样本：设置 → 数据与隐私 → 导出全部提交。
+- 删除贡献样本和私有统计备份：设置 → 数据与隐私 → 清空全部提交数据。
+- 撤回匿名贡献同意：在应用内关闭匿名贡献开关。
 
-For anything that cannot be handled in the app, email
-privacy@sift.alkinum.io.
+无法在应用内完成的请求，请发送邮件至 privacy@sift.alkinum.io。
