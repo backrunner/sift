@@ -5,13 +5,13 @@
 </script>
 
 <svelte:head>
-  <title>Sift · Privacy-first SMS filtering for iPhone</title>
+  <title>Sift · 让短信少打扰一点</title>
   <meta
     name="description"
-    content="Sift filters SMS on iPhone with local-first classification, optional sanitized contribution, and a Premium multilingual model."
+    content="Sift 在 iPhone 本地整理短信，默认不上传短信内容。垃圾、推广、验证码和重要通知，各归各位。"
   />
   <meta property="og:title" content="Sift" />
-  <meta property="og:description" content="Privacy-first SMS filtering for iPhone." />
+  <meta property="og:description" content="让短信少打扰一点，隐私留在 iPhone 上。" />
   <meta property="og:url" content="https://sift.alkinum.io/" />
 </svelte:head>
 
@@ -21,71 +21,81 @@
   <section class="landing-hero">
     <InboxScene />
     <div class="hero-copy">
-      <p class="eyebrow">Privacy-first SMS filtering for iPhone</p>
       <h1>Sift</h1>
-      <h2>短信安静下来，隐私留在 iPhone 上。</h2>
+      <h2>让短信少打扰一点。</h2>
       <p>
-        Sift 在本地分类垃圾、推广和重要通知。默认不把短信内容发往服务器，
-        也不给收件箱增加新的负担。
+        Sift 在 iPhone 本地整理垃圾短信、推广、验证码和重要通知。
+        默认不上传短信内容，收件箱清爽一点，你也少被打断。
       </p>
       <div class="hero-actions">
-        <a class="primary-link" href="/privacy">Read Privacy Policy</a>
-        <a class="secondary-link" href="/support">Get Support</a>
+        <a class="primary-link" href="#features">看功能介绍</a>
+        <a class="secondary-link" href="#data">数据和高级版</a>
       </div>
     </div>
   </section>
 
-  <section class="quiet-band" aria-label="Sift principles">
+  <section id="features" class="feature-band" aria-label="Sift 功能介绍">
     <div>
       <span>01</span>
-      <h3>Local-first filtering</h3>
-      <p>Incoming SMS is classified on the iPhone through the iOS filtering extension.</p>
+      <h3>短信自动归类</h3>
+      <p>垃圾、推广、验证码、快递、银行和出行通知分开放，重要短信更容易找到。</p>
     </div>
     <div>
       <span>02</span>
-      <h3>Review before sharing</h3>
-      <p>Optional contribution shows a redaction preview before anything reaches CloudKit.</p>
+      <h3>规则可以自己定</h3>
+      <p>按发送方或正文关键词补充规则，适合处理本地商户、学校、社区等短信。</p>
     </div>
     <div>
       <span>03</span>
-      <h3>Premium without a subscription</h3>
-      <p>A one-time purchase unlocks the on-demand multilingual Transformer model.</p>
+      <h3>统计只看数量</h3>
+      <p>看每天各类短信有多少，不保存短信正文，也不把统计做成广告画像。</p>
     </div>
   </section>
 
-  <section class="privacy-section">
+  <section id="data" class="detail-section">
     <div class="section-copy">
-      <p class="eyebrow">Built for reviewable trust</p>
-      <h2>No analytics SDKs. No ad tracking. No server-side SMS classifier.</h2>
+      <p class="eyebrow">数据怎么处理</p>
+      <h2>默认在本机分类。愿意贡献样本时，也会先让你看清楚。</h2>
       <p>
-        Sift keeps its promises narrow and inspectable: local rules, local counts,
-        optional sanitized samples, and in-app export or deletion controls.
+        日常短信过滤不上传短信内容。你可以选择贡献脱敏样本来帮助改进模型；
+        上传前会看到脱敏结果，之后也能导出或删除自己提交过的数据。
       </p>
     </div>
-    <dl class="assurance-list">
+    <dl class="detail-list">
       <div>
-        <dt>Filtering path</dt>
-        <dd>On device by default, without a network defer classifier.</dd>
+        <dt>日常过滤</dt>
+        <dd>通过 iOS 短信过滤扩展在 iPhone 上完成，不设置服务器判定通道。</dd>
       </div>
       <div>
-        <dt>Contribution</dt>
-        <dd>Opt-in, sanitized, previewed, exportable, and erasable.</dd>
+        <dt>样本收集</dt>
+        <dd>默认关闭；开启后先脱敏、再预览，确认后才上传到 CloudKit。</dd>
       </div>
       <div>
-        <dt>Purchases</dt>
-        <dd>StoreKit handles payment. Sift only checks entitlement on device.</dd>
+        <dt>删除和导出</dt>
+        <dd>可在应用内导出提交记录，也可以删除最近一次或清空全部贡献数据。</dd>
       </div>
     </dl>
   </section>
 
-  <section class="final-cta">
-    <p class="eyebrow">Public documents</p>
-    <h2>Everything App Store review needs is here.</h2>
+  <section id="premium" class="premium-section">
     <div>
-      <a href="/privacy">Privacy Policy</a>
-      <a href="/terms">Terms of Service</a>
-      <a href="/support">Technical Support</a>
+      <p class="eyebrow">Premium</p>
+      <h2>需要更强的多语言识别时，再解锁高级模型。</h2>
     </div>
+    <dl class="premium-list">
+      <div>
+        <dt>一次购买</dt>
+        <dd>Premium 是非订阅制内购，购买后可在同一 Apple ID 下恢复。</dd>
+      </div>
+      <div>
+        <dt>实时价格</dt>
+        <dd>价格由 App Store 按地区显示，应用内结账页展示的价格就是实际支付价格。</dd>
+      </div>
+      <div>
+        <dt>按需下载</dt>
+        <dd>购买或恢复后，再下载 Transformer 多语言模型，不把模型大文件塞进基础安装包。</dd>
+      </div>
+    </dl>
   </section>
 </main>
 

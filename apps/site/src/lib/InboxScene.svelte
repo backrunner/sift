@@ -1,20 +1,21 @@
 <script lang="ts">
   const lanes = [
     [
-      { label: 'Verification', text: 'Your login code was recognized locally.', tone: 'mint' },
-      { label: 'Delivery', text: 'Pickup and courier messages stay easy to find.', tone: 'blue' },
-      { label: 'Promo', text: 'Campaigns move out of the way.', tone: 'amber' }
+      { label: '验证码', text: '登录验证码已在本地识别。', tone: 'mint' },
+      { label: '快递', text: '取件和派送短信自动归位。', tone: 'blue' },
+      { label: '推广', text: '促销短信不再挤在前面。', tone: 'amber' }
     ],
     [
-      { label: 'Spam', text: 'Suspicious links are kept apart from daily SMS.', tone: 'rose' },
-      { label: 'Banking', text: 'Account notices remain visible.', tone: 'mint' },
-      { label: 'Travel', text: 'Trips, tickets, and reminders keep their place.', tone: 'blue' }
+      { label: '风险', text: '可疑链接和日常短信分开。', tone: 'rose' },
+      { label: '银行', text: '账户通知留在显眼的位置。', tone: 'mint' },
+      { label: '出行', text: '行程、票务和提醒各有去处。', tone: 'blue' }
     ]
   ];
 </script>
 
 <div class="inbox-scene" aria-hidden="true">
   <div class="scene-shade"></div>
+  <div class="scene-sweep"></div>
   <div class="scene-thread scene-thread-a">
     {#each lanes[0] as bubble}
       <span data-tone={bubble.tone}>
@@ -33,6 +34,6 @@
   </div>
   <div class="scene-device">
     <img src="/sift-icon-rounded.png" alt="" width="120" height="120" />
-    <span>On-device SMS filtering</span>
+    <span>短信本地过滤</span>
   </div>
 </div>

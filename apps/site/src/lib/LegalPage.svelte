@@ -17,7 +17,7 @@
 
 <main class="legal-page">
   <section class="legal-hero">
-    <p>Sift public documents</p>
+    <p>Sift 公开文档</p>
     <h1>{page.title}</h1>
     {#if page.description}
       <span>{page.description}</span>

@@ -4,7 +4,7 @@ export default defineConfig({
   site: {
     name: 'Sift',
     title: 'Sift',
-    description: 'Privacy-first SMS filtering for iPhone.',
+    description: '让短信少打扰一点，隐私留在 iPhone 上。',
     url: 'https://sift.alkinum.io'
   },
   content: {
@@ -24,16 +24,16 @@ export default defineConfig({
       mark: false
     },
     nav: [
-      { label: 'Privacy', href: '/privacy' },
-      { label: 'Terms', href: '/terms' },
-      { label: 'Support', href: '/support' }
+      { label: '功能', href: '/#features' },
+      { label: '数据', href: '/#data' },
+      { label: '高级版', href: '/#premium' }
     ],
     footer: {
       text: '© 2026 Alkinum',
       links: [
-        { label: 'Privacy', href: '/privacy' },
-        { label: 'Terms', href: '/terms' },
-        { label: 'Support', href: '/support' },
+        { label: '隐私政策', href: '/privacy' },
+        { label: '服务条款', href: '/terms' },
+        { label: '技术支持', href: '/support' },
         { label: 'GitHub', href: 'https://github.com/backrunner/sift', external: true }
       ]
     }
