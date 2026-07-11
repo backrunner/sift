@@ -28,7 +28,7 @@ for locale in zh-Hans en-US ja; do
   for screen in 1 2 3 4 5 6; do
     filename="$(printf '%02d' "$screen")-sift.png"
     bash "$PWCLI" --session "$SESSION" open "${PAGE}?locale=${locale}&screen=${screen}"
-    bash "$PWCLI" --session "$SESSION" resize 1320 2868
+    bash "$PWCLI" --session "$SESSION" resize 1242 2688
     bash "$PWCLI" --session "$SESSION" run-code \
       "async (page) => { await page.evaluate(() => window.appStoreAssetReady); await page.waitForTimeout(150); }"
     bash "$PWCLI" --session "$SESSION" screenshot \

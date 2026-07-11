@@ -4,7 +4,8 @@ The source screenshots under `output/app-store/1.0/raw/` come from the real
 Sift app running in iPhone Simulator. The HTML template only adds the localized
 headline, sequence indicator, background, and framing.
 
-Generate all 18 screenshots at 1320 x 2868:
+Generate all 18 screenshots at the App Store Connect-compatible 1242 x 2688
+portrait size:
 
 ```bash
 bash tools/app-store-assets/render.sh
@@ -18,6 +19,10 @@ tools/app-store-assets/index.html?locale=zh-Hans&screen=1
 
 Supported locales are `zh-Hans`, `en-US`, and `ja`. Keep screenshot order and
 headlines synchronized in `screenshots.js`.
+
+Each locale contains six static screenshots, which is within App Store
+Connect's limit of ten screenshots. This tool does not generate App Preview
+videos; App Previews have a separate limit of three per device size and locale.
 
 ## Git Policy
 
