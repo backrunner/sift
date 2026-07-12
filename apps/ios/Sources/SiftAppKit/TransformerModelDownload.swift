@@ -124,6 +124,7 @@ public protocol TransformerNetworkConditionChecking: Sendable {
 
 public protocol TransformerModelDownloading: Sendable {
     func prepareDownload() async throws -> TransformerModelDownloadPlan
+    @concurrent
     func download(
         _ plan: TransformerModelDownloadPlan,
         progress: @Sendable @escaping (TransformerModelDownloadProgress) -> Void
@@ -245,6 +246,7 @@ public final class TransformerModelDownloadClient: TransformerModelDownloading, 
         )
     }
 
+    @concurrent
     public func download(
         _ plan: TransformerModelDownloadPlan,
         progress: @Sendable @escaping (TransformerModelDownloadProgress) -> Void
@@ -275,6 +277,7 @@ public final class TransformerModelDownloadClient: TransformerModelDownloading, 
                         totalBytes: plan.displayByteCount
                     ))
                 }
+                try Task.checkCancellation()
                 completedBytes += received
                 progress(TransformerModelDownloadProgress(receivedBytes: completedBytes, totalBytes: plan.displayByteCount))
 
@@ -283,9 +286,11 @@ public final class TransformerModelDownloadClient: TransformerModelDownloading, 
                 }
             }
 
+            try Task.checkCancellation()
             guard TransformerModelStore.model(in: staging, resourceName: resourceName, fileManager: fileManager) != nil else {
                 throw TransformerModelDownloadError.installFailed
             }
+            try Task.checkCancellation()
             try TransformerModelStore.activate(stagedDirectory: staging, resourceName: resourceName, fileManager: fileManager)
         } catch {
             try? fileManager.removeItem(at: staging)
@@ -390,39 +395,184 @@ public final class TransformerModelDownloadClient: TransformerModelDownloading, 
     private func downloadArtifact(
         _ artifact: TransformerModelDownloadArtifact,
         to targetURL: URL,
-        progress: @Sendable (Int64) -> Void
+        progress: @Sendable @escaping (Int64) -> Void
     ) async throws -> Int64 {
-        let (bytes, response) = try await session.bytes(from: artifact.remoteURL)
-        guard response.isSuccessfulHTTPResponse else {
+        let operation = TransformerArtifactDownloadOperation(
+            targetURL: targetURL,
+            fileManager: fileManager,
+            progress: progress
+        )
+        let receivedBytes = try await operation.run(using: session, url: artifact.remoteURL)
+        try Task.checkCancellation()
+
+        guard operation.response?.isSuccessfulHTTPResponse == true else {
+            if fileManager.fileExists(atPath: targetURL.path) {
+                try? fileManager.removeItem(at: targetURL)
+            }
             throw TransformerModelDownloadError.invalidManifestResponse
         }
 
-        if fileManager.fileExists(atPath: targetURL.path) {
-            try fileManager.removeItem(at: targetURL)
+        if !fileManager.fileExists(atPath: targetURL.path) {
+            throw TransformerModelDownloadError.installFailed
         }
-        fileManager.createFile(atPath: targetURL.path, contents: nil)
-        let handle = try FileHandle(forWritingTo: targetURL)
-        defer { try? handle.close() }
 
-        var receivedBytes: Int64 = 0
-        var buffer: [UInt8] = []
-        buffer.reserveCapacity(64 * 1024)
-        for try await byte in bytes {
-            try Task.checkCancellation()
-            buffer.append(byte)
-            if buffer.count >= 64 * 1024 {
-                try handle.write(contentsOf: Data(buffer))
-                receivedBytes += Int64(buffer.count)
-                buffer.removeAll(keepingCapacity: true)
-                progress(receivedBytes)
+        let finalBytes: Int64
+        if receivedBytes > 0 {
+            finalBytes = receivedBytes
+        } else {
+            let attributes = try fileManager.attributesOfItem(atPath: targetURL.path)
+            finalBytes = (attributes[.size] as? NSNumber)?.int64Value ?? 0
+        }
+        progress(finalBytes)
+        return finalBytes
+    }
+}
+
+private final class TransformerArtifactDownloadOperation: NSObject, URLSessionDownloadDelegate, @unchecked Sendable {
+    private static let progressIntervalNanoseconds: UInt64 = 100_000_000
+
+    private let targetURL: URL
+    private let fileManager: FileManager
+    private let progress: @Sendable (Int64) -> Void
+    private let lock = NSLock()
+
+    private var continuation: CheckedContinuation<Int64, Error>?
+    private var task: URLSessionDownloadTask?
+    private var session: URLSession?
+    private var cancellationRequested = false
+    private var responseValue: URLResponse?
+    private var lastProgressUptimeNanoseconds: UInt64 = 0
+    private var latestReceivedBytes: Int64 = 0
+    private var installationError: Error?
+
+    init(
+        targetURL: URL,
+        fileManager: FileManager,
+        progress: @Sendable @escaping (Int64) -> Void
+    ) {
+        self.targetURL = targetURL
+        self.fileManager = fileManager
+        self.progress = progress
+    }
+
+    var response: URLResponse? {
+        lock.lock()
+        defer { lock.unlock() }
+        return responseValue
+    }
+
+    func run(using baseSession: URLSession, url: URL) async throws -> Int64 {
+        try await withTaskCancellationHandler(operation: {
+            try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Int64, Error>) in
+                lock.lock()
+                self.continuation = continuation
+                let wasCancelled = cancellationRequested
+                lock.unlock()
+
+                let session = URLSession(
+                    configuration: baseSession.configuration,
+                    delegate: self,
+                    delegateQueue: nil
+                )
+                let task = session.downloadTask(with: url)
+
+                lock.lock()
+                self.session = session
+                self.task = task
+                let shouldCancel = cancellationRequested || wasCancelled
+                lock.unlock()
+
+                task.resume()
+                if shouldCancel {
+                    task.cancel()
+                }
             }
+        }, onCancel: {
+            cancel()
+        })
+    }
+
+    private func cancel() {
+        lock.lock()
+        cancellationRequested = true
+        let task = self.task
+        lock.unlock()
+        task?.cancel()
+    }
+
+    func urlSession(
+        _ session: URLSession,
+        downloadTask: URLSessionDownloadTask,
+        didWriteData _: Int64,
+        totalBytesWritten: Int64,
+        totalBytesExpectedToWrite _: Int64
+    ) {
+        let now = DispatchTime.now().uptimeNanoseconds
+        lock.lock()
+        latestReceivedBytes = max(latestReceivedBytes, totalBytesWritten)
+        let shouldEmit = lastProgressUptimeNanoseconds == 0
+            || (now >= lastProgressUptimeNanoseconds
+                && now - lastProgressUptimeNanoseconds >= Self.progressIntervalNanoseconds)
+        if shouldEmit {
+            lastProgressUptimeNanoseconds = now
         }
-        if !buffer.isEmpty {
-            try handle.write(contentsOf: Data(buffer))
-            receivedBytes += Int64(buffer.count)
-            progress(receivedBytes)
+        lock.unlock()
+
+        if shouldEmit {
+            progress(totalBytesWritten)
         }
-        return receivedBytes
+    }
+
+    func urlSession(
+        _ session: URLSession,
+        downloadTask: URLSessionDownloadTask,
+        didFinishDownloadingTo location: URL
+    ) {
+        lock.lock()
+        responseValue = downloadTask.response
+        lock.unlock()
+
+        do {
+            if fileManager.fileExists(atPath: targetURL.path) {
+                try fileManager.removeItem(at: targetURL)
+            }
+            try fileManager.createDirectory(
+                at: targetURL.deletingLastPathComponent(),
+                withIntermediateDirectories: true
+            )
+            try fileManager.moveItem(at: location, to: targetURL)
+        } catch {
+            lock.lock()
+            installationError = error
+            lock.unlock()
+        }
+    }
+
+    func urlSession(
+        _ session: URLSession,
+        task: URLSessionTask,
+        didCompleteWithError error: Error?
+    ) {
+        lock.lock()
+        responseValue = task.response ?? responseValue
+        let continuation = self.continuation
+        self.continuation = nil
+        let session = self.session
+        self.task = nil
+        self.session = nil
+        let completionError = error ?? installationError
+        let receivedBytes = latestReceivedBytes
+        lock.unlock()
+
+        session?.finishTasksAndInvalidate()
+        guard let continuation else {
+            return
+        }
+        if let completionError {
+            continuation.resume(throwing: completionError)
+        } else {
+            continuation.resume(returning: receivedBytes)
+        }
     }
 }
 

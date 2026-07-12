@@ -19,6 +19,9 @@ public struct SiftRootView: View {
                 dashboardSections
             }
             .scrollIndicators(.hidden)
+            #if os(iOS)
+            .scrollDismissesKeyboard(.interactively)
+            #endif
             .background(AtmosphericBackground())
             .ignoresSafeArea(edges: .top)
             #if os(iOS)
@@ -36,6 +39,9 @@ public struct SiftRootView: View {
         } message: {
             Text(model.remoteAccountAlertMessage ?? "")
         }
+        #if canImport(UIKit)
+        .background(KeyboardDismissInstaller())
+        #endif
     }
 
     @ViewBuilder
@@ -693,7 +699,6 @@ private struct SubmitSamplePanel: View {
             GlassTextEditor(title: String(localized: "样本文本"), placeholder: String(localized: "粘贴一条待标注短信"), text: $model.submissionText, minHeight: 104)
                 .onChange(of: model.submissionText) { _, _ in
                     model.sampleSubmissionFeedback = nil
-                    model.refreshSanitizedPreview()
                 }
 
             if let validationMessage = model.submissionValidationMessage {
@@ -1798,6 +1803,81 @@ enum FormInputMetrics {
 }
 
 #if canImport(UIKit)
+private struct KeyboardDismissInstaller: UIViewRepresentable {
+    func makeUIView(context: Context) -> KeyboardDismissInstallerView {
+        KeyboardDismissInstallerView()
+    }
+
+    func updateUIView(_ uiView: KeyboardDismissInstallerView, context: Context) {}
+}
+
+private final class KeyboardDismissInstallerView: UIView, UIGestureRecognizerDelegate {
+    private weak var installedWindow: UIWindow?
+    private var tapRecognizer: UITapGestureRecognizer?
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        isUserInteractionEnabled = false
+        backgroundColor = .clear
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    override func didMoveToWindow() {
+        super.didMoveToWindow()
+        installRecognizer(on: window)
+    }
+
+    private func installRecognizer(on window: UIWindow?) {
+        guard installedWindow !== window else { return }
+
+        if let tapRecognizer {
+            installedWindow?.removeGestureRecognizer(tapRecognizer)
+        }
+        installedWindow = nil
+        tapRecognizer = nil
+
+        guard let window else { return }
+        let recognizer = UITapGestureRecognizer(target: self, action: #selector(dismissKeyboard))
+        recognizer.cancelsTouchesInView = false
+        recognizer.delaysTouchesBegan = false
+        recognizer.delaysTouchesEnded = false
+        recognizer.delegate = self
+        window.addGestureRecognizer(recognizer)
+        installedWindow = window
+        tapRecognizer = recognizer
+    }
+
+    @objc private func dismissKeyboard() {
+        installedWindow?.endEditing(true)
+    }
+
+    func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
+        !isInsideTextInput(touch.view)
+    }
+
+    func gestureRecognizer(
+        _ gestureRecognizer: UIGestureRecognizer,
+        shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer
+    ) -> Bool {
+        true
+    }
+
+    private func isInsideTextInput(_ view: UIView?) -> Bool {
+        var current = view
+        while let candidate = current {
+            if candidate is UITextField || candidate is UITextView {
+                return true
+            }
+            current = candidate.superview
+        }
+        return false
+    }
+}
+
 private struct SiftMultilineTextView: UIViewRepresentable {
     @Binding var text: String
 

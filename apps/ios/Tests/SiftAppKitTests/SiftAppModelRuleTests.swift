@@ -122,6 +122,28 @@ func remoteSubmitFailureKeepsVisibleFeedback() async throws {
 
 @MainActor
 @Test
+func sanitizedPreviewUpdatesAfterDebounceAndClearsWithInput() async throws {
+    let suiteName = "SiftTests.sanitizedPreview.\(UUID().uuidString)"
+    let defaults = try #require(UserDefaults(suiteName: suiteName))
+    defer { defaults.removePersistentDomain(forName: suiteName) }
+    let model = SiftAppModel(
+        remoteSampleClient: MockRemoteSampleClient(result: .success("unused")),
+        ledgerDefaults: defaults,
+        categoryMappingDefaults: defaults
+    )
+
+    model.submissionText = "登录验证码为 482913，请勿告知他人。"
+    #expect(model.sanitizedPreview.isEmpty)
+    try await waitUntil { model.sanitizedPreview.contains("{{CODE}}") }
+    #expect(model.shouldShowSanitizedPreview)
+
+    model.submissionText = ""
+    #expect(model.sanitizedPreview.isEmpty)
+    #expect(!model.shouldShowSanitizedPreview)
+}
+
+@MainActor
+@Test
 func remoteSubmitSuccessStoresReceiptToken() async throws {
     let suiteName = "SiftTests.remoteSubmitCounter.\(UUID().uuidString)"
     let ledgerDefaults = try #require(UserDefaults(suiteName: suiteName))
@@ -191,6 +213,7 @@ func similarCachedRemoteSubmissionIsNotSubmittedAgain() async throws {
     model.submissionText = "游戏2.9版本更新完成，新增地图并修复组队掉线问题。"
 
     model.submitSample()
+    try await waitUntil { model.isSubmittingSample == false && model.sampleSubmissionFeedback != nil }
 
     #expect(model.isSubmittingSample == false)
     #expect(model.sampleSubmissionFeedback?.kind == .info)

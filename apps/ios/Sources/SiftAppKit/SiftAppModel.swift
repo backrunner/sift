@@ -81,6 +81,22 @@ public struct SampleSubmissionFeedback: Identifiable, Equatable, Sendable {
     public let message: String
 }
 
+/// Serializes the relatively expensive PII model and detector work away from
+/// the main actor. A lazy sanitizer keeps Core ML model loading off app launch.
+private actor SanitizationWorker {
+    private var sanitizer: PrivacySanitizer?
+
+    func sanitize(_ text: String) -> String {
+        guard !Task.isCancelled else {
+            return text
+        }
+        if sanitizer == nil {
+            sanitizer = PrivacySanitizer.withBundledModel()
+        }
+        return sanitizer?.sanitize(text).text ?? text
+    }
+}
+
 @MainActor
 @Observable
 public final class SiftAppModel {
@@ -98,6 +114,7 @@ public final class SiftAppModel {
     public var submissionText: String = "" {
         didSet {
             scheduleSubmissionLabelSuggestion()
+            scheduleSanitizedPreview()
         }
     }
     public var selectedLabelID: String = SiftTaxonomy.leaves.first?.id ?? "finance.bank"
@@ -175,7 +192,7 @@ public final class SiftAppModel {
     public let premium: PremiumStore
 
     @ObservationIgnored
-    private let sanitizer = PrivacySanitizer.withBundledModel()
+    private let sanitizationWorker = SanitizationWorker()
 
     @ObservationIgnored
     private var baseClassifier: any MessageClassifier
@@ -210,6 +227,11 @@ public final class SiftAppModel {
 
     @ObservationIgnored
     private var submissionLabelSuggestionTask: Task<Void, Never>?
+
+    @ObservationIgnored
+    private var sanitizedPreviewTask: Task<Void, Never>?
+
+    private var sanitizedPreviewSourceText = ""
 
     @ObservationIgnored
     private var hasManuallySelectedSubmissionLabel = false
@@ -261,7 +283,6 @@ public final class SiftAppModel {
         if !variant.supportsLocalPersonalization {
             submissionDestination = .remote
         }
-        refreshSanitizedPreview()
         classifyCurrentDraft()
         Task { await refreshLocalSampleCount() }
 
@@ -525,12 +546,29 @@ public final class SiftAppModel {
         transformerDownloadPhase = .downloading
         transformerDownloadTask = Task { [weak self] in
             guard let self else { return }
-            let progressSink = TransformerDownloadProgressSink(model: self)
+            let (progressStream, progressContinuation) = AsyncStream<TransformerModelDownloadProgress>.makeStream(
+                bufferingPolicy: .bufferingNewest(1)
+            )
+            let progressConsumer = Task { @MainActor [weak self] in
+                for await progress in progressStream {
+                    guard let self, self.isTransformerDownloadActive else {
+                        return
+                    }
+                    self.updateTransformerDownloadProgress(progress)
+                }
+            }
+            defer {
+                progressContinuation.finish()
+                progressConsumer.cancel()
+            }
+
             do {
                 try await transformerDownloader.download(plan) { progress in
-                    progressSink.update(progress)
+                    progressContinuation.yield(progress)
                 }
                 guard !Task.isCancelled else { return }
+                progressContinuation.finish()
+                await progressConsumer.value
                 await MainActor.run { [weak self] in
                     guard let self else { return }
                     transformerDownloadPhase = .installing
@@ -695,11 +733,38 @@ public final class SiftAppModel {
         guard !trimmed.isEmpty else {
             return false
         }
-        return sanitizedPreview != submissionText
+        return sanitizedPreviewSourceText == submissionText && sanitizedPreview != submissionText
     }
 
-    public func refreshSanitizedPreview() {
-        sanitizedPreview = sanitizer.sanitize(submissionText).text
+    private func scheduleSanitizedPreview() {
+        sanitizedPreviewTask?.cancel()
+        let text = submissionText
+
+        guard !text.isEmpty else {
+            sanitizedPreviewSourceText = ""
+            sanitizedPreview = ""
+            return
+        }
+
+        let worker = sanitizationWorker
+        sanitizedPreviewTask = Task { [weak self] in
+            do {
+                try await Task.sleep(for: .milliseconds(220))
+                try Task.checkCancellation()
+            } catch {
+                return
+            }
+
+            let sanitized = await worker.sanitize(text)
+            guard !Task.isCancelled else {
+                return
+            }
+            guard let self, self.submissionText == text else {
+                return
+            }
+            self.sanitizedPreviewSourceText = text
+            self.sanitizedPreview = sanitized
+        }
     }
 
     private func scheduleSubmissionLabelSuggestion() {
@@ -789,7 +854,6 @@ public final class SiftAppModel {
             return
         }
         sampleSubmissionFeedback = nil
-        refreshSanitizedPreview()
         let selectedLabel = selectedLabel
         let text = submissionText
         let trimmedText = text.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -797,7 +861,6 @@ public final class SiftAppModel {
             showSubmissionFeedback(.error, String(localized: "请输入样本文本"))
             return
         }
-        let sanitizedText = sanitizedPreview
         switch submissionDestination {
         case .local:
             guard supportsLocalPersonalization else {
@@ -850,18 +913,11 @@ public final class SiftAppModel {
                     }
                     sampleSubmissionFeedback = SampleSubmissionFeedback(kind: .success, message: String(localized: "样本已保存到本地，仅用于设备上的个性化微调。"))
                     submissionText = ""
-                    refreshSanitizedPreview()
                 } catch {
                     showSubmissionFeedback(.error, String(localized: "本地保存失败：\(error.localizedDescription)"))
                 }
             }
         case .remote:
-            guard !submissionHistory.contains(where: {
-                $0.label == selectedLabel.id && SubmissionSimilarity.isSimilar($0.text, sanitizedText)
-            }) else {
-                showSubmissionFeedback(.info, String(localized: "您已提交过类似样本"))
-                return
-            }
             guard canUseRemoteSubmission else {
                 showRemoteAccountRequiredAlert()
                 return
@@ -872,18 +928,38 @@ public final class SiftAppModel {
             }
 
             isSubmittingSample = true
-            // Coarse-classify the sanitized text with the base model (no
-            // custom rules) and ship the verdict with the sample: curation
-            // uses agreement/confidence to weigh noisy submissions, without
-            // ever blocking a correction the user is deliberately making.
-            let localDecision = baseClassifier.classify(sender: nil, body: sanitizedText)
-            let assessment = LocalAssessment(
-                predictedLabelID: localDecision.labelID,
-                confidence: localDecision.confidence
-            )
-            Task {
+            let worker = sanitizationWorker
+            let classifier = baseClassifier
+            Task { [weak self] in
+                guard let self else { return }
                 defer { isSubmittingSample = false }
                 do {
+                    let sanitizedText = await worker.sanitize(text)
+                    guard !Task.isCancelled else { return }
+
+                    if self.submissionText == text {
+                        self.sanitizedPreviewSourceText = text
+                        self.sanitizedPreview = sanitizedText
+                    }
+
+                    guard !self.submissionHistory.contains(where: {
+                        $0.label == selectedLabel.id && SubmissionSimilarity.isSimilar($0.text, sanitizedText)
+                    }) else {
+                        self.showSubmissionFeedback(.info, String(localized: "您已提交过类似样本"))
+                        return
+                    }
+
+                    // Coarse-classify the sanitized text with the base model
+                    // off the main actor. Curation uses this assessment to
+                    // weigh noisy submissions without blocking corrections.
+                    let localDecision = await Task.detached(priority: .userInitiated) {
+                        classifier.classify(sender: nil, body: sanitizedText)
+                    }.value
+                    let assessment = LocalAssessment(
+                        predictedLabelID: localDecision.labelID,
+                        confidence: localDecision.confidence
+                    )
+
                     let receipt = try await remoteSampleClient.submit(
                         sanitizedText: sanitizedText,
                         labelID: selectedLabel.id,
@@ -906,7 +982,6 @@ public final class SiftAppModel {
                             showSubmissionFeedback(.success, String(localized: "已通过 iCloud 匿名共享脱敏样本，可用回执删除。"))
                         }
                         submissionText = ""
-                        refreshSanitizedPreview()
                     } else {
                         showSubmissionFeedback(.error, String(localized: "样本未被接收，请稍后重试"))
                     }
@@ -1590,20 +1665,5 @@ public final class SiftAppModel {
 
     private func isValidRegex(_ pattern: String) -> Bool {
         (try? NSRegularExpression(pattern: pattern, options: [.caseInsensitive])) != nil
-    }
-}
-
-private final class TransformerDownloadProgressSink: @unchecked Sendable {
-    weak var model: SiftAppModel?
-
-    @MainActor
-    init(model: SiftAppModel) {
-        self.model = model
-    }
-
-    func update(_ progress: TransformerModelDownloadProgress) {
-        Task { @MainActor in
-            self.model?.updateTransformerDownloadProgress(progress)
-        }
     }
 }

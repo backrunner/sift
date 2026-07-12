@@ -160,17 +160,45 @@ private struct MockPremiumBackend: PremiumPurchasing {
     }
 }
 
+private actor TransformerDownloadRecorder {
+    private(set) var prepareCallCount = 0
+    private(set) var downloadCallCount = 0
+
+    func recordPrepare() {
+        prepareCallCount += 1
+    }
+
+    func recordDownload() {
+        downloadCallCount += 1
+    }
+
+    func counts() -> (prepare: Int, download: Int) {
+        (prepareCallCount, downloadCallCount)
+    }
+}
+
 private struct MockTransformerDownloader: TransformerModelDownloading {
     let plan: TransformerModelDownloadPlan
+    let recorder: TransformerDownloadRecorder
+
+    init(
+        plan: TransformerModelDownloadPlan,
+        recorder: TransformerDownloadRecorder = TransformerDownloadRecorder()
+    ) {
+        self.plan = plan
+        self.recorder = recorder
+    }
 
     func prepareDownload() async throws -> TransformerModelDownloadPlan {
-        plan
+        await recorder.recordPrepare()
+        return plan
     }
 
     func download(
         _ plan: TransformerModelDownloadPlan,
         progress: @Sendable @escaping (TransformerModelDownloadProgress) -> Void
     ) async throws {
+        await recorder.recordDownload()
         progress(TransformerModelDownloadProgress(receivedBytes: plan.displayByteCount ?? 1, totalBytes: plan.displayByteCount))
     }
 }
@@ -234,28 +262,38 @@ func lockedTransformerSelectionOpensPaywallInsteadOfSwitching() async throws {
 @MainActor
 @Test
 func unlockedTransformerDoesNotDownloadUntilUserSelectsIt() async throws {
+    let recorder = TransformerDownloadRecorder()
+    let downloader = MockTransformerDownloader(
+        plan: mockTransformerDownloadPlan(),
+        recorder: recorder
+    )
     let model = SiftAppModel(
         premiumBackend: MockPremiumBackend(entitled: true, outcome: .cancelled),
         transformerAvailabilityOverride: false,
-        transformerDownloader: MockTransformerDownloader(plan: mockTransformerDownloadPlan())
+        transformerDownloader: downloader
     )
     try await waitForPremiumRefresh(model)
 
     #expect(model.premium.isUnlocked)
     #expect(model.transformerDownloadPhase == .notDownloaded)
     #expect(model.selectedModelVariant == .classic)
+    let counts = await recorder.counts()
+    #expect(counts.prepare == 0)
+    #expect(counts.download == 0)
 }
 
 @MainActor
 @Test
 func unlockedTransformerSelectionOnMeteredNetworkWaitsForConfirmation() async throws {
+    let recorder = TransformerDownloadRecorder()
     let model = SiftAppModel(
         premiumBackend: MockPremiumBackend(entitled: true, outcome: .cancelled),
         transformerAvailabilityOverride: false,
         transformerDownloader: MockTransformerDownloader(
             plan: mockTransformerDownloadPlan(
                 networkCondition: TransformerNetworkCondition(isExpensive: true)
-            )
+            ),
+            recorder: recorder
         )
     )
     try await waitForPremiumRefresh(model)
@@ -267,6 +305,15 @@ func unlockedTransformerSelectionOnMeteredNetworkWaitsForConfirmation() async th
     #expect(model.pendingTransformerDownloadPlan?.displayByteCount == 176_160_768)
     #expect(model.meteredTransformerDownloadMessage.contains("168") || model.meteredTransformerDownloadMessage.contains("176"))
     #expect(model.selectedModelVariant == .classic)
+
+    var counts = await recorder.counts()
+    #expect(counts.prepare == 1)
+    #expect(counts.download == 0)
+
+    model.confirmMeteredTransformerDownload()
+    try await waitForTransformerDownloadCall(recorder, count: 1)
+    counts = await recorder.counts()
+    #expect(counts.download == 1)
 }
 
 @MainActor
@@ -355,6 +402,20 @@ private func waitForTransformerDownloadPhase(
         try await Task.sleep(nanoseconds: 10_000_000)
     }
     Issue.record("Timed out waiting for transformer download phase \(phase)")
+}
+
+@MainActor
+private func waitForTransformerDownloadCall(
+    _ recorder: TransformerDownloadRecorder,
+    count: Int
+) async throws {
+    for _ in 0..<100 {
+        if await recorder.counts().download >= count {
+            return
+        }
+        try await Task.sleep(nanoseconds: 10_000_000)
+    }
+    Issue.record("Timed out waiting for transformer download call")
 }
 
 // MARK: - Submission history paging
