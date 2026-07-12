@@ -5,7 +5,7 @@ ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 PWCLI="${CODEX_HOME:-$HOME/.codex}/skills/playwright/scripts/playwright_cli.sh"
 PORT="8765"
 PAGE="http://127.0.0.1:${PORT}/tools/app-store-assets/index.html"
-OUTPUT="${ROOT}/output/app-store/1.0/final"
+OUTPUT="${ROOT}/output/app-store/1.0/final-v2"
 SESSION="sift-app-store-assets"
 
 mkdir -p "$OUTPUT"

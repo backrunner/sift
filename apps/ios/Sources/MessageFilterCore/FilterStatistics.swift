@@ -57,7 +57,6 @@ public struct DailyFilterStats: Codable, Hashable, Sendable, Identifiable {
 public struct FilterStatisticsStore: @unchecked Sendable {
     static let storageKey = "Sift.filterStats.v1"
     static let lifetimeTotalsKey = "Sift.filterStats.lifetimeTotals.v1"
-    static let firstDashboardDayKey = "Sift.filterStats.firstDashboardDay.v1"
     static let retentionDays = 90
 
     private let defaults: UserDefaults
@@ -137,18 +136,6 @@ public struct FilterStatisticsStore: @unchecked Sendable {
     public func totals() -> DailyFilterStats {
         let buckets = loadAll()
         return loadLifetimeTotals(fallback: buckets)
-    }
-
-    /// Records the first calendar day on which the dashboard was viewed and
-    /// returns whether `date` is still that day. This keeps the onboarding
-    /// hint to day one even when there are no messages to count yet.
-    public func isFirstDashboardDay(on date: Date = .now) -> Bool {
-        let day = Self.dayKey(for: date)
-        if let firstDay = defaults.string(forKey: Self.firstDashboardDayKey) {
-            return firstDay == day
-        }
-        defaults.set(day, forKey: Self.firstDashboardDayKey)
-        return true
     }
 
     public func removeAll() {

@@ -56,26 +56,6 @@ body {
   box-shadow: 0 8px 24px rgb(10 62 54 / 12%);
 }
 
-.sequence {
-  position: absolute;
-  top: 99px;
-  right: 98px;
-  display: flex;
-  align-items: center;
-  gap: 17px;
-  color: #53625f;
-  font-size: 26px;
-  font-variant-numeric: tabular-nums;
-  font-weight: 650;
-}
-
-.sequence-mark {
-  width: 19px;
-  height: 19px;
-  background: #f5a330;
-  border-radius: 5px;
-}
-
 h1 {
   max-width: 1044px;
   margin: 56px 0 0;

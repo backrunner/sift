@@ -147,7 +147,13 @@ public final class SiftAppModel {
     public private(set) var todayStats: DailyFilterStats = DailyFilterStats(day: FilterStatisticsStore.dayKey(for: .now))
     public private(set) var totalStats: DailyFilterStats = DailyFilterStats(day: "total")
     public private(set) var weeklyStats: [DailyFilterStats] = []
-    public private(set) var isStatisticsFirstDay: Bool = true
+
+    /// Whether the chart has at least one non-empty day to render. Lifetime
+    /// totals can outlive the retained daily buckets, so this intentionally
+    /// checks the chart data rather than the lifetime counter.
+    public var hasValidStatistics: Bool {
+        weeklyStats.contains { $0.total > 0 }
+    }
 
     /// 本地记录的已贡献样本数(App Group 计数,云端历史列表为准)。
     public private(set) var submittedSampleCount: Int = 0
@@ -297,7 +303,6 @@ public final class SiftAppModel {
         todayStats = statisticsStore.stats()
         totalStats = statisticsStore.totals()
         weeklyStats = statisticsStore.recent(days: 7)
-        isStatisticsFirstDay = statisticsStore.isFirstDashboardDay()
     }
 
     /// Whether the active model variant allows on-device fine-tuning. The

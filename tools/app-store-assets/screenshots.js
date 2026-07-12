@@ -1,27 +1,27 @@
 const screenshots = {
   "zh-Hans": [
-    ["每天的短信，分好类了", "01-dashboard.png"],
-    ["经典或多语言，按需选择", "02-models.png"],
-    ["规则，按你的方式", "03-rules.png"],
-    ["分类结果，也能自定义", "04-mappings.png"],
-    ["分享之前，先脱敏", "05-redaction.png"],
-    ["数据由你掌控", "06-settings.png"],
+    ["短信再多，也能一眼看清", "01-dashboard.png"],
+    ["两种模型，各有所长", "02-models.png"],
+    ["你的短信，你定规则", "03-rules.png"],
+    ["每一类，都有它的去处", "04-mappings.png"],
+    ["分享内容，不分享隐私", "05-redaction.png"],
+    ["数据始终在你手里", "06-settings.png"],
   ],
   "en-US": [
-    ["A quieter SMS inbox", "01-dashboard.png"],
-    ["Classic or multilingual", "02-models.png"],
-    ["Rules that fit you", "03-rules.png"],
-    ["Map categories your way", "04-mappings.png"],
-    ["Redact before sharing", "05-redaction.png"],
-    ["Your data, your controls", "06-settings.png"],
+    ["Your inbox, already sorted", "01-dashboard.png"],
+    ["Choose the model that fits", "02-models.png"],
+    ["Your messages. Your rules.", "03-rules.png"],
+    ["Every category in its place", "04-mappings.png"],
+    ["Share the message, not the details", "05-redaction.png"],
+    ["Your data stays yours", "06-settings.png"],
   ],
   ja: [
-    ["SMSをすっきり分類", "01-dashboard.png"],
-    ["2つのモデルを選択", "02-models.png"],
-    ["自分に合うルール", "03-rules.png"],
-    ["カテゴリを自由に振り分け", "04-mappings.png"],
-    ["共有前にマスキング", "05-redaction.png"],
-    ["データは自分で管理", "06-settings.png"],
+    ["届くSMSを、すっきり整理", "01-dashboard.png"],
+    ["SMSに合うモデルを選べる", "02-models.png"],
+    ["ルールは、自分好みに", "03-rules.png"],
+    ["カテゴリの行き先も自由に", "04-mappings.png"],
+    ["共有前に、個人情報だけ伏せる", "05-redaction.png"],
+    ["データを残すか、消すかも自由", "06-settings.png"],
   ],
 };
 
@@ -35,7 +35,6 @@ const [headline, filename] = screenshots[locale][screen - 1];
 
 document.documentElement.lang = locale;
 document.querySelector("#headline").textContent = headline;
-document.querySelector("#sequence").textContent = `${String(screen).padStart(2, "0")} / 06`;
 document.querySelector("#app-screenshot").src =
   `../../output/app-store/1.0/raw/${locale}/${filename}`;
 

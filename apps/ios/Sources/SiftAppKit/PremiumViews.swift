@@ -1,5 +1,6 @@
 import MessageFilterCore
 import Charts
+import Foundation
 import SwiftUI
 
 // MARK: - 统计面板
@@ -24,7 +25,7 @@ struct StatisticsPanel: View {
                 StatTile(title: String(localized: "正常放行"), value: model.totalStats.transaction, tint: .siftMint)
             }
 
-            if model.isStatisticsFirstDay {
+            if !model.hasValidStatistics {
                 HStack(alignment: .top, spacing: 9) {
                     Image(systemName: "sparkles")
                         .font(.callout.weight(.semibold))
@@ -213,35 +214,15 @@ struct PremiumPaywallView: View {
     @Bindable var model: SiftAppModel
     @Environment(\.dismiss) private var dismiss
     @Environment(\.openURL) private var openURL
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: 18) {
-                VStack(spacing: 10) {
-                    Image(systemName: "crown.fill")
-                        .font(.system(size: 34, weight: .bold))
-                        .foregroundStyle(
-                            LinearGradient(colors: [Color.siftAmber, Color.siftMint], startPoint: .topLeading, endPoint: .bottomTrailing)
-                        )
-                    Text(String(localized: "Sift 高级版"))
-                        .font(.title2.weight(.bold))
-                    Text(String(localized: "一次购买，永久解锁"))
-                        .font(.footnote.weight(.semibold))
-                        .foregroundStyle(.secondary)
-                }
-                .padding(.top, 8)
-
-                VStack(alignment: .leading, spacing: 12) {
-                    PaywallFeatureRow(icon: "brain.filled.head.profile", title: String(localized: "Transformer 多语言模型"), detail: String(localized: "针对中·英·日等 12 种语言离线训练，识别更准"))
-                    PaywallFeatureRow(icon: "globe.asia.australia.fill", title: String(localized: "跨语种垃圾短信识别"), detail: String(localized: "出差、留学场景下的外语短信同样精准分类"))
-                    PaywallFeatureRow(icon: "infinity", title: String(localized: "永久可用"), detail: String(localized: "非订阅制，一次购买长期有效，支持在新设备恢复"))
-                }
-                .padding(16)
-                .cardSurface(cornerRadius: 16)
-
-                priceSection
-
-                purchaseButton
+        GeometryReader { proxy in
+            VStack(spacing: 0) {
+                heroSection
+                benefitsSection
+                offerSection
+                    .padding(.top, 28)
 
                 Button {
                     Task {
@@ -263,19 +244,22 @@ struct PremiumPaywallView: View {
                 .buttonStyle(.plain)
                 .foregroundStyle(Color.siftMint)
                 .disabled(model.premium.isRestoring)
+                .padding(.top, 16)
 
-                HStack(spacing: 14) {
+                HStack(spacing: 18) {
                     Button(String(localized: "隐私政策")) { openURL(model.privacyPolicyURL) }
                     Button(String(localized: "服务条款")) { openURL(model.termsOfServiceURL) }
                 }
                 .font(.caption2)
                 .buttonStyle(.plain)
                 .foregroundStyle(.tertiary)
-                .padding(.bottom, 12)
+                .padding(.top, 12)
             }
+            .frame(maxWidth: .infinity, minHeight: max(proxy.size.height - 24, 0), alignment: .center)
             .padding(.horizontal, 18)
+            .padding(.top, 18)
+            .padding(.bottom, 24)
         }
-        .scrollIndicators(.hidden)
         .background(AtmosphericBackground())
         .sensoryFeedback(.success, trigger: model.premium.isUnlocked)
         .animation(.snappy(duration: 0.25), value: model.premium.isUnlocked)
@@ -292,6 +276,98 @@ struct PremiumPaywallView: View {
         }
     }
 
+    private var heroSection: some View {
+        VStack(spacing: 12) {
+            Group {
+                if reduceMotion {
+                    crownBubble
+                } else {
+                    crownBubble
+                        .keyframeAnimator(initialValue: CGFloat.zero, repeating: true) { content, verticalOffset in
+                            content.offset(x: 0, y: verticalOffset)
+                        } keyframes: { _ in
+                            // Start at rest, then preserve a continuous vertical loop.
+                            CubicKeyframe(-2, duration: 1.1)
+                            CubicKeyframe(2, duration: 2.2)
+                            CubicKeyframe(0, duration: 1.1)
+                        }
+                }
+            }
+            .frame(maxWidth: .infinity)
+            .frame(height: 82)
+
+            VStack(spacing: 5) {
+                Text(String(localized: "Sift 高级版"))
+                    .font(.largeTitle.weight(.bold))
+                Text(String(localized: "更准确的多语言短信识别"))
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.top, 2)
+        .padding(.bottom, 24)
+    }
+
+    private var crownBubble: some View {
+        ZStack {
+            Circle()
+                .fill(Color.siftAmber.opacity(0.14))
+            Circle()
+                .stroke(Color.siftAmber.opacity(0.28), lineWidth: 1)
+            Image(systemName: "crown.fill")
+                .font(.system(size: 32, weight: .bold))
+                .foregroundStyle(
+                    LinearGradient(
+                        colors: [Color.siftAmber, Color.siftMint],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+        }
+        .frame(width: 78, height: 78)
+        .compositingGroup()
+    }
+
+    private var benefitsSection: some View {
+        VStack(spacing: 0) {
+            PaywallFeatureRow(
+                icon: "brain.filled.head.profile",
+                title: String(localized: "支持中、英、日等 12 种语言")
+            )
+            Divider()
+                .padding(.leading, 44)
+            PaywallFeatureRow(
+                icon: "globe.asia.australia.fill",
+                title: String(localized: "跨语言识别垃圾短信")
+            )
+            Divider()
+                .padding(.leading, 44)
+            PaywallFeatureRow(
+                icon: "infinity",
+                title: String(localized: "一次购买，永久使用")
+            )
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 6)
+        .background(Color.siftCardFill.opacity(0.72), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .stroke(Color.siftHairline, lineWidth: 1)
+        )
+    }
+
+    private var offerSection: some View {
+        VStack(spacing: 14) {
+            priceSection
+            purchaseButton
+        }
+        .padding(.vertical, 14)
+        .padding(.leading, 14)
+        .padding(.trailing, 9)
+        .cardSurface(cornerRadius: 18)
+    }
+
     @ViewBuilder
     private var priceSection: some View {
         switch model.premium.productState {
@@ -304,8 +380,7 @@ struct PremiumPaywallView: View {
                     .foregroundStyle(.secondary)
             }
             .frame(maxWidth: .infinity)
-            .padding(14)
-            .insetSurface(cornerRadius: 14)
+            .frame(height: 44)
 
         case .unavailable(let message):
             VStack(spacing: 10) {
@@ -319,37 +394,28 @@ struct PremiumPaywallView: View {
                     .buttonStyle(.plain)
             }
             .frame(maxWidth: .infinity)
-            .padding(14)
-            .insetSurface(cornerRadius: 14)
+            .padding(.vertical, 6)
 
         case .available(let product):
-            VStack(spacing: 6) {
-                if product.isFree {
-                    Text(String(localized: "限时免费"))
-                        .font(.caption.weight(.bold))
-                        .foregroundStyle(.white)
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 4)
-                        .background(Color.siftAmber, in: Capsule())
-                } else if let promo = model.premium.promoText {
-                    Text(promo)
-                        .font(.caption.weight(.bold))
-                        .foregroundStyle(Color.siftAmber)
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 4)
-                        .background(Color.siftAmber.opacity(0.14), in: Capsule())
-                }
-                Text(product.isFree ? "¥0" : product.displayPrice)
-                    .font(.system(size: 30, weight: .bold, design: .rounded))
+            HStack(alignment: .center, spacing: 12) {
+                Text(String(localized: "现在购入"))
+                    .font(.subheadline.weight(.semibold))
                     .foregroundStyle(.primary)
-                    .contentTransition(.numericText())
-                Text(String(localized: "一次性买断 · 无订阅 · 全家庭共享跟随 Apple ID"))
-                    .font(.caption2)
-                    .foregroundStyle(.tertiary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+
+                VStack(alignment: .trailing, spacing: 2) {
+                    Text(product.isFree ? String(localized: "限时免费") : product.displayPrice)
+                        .font(.system(size: 32, weight: .bold, design: .rounded))
+                        .foregroundStyle(.primary)
+                        .contentTransition(.numericText())
+                    if !product.isFree, let promo = model.premium.promoText {
+                        Text(promo)
+                            .font(.caption2.weight(.semibold))
+                            .foregroundStyle(Color.siftAmber)
+                            .lineLimit(1)
+                    }
+                }
             }
-            .frame(maxWidth: .infinity)
-            .padding(14)
-            .insetSurface(cornerRadius: 14)
         }
     }
 
@@ -391,7 +457,7 @@ struct PremiumPaywallView: View {
 
     private var purchaseTitle: String {
         if case .available(let product) = model.premium.productState {
-            return product.isFree ? String(localized: "免费获取") : String(localized: "以 \(product.displayPrice) 购买")
+            return product.isFree ? String(localized: "免费获取") : String(localized: "立即购买")
         }
         return String(localized: "购买")
     }
@@ -400,26 +466,23 @@ struct PremiumPaywallView: View {
 private struct PaywallFeatureRow: View {
     let icon: String
     let title: String
-    let detail: String
 
     var body: some View {
-        HStack(alignment: .top, spacing: 12) {
+        HStack(spacing: 12) {
             Image(systemName: icon)
                 .font(.callout.weight(.bold))
                 .foregroundStyle(Color.siftMint)
                 .frame(width: 30, height: 30)
                 .background(Color.siftMint.opacity(0.12), in: RoundedRectangle(cornerRadius: 9, style: .continuous))
-            VStack(alignment: .leading, spacing: 2) {
-                Text(title)
-                    .font(.callout.weight(.semibold))
-                    .foregroundStyle(.primary)
-                Text(detail)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
+            Text(title)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(.primary)
             Spacer(minLength: 0)
+            Image(systemName: "checkmark.circle.fill")
+                .font(.caption.weight(.bold))
+                .foregroundStyle(Color.siftMint.opacity(0.8))
         }
+        .frame(minHeight: 48)
     }
 }
 
@@ -705,22 +768,33 @@ struct SettingsView: View {
             .insetSurface(cornerRadius: 12)
 
             SettingsRowContent(
-                title: String(localized: "模型版本"),
+                title: model.selectedModelVariant == .transformer
+                    ? String(localized: "高级模型")
+                    : String(localized: "模型版本"),
                 icon: model.selectedModelVariant.symbol,
                 tint: .siftMint
             ) {
-                VStack(alignment: .trailing, spacing: 2) {
-                    Text(model.modelVersion)
-                        .font(.callout.monospacedDigit())
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.72)
-                    Text(settingsModelTypeTitle)
-                        .font(.caption2.weight(.medium))
-                        .foregroundStyle(.tertiary)
-                        .lineLimit(1)
+                if model.selectedModelVariant == .transformer {
+                    Text(String(localized: "高级版"))
+                        .font(.caption2.weight(.bold))
+                        .foregroundStyle(Color.siftAmber)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 3)
+                        .background(Color.siftAmber.opacity(0.14), in: Capsule())
+                } else {
+                    VStack(alignment: .trailing, spacing: 2) {
+                        Text(model.modelVersion)
+                            .font(.callout.monospacedDigit())
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.72)
+                        Text(settingsModelTypeTitle)
+                            .font(.caption2.weight(.medium))
+                            .foregroundStyle(.tertiary)
+                            .lineLimit(1)
+                    }
+                    .frame(minWidth: 96, alignment: .trailing)
                 }
-                .frame(minWidth: 96, alignment: .trailing)
             }
             .insetSurface(cornerRadius: 12)
         }

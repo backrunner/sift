@@ -401,18 +401,18 @@
         }
       }
     },
-    "Transformer 多语言模型" : {
+    "支持中、英、日等 12 种语言" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Transformer multilingual model"
+            "value" : "Supports 12 languages, including Chinese, English, and Japanese"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Transformer 多言語モデル"
+            "value" : "中国語・英語・日本語など12言語に対応"
           }
         }
       }
@@ -465,34 +465,50 @@
         }
       }
     },
-    "一次性买断 · 无订阅 · 全家庭共享跟随 Apple ID" : {
+    "现在购入" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "One-time purchase · No subscription · Follows your Apple ID with Family Sharing"
+            "value" : "Get it now"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "買い切り · サブスクなし · Apple IDのファミリー共有に対応"
+            "value" : "今すぐ利用"
           }
         }
       }
     },
-    "一次购买，永久解锁" : {
+    "立即购买" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Buy once, unlock forever"
+            "value" : "Buy now"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "一度の購入で永久にアンロック"
+            "value" : "今すぐ購入"
+          }
+        }
+      }
+    },
+    "更准确的多语言短信识别" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "More accurate multilingual SMS filtering"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "多言語SMSをより正確に識別"
           }
         }
       }
@@ -2641,18 +2657,18 @@
         }
       }
     },
-    "永久可用" : {
+    "一次购买，永久使用" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Yours forever"
+            "value" : "Buy once, use forever"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "永久に利用可能"
+            "value" : "一度の購入でずっと使える"
           }
         }
       }
@@ -3281,18 +3297,18 @@
         }
       }
     },
-    "跨语种垃圾短信识别" : {
+    "跨语言识别垃圾短信" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Cross-language spam detection"
+            "value" : "Detects spam across languages"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "多言語の迷惑SMS検出"
+            "value" : "多言語の迷惑SMSを検出"
           }
         }
       }

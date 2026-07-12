@@ -112,13 +112,6 @@ private struct DashboardHero: View {
     @State private var isShowingModelPicker = false
     @State private var isShowingSettings = false
 
-    private var displayedModelVersion: String? {
-        guard model.selectedModelVariant != .classic, !model.isTransformerDownloadActive else {
-            return nil
-        }
-        return formatModelVersion(model.modelVersion)
-    }
-
     var body: some View {
         HStack(alignment: .center, spacing: 12) {
             Text("Sift")
@@ -143,11 +136,6 @@ private struct DashboardHero: View {
                     Text(modelSwitchTitle)
                         .font(.caption2.weight(.semibold))
                         .foregroundStyle(.white.opacity(0.85))
-                    if let displayedModelVersion {
-                        Text(displayedModelVersion)
-                            .font(.caption2.weight(.bold).monospaced())
-                            .foregroundStyle(.white)
-                    }
                     Image(systemName: "chevron.up.chevron.down")
                         .font(.system(size: 8, weight: .bold))
                         .foregroundStyle(.white.opacity(0.7))
@@ -228,7 +216,11 @@ private struct ModelPickerView: View {
                         isSelected: model.selectedModelVariant == variant,
                         isAvailable: model.isModelVariantAvailable(variant),
                         isLockedByPremium: isLocked,
-                        version: model.modelVersion(for: variant).map(formatModelVersion),
+                        // The premium model is identified by its 高级版 tag;
+                        // its downloadable manifest version is not user-facing.
+                        version: variant == .transformer
+                            ? nil
+                            : model.modelVersion(for: variant).map(formatModelVersion),
                         downloadPhase: variant == .transformer ? model.transformerDownloadPhase : nil,
                         downloadProgress: variant == .transformer ? model.transformerDownloadProgress : nil,
                         downloadSizeText: variant == .transformer ? model.transformerDownloadByteCountText : nil
@@ -242,6 +234,7 @@ private struct ModelPickerView: View {
                         }
                     }
                     .disabled(model.isSwitchingModelVariant || model.isTransformerDownloadActive)
+                    .frame(maxWidth: .infinity)
                 }
 
                 HStack(alignment: .top, spacing: 8) {
@@ -251,10 +244,15 @@ private struct ModelPickerView: View {
                     Text(String(localized: "经典模型可通过本地样本在设备上微调；Transformer 模型面向多语言场景离线训练，不支持设备端微调，切换后本地微调入口将隐藏。"))
                         .font(.caption)
                         .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .layoutPriority(1)
                 }
-                .padding(12)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.leading, 12)
+                .padding(.vertical, 12)
+                .padding(.trailing, 8)
                 .insetSurface(cornerRadius: 12)
+                .frame(maxWidth: .infinity)
             }
             .padding(.horizontal, 16)
             .padding(.top, 16)
@@ -340,7 +338,7 @@ private struct ModelVariantCard: View {
                                 .padding(.vertical, 2)
                                 .background(Color.siftInsetFill, in: Capsule())
                         }
-                        if isLockedByPremium {
+                        if variant == .transformer {
                             HStack(spacing: 3) {
                                 Image(systemName: "crown.fill")
                                     .font(.system(size: 8, weight: .bold))

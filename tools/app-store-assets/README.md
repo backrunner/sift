@@ -2,7 +2,7 @@
 
 The source screenshots under `output/app-store/1.0/raw/` come from the real
 Sift app running in iPhone Simulator. The HTML template only adds the localized
-headline, sequence indicator, background, and framing.
+headline, background, and framing.
 
 Generate all 18 screenshots at the App Store Connect-compatible 1242 x 2688
 portrait size:
@@ -10,6 +10,9 @@ portrait size:
 ```bash
 bash tools/app-store-assets/render.sh
 ```
+
+The current render is written to `output/app-store/1.0/final-v2/`, preserving
+the original `final/` delivery.
 
 Open a single composition for editing:
 

@@ -50,8 +50,8 @@ func dailyStatsMergeTakesPerCounterMax() {
 }
 
 @Test
-func statisticsTotalsAndFirstDayHintPersistAcrossCalendarDays() throws {
-    let suiteName = "SiftTests.stats.firstDay.\(UUID().uuidString)"
+func statisticsTotalsPersistAcrossCalendarDays() throws {
+    let suiteName = "SiftTests.stats.calendar.\(UUID().uuidString)"
     let defaults = try #require(UserDefaults(suiteName: suiteName))
     defer { defaults.removePersistentDomain(forName: suiteName) }
     let store = FilterStatisticsStore(defaults: defaults)
@@ -65,9 +65,31 @@ func statisticsTotalsAndFirstDayHintPersistAcrossCalendarDays() throws {
     #expect(totals.total == 2)
     #expect(totals.junk == 1)
     #expect(totals.promotion == 1)
-    #expect(store.isFirstDashboardDay(on: firstDay))
-    #expect(store.isFirstDashboardDay(on: firstDay))
-    #expect(store.isFirstDashboardDay(on: secondDay) == false)
+
+    let recent = store.recent(days: 7, endingAt: secondDay)
+    #expect(recent.contains { $0.total > 0 })
+}
+
+@MainActor
+@Test
+func dashboardStatisticsStayInHintStateUntilRecentDataExists() {
+    let suiteName = "SiftTests.stats.dashboard.\(UUID().uuidString)"
+    let defaults = UserDefaults(suiteName: suiteName)!
+    defer { defaults.removePersistentDomain(forName: suiteName) }
+    let store = FilterStatisticsStore(defaults: defaults)
+    let model = SiftAppModel(
+        remoteSampleClient: MockRemoteSampleClient(result: .failure(RemoteSampleClientError.noAccount)),
+        premiumBackend: MockPremiumBackend(entitled: false, outcome: .cancelled),
+        transformerAvailabilityOverride: false,
+        statisticsStore: store
+    )
+
+    #expect(!model.hasValidStatistics)
+
+    store.record(decision: decision(labelID: "spam", groupID: "spam", action: .junk))
+    model.refreshStatistics()
+
+    #expect(model.hasValidStatistics)
 }
 
 @Test
