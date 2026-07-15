@@ -33,6 +33,31 @@ public struct TextMatcher: Codable, Hashable, Sendable {
     }
 }
 
+public enum RuleAction: String, CaseIterable, Codable, Hashable, Identifiable, Sendable {
+    case allow
+    case block
+
+    public var id: String { rawValue }
+
+    public var systemAction: SystemAction {
+        switch self {
+        case .allow:
+            return .none
+        case .block:
+            return .junk
+        }
+    }
+
+    var decisionLabelID: String {
+        switch self {
+        case .allow:
+            return "transaction.message"
+        case .block:
+            return "spam"
+        }
+    }
+}
+
 public struct CustomRule: Codable, Hashable, Identifiable, Sendable {
     public var id: UUID
     public var name: String
@@ -40,7 +65,7 @@ public struct CustomRule: Codable, Hashable, Identifiable, Sendable {
     public var priority: Int
     public var sender: SenderMatcher?
     public var text: TextMatcher?
-    public var targetLabelID: String
+    public var action: RuleAction
     public var createdAt: Date
 
     public init(
@@ -50,7 +75,7 @@ public struct CustomRule: Codable, Hashable, Identifiable, Sendable {
         priority: Int = 0,
         sender: SenderMatcher? = nil,
         text: TextMatcher? = nil,
-        targetLabelID: String,
+        action: RuleAction = .block,
         createdAt: Date = .now
     ) {
         self.id = id
@@ -59,18 +84,70 @@ public struct CustomRule: Codable, Hashable, Identifiable, Sendable {
         self.priority = priority
         self.sender = sender
         self.text = text
-        self.targetLabelID = targetLabelID
+        self.action = action
         self.createdAt = createdAt
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case id
+        case name
+        case enabled
+        case priority
+        case sender
+        case text
+        case action
+        case targetLabelID
+        case createdAt
+    }
+
+    public init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decodeIfPresent(UUID.self, forKey: .id) ?? UUID()
+        name = try container.decode(String.self, forKey: .name)
+        enabled = try container.decodeIfPresent(Bool.self, forKey: .enabled) ?? true
+        priority = try container.decodeIfPresent(Int.self, forKey: .priority) ?? 0
+        sender = try container.decodeIfPresent(SenderMatcher.self, forKey: .sender)
+        text = try container.decodeIfPresent(TextMatcher.self, forKey: .text)
+        createdAt = try container.decodeIfPresent(Date.self, forKey: .createdAt) ?? .now
+
+        if let decodedAction = try container.decodeIfPresent(RuleAction.self, forKey: .action) {
+            action = decodedAction
+        } else {
+            let legacyLabelID = try container.decodeIfPresent(String.self, forKey: .targetLabelID)
+            action = Self.migratedAction(from: legacyLabelID)
+        }
+    }
+
+    public func encode(to encoder: any Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encode(name, forKey: .name)
+        try container.encode(enabled, forKey: .enabled)
+        try container.encode(priority, forKey: .priority)
+        try container.encodeIfPresent(sender, forKey: .sender)
+        try container.encodeIfPresent(text, forKey: .text)
+        try container.encode(action, forKey: .action)
+        try container.encode(createdAt, forKey: .createdAt)
+    }
+
+    private static func migratedAction(from legacyLabelID: String?) -> RuleAction {
+        guard let legacyLabelID, let label = SiftTaxonomy.leaf(id: legacyLabelID) else {
+            return .block
+        }
+        switch label.systemAction {
+        case .none, .transaction:
+            return .allow
+        case .promotion, .junk:
+            return .block
+        }
     }
 }
 
 public struct RuleMatch: Hashable, Sendable {
     public let rule: CustomRule
-    public let label: LeafLabel
 
-    public init(rule: CustomRule, label: LeafLabel) {
+    public init(rule: CustomRule) {
         self.rule = rule
-        self.label = label
     }
 }
 
@@ -90,10 +167,7 @@ public struct RuleEngine: Sendable {
             guard ruleMatches(rule, sender: normalizedSender, originalSender: sender ?? "", body: body) else {
                 continue
             }
-            guard let label = SiftTaxonomy.leaf(id: rule.targetLabelID) else {
-                continue
-            }
-            return RuleMatch(rule: rule, label: label)
+            return RuleMatch(rule: rule)
         }
 
         return nil

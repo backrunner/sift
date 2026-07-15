@@ -132,13 +132,15 @@ public struct ClassificationPipeline: Sendable {
 
     public func classify(sender: String?, body: String, rules: [CustomRule]) -> ClassificationDecision {
         if let match = ruleEngine.match(sender: sender, body: body, rules: rules) {
+            let action = match.rule.action
+            let label = SiftTaxonomy.leaf(id: action.decisionLabelID) ?? SiftTaxonomy.leaves[0]
             return ClassificationDecision(
-                labelID: match.label.id,
-                labelTitle: match.label.title,
-                groupID: match.label.groupId,
-                groupTitle: match.label.groupTitle,
+                labelID: label.id,
+                labelTitle: label.title,
+                groupID: label.groupId,
+                groupTitle: label.groupTitle,
                 confidence: 1,
-                systemAction: match.label.systemAction,
+                systemAction: action.systemAction,
                 source: .rule
             )
         }

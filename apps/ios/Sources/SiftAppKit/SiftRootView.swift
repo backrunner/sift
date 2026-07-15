@@ -48,7 +48,6 @@ public struct SiftRootView: View {
     private var dashboardSections: some View {
         VStack(spacing: 18) {
             DashboardHero(model: model)
-            StatisticsPanel(model: model)
             if !model.hasConfirmedFilterSetup {
                 InterceptionSetupPanel(model: model)
             }
@@ -1171,6 +1170,30 @@ private struct RuleDraftForm: View {
             GlassTextField(title: String(localized: "规则名称（可选）"), placeholder: model.defaultRuleNamePlaceholder, text: $model.ruleDraftName)
 
             VStack(alignment: .leading, spacing: 8) {
+                Text(String(localized: "行为"))
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                SegmentedChoiceRow {
+                    RuleChoiceChip(
+                        title: RuleAction.allow.title,
+                        icon: RuleAction.allow.symbol,
+                        isSelected: model.ruleDraftAction == .allow
+                    ) {
+                        model.ruleDraftAction = .allow
+                    }
+
+                    RuleChoiceChip(
+                        title: RuleAction.block.title,
+                        icon: RuleAction.block.symbol,
+                        isSelected: model.ruleDraftAction == .block,
+                        tint: .red
+                    ) {
+                        model.ruleDraftAction = .block
+                    }
+                }
+            }
+
+            VStack(alignment: .leading, spacing: 8) {
                 Text(String(localized: "匹配位置"))
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(.secondary)
@@ -1218,8 +1241,6 @@ private struct RuleDraftForm: View {
 
             GlassTextField(title: String(localized: "匹配内容"), placeholder: patternPlaceholder, text: $model.ruleDraftPattern)
 
-            CategoryMenu(titleLabel: String(localized: "分类"), selectedLabelID: $model.ruleDraftLabelID)
-
             ActionButton(
                 title: String(localized: "添加规则"),
                 icon: "plus",
@@ -1252,6 +1273,7 @@ private struct RuleChoiceChip: View {
     let title: String
     let icon: String
     let isSelected: Bool
+    var tint: Color = .siftMint
     let action: () -> Void
 
     var body: some View {
@@ -1264,7 +1286,7 @@ private struct RuleChoiceChip: View {
             }
             .frame(maxWidth: .infinity)
             .frame(height: 32)
-            .foregroundStyle(isSelected ? Color.siftMint : .secondary)
+            .foregroundStyle(isSelected ? tint : .secondary)
             .background {
                 if isSelected {
                     RoundedRectangle(cornerRadius: 9, style: .continuous)
@@ -1341,10 +1363,6 @@ private struct RuleListRow: View {
         return "tag"
     }
 
-    private var targetLabel: LeafLabel {
-        SiftTaxonomy.leaf(id: rule.targetLabelID) ?? SiftTaxonomy.leaves[0]
-    }
-
     var body: some View {
         ZStack(alignment: .trailing) {
             actionButtons
@@ -1391,7 +1409,11 @@ private struct RuleListRow: View {
                 HStack(spacing: 6) {
                     RuleTag(icon: locationIcon, text: locationTitle, tint: .secondary)
                     RuleTag(icon: patternKindIcon, text: patternKindTitle, tint: .secondary)
-                    RuleTag(icon: "tag", text: targetLabel.title, tint: .accent)
+                    RuleTag(
+                        icon: rule.action.symbol,
+                        text: rule.action.title,
+                        tint: rule.action == .allow ? .allow : .block
+                    )
                 }
             }
 
@@ -1496,7 +1518,7 @@ private struct RuleListRow: View {
 }
 
 private struct RuleTag: View {
-    enum Tint { case secondary, accent }
+    enum Tint { case secondary, allow, block }
     let icon: String
     let text: String
     var tint: Tint = .secondary
@@ -1519,21 +1541,24 @@ private struct RuleTag: View {
     private var foreground: Color {
         switch tint {
         case .secondary: return .secondary
-        case .accent:    return .siftMint
+        case .allow:     return .siftMint
+        case .block:     return .red
         }
     }
 
     private var background: Color {
         switch tint {
         case .secondary: return Color.siftInsetFill
-        case .accent:    return Color.siftMint.opacity(0.12)
+        case .allow:     return Color.siftMint.opacity(0.12)
+        case .block:     return Color.red.opacity(0.11)
         }
     }
 
     private var border: Color {
         switch tint {
         case .secondary: return Color.siftHairline
-        case .accent:    return Color.siftMint.opacity(0.28)
+        case .allow:     return Color.siftMint.opacity(0.28)
+        case .block:     return Color.red.opacity(0.28)
         }
     }
 }
@@ -1547,7 +1572,7 @@ private struct RuleEditView: View {
     @State private var pattern: String = ""
     @State private var location: RuleMatchLocation = .body
     @State private var patternKind: RulePatternKind = .substring
-    @State private var labelID: String = "life.pickup_code"
+    @State private var action: RuleAction = .block
     @State private var didLoad = false
 
     private var patternPlaceholder: String {
@@ -1572,6 +1597,26 @@ private struct RuleEditView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 14) {
                 GlassTextField(title: String(localized: "规则名称（可选）"), placeholder: model.defaultRuleNamePlaceholder, text: $name)
+
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(String(localized: "行为"))
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                    SegmentedChoiceRow {
+                        RuleChoiceChip(
+                            title: RuleAction.allow.title,
+                            icon: RuleAction.allow.symbol,
+                            isSelected: action == .allow
+                        ) { action = .allow }
+
+                        RuleChoiceChip(
+                            title: RuleAction.block.title,
+                            icon: RuleAction.block.symbol,
+                            isSelected: action == .block,
+                            tint: .red
+                        ) { action = .block }
+                    }
+                }
 
                 VStack(alignment: .leading, spacing: 8) {
                     Text(String(localized: "匹配位置"))
@@ -1613,7 +1658,6 @@ private struct RuleEditView: View {
 
                 GlassTextField(title: String(localized: "匹配内容"), placeholder: patternPlaceholder, text: $pattern)
 
-                CategoryMenu(titleLabel: String(localized: "分类"), selectedLabelID: $labelID)
             }
             .padding(18)
             .cardSurface()
@@ -1640,7 +1684,7 @@ private struct RuleEditView: View {
                         location: location,
                         patternKind: patternKind,
                         pattern: pattern,
-                        labelID: labelID
+                        action: action
                     )
                     if success {
                         onDismiss()
@@ -1659,7 +1703,7 @@ private struct RuleEditView: View {
         else { return }
         didLoad = true
         name = rule.name
-        labelID = rule.targetLabelID
+        action = rule.action
         if let sender = rule.sender {
             location = .sender
             pattern = sender.pattern
@@ -1716,7 +1760,7 @@ private struct ResultStrip: View {
             Spacer(minLength: 10)
 
             VStack(alignment: .trailing, spacing: 3) {
-                Text("\(decision.groupTitle) / \(decision.labelTitle)")
+                Text(resultTitle)
                     .font(.headline.weight(.bold))
                     .foregroundStyle(.primary)
                     .lineLimit(2)
@@ -1735,6 +1779,15 @@ private struct ResultStrip: View {
 
     private var confidenceText: String {
         "\(Int((decision.confidence * 100).rounded()))%"
+    }
+
+    private var resultTitle: String {
+        guard decision.source == .rule else {
+            return "\(decision.groupTitle) / \(decision.labelTitle)"
+        }
+        return decision.systemAction == .none
+            ? String(localized: "规则放行")
+            : String(localized: "规则阻止")
     }
 
 }

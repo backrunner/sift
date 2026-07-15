@@ -24,9 +24,9 @@ can modify/delete their own record, and reads require authentication.
 ("export all my submissions" / "erase all my submissions") by querying the
 current user's own records — no identity is ever stored in the payload.
 
-`FilterStats` is the second record type: daily filtering counters the app
-mirrors into each user's **private database** as a backup. It contains counts
-only, never message content, and is invisible to the developer.
+`FilterStats` remains in `schema.ckdb` only because CloudKit doesn't permit
+deleting a record type after it becomes active in production. The app no longer
+reads or writes this legacy type. A future clean container can omit it.
 
 ## Syncing the schema
 

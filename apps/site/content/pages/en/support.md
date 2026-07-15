@@ -25,7 +25,7 @@ https://github.com/backrunner/sift/issues
 Sift provides export and deletion controls in the App:
 
 - Export contributed samples: Settings → Data & Privacy → Export all submissions.
-- Erase contributed samples and private statistics backups: Settings → Data & Privacy → Erase all submitted data.
+- Erase contributed samples: Settings → Data & Privacy → Erase all submitted data.
 - Withdraw anonymous-contribution consent: turn off the anonymous-contribution toggle in the App.
 
 For anything that cannot be handled in the App, email [support@alkinum.io](mailto:support@alkinum.io?subject=Sift%20Support) and include “Sift” in the subject line.

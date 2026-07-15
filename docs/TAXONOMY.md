@@ -4,8 +4,8 @@ The taxonomy has 50 leaf labels across 9 groups. Each group sets the default
 system filter action (`systemAction`): `spam -> junk`, `promotion -> promotion`,
 and ordinary service messages -> `transaction`. Individual leaves may override
 that default when the user-facing intent differs from the group, such as
-`carrier.promotion -> promotion`. Leaf granularity is used for statistics,
-model training, and iOS 16+ IdentityLookup sub-action mapping.
+`carrier.promotion -> promotion`. Leaf granularity is used for model training
+and iOS 16+ IdentityLookup sub-action mapping.
 
 ## Design Principles
 
@@ -47,14 +47,6 @@ iOS 16+ sub-action:
 | non-promotional `carrier.*` | `transaction` | `transactionalCarrier` |
 | `government.*` | `transaction` | `transactionalPublicServices` |
 | all other transactional leaves | `transaction` | `transactionalOthers` |
-
-## Statistics Scope
-
-The app displays statistics by the three `systemAction` buckets (junk,
-promotion, normal) and by taxonomy group. Daily count buckets live in the App
-Group and are backed up to the user's private CloudKit database as
-`FilterStats` records; see `infra/cloudkit/README.md`. Statistics never include
-message content, only counts.
 
 ## Change Process
 

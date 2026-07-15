@@ -45,13 +45,13 @@ func ruleAddEditToggleAndDeletePersistAcrossModelInstances() throws {
     model.ruleDraftLocation = .body
     model.ruleDraftPatternKind = .substring
     model.ruleDraftPattern = "取件码"
-    model.ruleDraftLabelID = "life.pickup_code"
+    model.ruleDraftAction = .block
 
     #expect(model.addCustomRuleFromDraft())
     let addedRule = try #require(model.rules.first)
     #expect(addedRule.name == "Pickup code")
     #expect(addedRule.text?.pattern == "取件码")
-    #expect(addedRule.targetLabelID == "life.pickup_code")
+    #expect(addedRule.action == .block)
 
     let reloadedAfterAdd = SiftAppModel()
     let persistedAddedRule = try #require(reloadedAfterAdd.rules.first)
@@ -64,7 +64,7 @@ func ruleAddEditToggleAndDeletePersistAcrossModelInstances() throws {
         location: .sender,
         patternKind: .regex,
         pattern: "^955\\d{2}$",
-        labelID: "finance.bank"
+        action: .allow
     ))
 
     let editedRule = try #require(reloadedAfterAdd.rules.first)
@@ -72,7 +72,7 @@ func ruleAddEditToggleAndDeletePersistAcrossModelInstances() throws {
     #expect(editedRule.sender?.kind == .regex)
     #expect(editedRule.sender?.pattern == "^955\\d{2}$")
     #expect(editedRule.text == nil)
-    #expect(editedRule.targetLabelID == "finance.bank")
+    #expect(editedRule.action == .allow)
 
     let reloadedAfterEdit = SiftAppModel()
     let persistedEditedRule = try #require(reloadedAfterEdit.rules.first)
@@ -351,14 +351,15 @@ func testPreviewAppliesCustomRulesBeforeModel() {
     model.ruleDraftLocation = .body
     model.ruleDraftPatternKind = .substring
     model.ruleDraftPattern = "SIFTRULEMARKER"
-    model.ruleDraftLabelID = "finance.bank"
+    model.ruleDraftAction = .allow
     #expect(model.addCustomRuleFromDraft())
 
     model.testBody = "随便一句话 SIFTRULEMARKER 结尾"
     model.classifyCurrentDraft()
 
     #expect(model.lastDecision?.source == .rule)
-    #expect(model.lastDecision?.labelID == "finance.bank")
+    #expect(model.lastDecision?.labelID == "transaction.message")
+    #expect(model.lastDecision?.systemAction == SystemAction.none)
     #expect(model.lastDecision?.confidence == 1)
 }
 

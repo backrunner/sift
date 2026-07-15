@@ -70,7 +70,7 @@ struct SubmissionHistoryView: View {
             case .delete:
                 Text(String(localized: "将从云端删除这条匿名样本，不可撤销。"))
             case .eraseAll:
-                Text(String(localized: "将从云端删除你匿名提交的全部样本与统计备份，此操作不可撤销，不影响本地功能。"))
+                Text(String(localized: "将从云端删除你匿名提交的全部样本，此操作不可撤销，不影响本地功能。"))
             case nil:
                 EmptyView()
             }

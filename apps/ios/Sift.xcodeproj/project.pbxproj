@@ -15,7 +15,6 @@
 		1A2430A7C99CA6258D6305A4 /* FeatureHasher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F94E7D7E6D9B2D3624A6493 /* FeatureHasher.swift */; };
 		1FC39F0616712256D1C1B9F4 /* ModelSelection.swift in Sources */ = {isa = PBXBuildFile; fileRef = C29F041CB845ED5477E6AC11 /* ModelSelection.swift */; };
 		24F42188738E020AC24D3E6B /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 7EA84B55EFAA05AB592B06F3 /* Localizable.xcstrings */; };
-		32802BD3E25D04E202A8C691 /* FilterStatistics.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF3A58DEA3DAEB51EA8F59D7 /* FilterStatistics.swift */; };
 		382E91E8A2CDB0FEB8D96AAB /* AppleModelClassifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = A106E2DC9BA09A3E71EBD4BB /* AppleModelClassifier.swift */; };
 		3D99F36498C1C6D795ED49D5 /* MessageFilterExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 95714DBDDEB14E7636B61DEB /* MessageFilterExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		4428BAF5EA8D38D82262CABC /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 414E55D72A3C1BB0973F2C21 /* Assets.xcassets */; };
@@ -181,7 +180,6 @@
 		94BE665417F14F6013BCD08F /* SiftApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SiftApp.swift; sourceTree = "<group>"; };
 		95714DBDDEB14E7636B61DEB /* MessageFilterExtension.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = MessageFilterExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		A106E2DC9BA09A3E71EBD4BB /* AppleModelClassifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleModelClassifier.swift; sourceTree = "<group>"; };
-		AF3A58DEA3DAEB51EA8F59D7 /* FilterStatistics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FilterStatistics.swift; sourceTree = "<group>"; };
 		B01E8E89CED9145777F73B53 /* PremiumViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PremiumViews.swift; sourceTree = "<group>"; };
 		B3EB4AEB1B78C380B40F692D /* BPETokenizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BPETokenizer.swift; sourceTree = "<group>"; };
 		C29F041CB845ED5477E6AC11 /* ModelSelection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelSelection.swift; sourceTree = "<group>"; };
@@ -282,7 +280,6 @@
 				2B97F0AAEE63E8477A369B76 /* CloudKitSampleClient.swift */,
 				DF848914EC70ED6F39C774C3 /* CoreMLBridge.swift */,
 				2F94E7D7E6D9B2D3624A6493 /* FeatureHasher.swift */,
-				AF3A58DEA3DAEB51EA8F59D7 /* FilterStatistics.swift */,
 				27DA7D06EC28D68B6A037EB8 /* MessageModels.swift */,
 				6552BE571000D043A0B5FEC8 /* ModelManifest.swift */,
 				C29F041CB845ED5477E6AC11 /* ModelSelection.swift */,
@@ -590,7 +587,6 @@
 				C9F138E6EF756C5EBDE526B9 /* CloudKitSampleClient.swift in Sources */,
 				C97F06BC823C58D4E211ABB5 /* CoreMLBridge.swift in Sources */,
 				1A2430A7C99CA6258D6305A4 /* FeatureHasher.swift in Sources */,
-				32802BD3E25D04E202A8C691 /* FilterStatistics.swift in Sources */,
 				BD98F94128FED4D69A01C995 /* MessageModels.swift in Sources */,
 				68E9C0CAAEE4F4719B65EBDD /* ModelManifest.swift in Sources */,
 				1FC39F0616712256D1C1B9F4 /* ModelSelection.swift in Sources */,

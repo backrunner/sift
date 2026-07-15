@@ -9,7 +9,7 @@ func customRuleBeatsClassifier() {
         name: "VIP sender",
         priority: 100,
         sender: SenderMatcher(kind: .exact, pattern: "95588"),
-        targetLabelID: "finance.bank"
+        action: .allow
     )
     let pipeline = ClassificationPipeline()
 
@@ -20,8 +20,8 @@ func customRuleBeatsClassifier() {
     )
 
     #expect(decision.source == .rule)
-    #expect(decision.labelID == "finance.bank")
-    #expect(decision.systemAction == .transaction)
+    #expect(decision.labelID == "transaction.message")
+    #expect(decision.systemAction == .none)
 }
 
 @Test
@@ -30,7 +30,7 @@ func senderSubstringRuleMatchesNormalizedSender() {
         name: "Bank sender substring",
         priority: 100,
         sender: SenderMatcher(kind: .substring, pattern: "955"),
-        targetLabelID: "finance.bank"
+        action: .allow
     )
 
     let match = RuleEngine().match(
@@ -39,7 +39,7 @@ func senderSubstringRuleMatchesNormalizedSender() {
         rules: [rule]
     )
 
-    #expect(match?.label.id == "finance.bank")
+    #expect(match?.rule.action == .allow)
 }
 
 @Test
@@ -48,18 +48,53 @@ func higherPriorityRuleWins() {
         name: "promotion",
         priority: 10,
         text: TextMatcher(kind: .keyword, pattern: "取件码"),
-        targetLabelID: "promotion"
+        action: .block
     )
     let higher = CustomRule(
         name: "pickup",
         priority: 20,
         text: TextMatcher(kind: .keyword, pattern: "取件码"),
-        targetLabelID: "life.pickup_code"
+        action: .allow
     )
 
     let match = RuleEngine().match(sender: nil, body: "您的取件码 123456", rules: [lower, higher])
 
-    #expect(match?.label.id == "life.pickup_code")
+    #expect(match?.rule.action == .allow)
+}
+
+@Test
+func blockRuleRoutesMatchingMessageToJunk() {
+    let rule = CustomRule(
+        name: "Block sender",
+        sender: SenderMatcher(kind: .exact, pattern: "10690000"),
+        action: .block
+    )
+
+    let decision = ClassificationPipeline().classify(
+        sender: "10690000",
+        body: "Your order is ready",
+        rules: [rule]
+    )
+
+    #expect(decision.source == .rule)
+    #expect(decision.labelID == "spam")
+    #expect(decision.systemAction == .junk)
+}
+
+@Test
+func allowRuleCannotBeOverriddenByCategoryMapping() {
+    let rule = CustomRule(
+        name: "Allow sender",
+        sender: SenderMatcher(kind: .prefix, pattern: "955"),
+        action: .allow
+    )
+
+    let decision = ClassificationPipeline()
+        .classify(sender: "95588", body: "Account notice", rules: [rule])
+        .applying(categoryMappings: ["transaction.message": .junk])
+
+    #expect(decision.source == .rule)
+    #expect(decision.systemAction == .none)
 }
 
 @Test

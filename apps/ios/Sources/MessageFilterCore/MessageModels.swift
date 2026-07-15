@@ -36,6 +36,7 @@ public struct ClassificationDecision: Codable, Hashable, Sendable {
 
     public func applying(categoryMappings: [String: CategoryMappingTarget]) -> ClassificationDecision {
         guard
+            source != .rule,
             CategoryMappingPolicy.isEligibleSource(labelID: labelID),
             let target = categoryMappings[labelID]
         else {

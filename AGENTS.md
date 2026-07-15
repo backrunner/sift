@@ -10,7 +10,7 @@ Sift is a privacy-first iOS SMS filtering app. Classification runs on device
 through an IdentityLookup extension, using a 50-leaf taxonomy with first-class
 zh/en/ja coverage, a dual-model setup (a locally fine-tunable Create ML classic
 model plus a paid Premium transformer model), anonymous CloudKit sample
-collection, user-private statistics, and an automated training pipeline.
+collection, user-defined allow/block rules, and an automated training pipeline.
 The product is not launched yet; backward compatibility is not required.
 
 ## Directory Map
@@ -39,9 +39,9 @@ The product is not launched yet; backward compatibility is not required.
    and keep `apps/ios/SiftApp/Localizable.xcstrings` synchronized with
    zh-Hans as the source language and en/ja filled in. Do not localize regexes,
    identifiers, or storage keys.
-4. **Privacy boundary:** sample payloads must never carry identity fields;
-   statistics are counts only. Any new cloud field must be reflected in
-   `schema.ckdb`, the `--raw` export path, `docs/PRIVACY.md`, and legal copy.
+4. **Privacy boundary:** sample payloads must never carry identity fields. Any
+   new cloud field must be reflected in `schema.ckdb`, the `--raw` export path,
+   `docs/PRIVACY.md`, and legal copy.
 5. **Test isolation:** tests touching shared `UserDefaults` or App Group state
    must use a UUID-suffixed suite and clean it with `removePersistentDomain`.
    Tests must not depend on execution order.

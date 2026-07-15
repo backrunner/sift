@@ -1,6 +1,118 @@
 {
   "sourceLanguage" : "zh-Hans",
   "strings" : {
+    "行为" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Behavior"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "動作"
+          }
+        }
+      }
+    },
+    "放行" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Allow"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "許可"
+          }
+        }
+      }
+    },
+    "阻止" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Block"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ブロック"
+          }
+        }
+      }
+    },
+    "规则放行" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Allowed by Rule"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ルールで許可"
+          }
+        }
+      }
+    },
+    "规则阻止" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Blocked by Rule"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ルールでブロック"
+          }
+        }
+      }
+    },
+    "将从云端删除你匿名提交的全部样本，此操作不可撤销，不影响本地功能。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deletes every anonymously submitted sample from the cloud. This cannot be undone and does not affect local features."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "匿名で提出したすべてのサンプルをクラウドから削除します。取り消せませんが、ローカル機能には影響しません。"
+          }
+        }
+      }
+    },
+    "抹除会删除云端所有由本 Apple ID 提交的匿名样本。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Erasure deletes every anonymous sample submitted by this Apple ID."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "消去すると、このApple IDから提出されたすべての匿名サンプルが削除されます。"
+          }
+        }
+      }
+    },
     "您已提交过类似样本" : {
       "localizations" : {
         "en" : {
@@ -129,22 +241,6 @@
         }
       }
     },
-    "日期" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Date"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "日付"
-          }
-        }
-      }
-    },
     "清空" : {
       "localizations" : {
         "en" : {
@@ -221,54 +317,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "プレミアムモデル"
-          }
-        }
-      }
-    },
-    "累计 %lld 条" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld total"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "累計%lld件"
-          }
-        }
-      }
-    },
-    "近 7 天过滤统计" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Last 7 Days of Filtering"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "過去7日間のフィルタ統計"
-          }
-        }
-      }
-    },
-    "过滤结果" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Filter Result"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "フィルタ結果"
           }
         }
       }
@@ -1217,22 +1265,6 @@
         }
       }
     },
-    "垃圾拦截" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Junk Blocked"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "迷惑をブロック"
-          }
-        }
-      }
-    },
     "多语言 · 不支持本地微调" : {
       "localizations" : {
         "en" : {
@@ -1293,22 +1325,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "提出データをすべてエクスポート"
-          }
-        }
-      }
-    },
-    "将从云端删除你匿名提交的全部样本与统计备份，此操作不可撤销，不影响本地功能。" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Deletes every anonymously submitted sample and statistics backup from the cloud. This cannot be undone and does not affect local features."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "匿名で提出したすべてのサンプルと統計バックアップをクラウドから削除します。取り消せませんが、ローカル機能には影響しません。"
           }
         }
       }
@@ -1425,22 +1441,6 @@
         }
       }
     },
-    "已抹除 %lld 条提交样本及统计备份" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Erased %lld submitted samples and statistics backups"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld件の提出サンプルと統計バックアップを消去しました"
-          }
-        }
-      }
-    },
     "已抹除该条提交" : {
       "localizations" : {
         "en" : {
@@ -1485,22 +1485,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "ルールを追加しました"
-          }
-        }
-      }
-    },
-    "已清除云端统计备份" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cloud statistics backup cleared"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "クラウドの統計バックアップを消去しました"
           }
         }
       }
@@ -1761,38 +1745,6 @@
         }
       }
     },
-    "抹除会删除云端所有由本 Apple ID 提交的匿名样本与统计备份。" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Erasure deletes every anonymous sample and statistics backup submitted by this Apple ID."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "消去すると、このApple IDから提出されたすべての匿名サンプルと統計バックアップが削除されます。"
-          }
-        }
-      }
-    },
-    "抹除会删除云端所有由本 Apple ID 提交的匿名样本与统计备份（GDPR 擦除权）。需要设备已登录 iCloud。" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Erasure deletes every anonymous sample and statistics backup submitted by this Apple ID (GDPR right to erasure). Requires an iCloud session."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "消去すると、このApple IDから提出されたすべての匿名サンプルと統計バックアップが削除されます（GDPR消去権）。iCloudへのサインインが必要です。"
-          }
-        }
-      }
-    },
     "抹除全部云端数据" : {
       "localizations" : {
         "en" : {
@@ -1853,38 +1805,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "この提出を消去しますか？"
-          }
-        }
-      }
-    },
-    "拦截统计" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Filtering Stats"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "フィルタ統計"
-          }
-        }
-      }
-    },
-    "推广归类" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Promos Sorted"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "プロモ分類"
           }
         }
       }
@@ -2573,22 +2493,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "価格を取得中…"
-          }
-        }
-      }
-    },
-    "正常放行" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Allowed"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "通常許可"
           }
         }
       }
@@ -3341,38 +3245,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "本文を入力"
-          }
-        }
-      }
-    },
-    "过滤器开始工作后，这里会展示每日拦截趋势。统计只记录数量，不保存短信内容。" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Once the filter starts working, daily trends appear here. Statistics count only — message content is never stored."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "フィルタが動き始めると、ここに日別の推移が表示されます。統計は件数のみで、本文は保存されません。"
-          }
-        }
-      }
-    },
-    "近 7 天" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Last 7 Days"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "過去7日間"
           }
         }
       }

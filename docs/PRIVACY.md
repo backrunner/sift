@@ -35,7 +35,7 @@ identities.
 - Data minimization: only sanitized text and labeling metadata are written.
 - Erasure: beyond the last-submission receipt, Settings -> Data & Privacy offers
   full erasure — a creator-scoped CloudKit query deletes every sample the
-  user ever contributed plus their private statistics backups (GDPR Art. 17).
+  user ever contributed (GDPR Art. 17).
 - Access/portability: the same creator-scoped query powers "Export all my submissions"
   (machine-readable JSON, GDPR Art. 15/20).
 - Retention: samples remain in the public database while they are useful for
@@ -75,13 +75,11 @@ or delete the app.
 - Do not claim that SMS samples are impossible to identify in all circumstances;
   treat sanitized text conservatively as personal data for operational controls.
 
-## Statistics & purchases
+## Purchases
 
-Daily filtering statistics are counters only and are mirrored to the user's
-CloudKit **private database** (`FilterStats` records) as a backup we cannot
-read. The Premium in-app purchase is processed entirely by Apple via
-StoreKit 2; the app stores no payment data. Full store-ready legal documents
-live in `docs/legal/PRIVACY_POLICY.md` and `docs/legal/TERMS_OF_SERVICE.md`.
+The Premium in-app purchase is processed entirely by Apple via StoreKit 2;
+the app stores no payment data. Full store-ready legal documents live in
+`docs/legal/PRIVACY_POLICY.md` and `docs/legal/TERMS_OF_SERVICE.md`.
 
 ## CloudKit configuration
 

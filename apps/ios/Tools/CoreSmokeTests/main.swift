@@ -15,7 +15,7 @@ func customRuleBeatsClassifier() {
         name: "VIP sender",
         priority: 100,
         sender: SenderMatcher(kind: .exact, pattern: "95588"),
-        targetLabelID: "finance.bank"
+        action: .allow
     )
     let pipeline = ClassificationPipeline()
 
@@ -26,8 +26,8 @@ func customRuleBeatsClassifier() {
     )
 
     expect(decision.source == .rule, "custom rule should beat classifier")
-    expect(decision.labelID == "finance.bank", "rule should classify as finance.bank")
-    expect(decision.systemAction == .transaction, "finance.bank maps to transaction")
+    expect(decision.labelID == "transaction.message", "allow rule should use the neutral message label")
+    expect(decision.systemAction == .none, "allow rule should bypass filtering")
 }
 
 func higherPriorityRuleWins() {
@@ -35,18 +35,18 @@ func higherPriorityRuleWins() {
         name: "promotion",
         priority: 10,
         text: TextMatcher(kind: .keyword, pattern: "取件码"),
-        targetLabelID: "promotion"
+        action: .block
     )
     let higher = CustomRule(
         name: "pickup",
         priority: 20,
         text: TextMatcher(kind: .keyword, pattern: "取件码"),
-        targetLabelID: "life.pickup_code"
+        action: .allow
     )
 
     let match = RuleEngine().match(sender: nil, body: "您的取件码 123456", rules: [lower, higher])
 
-    expect(match?.label.id == "life.pickup_code", "higher priority rule should win")
+    expect(match?.rule.action == .allow, "higher priority rule should win")
 }
 
 func sanitizerRemovesObviousSensitiveTokens() {

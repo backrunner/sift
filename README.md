@@ -42,7 +42,7 @@ remote contribution from inside the app.
 | **Dual model path** | A classic Create ML model supports on-device personalization; an optional Premium transformer model is downloaded on demand. |
 | **PII-aware samples** | Deterministic redaction rules always run, and an optional Core ML PII detector can widen recall. |
 | **Revocable contribution** | CloudKit samples carry no identity fields; users can delete the latest sample, browse history, export JSON, or erase all submissions. |
-| **Private statistics** | Daily counts never include message content and back up only to the user's private iCloud database. |
+| **Allow/block rules** | Sender and message-body rules act as user-controlled white and black lists before model classification. |
 | **One-command training** | `pnpm pipeline -- all --install-ios` fetches, curates, audits, trains, installs, and reports. |
 
 ## Quick Start
@@ -104,8 +104,6 @@ docs                      Training, taxonomy, privacy, and legal source document
   classification.
 - Contributions require explicit consent and a redaction preview. Payloads have
   no identity fields.
-- Statistics are numeric counts only and live in the user's private iCloud
-  database.
 - Users can exercise GDPR-style rights in app: export all submissions or erase
   all submissions.
 

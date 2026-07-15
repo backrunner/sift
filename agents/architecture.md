@@ -4,7 +4,7 @@
 
 ```text
 +- SiftApp (main bundle) -------------------------------------------+
-|  SiftAppKit: SiftRootView (dashboard, stats, submit, rules)       |
+|  SiftAppKit: SiftRootView (dashboard, submit, rules)              |
 |    - SettingsView (Premium, restore, submissions, export, erase)  |
 |    - PremiumPaywallView (StoreKit 2, PremiumStore)                |
 |    - SubmissionHistoryView (CloudKit pagination, item deletion)   |
@@ -13,21 +13,19 @@
                  | App Group group.com.alkinum.sift
                  |  - ModelSelectionStore
                  |  - SharedRuleStore
-                 |  - FilterStatisticsStore
                  |  - SubmissionLedger
 +----------------+--------------------------------------------------+
 |  MessageFilterExtension (IdentityLookup)                          |
 |  Each handle() reloads shared selection and rules                  |
 |  -> ClassificationPipeline                                        |
 |  -> MessageFilterActionMapper (junk/promotion/transaction/allow)  |
-|  -> FilterStatisticsStore.record()                                |
 +-------------------------------------------------------------------+
 ```
 
 ### MessageFilterCore
 
-- `ClassificationPipeline` = custom rules first, then classifier, then
-  low-confidence fallback.
+- `ClassificationPipeline` = custom allow/block rules first, then classifier,
+  then low-confidence fallback.
 - Classifier stack by `ModelVariant`:
   - **classic**: `NLModelTextClassifier` (Create ML, `SiftSMSClassifier`) plus
     local personalization (`PersonalizationTrainer`, logistic regression,
@@ -45,8 +43,6 @@
   - Public database `SmsSample`: anonymous sample, local coarse prediction
     metadata, and `textLanguage`. Creator association supports receipt-based
     deletion, full erasure, and keyset-paginated history by `createdAt`.
-  - Private database `FilterStats`: user-private statistics backup using
-    per-counter max merge.
 
 ## Training Side
 

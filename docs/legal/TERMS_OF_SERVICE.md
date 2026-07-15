@@ -1,10 +1,10 @@
 # Sift Terms of Service
 
-**Effective date: July 5, 2026**
+**Effective date: July 15, 2026**
 
 These Terms of Service ("Terms") govern your use of the Sift iOS application
-("the App") and its optional hosted features (anonymous sample contribution
-and iCloud-backed statistics). By downloading or using the App you agree to
+("the App") and its optional anonymous sample contribution feature. By
+downloading or using the App you agree to
 these Terms and to the
 [Privacy Policy](https://sift.alkinum.io/privacy).
 The public copy of these Terms is served at `https://sift.alkinum.io/terms`.
@@ -16,11 +16,11 @@ entitled to enforce them.
 
 ## 1. The service
 
-Sift provides on-device SMS classification and filtering, user-defined rules,
-local statistics, optional on-device model personalization, and an optional,
+Sift provides on-device SMS classification and filtering, user-defined
+allow/block rules, optional on-device model personalization, and an optional,
 consent-gated pipeline for contributing anonymized training samples. Local
-functionality works without any account; contribution and statistics backup
-use your iCloud session.
+functionality works without any account; sample contribution uses your iCloud
+session.
 
 ## 2. License
 

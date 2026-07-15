@@ -28,8 +28,8 @@ Sift implements export and deletion controls in the app:
 
 - Export contributed samples: Settings -> Data & Privacy -> Export all my
   submissions.
-- Erase contributed samples and private statistics backups: Settings -> Data &
-  Privacy -> Erase all submitted data.
+- Erase contributed samples: Settings -> Data & Privacy -> Erase all submitted
+  data.
 - Withdraw anonymous contribution consent: turn off the anonymous contribution
   toggle in the app.
 

@@ -1,59 +1,6 @@
 import MessageFilterCore
-import Charts
 import Foundation
 import SwiftUI
-
-// MARK: - 统计面板
-
-/// 今日拦截概览 + 近 7 天迷你趋势。数据来自过滤扩展写入的每日计数桶,
-/// 通过 CloudKit 私有库跨设备备份。只有计数,永远不含短信内容。
-struct StatisticsPanel: View {
-    @Bindable var model: SiftAppModel
-    @Environment(\.scenePhase) private var scenePhase
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            SectionHeader(title: String(localized: "拦截统计"), icon: "chart.bar.fill") {
-                Text(String(localized: "累计 \(model.totalStats.total) 条"))
-                    .font(.caption2.weight(.semibold).monospacedDigit())
-                    .foregroundStyle(.secondary)
-            }
-
-            HStack(spacing: 10) {
-                StatTile(title: String(localized: "垃圾拦截"), value: model.totalStats.junk, tint: .red)
-                StatTile(title: String(localized: "推广归类"), value: model.totalStats.promotion, tint: .siftAmber)
-                StatTile(title: String(localized: "正常放行"), value: model.totalStats.transaction, tint: .siftMint)
-            }
-
-            if !model.hasValidStatistics {
-                HStack(alignment: .top, spacing: 9) {
-                    Image(systemName: "sparkles")
-                        .font(.callout.weight(.semibold))
-                        .foregroundStyle(Color.siftHalo)
-                        .frame(width: 18)
-                    Text(String(localized: "过滤器开始工作后，这里会展示每日拦截趋势。统计只记录数量，不保存短信内容。"))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-                .padding(12)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .insetSurface(cornerRadius: 12)
-            } else {
-                WeeklyFilterChart(days: model.weeklyStats)
-            }
-        }
-        .padding(18)
-        .cardSurface()
-        .animation(.snappy(duration: 0.25), value: model.todayStats)
-        .onAppear { model.refreshStatistics() }
-        .onChange(of: scenePhase) { _, phase in
-            if phase == .active {
-                model.refreshStatistics()
-            }
-        }
-    }
-}
 
 private struct SettingsRowContent<Trailing: View>: View {
     let title: String
@@ -113,96 +60,6 @@ private extension SettingsRowContent where Trailing == EmptyView {
         self.init(title: title, subtitle: subtitle, icon: icon, tint: tint, isEnabled: isEnabled) {
             EmptyView()
         }
-    }
-}
-
-private struct StatTile: View {
-    let title: String
-    let value: Int
-    let tint: Color
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text("\(value)")
-                .font(.title3.weight(.bold).monospacedDigit())
-                .foregroundStyle(tint)
-                .contentTransition(.numericText())
-            Text(title)
-                .font(.caption2.weight(.semibold))
-                .foregroundStyle(.secondary)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, 12)
-        .padding(.vertical, 10)
-        .insetSurface(cornerRadius: 12)
-    }
-}
-
-private struct WeeklyFilterChart: View {
-    let days: [DailyFilterStats]
-
-    private var peak: Int {
-        max(days.map(\.total).max() ?? 1, 1)
-    }
-
-    private let junkTitle = String(localized: "垃圾拦截")
-    private let promotionTitle = String(localized: "推广归类")
-    private let regularTitle = String(localized: "正常放行")
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(String(localized: "近 7 天"))
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(.secondary)
-
-            Chart(days) { day in
-                BarMark(
-                    x: .value(String(localized: "日期"), day.day),
-                    y: .value(junkTitle, day.junk)
-                )
-                .foregroundStyle(by: .value(String(localized: "过滤结果"), junkTitle))
-
-                BarMark(
-                    x: .value(String(localized: "日期"), day.day),
-                    y: .value(promotionTitle, day.promotion)
-                )
-                .foregroundStyle(by: .value(String(localized: "过滤结果"), promotionTitle))
-
-                BarMark(
-                    x: .value(String(localized: "日期"), day.day),
-                    y: .value(regularTitle, day.transaction)
-                )
-                .foregroundStyle(by: .value(String(localized: "过滤结果"), regularTitle))
-            }
-            .chartForegroundStyleScale(
-                domain: [junkTitle, promotionTitle, regularTitle],
-                range: [Color.red, Color.siftAmber, Color.siftMint]
-            )
-            .chartYScale(domain: 0...peak)
-            .chartLegend(position: .top, alignment: .leading, spacing: 10)
-            .chartXAxis {
-                AxisMarks(values: days.map(\.day)) { value in
-                    AxisValueLabel {
-                        if let day = value.as(String.self) {
-                            Text(String(day.suffix(2)))
-                                .monospacedDigit()
-                        }
-                    }
-                }
-            }
-            .chartYAxis {
-                AxisMarks(position: .leading, values: .automatic(desiredCount: 3)) {
-                    AxisGridLine()
-                        .foregroundStyle(Color.secondary.opacity(0.14))
-                    AxisValueLabel()
-                }
-            }
-            .frame(height: 150)
-            .accessibilityLabel(String(localized: "近 7 天过滤统计"))
-        }
-        .padding(12)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .insetSurface(cornerRadius: 12)
     }
 }
 
@@ -545,7 +402,7 @@ struct SettingsView: View {
             }
             Button(String(localized: "取消"), role: .cancel) {}
         } message: {
-            Text(String(localized: "将从云端删除你匿名提交的全部样本与统计备份，此操作不可撤销，不影响本地功能。"))
+            Text(String(localized: "将从云端删除你匿名提交的全部样本，此操作不可撤销，不影响本地功能。"))
         }
     }
 
@@ -705,7 +562,7 @@ struct SettingsView: View {
             .insetSurface(cornerRadius: 12)
             .disabled(model.isErasingRemoteData)
 
-            Text(String(localized: "抹除会删除云端所有由本 Apple ID 提交的匿名样本与统计备份。"))
+            Text(String(localized: "抹除会删除云端所有由本 Apple ID 提交的匿名样本。"))
                 .font(.caption2)
                 .foregroundStyle(.tertiary)
         }

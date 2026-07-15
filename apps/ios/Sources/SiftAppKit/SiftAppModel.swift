@@ -63,6 +63,26 @@ public enum RulePatternKind: String, CaseIterable, Identifiable, Sendable {
     }
 }
 
+extension RuleAction {
+    var title: String {
+        switch self {
+        case .allow:
+            return String(localized: "放行")
+        case .block:
+            return String(localized: "阻止")
+        }
+    }
+
+    var symbol: String {
+        switch self {
+        case .allow:
+            return "checkmark.shield.fill"
+        case .block:
+            return "hand.raised.fill"
+        }
+    }
+}
+
 public struct SiftToast: Identifiable, Equatable, Sendable {
     public enum Kind: Sendable {
         case success
@@ -132,7 +152,7 @@ public final class SiftAppModel {
     public var ruleDraftPattern: String = ""
     public var ruleDraftLocation: RuleMatchLocation = .body
     public var ruleDraftPatternKind: RulePatternKind = .substring
-    public var ruleDraftLabelID: String = "life.pickup_code"
+    public var ruleDraftAction: RuleAction = .block
     public var localSampleCount: Int = 0
     public var lastReceiptToken: String? = UserDefaults.standard.string(forKey: "Sift.lastRemoteSampleReceiptToken") {
         didSet {
@@ -161,17 +181,6 @@ public final class SiftAppModel {
     public var isSubmittingSample: Bool = false
     public var isShowingPaywall: Bool = false
     public private(set) var isErasingRemoteData: Bool = false
-    public private(set) var todayStats: DailyFilterStats = DailyFilterStats(day: FilterStatisticsStore.dayKey(for: .now))
-    public private(set) var totalStats: DailyFilterStats = DailyFilterStats(day: "total")
-    public private(set) var weeklyStats: [DailyFilterStats] = []
-
-    /// Whether the chart has at least one non-empty day to render. Lifetime
-    /// totals can outlive the retained daily buckets, so this intentionally
-    /// checks the chart data rather than the lifetime counter.
-    public var hasValidStatistics: Bool {
-        weeklyStats.contains { $0.total > 0 }
-    }
-
     /// 本地记录的已贡献样本数(App Group 计数,云端历史列表为准)。
     public private(set) var submittedSampleCount: Int = 0
 
@@ -215,9 +224,6 @@ public final class SiftAppModel {
     @ObservationIgnored
     private var transformerDownloadTask: Task<Void, Never>?
 
-    @ObservationIgnored
-    private let statisticsStore: FilterStatisticsStore
-
     /// 注入口:测试用独立 UserDefaults suite 隔离贡献计数。
     @ObservationIgnored
     private let ledgerDefaults: UserDefaults?
@@ -246,12 +252,10 @@ public final class SiftAppModel {
         transformerDownloader: (any TransformerModelDownloading)? = TransformerModelDownloadClient.configured(),
         ledgerDefaults: UserDefaults? = nil,
         categoryMappingDefaults: UserDefaults? = nil,
-        sampleStore: LocalSampleStore? = nil,
-        statisticsStore: FilterStatisticsStore = FilterStatisticsStore()
+        sampleStore: LocalSampleStore? = nil
     ) {
         self.ledgerDefaults = ledgerDefaults
         self.categoryMappingDefaults = categoryMappingDefaults
-        self.statisticsStore = statisticsStore
         self.sampleStore = sampleStore ?? LocalSampleStore(fileURL: LocalSampleStore.defaultFileURL())
         self.remoteSampleClient = remoteSampleClient ?? CloudKitSampleClient(
             containerIdentifier: CloudKitSampleClient.configuredContainerIdentifier()
@@ -289,16 +293,6 @@ public final class SiftAppModel {
         reconcileSubmittedSampleCount(
             historyIsComplete: historyFullyLoaded && submissionHistory.count < Self.historyMaxItems
         )
-        refreshStatistics()
-
-        // 统计云备份是 best-effort:失败静默,永不打扰用户。仅在真机 App
-        // 环境执行——单测/命令行环境没有 CloudKit entitlement,构造
-        // CKContainer 会直接抛 ObjC 异常。
-        #if os(iOS) && !targetEnvironment(simulator)
-        Task.detached(priority: .utility) { [containerIdentifier = CloudKitSampleClient.configuredContainerIdentifier()] in
-            await CloudKitStatsSync(containerIdentifier: containerIdentifier).sync()
-        }
-        #endif
 
         // 高级版被退款/撤销时,若正在使用 Transformer 则回退经典模型。
         premium.onEntitlementChange = { [weak self] unlocked in
@@ -318,13 +312,6 @@ public final class SiftAppModel {
         } else {
             remoteAccountStatus = .available
         }
-    }
-
-    /// 刷新仪表盘统计(累计计数 + 近 7 天逐日图表)。
-    public func refreshStatistics() {
-        todayStats = statisticsStore.stats()
-        totalStats = statisticsStore.totals()
-        weeklyStats = statisticsStore.recent(days: 7)
     }
 
     /// Whether the active model variant allows on-device fine-tuning. The
@@ -1032,7 +1019,7 @@ public final class SiftAppModel {
         }
     }
 
-    /// 删除当前用户在云端的全部提交样本与统计备份。
+    /// 删除当前用户在云端的全部提交样本。
     public func eraseAllRemoteData() {
         guard !isErasingRemoteData else {
             return
@@ -1065,15 +1052,8 @@ public final class SiftAppModel {
             defer { isErasingRemoteData = false }
             do {
                 let deletedSamples = try await remoteSampleClient.eraseAllSubmissions()
-                let deletedStats = (try? await CloudKitStatsSync(
-                    containerIdentifier: CloudKitSampleClient.configuredContainerIdentifier()
-                ).eraseBackup()) ?? 0
-                if deletedSamples == 0 && deletedStats == 0 {
+                if deletedSamples == 0 {
                     showToast(.info, String(localized: "云端没有找到你提交的数据"))
-                } else if deletedSamples == 0 {
-                    showToast(.success, String(localized: "已清除云端统计备份"))
-                } else if deletedStats > 0 {
-                    showToast(.success, String(localized: "已抹除 \(deletedSamples) 条提交样本及统计备份"))
                 } else {
                     showToast(.success, String(localized: "已抹除 \(deletedSamples) 条提交样本"))
                 }
@@ -1361,13 +1341,13 @@ public final class SiftAppModel {
             rule = CustomRule(
                 name: ruleName,
                 sender: SenderMatcher(kind: ruleDraftPatternKind == .regex ? .regex : .substring, pattern: pattern),
-                targetLabelID: ruleDraftLabelID
+                action: ruleDraftAction
             )
         case .body:
             rule = CustomRule(
                 name: ruleName,
                 text: TextMatcher(kind: ruleDraftPatternKind == .regex ? .regex : .substring, pattern: pattern),
-                targetLabelID: ruleDraftLabelID
+                action: ruleDraftAction
             )
         }
 
@@ -1388,7 +1368,7 @@ public final class SiftAppModel {
         ruleDraftPattern = ""
         ruleDraftLocation = .body
         ruleDraftPatternKind = .substring
-        ruleDraftLabelID = "life.pickup_code"
+        ruleDraftAction = .block
     }
 
     public func updateRule(
@@ -1397,7 +1377,7 @@ public final class SiftAppModel {
         location: RuleMatchLocation,
         patternKind: RulePatternKind,
         pattern: String,
-        labelID: String
+        action: RuleAction
     ) -> Bool {
         let trimmedPattern = pattern.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmedPattern.isEmpty else {
@@ -1425,7 +1405,7 @@ public final class SiftAppModel {
 
         var rule = rules[index]
         rule.name = finalName
-        rule.targetLabelID = labelID
+        rule.action = action
         switch location {
         case .sender:
             rule.sender = SenderMatcher(kind: matcherKind, pattern: trimmedPattern)

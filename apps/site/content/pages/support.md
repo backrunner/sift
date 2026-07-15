@@ -25,7 +25,7 @@ https://github.com/backrunner/sift/issues
 Sift 已在应用内提供导出和删除功能：
 
 - 导出贡献样本：设置 → 数据与隐私 → 导出全部提交。
-- 删除贡献样本和私有统计备份：设置 → 数据与隐私 → 清空全部提交数据。
+- 删除贡献样本：设置 → 数据与隐私 → 清空全部提交数据。
 - 撤回匿名贡献同意：在应用内关闭匿名贡献开关。
 
 无法在应用内完成的请求，请发送邮件至 [support@alkinum.io](mailto:support@alkinum.io?subject=Sift%20Support)，并在邮件标题中注明“Sift”。

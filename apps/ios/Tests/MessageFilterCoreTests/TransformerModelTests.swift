@@ -177,7 +177,7 @@ func sharedRuleStoreRoundTripsRules() throws {
         name: "Bank sender",
         priority: 40,
         sender: SenderMatcher(kind: .prefix, pattern: "955"),
-        targetLabelID: "finance.bank"
+        action: .allow
     )
     SharedRuleStore.save([rule], defaults: defaults)
 
@@ -185,7 +185,16 @@ func sharedRuleStoreRoundTripsRules() throws {
     #expect(loaded.count == 1)
     #expect(loaded.first?.id == rule.id)
     #expect(loaded.first?.sender?.pattern == "955")
-    #expect(loaded.first?.targetLabelID == "finance.bank")
+    #expect(loaded.first?.action == .allow)
+}
+
+@Test
+func legacyRuleTargetsMigrateToActions() throws {
+    let allowJSON = Data(#"{"id":"00000000-0000-0000-0000-000000000001","name":"Bank","enabled":true,"priority":10,"sender":{"kind":"prefix","pattern":"955"},"targetLabelID":"finance.bank","createdAt":0}"#.utf8)
+    let blockJSON = Data(#"{"id":"00000000-0000-0000-0000-000000000002","name":"Spam","enabled":true,"priority":10,"text":{"kind":"substring","pattern":"offer"},"targetLabelID":"promotion","createdAt":0}"#.utf8)
+
+    #expect(try JSONDecoder().decode(CustomRule.self, from: allowJSON).action == .allow)
+    #expect(try JSONDecoder().decode(CustomRule.self, from: blockJSON).action == .block)
 }
 
 // MARK: - ModelVariant / ModelSelectionStore

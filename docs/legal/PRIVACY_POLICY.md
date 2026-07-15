@@ -1,12 +1,11 @@
 # Sift Privacy Policy
 
-**Effective date: July 5, 2026**
+**Effective date: July 15, 2026**
 
 This Privacy Policy describes how Sift ("the App", "we", "us") handles
 information when you use the Sift iOS application and its optional cloud
-features. Sift is designed to be **local-first**: SMS filtering, custom
-rules, statistics counting, and on-device personalization all run on your
-device by default.
+features. Sift is designed to be **local-first**: SMS filtering, custom rules,
+and on-device personalization all run on your device by default.
 
 The public copy of this policy is served at
 `https://sift.alkinum.io/privacy`. If this document and the in-app summary ever
@@ -20,8 +19,6 @@ differ, this document controls.
   consent toggle, sanitized before upload, and reversible: you can delete
   your most recent submission or **erase everything you ever submitted** from
   inside the App (Settings → Data & Privacy).
-- Filtering statistics are **counters only** (never message content) and are
-  backed up to **your own iCloud private database**, which we cannot read.
 - The optional Premium upgrade is a one-time purchase processed entirely by
   Apple. We never see your payment details.
 - We do not run our own servers, do not use third-party analytics or
@@ -61,28 +58,19 @@ requirement). Apple's CloudKit internally associates the record with its
 creator; we use that association solely so **you** can delete your own
 records, and training exports never read creator identities.
 
-## 4. Filtering statistics (your private iCloud database)
-
-The App keeps daily counters (how many messages were classified as junk,
-promotion, or regular) in shared on-device storage and mirrors them to the
-CloudKit **private database of your own iCloud account** so they survive
-reinstalls. Private-database data is stored under your Apple ID, counts
-against your iCloud storage, and is **not accessible to us**. You can erase
-these backups at any time from Settings → Data & Privacy.
-
-## 5. Purchases
+## 4. Purchases
 
 The Premium upgrade is a non-consumable in-app purchase processed
 by Apple. We receive no name, address, or payment information. Purchase
 entitlement is verified on-device through StoreKit. See Apple's privacy
 policy for how Apple processes purchase data.
 
-## 6. Legal bases (GDPR / UK GDPR)
+## 5. Legal bases (GDPR / UK GDPR)
 
 - **Consent (Art. 6(1)(a))** — anonymous sample contribution. You can
   withdraw consent at any time by turning the toggle off; withdrawal does not
   affect prior processing, and you can additionally erase past contributions
-  (Section 8).
+  (Section 7).
 - **Legitimate interest / contract (Art. 6(1)(b), (f))** — operating the
   local filtering features you install the App to use, and validating
   Premium entitlements.
@@ -90,16 +78,14 @@ policy for how Apple processes purchase data.
 We treat sanitized sample text conservatively as personal data even though it
 is designed not to identify you.
 
-## 7. Retention
+## 6. Retention
 
 - Contributed samples are retained while they remain useful for training.
   Training corpora are rebuilt from the live database, so erased samples drop
   out of all future model training.
-- Statistics backups persist in your private iCloud until you erase them or
-  delete the App's iCloud data from iOS Settings.
 - Local data lives on your device and is removed when you delete the App.
 
-## 8. Your rights
+## 7. Your rights
 
 Where GDPR, UK GDPR, CCPA/CPRA, or similar laws apply, you have rights of
 access, rectification, erasure, restriction, portability, and objection, and
@@ -110,8 +96,8 @@ implements the most important ones **directly in the App**:
   submissions* produces a machine-readable JSON copy of every sample you
   contributed.
 - **Erasure**: Settings → Data & Privacy → *Erase all submitted data*
-  permanently deletes every sample you contributed and your statistics
-  backups. *Delete last submission* is also available right after submitting.
+  permanently deletes every sample you contributed. *Delete last submission*
+  is also available right after submitting.
 - **Withdrawal of consent**: turn off the anonymous-contribution toggle.
 
 For anything else (including complaints), contact
@@ -119,30 +105,30 @@ For anything else (including complaints), contact
 with your local supervisory authority. We do not sell or share personal
 information as defined by the CCPA/CPRA.
 
-## 9. International transfers
+## 8. International transfers
 
-Contributed samples and your private statistics are stored in Apple's
-CloudKit infrastructure, which may process data in multiple regions under
-Apple's data-transfer safeguards. We do not operate independent servers.
+Contributed samples are stored in Apple's CloudKit infrastructure, which may
+process data in multiple regions under Apple's data-transfer safeguards. We do
+not operate independent servers.
 
-## 10. Children
+## 9. Children
 
 Sift is not directed at children under 13 (or the equivalent minimum age in
 your jurisdiction), and we do not knowingly collect personal information from
 children. The anonymous-contribution feature requires an iCloud account.
 
-## 11. Security
+## 10. Security
 
 Contributions are sanitized on-device before upload, transported over TLS by
 CloudKit, and carry no identity fields. Record-level permissions restrict
 modification and deletion of a sample to its creator. Local files use iOS
 data protection.
 
-## 12. Changes to this policy
+## 11. Changes to this policy
 
 We will update this document when features change and adjust the effective
 date above. Material changes are additionally surfaced in the App.
 
-## 13. Contact
+## 12. Contact
 
 Alkinum — privacy@sift.alkinum.io

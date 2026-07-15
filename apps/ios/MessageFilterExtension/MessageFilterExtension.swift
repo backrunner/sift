@@ -14,8 +14,6 @@ final class MessageFilterExtension: ILMessageFilterExtension, ILMessageFilterQue
     private var pipeline: ClassificationPipeline
     private var rules: [CustomRule]
     private var categoryMappings: [String: CategoryMappingTarget]
-    private let statistics = FilterStatisticsStore()
-
     override init() {
         let variant = ModelSelectionStore.load()
         self.activeVariant = variant
@@ -33,8 +31,6 @@ final class MessageFilterExtension: ILMessageFilterExtension, ILMessageFilterQue
             body: queryRequest.messageBody ?? "",
             rules: rules
         ).applying(categoryMappings: categoryMappings)
-        statistics.record(decision: decision)
-
         let response = ILMessageFilterQueryResponse()
         response.action = MessageFilterActionMapper.filterAction(for: decision)
         response.subAction = MessageFilterActionMapper.filterSubAction(for: decision)
