@@ -117,6 +117,7 @@ func remoteSubmitFailureKeepsVisibleFeedback() async throws {
 
     #expect(model.sampleSubmissionFeedback?.kind == .error)
     #expect(model.sampleSubmissionFeedback?.message == "请先在系统设置中登录 iCloud，再匿名共享样本")
+    #expect(model.currentToast == nil)
     #expect(model.lastReceiptToken == nil)
 }
 
@@ -177,6 +178,7 @@ func remoteSubmitSuccessStoresReceiptToken() async throws {
 
     #expect(model.lastReceiptToken == "ck-record-123")
     #expect(model.sampleSubmissionFeedback?.kind == .success)
+    #expect(model.currentToast == nil)
     #expect(model.submissionText.isEmpty)
     #expect(model.submittedSampleCount == 1)
     #expect(SubmissionLedger.count(defaults: ledgerDefaults) == 1)

@@ -290,6 +290,7 @@ public final class SiftAppModel {
             historyIsComplete: historyFullyLoaded && submissionHistory.count < Self.historyMaxItems
         )
         refreshStatistics()
+
         // 统计云备份是 best-effort:失败静默,永不打扰用户。仅在真机 App
         // 环境执行——单测/命令行环境没有 CloudKit entitlement,构造
         // CKContainer 会直接抛 ObjC 异常。
@@ -1337,7 +1338,6 @@ public final class SiftAppModel {
 
     public func showSubmissionFeedback(_ kind: SiftToast.Kind, _ message: String) {
         sampleSubmissionFeedback = SampleSubmissionFeedback(kind: kind, message: message)
-        showToast(kind, message)
     }
 
     @discardableResult

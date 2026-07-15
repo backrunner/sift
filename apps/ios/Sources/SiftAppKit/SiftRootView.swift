@@ -2327,10 +2327,9 @@ struct ActionButton: View {
 
 private struct ToastOverlay: View {
     @Binding var toast: SiftToast?
-    @State private var dismissTask: Task<Void, Never>?
 
     var body: some View {
-        VStack {
+        Group {
             if let toast {
                 ToastBubble(toast: toast)
                     .id(toast.id)
@@ -2340,27 +2339,25 @@ private struct ToastOverlay: View {
                     .onTapGesture {
                         clear()
                     }
+                    .task(id: toast.id) {
+                        do {
+                            try await Task.sleep(for: .seconds(2.4))
+                        } catch {
+                            return
+                        }
+                        guard self.toast?.id == toast.id else {
+                            return
+                        }
+                        clear()
+                    }
             }
-            Spacer(minLength: 0)
         }
         .frame(maxWidth: .infinity, alignment: .top)
         .animation(.snappy(duration: 0.28), value: toast?.id)
-        .onChange(of: toast?.id) { _, newID in
-            dismissTask?.cancel()
-            guard newID != nil else { return }
-            dismissTask = Task { @MainActor in
-                try? await Task.sleep(nanoseconds: 2_400_000_000)
-                guard !Task.isCancelled else { return }
-                clear()
-            }
-        }
-        .allowsHitTesting(toast != nil)
     }
 
     private func clear() {
         toast = nil
-        dismissTask?.cancel()
-        dismissTask = nil
     }
 }
 
