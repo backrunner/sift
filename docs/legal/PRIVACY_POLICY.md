@@ -1,6 +1,6 @@
 # Sift Privacy Policy
 
-**Effective date: July 15, 2026**
+**Effective date: July 17, 2026**
 
 This Privacy Policy describes how Sift ("the App", "we", "us") handles
 information when you use the Sift iOS application and its optional cloud
@@ -42,9 +42,9 @@ If — and only if — you enable anonymous contribution and submit a sample, th
 App writes a single record to the App's CloudKit **public database**
 containing:
 
-- the sanitized sample text (phone numbers, ID numbers, emails, URLs, bank
-  cards, addresses, codes, and names are replaced with placeholders before
-  upload; a preview shows you exactly what will be sent);
+- the sanitized sample text (phone numbers, ID numbers, vehicle license plates,
+  emails, URLs, bank cards, addresses, codes, and names are replaced with
+  placeholders before upload; a preview shows you exactly what will be sent);
 - the category label you selected;
 - the App's own predicted category and confidence (used to weigh data
   quality during training);

@@ -31,11 +31,14 @@ failed stage can be re-run in isolation.
 from __future__ import annotations
 
 import argparse
+import json
 import os
+import re
 import shutil
 import subprocess
 import sys
 import time
+import unicodedata
 from pathlib import Path
 
 STAGES = ["fetch-public", "fetch-remote", "curate", "train-classic", "train-transformer"]
@@ -53,6 +56,7 @@ CURATION_REPORT = PIPELINE_DIR / "curation-report.json"
 CLASSIC_OUT = PIPELINE_DIR / "apple-model"
 TRANSFORMER_OUT = PIPELINE_DIR / "transformer-model"
 PROMOTION_TEST_SET = APPLE_TRAINER / "Evaluation" / "promotion-regressions.ndjson"
+CLASSIFICATION_TEST_SET = APPLE_TRAINER / "Evaluation" / "classification-regressions.ndjson"
 
 
 def parse_arguments() -> argparse.Namespace:
@@ -121,6 +125,46 @@ def require_tool(name: str, hint: str) -> None:
         raise SystemExit(f"error: `{name}` is required for this stage. {hint}")
 
 
+def normalized_text(text: str) -> str:
+    return re.sub(r"\s+", " ", unicodedata.normalize("NFC", text)).strip()
+
+
+def near_duplicate_signature(text: str) -> str:
+    collapsed = re.sub(r"\d+", "0", normalized_text(text).lower())
+    return re.sub(r"[\W_]+", "", collapsed, flags=re.UNICODE)[:80]
+
+
+def load_texts(path: Path) -> list[str]:
+    texts: list[str] = []
+    with path.open(encoding="utf-8") as handle:
+        for number, line in enumerate(handle, 1):
+            if not line.strip():
+                continue
+            text = normalized_text(str(json.loads(line).get("text", "")))
+            if not text:
+                raise SystemExit(f"error: missing text at {path}:{number}")
+            texts.append(text)
+    return texts
+
+
+def require_holdout_isolation(path: Path) -> None:
+    holdout_texts = load_texts(CLASSIFICATION_TEST_SET) + load_texts(PROMOTION_TEST_SET)
+    holdout_exact = {text.lower() for text in holdout_texts}
+    holdout_near = {near_duplicate_signature(text) for text in holdout_texts}
+    exact_collisions = 0
+    near_collisions = 0
+    for text in load_texts(path):
+        if text.lower() in holdout_exact:
+            exact_collisions += 1
+        elif near_duplicate_signature(text) in holdout_near:
+            near_collisions += 1
+    if exact_collisions or near_collisions:
+        raise SystemExit(
+            "error: refusing to train on holdout-contaminated corpus: "
+            f"{exact_collisions} exact and {near_collisions} near collisions; rerun the curate stage"
+        )
+
+
 def stage_fetch_public(arguments: argparse.Namespace) -> None:
     require_tool("swift", "Install Xcode command line tools.")
     run(
@@ -179,6 +223,8 @@ def stage_curate(arguments: argparse.Namespace) -> None:
         "--out", str(TRAIN_SET),
         "--rejected", str(REJECTED_SET),
         "--report", str(CURATION_REPORT),
+        "--holdout", str(CLASSIFICATION_TEST_SET),
+        "--holdout", str(PROMOTION_TEST_SET),
         "--model-filter", arguments.model_filter,
         "--hard-floor", str(arguments.hard_floor),
         "--gray-keep", str(arguments.gray_keep),
@@ -194,6 +240,7 @@ def stage_train_classic(arguments: argparse.Namespace) -> None:
     require_tool("swift", "Install Xcode command line tools.")
     if not TRAIN_SET.exists():
         raise SystemExit(f"error: {TRAIN_SET} missing; run the curate stage first")
+    require_holdout_isolation(TRAIN_SET)
     command = [
         "swift", "run", "-q", "SiftAppleTrainer",
         "--input", str(TRAIN_SET),
@@ -212,6 +259,7 @@ def stage_train_transformer(arguments: argparse.Namespace, finetune: bool = Fals
     require_tool("uv", "Install uv (https://docs.astral.sh/uv).")
     if not TRAIN_SET.exists():
         raise SystemExit(f"error: {TRAIN_SET} missing; run the curate stage first")
+    require_holdout_isolation(TRAIN_SET)
 
     resume_from = arguments.resume_from
     learning_rate = arguments.learning_rate if arguments.learning_rate is not None else arguments.body_learning_rate

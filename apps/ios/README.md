@@ -46,8 +46,9 @@ Group to be provisioned for both targets.
 ## Sanitization (two tracks)
 
 `PrivacySanitizer` always runs its deterministic rules (phone, URL, email,
-identity documents `{{ID}}`, bank card, order/pickup/verification codes, amounts,
-addresses, names). If the optional `SiftPIIDetector.*` artifacts from
+identity documents `{{ID}}`, vehicle plates `{{PLATE}}`, bank card,
+order/pickup/verification codes, amounts, addresses, names). If the optional
+`SiftPIIDetector.*` artifacts from
 `tools/pii-trainer` are bundled, a Core ML token-classification model runs on
 top and its detections are **unioned** with the rules — the model can only
 widen recall, never lose a rule hit. Anonymous submissions also carry the

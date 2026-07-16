@@ -3,6 +3,32 @@ import Foundation
 import MessageFilterCore
 import Testing
 
+private struct PlatePositiveFixture: Decodable {
+    let text: String
+    let value: String
+}
+
+private struct CleanPIIFixture: Decodable {
+    let text: String
+}
+
+private func piiEvaluationURL(_ name: String) -> URL {
+    URL(fileURLWithPath: #filePath)
+        .deletingLastPathComponent()
+        .deletingLastPathComponent()
+        .deletingLastPathComponent()
+        .deletingLastPathComponent()
+        .deletingLastPathComponent()
+        .appendingPathComponent("tools/pii-trainer/Evaluation/\(name)")
+}
+
+private func loadNDJSON<T: Decodable>(_ type: T.Type, from url: URL) throws -> [T] {
+    let contents = try String(contentsOf: url, encoding: .utf8)
+    return try contents.split(whereSeparator: \.isNewline).map { line in
+        try JSONDecoder().decode(T.self, from: Data(line.utf8))
+    }
+}
+
 // MARK: - Rule-track sanitizer coverage
 
 @Test
@@ -24,6 +50,127 @@ func sanitizerRedactsPassportNumbers() {
     let result = sanitizer.sanitize("Passport E12345678 has been approved.")
     #expect(result.text.contains("{{ID}}"))
     #expect(!result.text.contains("E12345678"))
+}
+
+@Test
+func sanitizerRedactsVehicleLicensePlates() {
+    let sanitizer = PrivacySanitizer()
+    let samples = [
+        ("车辆京A12345已进入停车场。", "京A12345"),
+        ("新能源车牌粤BD12345已绑定。", "粤BD12345"),
+        ("执勤车辆京A1234警已到达。", "京A1234警"),
+        ("领事车辆沪A1234领已登记。", "沪A1234领"),
+        ("車両番号は品川 300 あ 12-34です。", "品川 300 あ 12-34"),
+        ("ナンバープレートは横浜300わ12-34です。", "横浜300わ12-34"),
+        ("French license plate AB-123-CD was checked in.", "AB-123-CD"),
+        ("Kfz-Kennzeichen B-AB 1234 wurde erfasst.", "B-AB 1234"),
+        ("La targa AB 123 CD è stata registrata.", "AB 123 CD"),
+        ("La matrícula del vehículo 1234 BCD fue verificada.", "1234 BCD"),
+        ("Kenteken AB-12-CD is bij de slagboom gelezen.", "AB-12-CD"),
+        ("A matrícula do veículo 12-AB-34 foi verificada.", "12-AB-34"),
+        ("Plaque d'immatriculation 1-ABC-123 enregistrée.", "1-ABC-123"),
+        ("Kennzeichen des Fahrzeugs ZH 123456 wurde erfasst.", "ZH 123456"),
+        ("Vehicle registration 241-D-12345 was recorded.", "241-D-12345"),
+        ("Fordonets registreringsnummer ABC 12D har registrerats.", "ABC 12D"),
+        ("Nummerplade AB 12 345 blev registreret.", "AB 12 345"),
+        ("Ajoneuvon rekisteritunnus ABC-123 tallennettiin.", "ABC-123"),
+        ("Numer rejestracyjny pojazdu WX 1234A został zapisany.", "WX 1234A"),
+        ("Vehicle plate AB12 CDE entered the car park.", "AB12 CDE"),
+        ("License plate 8ABC123 entered the garage.", "8ABC123"),
+        ("license plate ab1234 entered the garage.", "ab1234"),
+        ("香港車牌 AB 1234 已進入停車場。", "AB 1234"),
+        ("香港車牌 9 已完成登記。", "9")
+    ]
+
+    for (text, plate) in samples {
+        let result = sanitizer.sanitize(text)
+        #expect(result.text.contains("{{PLATE}}"))
+        #expect(!result.text.contains(plate))
+        #expect(result.redactions.contains { redaction in
+            redaction.token == "{{PLATE}}" && String(text[redaction.range]) == plate
+        })
+    }
+}
+
+@Test
+func sanitizerKeepsPlateLikeIdentifiersWithoutPlateEvidence() {
+    let sanitizer = PrivacySanitizer()
+    let samples = [
+        "航班 CA1234 预计十八点起飞。",
+        "产品型号 AB1234 已上新。",
+        "产品型号粤B12345已上新，共有三种颜色。",
+        "产品型号粤B12345，车牌信息尚未填写。",
+        "粤B12345 是产品型号，不是车辆号牌。",
+        "Order AB-1234 is ready for pickup.",
+        "予約番号品川 300 あ 12-34です。",
+        "品川 300 あ 12-34は予約番号で、車両番号ではありません。",
+        "License plate ABCDEFGHIJK was entered incorrectly.",
+        "License plate is invalid and must be entered again.",
+        "Plate number unknown was not accepted.",
+        "车牌号 abcdefghijk 不是有效号牌。",
+        "Campaign 1234 BCD starts tomorrow.",
+        "Software build AB12 CDE passed all checks.",
+        "Student matrícula AB1234 was renewed.",
+        "La matrícula universitaria 1234 BCD corresponde al estudiante.",
+        "A matrícula escolar 12-AB-34 pertence ao aluno.",
+        "Immatriculation AB1234 belongs to a company record.",
+        "Immatriculation du registre 1-ABC-123 concerne une société.",
+        "Kennzeichen 1234 BCD is a catalog reference.",
+        "Targa AB1234 is the product code.",
+        "Kenteken 8ABC123 is an account identifier.",
+        "French license plate 8ABC123 is not a valid French registration.",
+        "American license plate AB-123-CD is not a supported US format."
+    ]
+
+    for sample in samples {
+        #expect(!sanitizer.sanitize(sample).text.contains("{{PLATE}}"))
+    }
+}
+
+@Test
+func unrelatedEarlierClauseDoesNotSuppressStrongPlate() {
+    let sanitizer = PrivacySanitizer()
+    let result = sanitizer.sanitize("订单已完成。车辆京A12345已进入停车场。")
+
+    #expect(result.text == "订单已完成。车辆{{PLATE}}已进入停车场。")
+}
+
+@Test
+func japanesePlateRedactionPreservesPrecedingContext() {
+    let sanitizer = PrivacySanitizer()
+    let result = sanitizer.sanitize("通知：車両番号は品川 300 あ 12-34です。")
+
+    #expect(result.text == "通知：車両番号は{{PLATE}}です。")
+}
+
+@Test
+func sanitizerPassesFixedRegionalPlateRegressions() throws {
+    let sanitizer = PrivacySanitizer()
+    let fixtures = try loadNDJSON(
+        PlatePositiveFixture.self,
+        from: piiEvaluationURL("plate-positives.ndjson")
+    )
+
+    #expect(fixtures.count >= 20)
+    for fixture in fixtures {
+        let result = sanitizer.sanitize(fixture.text)
+        #expect(result.redactions.contains { redaction in
+            redaction.token == "{{PLATE}}" && String(fixture.text[redaction.range]) == fixture.value
+        })
+    }
+}
+
+@Test
+func sanitizerDoesNotFlagFixedCleanRegressionsAsPlates() throws {
+    let sanitizer = PrivacySanitizer()
+    let fixtures = try loadNDJSON(
+        CleanPIIFixture.self,
+        from: piiEvaluationURL("clean-negatives.ndjson")
+    )
+
+    for fixture in fixtures {
+        #expect(!sanitizer.sanitize(fixture.text).text.contains("{{PLATE}}"))
+    }
 }
 
 @Test
@@ -108,6 +255,15 @@ func modelCodeDetectionKeepsPlausibleVerificationCodes() {
 
     #expect(result.text.contains("{{CODE}}"))
     #expect(!result.text.contains("A7K9Q2"))
+}
+
+@Test
+func modelOrderDetectionRequiresOrderContext() {
+    let value = "AB-123-CD"
+    let detector = FakeDetector(kind: .orderID, needle: value)
+
+    #expect(PrivacySanitizer(modelDetector: detector).sanitize("Product model \(value) is now available.").text.contains("{{ORDER_ID}}") == false)
+    #expect(PrivacySanitizer(modelDetector: detector).sanitize("Order number \(value) is ready for pickup.").text.contains("{{ORDER_ID}}"))
 }
 
 @Test

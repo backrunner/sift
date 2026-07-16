@@ -140,9 +140,11 @@ def contextualize_value(tag: str, value: str, carrier: str, rng: random.Random) 
     if tag != "CODE":
         return value, 0, len(value)
 
-    if any("぀" <= ch <= "ヿ" for ch in carrier):
+    japanese = any("぀" <= ch <= "ヿ" for ch in carrier)
+    chinese = any("一" <= ch <= "鿿" for ch in carrier) and not japanese
+    if japanese:
         prefix = rng.choice(["認証コード ", "確認コード：", "ワンタイムパスワード "])
-    elif any("一" <= ch <= "鿿" for ch in carrier):
+    elif chinese:
         prefix = rng.choice(["验证码 ", "动态码：", "一次性口令 "])
     else:
         prefix = rng.choice(["verification code ", "security code: ", "OTP "])
@@ -500,7 +502,25 @@ def main() -> None:
     )
 
     effective_clean_fpr = max(clean_fpr, clean_test_fpr)
-    if arguments.install_ios and (pii_f1 < arguments.minimum_pii_f1 or effective_clean_fpr > arguments.maximum_clean_fpr):
+    out.mkdir(parents=True, exist_ok=True)
+    quality_report_path = out / "quality-report.json"
+    quality_report_path.write_text(json.dumps({
+        "piiMicroPrecision": precision,
+        "piiMicroRecall": recall,
+        "piiMicroF1": pii_f1,
+        "cleanSentenceFalsePositiveRate": clean_fpr,
+        "cleanRegressionFalsePositiveRate": clean_test_fpr,
+        "inferenceThreshold": arguments.inference_threshold,
+        "passed": (
+            pii_f1 >= arguments.minimum_pii_f1
+            and effective_clean_fpr <= arguments.maximum_clean_fpr
+        ),
+    }, indent=2) + "\n", encoding="utf-8")
+    print(f"quality report: {quality_report_path}")
+    if arguments.install_ios and (
+        pii_f1 < arguments.minimum_pii_f1
+        or effective_clean_fpr > arguments.maximum_clean_fpr
+    ):
         raise SystemExit(
             "error: refusing --install-ios because PII quality gate failed: "
             f"F1 {pii_f1:.4f} (minimum {arguments.minimum_pii_f1:.4f}), "

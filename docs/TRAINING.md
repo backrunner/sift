@@ -65,9 +65,10 @@ Two filters run:
 
 1. **Rule-level filter** using only the standard library: taxonomy validation,
    normalization, length limits (8-500), low-information and repetition
-   heuristics, placeholder rehydration such as `{{PHONE}}` into realistic
-   values, exact and near-duplicate removal, cross-label conflict removal, and
-   language allowlisting.
+   heuristics, placeholder rehydration such as `{{PHONE}}` into deterministic
+   synthetic values, exact and near-duplicate removal, cross-label conflict
+   removal, and language allowlisting. Rehydration never attempts to recover
+   the submitted original; that would be both impossible and a privacy breach.
 2. **Model-level filter** with `--model-filter auto|on` and uv: a centroid
    embedding margin filter. Rows with margin < `--hard-floor` (-0.15) are
    rejected; gray-zone rows in `[hard-floor, 0)` keep the top
@@ -101,7 +102,9 @@ comparison, but they underperformed MaxEnt on the current 50-label small SMS
 dataset. Change `--split-seed-classic` when rechecking generalization; do not
 trust only the default seed 42.
 
-Before training a release candidate, isolate both external holdouts:
+The automated curation stage always isolates both external holdouts before
+training. For a custom candidate assembled outside `pnpm pipeline`, use the
+same mandatory isolation helper:
 
 ```bash
 python3 tools/apple-trainer/Scripts/prepare_classic_candidate.py \
@@ -260,6 +263,12 @@ micro F1 or above 2% clean-sentence FPR on either synthetic clean rows or the
 fixed `Evaluation/clean-negatives.ndjson` set. Runtime uses whole-word average
 probabilities with a 0.85 threshold. If the PII model is absent, pure rules run;
 see `tools/pii-trainer/README.md`.
+
+Vehicle plates are deliberately excluded from the PII model. They are redacted
+only after complete regional-format and nearby-context checks pass, with shared
+positive and hard-negative fixtures covering China, Japan, Europe, the US, and
+Hong Kong. This keeps generic order numbers, flight numbers, product models,
+company registrations, and student enrollment identifiers visible.
 
 The accepted `pii-boundary-v5` result is 99.66% precision, 99.09% recall,
 99.37% F1, 0/498 synthetic clean false positives, and 0/45 fixed zh/en/ja

@@ -2,6 +2,7 @@
 {"text":"游戏2.8版本更新完成，新增地图并修复组队掉线问题。"}
 {"text":"航班CA1234预计18:30起飞，请提前到达登机口。"}
 {"text":"产品型号XG-2026已上新，首发版本包含三种颜色。"}
+{"text":"产品型号粤B12345已上新，共有三种颜色。"}
 {"text":"超市满200减30活动今天开始。"}
 {"text":"Apple将在北京发布新品，上海门店同步开售。"}
 {"text":"订单共有3件商品，预计2个工作日内发出。"}
@@ -33,6 +34,12 @@
 {"text":"代码分支release-2026已完成合并。"}
 {"text":"商品SKU A7K9Q2已进入轮换销售列表。"}
 {"text":"活动编号20260711对应本周游戏道具交易专场。"}
+{"text":"Campaign 1234 BCD starts tomorrow without any vehicle assignment."}
+{"text":"Software build AB12 CDE passed all release checks."}
+{"text":"Order AB-123-CD is ready for pickup at the service desk."}
+{"text":"License plate is invalid and must be entered again."}
+{"text":"Plate number unknown was not accepted."}
+{"text":"予約番号品川 300 あ 12-34です。"}
 {"text":"Product code XG-2026 is now active in the catalog."}
 {"text":"Error code E1007 means the inventory sync is pending."}
 {"text":"The release-2026 code branch was merged successfully."}
@@ -43,3 +50,11 @@
 {"text":"コードブランチrelease-2026のマージが完了しました。"}
 {"text":"商品SKU A7K9Q2を今週のローテーションに追加しました。"}
 {"text":"キャンペーン番号20260711はゲームアイテム取引企画です。"}
+{"text":"粤B12345 是产品型号，不是车辆号牌。"}
+{"text":"品川 300 あ 12-34は予約番号で、車両番号ではありません。"}
+{"text":"La matrícula universitaria 1234 BCD corresponde al estudiante."}
+{"text":"A matrícula escolar 12-AB-34 pertence ao aluno."}
+{"text":"Immatriculation du registre 1-ABC-123 concerne une société."}
+{"text":"香港車牌 AB 0123 不是有效號牌。"}
+{"text":"French license plate 8ABC123 is not a valid French registration."}
+{"text":"American license plate AB-123-CD is not a supported US format."}

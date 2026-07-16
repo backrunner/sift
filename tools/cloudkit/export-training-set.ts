@@ -1,6 +1,7 @@
 /**
  * Export anonymous `SmsSample` records from the CloudKit public database into
- * the framework-neutral `{"text": ..., "label": ...}` NDJSON corpus that
+ * the framework-neutral `{"text": ..., "label": ..., "textLanguage": ...}`
+ * NDJSON corpus that
  * `tools/apple-trainer` and `tools/transformer-trainer` consume.
  *
  * Auth uses a CloudKit server-to-server key (CloudKit Console → API Access):
@@ -32,6 +33,7 @@ interface ExportOptions {
 interface TrainingRow {
   readonly text: string;
   readonly label: string;
+  readonly textLanguage: string | null;
 }
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));
@@ -48,8 +50,8 @@ Options:
   --key-id <id>         Server-to-server key id ($CLOUDKIT_KEY_ID).
   --key <path>          PEM private key path ($CLOUDKIT_PRIVATE_KEY).
   --out <path>          Output NDJSON. Defaults to build/remote-training.ndjson.
-  --raw                 Keep metadata columns (labelGroup, locale, modelVersion,
-                        createdAt, recordName) instead of bare text/label rows.
+  --raw                 Keep all metadata columns instead of the training-safe
+                        text/label/textLanguage rows.
   --since <iso-date>    Only export records with createdAt after this instant.
   --max <n>             Stop after n records (debugging).
   --min-length <n>      Drop rows shorter than n characters. Default 8.
@@ -243,7 +245,7 @@ async function main(): Promise<void> {
             createdAt: fieldNumber(record, "createdAt"),
             recordName: record.recordName,
           }
-        : { text, label },
+        : { text, label, textLanguage: fieldString(record, "textLanguage") },
     );
   }
 

@@ -31,14 +31,15 @@ pnpm export:training -- --env production \
 pnpm export:training -- --env production --raw --out ../../build/remote-raw.ndjson
 ```
 
-Rows are validated against `packages/taxonomy/taxonomy.json`, deduplicated on
-`label + text`, and length-filtered (8–500 characters) so the file can feed
-the trainers directly:
+Rows contain `text`, `label`, and the optional device-detected `textLanguage`.
+They are validated against `packages/taxonomy/taxonomy.json`, deduplicated on
+`label + text`, and length-filtered (8–500 characters) so the file can feed the
+curation pipeline directly:
 
 ```bash
 cd tools/apple-trainer
 swift run SiftAppleTrainer --input ../../build/remote-training.ndjson --out ../../build/apple-model
 ```
 
-`--raw` output is for dataset curation (per-locale balance checks), not for
-direct training.
+`--raw` adds the remaining curation metadata, including locale, model version,
+agreement, timestamps, and the CloudKit record name.

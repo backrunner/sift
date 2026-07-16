@@ -4,6 +4,43 @@ import Foundation
 import NaturalLanguage
 #endif
 
+private enum VehiclePlatePatterns {
+    static let mainlandChina = #"[京津沪渝冀豫云辽黑湘皖鲁新苏浙赣鄂桂甘晋蒙陕吉闽贵粤青藏川宁琼][A-Z][·•・ \t-]?(?:[DF][A-HJ-NP-Z0-9]{5}|[A-HJ-NP-Z0-9]{5}[DF]|[A-HJ-NP-Z0-9]{4}[挂学警港澳领]|[A-HJ-NP-Z0-9]{5})"#
+
+    static let japaneseJurisdiction = #"(?:札幌|函館|旭川|室蘭|釧路|帯広|北見|青森|八戸|岩手|盛岡|宮城|仙台|秋田|山形|庄内|福島|会津|郡山|いわき|水戸|土浦|つくば|宇都宮|那須|とちぎ|群馬|高崎|前橋|大宮|所沢|川越|熊谷|春日部|越谷|千葉|習志野|袖ヶ浦|野田|柏|成田|市川|船橋|松戸|品川|練馬|足立|八王子|多摩|世田谷|杉並|板橋|江東|葛飾|横浜|川崎|相模|湘南|新潟|長岡|上越|富山|石川|金沢|福井|山梨|富士山|長野|松本|諏訪|岐阜|飛騨|静岡|浜松|沼津|伊豆|名古屋|尾張小牧|三河|岡崎|豊田|一宮|春日井|三重|鈴鹿|伊勢志摩|四日市|滋賀|京都|大阪|なにわ|和泉|堺|神戸|姫路|奈良|飛鳥|和歌山|鳥取|島根|岡山|倉敷|広島|福山|山口|下関|徳島|香川|愛媛|高知|福岡|北九州|久留米|筑豊|佐賀|長崎|佐世保|熊本|大分|宮崎|鹿児島|奄美|沖縄)"#
+    static let japaneseKana = #"(?:[あいうえかきくけこさすせそたちつてとなにぬねのはひふほまみむめもやゆよらりるれろをわれ]|[EHKMTY])"#
+    static let japaneseSerial = #"(?:\d{1,2}-\d{2}|[・･]{1,3}[ \t]*\d{1,3})"#
+    static let japan = "\(japaneseJurisdiction)[ \\t]*\\d{1,3}[ \\t]*\(japaneseKana)[ \\t]*\(japaneseSerial)"
+
+    static let france = #"[A-HJ-NP-TV-Z]{2}-\d{3}-[A-HJ-NP-TV-Z]{2}"#
+    static let italy = #"[A-HJ-NPR-TV-Z]{2}[ \t]?\d{3}[ \t]?[A-HJ-NPR-TV-Z]{2}"#
+    static let germany = #"[A-Z]{1,3}(?:-[A-Z]{1,2}|[ \t]+[A-Z]{1,2})[ \t]+\d{1,4}"#
+    static let spain = #"\d{4}[ \t]?[B-DF-HJ-NPR-TV-Z]{3}"#
+    static let unitedKingdom = #"[A-Z]{2}\d{2}[ \t]?[A-Z]{3}"#
+    static let netherlands = #"(?:[A-Z]{2}-\d{2}-[A-Z]{2}|\d{2}-[A-Z]{2}-\d{2}|\d{2}-\d{2}-[A-Z]{2}|[A-Z]{2}-[A-Z]{2}-\d{2}|[A-Z]{2}-\d{2}-\d{2}|\d{2}-[A-Z]{2}-[A-Z]{2})"#
+    static let portugal = #"(?:[A-Z]{2}-\d{2}-[A-Z]{2}|\d{2}-[A-Z]{2}-\d{2}|\d{2}-\d{2}-[A-Z]{2}|[A-Z]{2}-\d{2}-\d{2})"#
+    static let belgium = #"(?:[12]-[A-Z]{3}-\d{3}|[A-Z]{3}-\d{3})"#
+    static let switzerland = #"[A-Z]{2}[ \t]+\d{1,6}"#
+    static let austria = #"[A-Z]{1,2}[ \t]+\d{1,5}[ \t]+[A-Z]{1,2}"#
+    static let ireland = #"\d{2,3}-[A-Z]{1,2}-\d{1,6}"#
+    static let sweden = #"[A-Z]{3}[ \t]+\d{2}[A-Z0-9]"#
+    static let norway = #"[A-Z]{2}[ \t]+\d{4,5}"#
+    static let denmark = #"[A-Z]{2}[ \t]?\d{2}[ \t]?\d{3}"#
+    static let finland = #"[A-Z]{2,3}-\d{3}"#
+    static let poland = #"[A-Z]{1,3}[ \t]+[A-Z0-9]{4,5}"#
+    static let hongKong = #"(?:[A-HJ-NPR-Z]{1,2}[ \t]?[1-9]\d{0,3}|[1-9]\d{0,3})"#
+    static let northAmericaSpaced = #"(?=[A-Z0-9 -]{3,9}(?![A-Z0-9-]))(?=[A-Z0-9 -]*\d)[A-Z0-9]{1,4}[ -][A-Z0-9]{1,4}"#
+    static let northAmericaCompact = #"(?=[A-Z0-9]{1,8}(?![A-Z0-9]))(?=[A-Z0-9]*\d)[A-Z0-9]{1,8}"#
+
+    static let contextual = [
+        france, italy, germany, spain, unitedKingdom, netherlands, portugal,
+        belgium, switzerland, austria, ireland, sweden, norway, denmark, finland, poland,
+        hongKong, northAmericaSpaced, northAmericaCompact
+    ]
+
+    static let genericContext = #"(?:license plate(?: number)?|license tag|vehicle tag|plate number|number plate|vehicle plate|registration mark|vehicle registration(?: number)?|车牌号|車牌號|车辆号牌|車輛號牌|车牌|車牌|号牌|號牌|ナンバープレート|車両番号|自動車登録番号|車両登録番号)"#
+}
+
 public struct Redaction: Hashable, Sendable {
     public let token: String
     public let range: Range<String.Index>
@@ -120,6 +157,7 @@ public struct PrivacySanitizer {
             token: "{{ORDER_ID}}",
             captureGroup: 1
         ))
+        redactions.append(contentsOf: plateRedactions(in: text))
         redactions.append(contentsOf: cardRedactions(in: text))
 
         #if canImport(NaturalLanguage)
@@ -140,9 +178,10 @@ public struct PrivacySanitizer {
         in text: String,
         pattern: String,
         token: String,
-        captureGroup: Int = 0
+        captureGroup: Int = 0,
+        options: NSRegularExpression.Options = [.caseInsensitive]
     ) -> [Redaction] {
-        guard let regex = try? NSRegularExpression(pattern: pattern, options: [.caseInsensitive]) else {
+        guard let regex = try? NSRegularExpression(pattern: pattern, options: options) else {
             return []
         }
 
@@ -157,6 +196,135 @@ public struct PrivacySanitizer {
             redactions.append(Redaction(token: token, range: stringRange))
         }
         return redactions
+    }
+
+    private func plateRedactions(in text: String) -> [Redaction] {
+        var redactions = regexRedactions(
+            in: text,
+            pattern: "(?<![A-Z0-9])\(VehiclePlatePatterns.mainlandChina)(?![A-Z0-9])",
+            token: "{{PLATE}}"
+        ).filter { shouldAcceptStrongPlate(at: $0.range, in: text) }
+        redactions.append(contentsOf: regexRedactions(
+            in: text,
+            pattern: "(?<![\\u3400-\\u9FFF])\(VehiclePlatePatterns.japan)(?![0-9A-Z])",
+            token: "{{PLATE}}"
+        ).filter { shouldAcceptStrongPlate(at: $0.range, in: text) })
+        redactions.append(contentsOf: contextualPlateRedactions(
+            in: text,
+            contextPattern: VehiclePlatePatterns.genericContext,
+            candidatePatterns: [VehiclePlatePatterns.japan] + VehiclePlatePatterns.contextual
+        ))
+        redactions.append(contentsOf: contextualPlateRedactions(
+            in: text,
+            contextPattern: #"(?:plaque d'immatriculation|immatriculation du véhicule)"#,
+            candidatePatterns: [VehiclePlatePatterns.france, VehiclePlatePatterns.belgium]
+        ))
+        redactions.append(contentsOf: contextualPlateRedactions(
+            in: text,
+            contextPattern: #"(?:kfz-kennzeichen|autokennzeichen|kennzeichen des fahrzeugs)"#,
+            candidatePatterns: [
+                VehiclePlatePatterns.germany,
+                VehiclePlatePatterns.austria,
+                VehiclePlatePatterns.switzerland
+            ]
+        ))
+        redactions.append(contentsOf: contextualPlateRedactions(
+            in: text,
+            contextPattern: #"targa"#,
+            candidatePatterns: [VehiclePlatePatterns.italy]
+        ))
+        redactions.append(contentsOf: contextualPlateRedactions(
+            in: text,
+            contextPattern: #"(?:matr[ií]cula del (?:veh[ií]culo|coche)|placa vehicular)"#,
+            candidatePatterns: [VehiclePlatePatterns.spain]
+        ))
+        redactions.append(contentsOf: contextualPlateRedactions(
+            in: text,
+            contextPattern: #"(?:matr[ií]cula do (?:ve[ií]culo|automóvel)|chapa de matr[ií]cula)"#,
+            candidatePatterns: [VehiclePlatePatterns.portugal]
+        ))
+        redactions.append(contentsOf: contextualPlateRedactions(
+            in: text,
+            contextPattern: #"kenteken"#,
+            candidatePatterns: [VehiclePlatePatterns.netherlands, VehiclePlatePatterns.belgium]
+        ))
+        redactions.append(contentsOf: contextualPlateRedactions(
+            in: text,
+            contextPattern: #"(?:fordonets|kjøretøyets) registreringsnummer"#,
+            candidatePatterns: [VehiclePlatePatterns.sweden, VehiclePlatePatterns.norway]
+        ))
+        redactions.append(contentsOf: contextualPlateRedactions(
+            in: text,
+            contextPattern: #"(?:nummerplade|køretøjets registreringsnummer)"#,
+            candidatePatterns: [VehiclePlatePatterns.denmark]
+        ))
+        redactions.append(contentsOf: contextualPlateRedactions(
+            in: text,
+            contextPattern: #"(?:ajoneuvon rekisteritunnus|rekisterikilpi)"#,
+            candidatePatterns: [VehiclePlatePatterns.finland]
+        ))
+        redactions.append(contentsOf: contextualPlateRedactions(
+            in: text,
+            contextPattern: #"(?:numer rejestracyjny pojazdu|tablica rejestracyjna)"#,
+            candidatePatterns: [VehiclePlatePatterns.poland]
+        ))
+        return redactions
+    }
+
+    private func contextualPlateRedactions(
+        in text: String,
+        contextPattern: String,
+        candidatePatterns: [String]
+    ) -> [Redaction] {
+        let candidates = candidatePatterns.joined(separator: "|")
+        return regexRedactions(
+            in: text,
+            pattern: "\(contextPattern)[ \\t]*(?:is|是|为|は|：|:|#)?[ \\t]*(\(candidates))(?![A-Z0-9-])",
+            token: "{{PLATE}}",
+            captureGroup: 1
+        ).filter { shouldAcceptContextualPlate($0, in: text) }
+    }
+
+    private func shouldAcceptContextualPlate(_ redaction: Redaction, in text: String) -> Bool {
+        let context = "\(platePrefixContext(before: redaction.range, in: text)) \(plateSuffixContext(after: redaction.range, in: text))"
+        let value = String(text[redaction.range])
+        let regionalRestrictions: [([String], [String])] = [
+            (["香港", "hong kong"], [VehiclePlatePatterns.hongKong]),
+            (["日本", "japan", "japanese"], [VehiclePlatePatterns.japan]),
+            (["中国", "中國", "内地", "內地", "大陆", "大陸", "mainland china"], [VehiclePlatePatterns.mainlandChina]),
+            (["france", "french"], [VehiclePlatePatterns.france]),
+            (["germany", "german"], [VehiclePlatePatterns.germany]),
+            (["italy", "italian"], [VehiclePlatePatterns.italy]),
+            (["spain", "spanish"], [VehiclePlatePatterns.spain]),
+            (["united kingdom", "british"], [VehiclePlatePatterns.unitedKingdom]),
+            (["netherlands", "dutch"], [VehiclePlatePatterns.netherlands]),
+            (["portugal", "portuguese"], [VehiclePlatePatterns.portugal]),
+            (["belgium", "belgian"], [VehiclePlatePatterns.belgium]),
+            (["switzerland", "swiss"], [VehiclePlatePatterns.switzerland]),
+            (["austria", "austrian"], [VehiclePlatePatterns.austria]),
+            (["ireland", "irish"], [VehiclePlatePatterns.ireland]),
+            (["sweden", "swedish"], [VehiclePlatePatterns.sweden]),
+            (["norway", "norwegian"], [VehiclePlatePatterns.norway]),
+            (["denmark", "danish"], [VehiclePlatePatterns.denmark]),
+            (["finland", "finnish"], [VehiclePlatePatterns.finland]),
+            (["poland", "polish"], [VehiclePlatePatterns.poland]),
+            (["united states", "american", "usa"], [
+                VehiclePlatePatterns.northAmericaSpaced,
+                VehiclePlatePatterns.northAmericaCompact
+            ])
+        ]
+        for (keywords, patterns) in regionalRestrictions where keywords.contains(where: context.contains) {
+            return patterns.contains { matchesWholePattern(value, pattern: $0) }
+        }
+        return true
+    }
+
+    private func matchesWholePattern(_ value: String, pattern: String) -> Bool {
+        let range = NSRange(value.startIndex..., in: value)
+        guard let regex = try? NSRegularExpression(pattern: "^(?:\(pattern))$", options: [.caseInsensitive]) else {
+            return false
+        }
+        return regex.firstMatch(in: value, range: range)?.range == range
     }
 
     private func cardRedactions(in text: String) -> [Redaction] {
@@ -178,6 +346,8 @@ public struct PrivacySanitizer {
             return isPlausibleCard(String(text[detection.range]), range: detection.range, in: text)
         case .code:
             return isPlausibleCode(String(text[detection.range]), range: detection.range, in: text)
+        case .orderID:
+            return isPlausibleOrderID(String(text[detection.range]), range: detection.range, in: text)
         case .phone:
             return isPlausiblePhone(String(text[detection.range]), range: detection.range, in: text)
         default:
@@ -208,6 +378,25 @@ public struct PrivacySanitizer {
         ].contains { context.contains($0) }
     }
 
+    private func isPlausibleOrderID(_ value: String, range: Range<String.Index>, in text: String) -> Bool {
+        let compact = value.filter { !$0.isWhitespace }
+        guard
+            (4...24).contains(compact.count),
+            compact.contains(where: \.isNumber),
+            compact.allSatisfy({ $0.isASCII && ($0.isLetter || $0.isNumber || $0 == "-") })
+        else {
+            return false
+        }
+        let lower = text.index(range.lowerBound, offsetBy: -32, limitedBy: text.startIndex) ?? text.startIndex
+        let upper = text.index(range.upperBound, offsetBy: 16, limitedBy: text.endIndex) ?? text.endIndex
+        let context = text[lower..<upper].lowercased()
+        return [
+            "订单号", "订单编号", "运单号", "快递单号", "流水号", "取件码",
+            "注文番号", "追跡番号", "予約番号",
+            "order id", "order number", "tracking id", "tracking number", "reservation number"
+        ].contains(where: context.contains)
+    }
+
     private func isPlausiblePhone(_ value: String, range: Range<String.Index>, in text: String) -> Bool {
         let digits = value.compactMap(\.wholeNumberValue)
         guard (7...15).contains(digits.count) else { return false }
@@ -216,6 +405,40 @@ public struct PrivacySanitizer {
         }
         guard digits.count == 11, digits.first == 1 else { return false }
         return (3...9).contains(digits[1])
+    }
+
+    private func shouldAcceptStrongPlate(at range: Range<String.Index>, in text: String) -> Bool {
+        let context = platePrefixContext(before: range, in: text)
+        return !containsConflictingPlateKeyword(context)
+            && !containsConflictingPlateKeyword(plateSuffixContext(after: range, in: text))
+    }
+
+    private func containsConflictingPlateKeyword(_ context: String) -> Bool {
+        [
+            "航班", "车次", "订单", "产品型号", "商品代码", "活动编号", "构建编号",
+            "flight", "train number", "order", "product model", "product code", "campaign", "build",
+            "予約番号", "注文番号", "便名", "製品型番", "商品コード", "企画番号", "ビルド番号"
+        ].contains(where: context.contains)
+    }
+
+    private func platePrefixContext(before range: Range<String.Index>, in text: String) -> String {
+        let lower = text.index(range.lowerBound, offsetBy: -40, limitedBy: text.startIndex) ?? text.startIndex
+        let context = text[lower..<range.lowerBound].lowercased()
+        let separators: Set<Character> = [",", "，", ".", "。", "!", "！", "?", "？", ";", "；", "\n", "\r"]
+        guard let separator = context.lastIndex(where: separators.contains) else {
+            return context
+        }
+        return String(context[context.index(after: separator)...])
+    }
+
+    private func plateSuffixContext(after range: Range<String.Index>, in text: String) -> String {
+        let upper = text.index(range.upperBound, offsetBy: 32, limitedBy: text.endIndex) ?? text.endIndex
+        let context = text[range.upperBound..<upper].lowercased()
+        let separators: Set<Character> = [",", "，", ".", "。", "!", "！", "?", "？", ";", "；", "\n", "\r"]
+        guard let separator = context.firstIndex(where: separators.contains) else {
+            return context
+        }
+        return String(context[..<separator])
     }
 
     private func hasPhoneContext(around range: Range<String.Index>, in text: String) -> Bool {
@@ -306,7 +529,7 @@ public struct PrivacySanitizer {
 
     private func chooseToken(_ lhs: String, _ rhs: String) -> String {
         if lhs == rhs { return lhs }
-        let priority = ["{{PHONE}}", "{{URL}}", "{{EMAIL}}", "{{ID}}", "{{ADDRESS}}", "{{CARD}}", "{{ORDER_ID}}", "{{AMOUNT}}", "{{CODE}}", "{{NAME}}"]
+        let priority = ["{{PHONE}}", "{{URL}}", "{{EMAIL}}", "{{ID}}", "{{PLATE}}", "{{ADDRESS}}", "{{CARD}}", "{{ORDER_ID}}", "{{AMOUNT}}", "{{CODE}}", "{{NAME}}"]
         for token in priority where token == lhs || token == rhs {
             return token
         }

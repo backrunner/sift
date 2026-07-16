@@ -22,7 +22,10 @@ re-run in isolation; artifacts live under `build/pipeline/`.
 - `curate` enforces data quality (see
   `tools/transformer-trainer/curate_dataset.py`) and audits that every
   taxonomy label has enough zh / en / ja rows; `--strict-audit` turns
-  coverage gaps into pipeline failures.
+  coverage gaps into pipeline failures. It also rejects exact and
+  digit-normalized collisions against both fixed external holdouts before any
+  model can train or be installed. Both train stages repeat the collision check
+  and refuse stale or manually replaced `train.ndjson` files.
 - `train-classic` uses Create ML MaxEnt by default (`--algorithm-classic
   maxent`) because it is the validated high-accuracy, tiny-model baseline for
   the current 50-label SMS corpus; pass `--algorithm-classic bert` or `auto`

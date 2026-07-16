@@ -34,7 +34,7 @@ from pathlib import Path
 
 CORE_LANGUAGES = ("zh", "en", "ja")
 SUPPORTED_LANGUAGES = ("zh", "en", "ja", "es", "pt", "fr", "de", "ru", "ko", "id", "vi", "th")
-PLACEHOLDER_PATTERN = re.compile(r"\{\{(PHONE|URL|EMAIL|ADDRESS|CARD|ID|ORDER_ID|AMOUNT|CODE|NAME)\}\}")
+PLACEHOLDER_PATTERN = re.compile(r"\{\{(PHONE|URL|EMAIL|ADDRESS|CARD|ID|ORDER_ID|AMOUNT|CODE|PLATE|NAME)\}\}")
 
 
 @dataclass
@@ -48,6 +48,7 @@ class Row:
 @dataclass
 class Report:
     inputs: dict[str, int] = field(default_factory=dict)
+    holdouts: dict[str, int] = field(default_factory=dict)
     kept: int = 0
     rejected: Counter = field(default_factory=Counter)
     rehydrated_rows: int = 0
@@ -62,6 +63,13 @@ def parse_arguments() -> argparse.Namespace:
     parser.add_argument("--rejected", type=Path, default=None, help="rejected rows + reasons (NDJSON)")
     parser.add_argument("--report", type=Path, default=None, help="curation report JSON")
     parser.add_argument("--taxonomy", type=Path, default=None, help="taxonomy.json (default: repo copy)")
+    parser.add_argument(
+        "--holdout",
+        type=Path,
+        action="append",
+        default=[],
+        help="external holdout excluded by exact and digit-normalized signature (repeatable)",
+    )
     parser.add_argument("--min-length", type=int, default=8)
     parser.add_argument("--max-length", type=int, default=500)
     parser.add_argument(
@@ -110,6 +118,14 @@ def load_taxonomy_labels(path: Path) -> set[str]:
     return {leaf["id"] for group in document["groups"] for leaf in group["leaves"]}
 
 
+def normalize_language_hint(value: object) -> str:
+    raw = str(value or "").strip().lower().replace("_", "-")
+    base = raw.split("-", 1)[0]
+    aliases = {"cmn": "zh", "eng": "en", "jpn": "ja"}
+    normalized = aliases.get(base, base)
+    return normalized if normalized in SUPPORTED_LANGUAGES else "unknown"
+
+
 def load_rows(paths: list[Path], report: Report) -> list[Row]:
     rows: list[Row] = []
     for path in paths:
@@ -126,7 +142,8 @@ def load_rows(paths: list[Path], report: Report) -> list[Row]:
                 record = json.loads(line)
                 text, label = str(record.get("text", "")), str(record.get("label", ""))
                 if text and label:
-                    rows.append(Row(text=text, label=label, source=path.name))
+                    language = normalize_language_hint(record.get("textLanguage") or record.get("language"))
+                    rows.append(Row(text=text, label=label, source=path.name, language=language))
                     count += 1
         report.inputs[str(path)] = count
     return rows
@@ -190,11 +207,13 @@ def rehydrate_placeholders(text: str, language: str, rng: "_Rng") -> str:
     """Replaces sanitizer tokens ({{PHONE}}, {{CODE}}, …) with plausible fake
     values so contributed samples match the raw-SMS distribution the filter
     sees at inference time."""
-    cjk = language in ("zh", "ja")
-
     def value_for(token: str) -> str:
         if token == "PHONE":
-            return f"1{rng.next_int(30, 99)}{rng.next_int(10000000, 99999999)}" if cjk else f"+{rng.next_int(1, 81)}{rng.next_int(200000000, 999999999)}"
+            if language == "zh":
+                return f"1{rng.next_int(30, 99)}{rng.next_int(10000000, 99999999)}"
+            if language == "ja":
+                return f"090-{rng.next_int(1000, 9999)}-{rng.next_int(1000, 9999)}"
+            return f"+{rng.next_int(1, 81)} {rng.next_int(200, 999)} {rng.next_int(100, 999)} {rng.next_int(1000, 9999)}"
         if token == "URL":
             return f"https://{rng.choice(['t.co', 'bit.ly', 'dwz.cn', 'go.link'])}/{rng.next_int(100000, 999999)}"
         if token == "EMAIL":
@@ -208,8 +227,15 @@ def rehydrate_placeholders(text: str, language: str, rng: "_Rng") -> str:
         if token == "CARD":
             return " ".join(str(rng.next_int(1000, 9999)) for _ in range(4))
         if token == "ID":
-            # Obviously synthetic ID-card-shaped number (invalid checksum).
-            return f"11010{rng.next_int(1, 9)}19{rng.next_int(60, 99)}0{rng.next_int(1, 9)}{rng.next_int(10, 28)}{rng.next_int(100, 999)}X"
+            if language == "zh":
+                body = f"11010{rng.next_int(1, 9)}19{rng.next_int(60, 99)}0{rng.next_int(1, 9)}{rng.next_int(10, 28)}{rng.next_int(100, 999)}"
+                weights = (7, 9, 10, 5, 8, 4, 2, 1, 6, 3, 7, 9, 10, 5, 8, 4, 2)
+                valid_checksum = "10X98765432"[sum(int(digit) * weight for digit, weight in zip(body, weights)) % 11]
+                invalid_checksum = "0" if valid_checksum != "0" else "1"
+                return body + invalid_checksum
+            if language == "ja":
+                return "000000000000"
+            return "P00000000"
         if token == "ORDER_ID":
             return f"{rng.next_int(100000000, 999999999)}"
         if token == "AMOUNT":
@@ -221,6 +247,42 @@ def rehydrate_placeholders(text: str, language: str, rng: "_Rng") -> str:
             return f"${amount}"
         if token == "CODE":
             return str(rng.next_int(100000, 999999))
+        if token == "PLATE":
+            if language == "zh":
+                if rng.next_int(0, 4) == 0:
+                    return rng.choice([
+                        f"{rng.choice(['AB', 'CD', 'EF'])} {rng.next_int(1, 9999)}",
+                        str(rng.next_int(1, 9999)),
+                    ])
+                province = rng.choice(list("京津沪渝冀豫云辽黑湘皖鲁新苏浙赣鄂桂甘晋蒙陕吉闽贵粤青藏川宁琼"))
+                letter = rng.choice(list("ABCDEFGHJKLMNPQRSTUVWXYZ"))
+                if rng.next_int(0, 3) == 0:
+                    suffix = rng.choice(["D", "F"]) + "".join(
+                        rng.choice(list("ABCDEFGHJKLMNPQRSTUVWXYZ0123456789")) for _ in range(5)
+                    )
+                else:
+                    suffix = "".join(rng.choice(list("ABCDEFGHJKLMNPQRSTUVWXYZ0123456789")) for _ in range(5))
+                return province + letter + suffix
+            if language == "ja":
+                return (
+                    f"{rng.choice(['品川', '練馬', '横浜', '大阪', '神戸'])} "
+                    f"{rng.next_int(300, 599)} {rng.choice(list('あいうえかきくけこさすせそたちつてとなにぬねの'))} "
+                    f"{rng.next_int(10, 99)}-{rng.next_int(10, 99)}"
+                )
+            if language == "de":
+                return f"{rng.choice(['B', 'M', 'HH'])}-{rng.choice(['AB', 'CD', 'EF'])} {rng.next_int(1, 9999)}"
+            if language == "fr":
+                return f"{rng.choice(['AB', 'CD', 'EF'])}-{rng.next_int(100, 999)}-{rng.choice(['GH', 'JK', 'LM'])}"
+            if language == "es":
+                return f"{rng.next_int(1000, 9999)} {rng.choice(['BCD', 'FGH', 'JKL'])}"
+            if language == "pt":
+                return f"{rng.next_int(10, 99)}-{rng.choice(['AB', 'CD', 'EF'])}-{rng.next_int(10, 99)}"
+            return rng.choice([
+                f"{rng.choice(['S', 'B', 'M'])}{rng.choice(['AA', 'KT', 'RX'])}{rng.next_int(1000, 9999)}",
+                f"{rng.choice(['AB', 'CD', 'EF'])}{rng.next_int(10, 99)} {rng.choice(['CDE', 'FGH', 'JKL'])}",
+                f"{rng.choice(['AB', 'CD', 'EF'])} {rng.next_int(1, 9999):04d}",
+                f"{rng.choice(['AB', 'ZX', 'KLM'])}-{rng.next_int(1000, 9999)}",
+            ])
         if token == "NAME":
             if language == "zh":
                 return rng.choice(["李先生", "王女士", "张老师", "陈先生"])
@@ -238,10 +300,36 @@ def normalize(text: str) -> str:
     return re.sub(r"\s+", " ", unicodedata.normalize("NFC", text)).strip()
 
 
+def is_placeholder_only(text: str) -> bool:
+    residual = PLACEHOLDER_PATTERN.sub("", text)
+    return bool(PLACEHOLDER_PATTERN.search(text)) and not any(character.isalnum() for character in residual)
+
+
 def near_duplicate_signature(text: str) -> str:
     collapsed = re.sub(r"\d+", "0", text.lower())
     collapsed = re.sub(r"[\W_]+", "", collapsed, flags=re.UNICODE)
     return collapsed[:80]
+
+
+def load_holdout_keys(paths: list[Path], report: Report) -> tuple[set[str], set[str]]:
+    exact: set[str] = set()
+    signatures: set[str] = set()
+    for path in paths:
+        if not path.exists():
+            raise SystemExit(f"error: holdout missing: {path}")
+        count = 0
+        with path.open(encoding="utf-8") as handle:
+            for number, line in enumerate(handle, 1):
+                if not line.strip():
+                    continue
+                text = normalize(str(json.loads(line).get("text", "")))
+                if not text:
+                    raise SystemExit(f"error: holdout text missing at {path}:{number}")
+                exact.add(text.lower())
+                signatures.add(near_duplicate_signature(text))
+                count += 1
+        report.holdouts[str(path)] = count
+    return exact, signatures
 
 
 def junk_reason(text: str, language: str, min_length: int, max_length: int) -> str | None:
@@ -261,7 +349,7 @@ def junk_reason(text: str, language: str, min_length: int, max_length: int) -> s
         if len(re.findall(r"[\w']+", text, re.UNICODE)) < 2:
             return "too-few-words"
 
-    if not PLACEHOLDER_PATTERN.sub("", text).strip(" .,;:!?，。；：！？"):
+    if is_placeholder_only(text):
         return "placeholder-only"
     return None
 
@@ -273,7 +361,11 @@ def apply_rule_tier(
     arguments: argparse.Namespace,
     report: Report,
     rejected_sink: list[dict],
+    holdout_exact: set[str] | None = None,
+    holdout_signatures: set[str] | None = None,
 ) -> list[Row]:
+    holdout_exact = holdout_exact or set()
+    holdout_signatures = holdout_signatures or set()
     kept: list[Row] = []
     seen_exact: set[str] = set()
     seen_signatures: set[str] = set()
@@ -286,8 +378,13 @@ def apply_rule_tier(
             report.rejected["unknown-label" if text else "empty"] += 1
             rejected_sink.append({"text": row.text, "label": row.label, "source": row.source, "reason": "unknown-label"})
             continue
+        if is_placeholder_only(text):
+            report.rejected["placeholder-only"] += 1
+            rejected_sink.append({"text": row.text, "label": row.label, "source": row.source, "reason": "placeholder-only"})
+            continue
         row.text = text
-        row.language = detect_language(text)
+        if row.language not in SUPPORTED_LANGUAGES:
+            row.language = detect_language(text)
         if PLACEHOLDER_PATTERN.search(text):
             row.text = normalize(rehydrate_placeholders(text, row.language, stable_rng(text)))
             report.rehydrated_rows += 1
@@ -302,17 +399,22 @@ def apply_rule_tier(
             reason = f"language:{row.language}"
         if reason is None and row.text.lower() in conflicting_texts:
             reason = "cross-label-conflict"
+        signature = near_duplicate_signature(row.text)
+        if reason is None and row.text.lower() in holdout_exact:
+            reason = "holdout-exact"
+        if reason is None and signature in holdout_signatures:
+            reason = "holdout-near"
         if reason is None:
             exact_key = f"{row.label}\x1f{row.text}"
             if exact_key in seen_exact:
                 reason = "duplicate"
             else:
                 seen_exact.add(exact_key)
-                signature = f"{row.label}\x1f{near_duplicate_signature(row.text)}"
-                if signature in seen_signatures:
+                label_signature = f"{row.label}\x1f{signature}"
+                if label_signature in seen_signatures:
                     reason = "near-duplicate"
                 else:
-                    seen_signatures.add(signature)
+                    seen_signatures.add(label_signature)
 
         if reason is None:
             kept.append(row)
@@ -467,12 +569,17 @@ def main() -> None:
     report = Report()
     rejected_sink: list[dict] = []
     rows = load_rows(list(arguments.inputs), report)
+    holdout_exact, holdout_signatures = load_holdout_keys(
+        [path.expanduser().resolve() for path in arguments.holdout],
+        report,
+    )
     print(f"loaded {len(rows)} rows from {len(arguments.inputs)} inputs")
 
     if arguments.audit_only:
         for row in rows:
             row.text = normalize(row.text)
-            row.language = detect_language(row.text)
+            if row.language not in SUPPORTED_LANGUAGES:
+                row.language = detect_language(row.text)
         rows = [row for row in rows if row.label in valid_labels]
         build_matrix(rows, valid_labels, report)
         audit_core_coverage(report, arguments.min_core_rows)
@@ -485,7 +592,16 @@ def main() -> None:
     if not arguments.out:
         raise SystemExit("error: --out is required unless --audit-only")
 
-    rows = apply_rule_tier(rows, valid_labels, allowed_languages, arguments, report, rejected_sink)
+    rows = apply_rule_tier(
+        rows,
+        valid_labels,
+        allowed_languages,
+        arguments,
+        report,
+        rejected_sink,
+        holdout_exact,
+        holdout_signatures,
+    )
     if arguments.model_filter != "off":
         rows = apply_model_tier(rows, arguments, report, rejected_sink)
 

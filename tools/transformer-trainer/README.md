@@ -79,7 +79,9 @@ the automated pipeline runs between "fetch" and "train":
 ```bash
 # rule tier only (stdlib, no ML deps)
 python3 curate_dataset.py --inputs a.ndjson b.ndjson \
-  --out train.ndjson --rejected rejected.ndjson --report report.json --audit
+  --out train.ndjson --rejected rejected.ndjson --report report.json --audit \
+  --holdout ../apple-trainer/Evaluation/classification-regressions.ndjson \
+  --holdout ../apple-trainer/Evaluation/promotion-regressions.ndjson
 
 # + embedding label-noise filter (drops rows closer to another label's centroid)
 uv run curate_dataset.py --inputs ... --out train.ndjson --model-filter on
@@ -91,9 +93,20 @@ python3 curate_dataset.py --inputs train.ndjson --audit-only --strict-audit
 Rule tier: taxonomy validation → NFC/whitespace normalization → length
 bounds → junk heuristics (low-information, repetitive, too-few-words,
 placeholder-only) → **sanitizer-placeholder rehydration** (`{{PHONE}}`,
-`{{CODE}}`, … become plausible fake values so contributed samples match the
-raw-SMS distribution seen at inference) → exact + near-duplicate dedupe →
+`{{CODE}}`, `{{PLATE}}`, … become plausible fake values so contributed samples
+match the raw-SMS distribution seen at inference without attempting to recover
+the submitted original) → exact + near-duplicate dedupe →
 cross-label conflict removal → language allowlist.
+
+CloudKit exports retain the device-detected `textLanguage`. Curation normalizes
+that hint (`zh-Hans` → `zh`, `ja-JP` → `ja`) and only falls back to script
+detection when the hint is absent, so kanji-only Japanese samples are not
+rehydrated with Chinese values.
+
+The automated pipeline always supplies both external holdouts. Exact and
+digit-normalized collisions are rejected before either model can train or be
+installed, and the counts appear as `holdout-exact` / `holdout-near` in the
+curation report.
 
 Model tier (`--model-filter auto|on`): embeds every row with the backbone,
 builds per-label centroids, and rejects rows whose own-label cosine trails

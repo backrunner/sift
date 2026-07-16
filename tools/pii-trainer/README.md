@@ -5,7 +5,9 @@ sanitizer. Sanitization runs on two legs:
 
 1. **Rules (always on, the floor)** — deterministic regex/NSDataDetector
    redaction in `PrivacySanitizer` (phone, URL, email, identity documents, bank
-   card, order/pickup/verification codes, amounts, addresses, names).
+   card, vehicle plates, order/pickup/verification codes, amounts, addresses,
+   names). Vehicle plates are intentionally rules-only: a broad token model is
+   not allowed to bypass the regional format and context checks.
 2. **Model (this trainer, optional)** — a token-classification model that
    widens recall on messy formats the rules miss. The Swift side **unions**
    both legs before redacting, so an immature model can never make results
@@ -14,10 +16,10 @@ sanitizer. Sanitization runs on two legs:
 ## How it works
 
 Training data is synthesized: carrier sentences from the SMS corpus receive
-fake phone numbers / ID cards / emails / addresses / names at random word
-boundaries with exact span labels (50% of sentences stay clean by default). A WordPiece
-backbone (`distilbert-base-multilingual-cased` by default, truncated to 2
-encoder layers) is fine-tuned for per-token tagging, then exported as
+fake phone numbers / ID cards / emails / addresses / names at
+random word boundaries with exact span labels (50% of sentences stay clean by
+default). A WordPiece backbone (`distilbert-base-multilingual-cased` by default,
+truncated to 2 encoder layers) is fine-tuned for per-token tagging, then exported as
 `logits [1, seq, tags]` with the same vocab format the Swift
 `WordPieceTokenizer` consumes.
 
@@ -34,13 +36,21 @@ uv run train_pii.py \
   --install-ios          # copies SiftPIIDetector.* into apps/ios/GeneratedModels
 ```
 
-The trainer reports PII micro precision/recall/F1 and clean-sentence false
-positive rate, including the fixed zh/en/ja hard-negative set under
-`Evaluation/clean-negatives.ndjson`. `--install-ios` is gated by
-`--minimum-pii-f1` (0.90) and
-`--maximum-clean-fpr` (0.02), so a high-recall but noisy detector is not
-silently shipped. Evaluation applies the same 0.85 non-PII confidence gate as
-the iOS detector (`--inference-threshold`).
+The trainer reports PII micro precision/recall/F1 and clean-sentence
+false-positive rate. Evaluation includes the fixed multilingual hard-negative
+set under `Evaluation/clean-negatives.ndjson`. `--install-ios` is gated by
+`--minimum-pii-f1` (0.90) and `--maximum-clean-fpr` (0.02), using the same 0.85
+non-PII confidence gate as the iOS detector (`--inference-threshold`).
+
+Vehicle-plate accuracy is gated separately by Swift sanitizer regressions. The
+shared `Evaluation/plate-positives.ndjson` fixture covers China, Japan, Europe,
+the US, and Hong Kong; `clean-negatives.ndjson` contains plate-shaped flight,
+order, product, registration, and enrollment identifiers that must remain
+visible.
+
+Every run writes `quality-report.json` before the install gate. Failed
+candidates therefore retain auditable F1/FPR results even though
+their Core ML artifacts are not installed.
 
 Device support matches the other trainers: `--device auto` picks
 cuda (NVIDIA CUDA / AMD ROCm builds) → mps (Apple Silicon) → cpu, and export

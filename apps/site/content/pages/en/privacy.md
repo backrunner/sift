@@ -3,7 +3,7 @@ title: Sift Privacy Policy
 description: How Sift handles SMS, optional sample contributions, and iCloud data.
 ---
 
-**Effective date: July 15, 2026**
+**Effective date: July 17, 2026**
 
 This Privacy Policy describes how Sift ("the App", "we", "us") handles information when you use the Sift iOS application and its optional cloud features. Sift is designed to be **local-first**: SMS filtering, custom rules, and on-device personalization all run on your device by default.
 
@@ -30,7 +30,7 @@ The following never leaves your device unless you explicitly choose to contribut
 
 If, and only if, you enable anonymous contribution and submit a sample, the App writes a single record to the App's CloudKit **public database** containing:
 
-- the sanitized sample text. Phone numbers, ID numbers, emails, URLs, bank cards, addresses, codes, and names are replaced with placeholders before upload; a preview shows you exactly what will be sent;
+- the sanitized sample text. Phone numbers, ID numbers, vehicle license plates, emails, URLs, bank cards, addresses, codes, and names are replaced with placeholders before upload; a preview shows you exactly what will be sent;
 - the category label you selected;
 - the App's predicted category and confidence, used to weigh data quality during training;
 - the classifier version, a payload schema version, a coarse language or region tag (for example `zh-CN`), and a client timestamp.
