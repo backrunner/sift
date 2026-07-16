@@ -40,21 +40,51 @@ public protocol PIIDetecting: Sendable {
     func detections(in text: String) -> [PIIDetection]
 }
 
+/// Manifest emitted by the current PII trainer for the bundled WordPiece
+/// token-classification model.
+public struct PIIModelManifest: Codable, Hashable, Sendable {
+    public let version: String
+    public let trainedAt: String
+    public let algorithm: String
+    public let backbone: String
+    public let languages: [String]
+    public let labels: [String]
+    public let maxSequenceLength: Int
+    public let doLowerCase: Bool
+    public let vocabularyArtifact: String
+    public let modelArtifact: String
+    public let sha256: String
+}
+
 public enum PIIDetectorLoader {
     public static let defaultResourceName = "SiftPIIDetector"
 
     public static func manifest(
         resourceName: String = defaultResourceName,
         bundles: [Bundle] = [.main]
-    ) -> TransformerModelManifest? {
-        TransformerClassifierLoader.manifest(resourceName: resourceName, bundles: bundles)
+    ) -> PIIModelManifest? {
+        for bundle in bundles {
+            guard
+                let url = bundle.url(forResource: "\(resourceName).manifest", withExtension: "json"),
+                let data = try? Data(contentsOf: url),
+                let manifest = try? JSONDecoder().decode(PIIModelManifest.self, from: data)
+            else {
+                continue
+            }
+            return manifest
+        }
+        return nil
     }
 
     public static func isAvailable(
         resourceName: String = defaultResourceName,
         bundles: [Bundle] = [.main]
     ) -> Bool {
-        TransformerClassifierLoader.isAvailable(resourceName: resourceName, bundles: bundles)
+        guard let manifest = manifest(resourceName: resourceName, bundles: bundles) else {
+            return false
+        }
+        return vocabularyURL(for: manifest, bundles: bundles) != nil
+            && modelURL(for: manifest, bundles: bundles) != nil
     }
 
     /// Loads the optional bundled PII model; nil (rules-only sanitization)
@@ -67,12 +97,8 @@ public enum PIIDetectorLoader {
         #if canImport(CoreML)
         guard
             let manifest = manifest(resourceName: resourceName, bundles: bundles),
-            let vocabularyURL = TransformerClassifierLoader.vocabularyURL(
-                manifest: manifest,
-                resourceName: resourceName,
-                bundles: bundles
-            ),
-            let modelURL = TransformerClassifierLoader.modelURL(resourceName: resourceName, bundles: bundles)
+            let vocabularyURL = vocabularyURL(for: manifest, bundles: bundles),
+            let modelURL = modelURL(for: manifest, bundles: bundles)
         else {
             return nil
         }
@@ -85,9 +111,8 @@ public enum PIIDetectorLoader {
                     maxSequenceLength: manifest.maxSequenceLength
                 )
             )
-            let compiledURL = modelURL.pathExtension == "mlmodelc" ? modelURL : try MLModel.compileModel(at: modelURL)
             return try CoreMLPIIDetector(
-                modelURL: compiledURL,
+                modelURL: modelURL,
                 tokenizer: tokenizer,
                 tags: manifest.labels,
                 confidenceThreshold: confidenceThreshold
@@ -98,6 +123,35 @@ public enum PIIDetectorLoader {
         #else
         return nil
         #endif
+    }
+
+    private static func vocabularyURL(
+        for manifest: PIIModelManifest,
+        bundles: [Bundle]
+    ) -> URL? {
+        let artifact = URL(fileURLWithPath: manifest.vocabularyArtifact)
+        guard
+            artifact.lastPathComponent == manifest.vocabularyArtifact,
+            artifact.pathExtension == "txt"
+        else {
+            return nil
+        }
+        return bundles.lazy.compactMap {
+            $0.url(forResource: artifact.deletingPathExtension().lastPathComponent, withExtension: artifact.pathExtension)
+        }.first
+    }
+
+    private static func modelURL(for manifest: PIIModelManifest, bundles: [Bundle]) -> URL? {
+        let artifact = URL(fileURLWithPath: manifest.modelArtifact)
+        guard
+            artifact.lastPathComponent == manifest.modelArtifact,
+            artifact.pathExtension == "mlpackage"
+        else {
+            return nil
+        }
+        return bundles.lazy.compactMap {
+            $0.url(forResource: artifact.deletingPathExtension().lastPathComponent, withExtension: "mlmodelc")
+        }.first
     }
 }
 

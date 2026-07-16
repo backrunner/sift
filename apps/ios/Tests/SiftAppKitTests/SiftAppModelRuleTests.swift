@@ -4,41 +4,16 @@ import MessageFilterCore
 import SiftAppKit
 import Testing
 
-private let rulesPersistenceKey = "Sift.customRules"
 private let remoteSamplePrivacyConsentKey = "Sift.hasAcceptedRemoteSamplePrivacy"
-private let lastRemoteSampleReceiptTokenKey = "Sift.lastRemoteSampleReceiptToken"
-
-/// Snapshots and clears both rule stores (legacy standard defaults + shared
-/// app-group defaults) so rule tests stay isolated; returns a restore closure.
-@MainActor
-private func withCleanRuleStores() -> () -> Void {
-    let standard = UserDefaults.standard
-    let shared = UserDefaults(suiteName: ModelSelectionStore.appGroupIdentifier)
-    let originalStandard = standard.data(forKey: rulesPersistenceKey)
-    let originalShared = shared?.data(forKey: rulesPersistenceKey)
-    standard.removeObject(forKey: rulesPersistenceKey)
-    shared?.removeObject(forKey: rulesPersistenceKey)
-    return {
-        if let originalStandard {
-            standard.set(originalStandard, forKey: rulesPersistenceKey)
-        } else {
-            standard.removeObject(forKey: rulesPersistenceKey)
-        }
-        if let originalShared {
-            shared?.set(originalShared, forKey: rulesPersistenceKey)
-        } else {
-            shared?.removeObject(forKey: rulesPersistenceKey)
-        }
-    }
-}
 
 @MainActor
 @Test
 func ruleAddEditToggleAndDeletePersistAcrossModelInstances() throws {
-    let restore = withCleanRuleStores()
-    defer { restore() }
+    let suiteName = "SiftTests.rules.persistence.\(UUID().uuidString)"
+    let defaults = try #require(UserDefaults(suiteName: suiteName))
+    defer { defaults.removePersistentDomain(forName: suiteName) }
 
-    let model = SiftAppModel()
+    let model = SiftAppModel(ruleDefaults: defaults)
     #expect(model.rules.isEmpty)
 
     model.ruleDraftName = "Pickup code"
@@ -53,7 +28,7 @@ func ruleAddEditToggleAndDeletePersistAcrossModelInstances() throws {
     #expect(addedRule.text?.pattern == "取件码")
     #expect(addedRule.action == .block)
 
-    let reloadedAfterAdd = SiftAppModel()
+    let reloadedAfterAdd = SiftAppModel(ruleDefaults: defaults)
     let persistedAddedRule = try #require(reloadedAfterAdd.rules.first)
     #expect(persistedAddedRule.id == addedRule.id)
     #expect(persistedAddedRule.text?.pattern == "取件码")
@@ -74,7 +49,7 @@ func ruleAddEditToggleAndDeletePersistAcrossModelInstances() throws {
     #expect(editedRule.text == nil)
     #expect(editedRule.action == .allow)
 
-    let reloadedAfterEdit = SiftAppModel()
+    let reloadedAfterEdit = SiftAppModel(ruleDefaults: defaults)
     let persistedEditedRule = try #require(reloadedAfterEdit.rules.first)
     #expect(persistedEditedRule.name == "Bank sender")
     #expect(persistedEditedRule.sender?.pattern == "^955\\d{2}$")
@@ -83,32 +58,29 @@ func ruleAddEditToggleAndDeletePersistAcrossModelInstances() throws {
     toggledRule.enabled = false
     reloadedAfterEdit.rules[0] = toggledRule
 
-    let reloadedAfterToggle = SiftAppModel()
+    let reloadedAfterToggle = SiftAppModel(ruleDefaults: defaults)
     let persistedToggledRule = try #require(reloadedAfterToggle.rules.first)
     #expect(!persistedToggledRule.enabled)
 
     reloadedAfterToggle.deleteRule(id: addedRule.id)
     #expect(reloadedAfterToggle.rules.isEmpty)
 
-    let reloadedAfterDelete = SiftAppModel()
+    let reloadedAfterDelete = SiftAppModel(ruleDefaults: defaults)
     #expect(!reloadedAfterDelete.rules.contains { $0.id == addedRule.id })
 }
 
 @MainActor
 @Test
 func remoteSubmitFailureKeepsVisibleFeedback() async throws {
-    let defaults = UserDefaults.standard
-    let originalConsent = defaults.object(forKey: remoteSamplePrivacyConsentKey)
+    let suiteName = "SiftTests.remoteFailure.\(UUID().uuidString)"
+    let defaults = try #require(UserDefaults(suiteName: suiteName))
     defaults.set(true, forKey: remoteSamplePrivacyConsentKey)
-    defer {
-        if let originalConsent {
-            defaults.set(originalConsent, forKey: remoteSamplePrivacyConsentKey)
-        } else {
-            defaults.removeObject(forKey: remoteSamplePrivacyConsentKey)
-        }
-    }
+    defer { defaults.removePersistentDomain(forName: suiteName) }
 
-    let model = SiftAppModel(remoteSampleClient: MockRemoteSampleClient(result: .failure(RemoteSampleClientError.noAccount)))
+    let model = SiftAppModel(
+        remoteSampleClient: MockRemoteSampleClient(result: .failure(RemoteSampleClientError.noAccount)),
+        appDefaults: defaults
+    )
     model.submissionDestination = .remote
     model.submissionText = "您的验证码为 123456，请勿告知他人。"
 
@@ -117,7 +89,7 @@ func remoteSubmitFailureKeepsVisibleFeedback() async throws {
 
     #expect(model.sampleSubmissionFeedback?.kind == .error)
     #expect(model.sampleSubmissionFeedback?.message == "请先在系统设置中登录 iCloud，再匿名共享样本")
-    #expect(model.currentToast == nil)
+    #expect(model.toastCenter.toast == nil)
     #expect(model.lastReceiptToken == nil)
 }
 
@@ -148,27 +120,15 @@ func sanitizedPreviewUpdatesAfterDebounceAndClearsWithInput() async throws {
 func remoteSubmitSuccessStoresReceiptToken() async throws {
     let suiteName = "SiftTests.remoteSubmitCounter.\(UUID().uuidString)"
     let ledgerDefaults = try #require(UserDefaults(suiteName: suiteName))
-    let defaults = UserDefaults.standard
-    let originalConsent = defaults.object(forKey: remoteSamplePrivacyConsentKey)
-    let originalReceipt = defaults.string(forKey: lastRemoteSampleReceiptTokenKey)
-    defaults.set(true, forKey: remoteSamplePrivacyConsentKey)
-    defaults.removeObject(forKey: lastRemoteSampleReceiptTokenKey)
-    defer {
-        ledgerDefaults.removePersistentDomain(forName: suiteName)
-        if let originalConsent {
-            defaults.set(originalConsent, forKey: remoteSamplePrivacyConsentKey)
-        } else {
-            defaults.removeObject(forKey: remoteSamplePrivacyConsentKey)
-        }
-        if let originalReceipt {
-            defaults.set(originalReceipt, forKey: lastRemoteSampleReceiptTokenKey)
-        } else {
-            defaults.removeObject(forKey: lastRemoteSampleReceiptTokenKey)
-        }
-    }
+    ledgerDefaults.set(true, forKey: remoteSamplePrivacyConsentKey)
+    defer { ledgerDefaults.removePersistentDomain(forName: suiteName) }
 
     let client = MockRemoteSampleClient(result: .success("ck-record-123"))
-    let model = SiftAppModel(remoteSampleClient: client, ledgerDefaults: ledgerDefaults)
+    let model = SiftAppModel(
+        remoteSampleClient: client,
+        appDefaults: ledgerDefaults,
+        ledgerDefaults: ledgerDefaults
+    )
     model.submissionDestination = .remote
     model.selectedLabelID = "verification"
     model.submissionText = "您的验证码为 123456，请勿告知他人。"
@@ -178,7 +138,8 @@ func remoteSubmitSuccessStoresReceiptToken() async throws {
 
     #expect(model.lastReceiptToken == "ck-record-123")
     #expect(model.sampleSubmissionFeedback?.kind == .success)
-    #expect(model.currentToast == nil)
+    #expect(model.toastCenter.toast?.kind == .success)
+    #expect(model.toastCenter.toast?.message == "匿名样本提交成功")
     #expect(model.submissionText.isEmpty)
     #expect(model.submittedSampleCount == 1)
     #expect(SubmissionLedger.count(defaults: ledgerDefaults) == 1)
@@ -228,27 +189,15 @@ func similarCachedRemoteSubmissionIsNotSubmittedAgain() async throws {
 func remoteSubmitDisagreementStillSubmitsWithHint() async throws {
     let suiteName = "SiftTests.remoteDisagreement.\(UUID().uuidString)"
     let ledgerDefaults = try #require(UserDefaults(suiteName: suiteName))
-    let defaults = UserDefaults.standard
-    let originalConsent = defaults.object(forKey: remoteSamplePrivacyConsentKey)
-    let originalReceipt = defaults.string(forKey: lastRemoteSampleReceiptTokenKey)
-    defaults.set(true, forKey: remoteSamplePrivacyConsentKey)
-    defaults.removeObject(forKey: lastRemoteSampleReceiptTokenKey)
-    defer {
-        ledgerDefaults.removePersistentDomain(forName: suiteName)
-        if let originalConsent {
-            defaults.set(originalConsent, forKey: remoteSamplePrivacyConsentKey)
-        } else {
-            defaults.removeObject(forKey: remoteSamplePrivacyConsentKey)
-        }
-        if let originalReceipt {
-            defaults.set(originalReceipt, forKey: lastRemoteSampleReceiptTokenKey)
-        } else {
-            defaults.removeObject(forKey: lastRemoteSampleReceiptTokenKey)
-        }
-    }
+    ledgerDefaults.set(true, forKey: remoteSamplePrivacyConsentKey)
+    defer { ledgerDefaults.removePersistentDomain(forName: suiteName) }
 
     let client = MockRemoteSampleClient(result: .success("ck-record-456"))
-    let model = SiftAppModel(remoteSampleClient: client, ledgerDefaults: ledgerDefaults)
+    let model = SiftAppModel(
+        remoteSampleClient: client,
+        appDefaults: ledgerDefaults,
+        ledgerDefaults: ledgerDefaults
+    )
     model.submissionDestination = .remote
     // The local model confidently reads this as a verification code, so a
     // pickup-code label is a high-confidence disagreement: the sample still
@@ -261,6 +210,7 @@ func remoteSubmitDisagreementStillSubmitsWithHint() async throws {
 
     #expect(model.lastReceiptToken == "ck-record-456")
     #expect(model.sampleSubmissionFeedback?.kind == .info)
+    #expect(model.toastCenter.toast?.kind == .success)
     let submitted = await client.recorder.submissions
     #expect(submitted.count == 1)
     #expect(submitted.first?.labelID == "life.pickup_code")
@@ -269,19 +219,15 @@ func remoteSubmitDisagreementStillSubmitsWithHint() async throws {
 
 @MainActor
 @Test
-func remoteSubmitRequiresPrivacyConsent() {
-    let defaults = UserDefaults.standard
-    let originalConsent = defaults.object(forKey: remoteSamplePrivacyConsentKey)
-    defaults.removeObject(forKey: remoteSamplePrivacyConsentKey)
-    defer {
-        if let originalConsent {
-            defaults.set(originalConsent, forKey: remoteSamplePrivacyConsentKey)
-        } else {
-            defaults.removeObject(forKey: remoteSamplePrivacyConsentKey)
-        }
-    }
+func remoteSubmitRequiresPrivacyConsent() throws {
+    let suiteName = "SiftTests.remoteConsent.\(UUID().uuidString)"
+    let defaults = try #require(UserDefaults(suiteName: suiteName))
+    defer { defaults.removePersistentDomain(forName: suiteName) }
 
-    let model = SiftAppModel(remoteSampleClient: MockRemoteSampleClient(result: .success("unused")))
+    let model = SiftAppModel(
+        remoteSampleClient: MockRemoteSampleClient(result: .success("unused")),
+        appDefaults: defaults
+    )
     model.submissionDestination = .remote
     model.submissionText = "您的验证码为 123456，请勿告知他人。"
 
@@ -321,32 +267,57 @@ func submissionCategoryDefaultsToFirstLeafAndFollowsLocalModelUntilManuallyChang
 
 @MainActor
 @Test
-func remoteReceiptPersistsAcrossModelInstances() {
-    let defaults = UserDefaults.standard
-    let originalReceipt = defaults.string(forKey: lastRemoteSampleReceiptTokenKey)
-    defaults.removeObject(forKey: lastRemoteSampleReceiptTokenKey)
-    defer {
-        if let originalReceipt {
-            defaults.set(originalReceipt, forKey: lastRemoteSampleReceiptTokenKey)
-        } else {
-            defaults.removeObject(forKey: lastRemoteSampleReceiptTokenKey)
-        }
-    }
-
+func remoteReceiptIsSessionOnlyAndClearsOnForeground() {
     let model = SiftAppModel()
     model.lastReceiptToken = "receipt-test-token"
+    model.clearTransientReceipt()
+
+    #expect(model.lastReceiptToken == nil)
 
     let reloaded = SiftAppModel()
-    #expect(reloaded.lastReceiptToken == "receipt-test-token")
+    #expect(reloaded.lastReceiptToken == nil)
 }
 
 @MainActor
 @Test
-func testPreviewAppliesCustomRulesBeforeModel() {
-    let restore = withCleanRuleStores()
-    defer { restore() }
+func remoteSubmissionFinishingAfterForegroundResetDoesNotRestoreReceipt() async throws {
+    let suiteName = "SiftTests.remoteReceipt.inFlight.\(UUID().uuidString)"
+    let defaults = try #require(UserDefaults(suiteName: suiteName))
+    defaults.set(true, forKey: remoteSamplePrivacyConsentKey)
+    defer { defaults.removePersistentDomain(forName: suiteName) }
 
-    let model = SiftAppModel(remoteSampleClient: MockRemoteSampleClient(result: .success("unused")))
+    let gate = DelayedSubmissionGate()
+    let model = SiftAppModel(
+        remoteSampleClient: DelayedRemoteSampleClient(gate: gate),
+        appDefaults: defaults,
+        ledgerDefaults: defaults
+    )
+    model.submissionDestination = .remote
+    model.selectedLabelID = "verification"
+    model.submissionText = "您的验证码为 123456，请勿告知他人。"
+
+    model.submitSample()
+    try await waitUntilSubmissionStarts(gate)
+    model.clearTransientReceipt()
+    await gate.release()
+    try await waitUntil { !model.isSubmittingSample }
+
+    #expect(model.lastReceiptToken == nil)
+    #expect(model.submissionHistory.first?.recordName == "delayed-receipt")
+    #expect(model.toastCenter.toast?.kind == .success)
+}
+
+@MainActor
+@Test
+func testPreviewAppliesCustomRulesBeforeModel() async throws {
+    let suiteName = "SiftTests.rules.preview.\(UUID().uuidString)"
+    let defaults = try #require(UserDefaults(suiteName: suiteName))
+    defer { defaults.removePersistentDomain(forName: suiteName) }
+
+    let model = SiftAppModel(
+        remoteSampleClient: MockRemoteSampleClient(result: .success("unused")),
+        ruleDefaults: defaults
+    )
     model.ruleDraftName = "Marker rule"
     model.ruleDraftLocation = .body
     model.ruleDraftPatternKind = .substring
@@ -356,6 +327,7 @@ func testPreviewAppliesCustomRulesBeforeModel() {
 
     model.testBody = "随便一句话 SIFTRULEMARKER 结尾"
     model.classifyCurrentDraft()
+    try await waitUntil { model.lastDecision != nil }
 
     #expect(model.lastDecision?.source == .rule)
     #expect(model.lastDecision?.labelID == "transaction.message")
@@ -388,6 +360,42 @@ actor SubmissionRecorder {
     func recordHistoryFetch() {
         historyFetchCount += 1
     }
+}
+
+actor DelayedSubmissionGate {
+    private(set) var hasStarted = false
+    private var continuation: CheckedContinuation<Void, Never>?
+
+    func waitForRelease() async {
+        hasStarted = true
+        await withCheckedContinuation { continuation in
+            self.continuation = continuation
+        }
+    }
+
+    func release() {
+        continuation?.resume()
+        continuation = nil
+    }
+}
+
+struct DelayedRemoteSampleClient: RemoteSampleSubmitting {
+    let gate: DelayedSubmissionGate
+
+    func submit(
+        sanitizedText: String,
+        labelID: String,
+        modelVersion: String?,
+        assessment: LocalAssessment?
+    ) async throws -> RemoteSampleReceipt {
+        await gate.waitForRelease()
+        return RemoteSampleReceipt(accepted: true, receiptToken: "delayed-receipt")
+    }
+
+    func delete(receiptToken: String) async throws -> Bool { true }
+    func fetchMySubmissions() async throws -> [RemoteSubmissionSummary] { [] }
+    func fetchMySubmissions(before createdAtMillis: Int64?, limit: Int) async throws -> [RemoteSubmissionSummary] { [] }
+    func eraseAllSubmissions() async throws -> Int { 0 }
 }
 
 struct MockRemoteSampleClient: RemoteSampleSubmitting {
@@ -505,5 +513,15 @@ private func waitUntil(_ condition: @MainActor () -> Bool) async throws {
         try await Task.sleep(nanoseconds: 10_000_000)
     }
     Issue.record("Timed out waiting for condition")
+}
+
+private func waitUntilSubmissionStarts(_ gate: DelayedSubmissionGate) async throws {
+    for _ in 0..<200 {
+        if await gate.hasStarted {
+            return
+        }
+        try await Task.sleep(nanoseconds: 10_000_000)
+    }
+    Issue.record("Timed out waiting for delayed submission")
 }
 #endif

@@ -95,6 +95,18 @@ public struct SiftToast: Identifiable, Equatable, Sendable {
     public let message: String
 }
 
+@MainActor
+@Observable
+public final class SiftToastCenter {
+    public var toast: SiftToast?
+
+    public init() {}
+
+    public func show(_ kind: SiftToast.Kind, _ message: String) {
+        toast = SiftToast(kind: kind, message: message)
+    }
+}
+
 public struct SampleSubmissionFeedback: Identifiable, Equatable, Sendable {
     public let id = UUID()
     public let kind: SiftToast.Kind
@@ -117,6 +129,54 @@ private actor SanitizationWorker {
     }
 }
 
+private actor DraftClassificationWorker {
+    func classify(
+        pipeline: ClassificationPipeline,
+        body: String,
+        rules: [CustomRule],
+        categoryMappings: [String: CategoryMappingTarget]
+    ) -> ClassificationDecision {
+        pipeline.classify(sender: nil, body: body, rules: rules)
+            .applying(categoryMappings: categoryMappings)
+    }
+}
+
+public protocol SiftModelClassifierLoading: Sendable {
+    @concurrent
+    func classifier(for variant: ModelVariant) async -> (any MessageClassifier)?
+}
+
+public struct DefaultSiftModelClassifierLoader: SiftModelClassifierLoading {
+    public init() {}
+
+    @concurrent
+    public func classifier(for variant: ModelVariant) async -> (any MessageClassifier)? {
+        switch variant {
+        case .classic:
+            return AppleClassifierLoader.classifier(for: .classic)
+        case .transformer:
+            guard let transformer = TransformerClassifierLoader.available() else {
+                return nil
+            }
+            return CascadingClassifier(
+                primary: transformer,
+                fallback: HeuristicClassifier(),
+                primaryThreshold: 0.5
+            )
+        }
+    }
+}
+
+private struct SiftClassifierStack: Sendable {
+    let base: any MessageClassifier
+    let pipeline: ClassificationPipeline
+}
+
+private enum TransformerDownloadUIUpdate: Sendable {
+    case progress(TransformerModelDownloadProgress)
+    case phase(TransformerModelDownloadWorkPhase)
+}
+
 @MainActor
 @Observable
 public final class SiftAppModel {
@@ -124,7 +184,10 @@ public final class SiftAppModel {
     public var modelVersion: String = "corpus-0.1"
     public private(set) var selectedModelVariant: ModelVariant = .classic
     public private(set) var isSwitchingModelVariant: Bool = false
+    public private(set) var modelVariantBeingLoaded: ModelVariant?
     public private(set) var isTransformerModelAvailable: Bool
+    public private(set) var isTransformerModelDownloaded: Bool
+    public private(set) var isClearingTransformerModel: Bool = false
     public private(set) var transformerDownloadPhase: TransformerModelDownloadPhase = .notDownloaded
     public private(set) var transformerDownloadProgress: TransformerModelDownloadProgress?
     public private(set) var pendingTransformerDownloadPlan: TransformerModelDownloadPlan?
@@ -154,29 +217,21 @@ public final class SiftAppModel {
     public var ruleDraftPatternKind: RulePatternKind = .substring
     public var ruleDraftAction: RuleAction = .block
     public var localSampleCount: Int = 0
-    public var lastReceiptToken: String? = UserDefaults.standard.string(forKey: "Sift.lastRemoteSampleReceiptToken") {
-        didSet {
-            if let lastReceiptToken {
-                UserDefaults.standard.set(lastReceiptToken, forKey: Self.lastRemoteSampleReceiptTokenKey)
-            } else {
-                UserDefaults.standard.removeObject(forKey: Self.lastRemoteSampleReceiptTokenKey)
-            }
-        }
-    }
+    public var lastReceiptToken: String?
     public var lastDecision: ClassificationDecision?
     public var sanitizedPreview: String = ""
     public var statusMessage: String = ""
-    public var hasAcceptedRemoteSamplePrivacy: Bool = UserDefaults.standard.bool(forKey: "Sift.hasAcceptedRemoteSamplePrivacy") {
+    public var hasAcceptedRemoteSamplePrivacy: Bool {
         didSet {
-            UserDefaults.standard.set(hasAcceptedRemoteSamplePrivacy, forKey: Self.remoteSamplePrivacyConsentKey)
+            appDefaults.set(hasAcceptedRemoteSamplePrivacy, forKey: Self.remoteSamplePrivacyConsentKey)
         }
     }
-    public var hasConfirmedFilterSetup: Bool = UserDefaults.standard.bool(forKey: "Sift.hasConfirmedFilterSetup") {
+    public var hasConfirmedFilterSetup: Bool {
         didSet {
-            UserDefaults.standard.set(hasConfirmedFilterSetup, forKey: "Sift.hasConfirmedFilterSetup")
+            appDefaults.set(hasConfirmedFilterSetup, forKey: Self.filterSetupConfirmationKey)
         }
     }
-    public var currentToast: SiftToast?
+    public let toastCenter = SiftToastCenter()
     public var sampleSubmissionFeedback: SampleSubmissionFeedback?
     public var isSubmittingSample: Bool = false
     public var isShowingPaywall: Bool = false
@@ -204,6 +259,9 @@ public final class SiftAppModel {
     private let sanitizationWorker = SanitizationWorker()
 
     @ObservationIgnored
+    private let draftClassificationWorker = DraftClassificationWorker()
+
+    @ObservationIgnored
     private var baseClassifier: any MessageClassifier
 
     @ObservationIgnored
@@ -222,7 +280,31 @@ public final class SiftAppModel {
     private let transformerDownloader: (any TransformerModelDownloading)?
 
     @ObservationIgnored
+    private let modelClassifierLoader: any SiftModelClassifierLoading
+
+    @ObservationIgnored
     private var transformerDownloadTask: Task<Void, Never>?
+
+    @ObservationIgnored
+    private let transformerModelRemover: any TransformerModelRemoving
+
+    @ObservationIgnored
+    private var transformerCleanupTask: Task<Void, Never>?
+
+    @ObservationIgnored
+    private var modelSwitchTask: Task<Void, Never>?
+
+    @ObservationIgnored
+    private var modelSwitchRequestID: UUID?
+
+    @ObservationIgnored
+    private var modelVariantToRestoreAfterEntitlement: ModelVariant?
+
+    @ObservationIgnored
+    private let modelSelectionDefaults: UserDefaults?
+
+    @ObservationIgnored
+    private let appDefaults: UserDefaults
 
     /// 注入口:测试用独立 UserDefaults suite 隔离贡献计数。
     @ObservationIgnored
@@ -232,10 +314,22 @@ public final class SiftAppModel {
     private let categoryMappingDefaults: UserDefaults?
 
     @ObservationIgnored
+    private let ruleDefaults: UserDefaults?
+
+    @ObservationIgnored
     private var submissionLabelSuggestionTask: Task<Void, Never>?
 
     @ObservationIgnored
     private var sanitizedPreviewTask: Task<Void, Never>?
+
+    @ObservationIgnored
+    private var draftClassificationTask: Task<Void, Never>?
+
+    @ObservationIgnored
+    private var draftClassificationRequestID: UUID?
+
+    @ObservationIgnored
+    private var transientReceiptGeneration = 0
 
     private var sanitizedPreviewSourceText = ""
 
@@ -249,31 +343,53 @@ public final class SiftAppModel {
         remoteSampleClient: (any RemoteSampleSubmitting)? = nil,
         premiumBackend: (any PremiumPurchasing)? = nil,
         transformerAvailabilityOverride: Bool? = nil,
+        transformerDownloadedOverride: Bool? = nil,
         transformerDownloader: (any TransformerModelDownloading)? = TransformerModelDownloadClient.configured(),
+        transformerModelRemover: any TransformerModelRemoving = TransformerModelStoreRemover(),
+        modelClassifierLoader: any SiftModelClassifierLoading = DefaultSiftModelClassifierLoader(),
+        modelSelectionDefaults: UserDefaults? = nil,
+        appDefaults: UserDefaults? = nil,
         ledgerDefaults: UserDefaults? = nil,
         categoryMappingDefaults: UserDefaults? = nil,
+        ruleDefaults: UserDefaults? = nil,
         sampleStore: LocalSampleStore? = nil
     ) {
+        let resolvedAppDefaults = appDefaults ?? .standard
+        self.appDefaults = resolvedAppDefaults
+        self.hasAcceptedRemoteSamplePrivacy = resolvedAppDefaults.bool(forKey: Self.remoteSamplePrivacyConsentKey)
+        self.hasConfirmedFilterSetup = resolvedAppDefaults.bool(forKey: Self.filterSetupConfirmationKey)
+        self.modelSelectionDefaults = modelSelectionDefaults
         self.ledgerDefaults = ledgerDefaults
         self.categoryMappingDefaults = categoryMappingDefaults
+        self.ruleDefaults = ruleDefaults
         self.sampleStore = sampleStore ?? LocalSampleStore(fileURL: LocalSampleStore.defaultFileURL())
         self.remoteSampleClient = remoteSampleClient ?? CloudKitSampleClient(
             containerIdentifier: CloudKitSampleClient.configuredContainerIdentifier()
         )
         self.transformerDownloader = transformerDownloader
+        self.transformerModelRemover = transformerModelRemover
+        self.modelClassifierLoader = modelClassifierLoader
         self.premium = PremiumStore(backend: premiumBackend)
 
-        let transformerAvailable = transformerAvailabilityOverride ?? TransformerClassifierLoader.isAvailable()
+        let installedTransformer = TransformerModelStore.installedModel(validateChecksums: false)
+        let transformerDownloaded = transformerDownloadedOverride ?? (installedTransformer != nil)
+        let transformerAvailable = transformerAvailabilityOverride
+            ?? (installedTransformer.map { TransformerClassifierLoader.isReady($0) } == true)
+        self.isTransformerModelDownloaded = transformerDownloaded
         self.isTransformerModelAvailable = transformerAvailable
         self.transformerDownloadPhase = transformerAvailable ? .ready : .notDownloaded
-        let storedVariant = ModelSelectionStore.load()
-        let variant: ModelVariant = (storedVariant == .transformer && !transformerAvailable) ? .classic : storedVariant
-        self.selectedModelVariant = variant
-
-        let stack = Self.makeClassifierStack(for: variant)
-        self.baseClassifier = stack.base
-        self.pipeline = stack.pipeline
-        self.rules = Self.loadPersistedRules()
+        let storedVariant = ModelSelectionStore.load(defaults: modelSelectionDefaults)
+        let shouldRestoreTransformer = storedVariant == .transformer && transformerAvailable
+        if shouldRestoreTransformer {
+            self.modelVariantToRestoreAfterEntitlement = .transformer
+        } else if storedVariant == .transformer {
+            ModelSelectionStore.save(.classic, defaults: modelSelectionDefaults)
+        }
+        let placeholder = HeuristicClassifier()
+        self.selectedModelVariant = .classic
+        self.baseClassifier = placeholder
+        self.pipeline = ClassificationPipeline(classifier: placeholder)
+        self.rules = Self.loadPersistedRules(defaults: ruleDefaults)
         self.categoryMappings = SharedCategoryMappingStore.load(defaults: categoryMappingDefaults)
 
         if let cachedHistory = SubmissionHistoryCache.load(defaults: ledgerDefaults) {
@@ -284,9 +400,6 @@ public final class SiftAppModel {
         }
 
         refreshModelMetadataDisplay()
-        if !variant.supportsLocalPersonalization {
-            submissionDestination = .remote
-        }
         classifyCurrentDraft()
         Task { await refreshLocalSampleCount() }
 
@@ -294,23 +407,57 @@ public final class SiftAppModel {
             historyIsComplete: historyFullyLoaded && submissionHistory.count < Self.historyMaxItems
         )
 
-        // 高级版被退款/撤销时,若正在使用 Transformer 则回退经典模型。
+        // 首次授权解析后恢复选择；退款/撤销时取消工作并回退经典模型。
         premium.onEntitlementChange = { [weak self] unlocked in
-            guard let self, !unlocked else {
+            guard let self else {
                 return
             }
+            if unlocked {
+                guard self.modelVariantToRestoreAfterEntitlement == .transformer else {
+                    return
+                }
+                self.modelVariantToRestoreAfterEntitlement = nil
+                self.switchToModelVariant(
+                    .transformer,
+                    showsSuccessToast: false,
+                    priority: .utility
+                ) { [weak self] didSwitch in
+                    guard !didSwitch else { return }
+                    self?.switchToModelVariant(.classic, showsSuccessToast: false, priority: .utility)
+                }
+                return
+            }
+            let wasWaitingToRestoreTransformer = self.modelVariantToRestoreAfterEntitlement == .transformer
+            self.modelVariantToRestoreAfterEntitlement = nil
             self.cancelPendingTransformerDownload()
+            if self.modelVariantBeingLoaded == .transformer {
+                self.cancelModelSwitch()
+            }
+            if wasWaitingToRestoreTransformer {
+                ModelSelectionStore.save(.classic, defaults: self.modelSelectionDefaults)
+                self.switchToModelVariant(.classic, showsSuccessToast: false, priority: .utility)
+                return
+            }
             guard self.selectedModelVariant == .transformer else {
                 return
             }
-            self.selectModelVariant(.classic)
-            self.showToast(.info, String(localized: "高级版授权已失效，已切换回经典模型"))
+            if self.modelVariantBeingLoaded == .classic {
+                return
+            }
+            self.switchToModelVariant(.classic, showsSuccessToast: false) { [weak self] didSwitch in
+                guard didSwitch else { return }
+                self?.showToast(.info, String(localized: "高级版授权已失效，已切换回经典模型"))
+            }
         }
 
         if remoteSampleClient == nil {
             refreshRemoteAccountStatus()
         } else {
             remoteAccountStatus = .available
+        }
+
+        if !shouldRestoreTransformer {
+            switchToModelVariant(.classic, showsSuccessToast: false, priority: .utility)
         }
     }
 
@@ -342,7 +489,11 @@ public final class SiftAppModel {
     }
 
     public func selectModelVariant(_ variant: ModelVariant) {
-        guard variant != selectedModelVariant, !isSwitchingModelVariant else {
+        guard
+            variant != selectedModelVariant,
+            variant != modelVariantBeingLoaded,
+            !isClearingTransformerModel
+        else {
             return
         }
         if variant == .transformer, !premium.isUnlocked {
@@ -358,39 +509,151 @@ public final class SiftAppModel {
         switchToModelVariant(variant)
     }
 
-    private func switchToModelVariant(_ variant: ModelVariant) {
-        selectedModelVariant = variant
-        ModelSelectionStore.save(variant)
-        refreshModelMetadataDisplay()
-        if !variant.supportsLocalPersonalization {
-            if submissionDestination == .local {
-                submissionDestination = .remote
-            }
-            sampleSubmissionFeedback = nil
-        }
+    private func switchToModelVariant(
+        _ variant: ModelVariant,
+        showsSuccessToast: Bool = true,
+        priority: TaskPriority = .userInitiated,
+        completion: (@MainActor @Sendable (Bool) -> Void)? = nil
+    ) {
+        modelSwitchTask?.cancel()
+        let requestID = UUID()
+        modelSwitchRequestID = requestID
+        modelVariantBeingLoaded = variant
+        isSwitchingModelVariant = true
+        let modelClassifierLoader = modelClassifierLoader
 
         // Core ML loading (and possible first-launch model compilation) is
         // slow enough to hitch the UI; build the new stack off the main actor.
-        isSwitchingModelVariant = true
-        Task {
-            let stack = await Task.detached(priority: .userInitiated) {
-                Self.makeClassifierStack(for: variant)
-            }.value
+        modelSwitchTask = Task(priority: priority) { [weak self] in
+            // Automatic startup restoration yields the first frame before a
+            // large Core ML graph starts competing for CPU and memory bandwidth.
+            if priority == .utility {
+                do {
+                    try await Task.sleep(for: .milliseconds(250))
+                } catch {
+                    return
+                }
+            }
+            let stack = await Self.makeClassifierStack(for: variant, loader: modelClassifierLoader)
 
-            // A newer switch may have started while we were loading.
-            guard selectedModelVariant == variant else {
+            guard
+                let self,
+                !Task.isCancelled,
+                self.modelSwitchRequestID == requestID
+            else {
                 return
             }
-            baseClassifier = stack.base
-            pipeline = stack.pipeline
-            isSwitchingModelVariant = false
 
-            if canClassifyCurrentDraft {
-                classifyCurrentDraft()
-            } else {
-                clearCurrentDecision()
+            self.modelSwitchTask = nil
+            self.modelSwitchRequestID = nil
+            self.modelVariantBeingLoaded = nil
+            self.isSwitchingModelVariant = false
+
+            guard let stack else {
+                if variant == .transformer {
+                    self.transformerDownloadPhase = .failed(String(localized: "高级模型加载失败"))
+                    self.showToast(.error, String(localized: "高级模型加载失败"))
+                }
+                completion?(false)
+                return
             }
-            showToast(.success, String(localized: "已切换至\(variant.title)"))
+
+            // Keep the old Core ML graph alive across both assignments, then
+            // release it on a cooperative-pool thread. Destroying a loaded
+            // Transformer on the main actor can stall UI commits for seconds.
+            let retiredStack = SiftClassifierStack(
+                base: self.baseClassifier,
+                pipeline: self.pipeline
+            )
+            self.baseClassifier = stack.base
+            self.pipeline = stack.pipeline
+            Task.detached(priority: .utility) {
+                withExtendedLifetime(retiredStack) {}
+            }
+            self.selectedModelVariant = variant
+            ModelSelectionStore.save(variant, defaults: self.modelSelectionDefaults)
+            self.refreshModelMetadataDisplay()
+            if !variant.supportsLocalPersonalization {
+                if self.submissionDestination == .local {
+                    self.submissionDestination = .remote
+                }
+                self.sampleSubmissionFeedback = nil
+            }
+
+            if self.canClassifyCurrentDraft {
+                self.classifyCurrentDraft()
+            } else {
+                self.clearCurrentDecision()
+            }
+            if showsSuccessToast {
+                self.showToast(.success, String(localized: "已切换至\(variant.title)"))
+            }
+            completion?(true)
+        }
+    }
+
+    private func cancelModelSwitch() {
+        modelSwitchTask?.cancel()
+        modelSwitchTask = nil
+        modelSwitchRequestID = nil
+        modelVariantBeingLoaded = nil
+        isSwitchingModelVariant = false
+    }
+
+    public func clearDownloadedTransformerModel() {
+        guard
+            isTransformerModelDownloaded,
+            !isClearingTransformerModel,
+            !isTransformerDownloadActive,
+            !isSwitchingModelVariant
+        else {
+            return
+        }
+
+        isClearingTransformerModel = true
+        if selectedModelVariant == .transformer {
+            switchToModelVariant(.classic, showsSuccessToast: false) { [weak self] didSwitch in
+                guard let self else { return }
+                guard didSwitch else {
+                    self.isClearingTransformerModel = false
+                    return
+                }
+                self.removeDownloadedTransformerModel()
+            }
+        } else {
+            removeDownloadedTransformerModel()
+        }
+    }
+
+    private func removeDownloadedTransformerModel() {
+        let remover = transformerModelRemover
+        transformerCleanupTask = Task { [weak self] in
+            guard let self else { return }
+            do {
+                try await remover.removeInstalledModel()
+                guard !Task.isCancelled else { return }
+                self.isTransformerModelDownloaded = TransformerClassifierLoader.isDownloadedModelAvailable()
+                self.isTransformerModelAvailable = TransformerClassifierLoader.isAvailable()
+                self.transformerDownloadPhase = self.isTransformerModelAvailable ? .ready : .notDownloaded
+                self.pendingTransformerDownloadPlan = nil
+                self.transformerDownloadProgress = nil
+                self.isClearingTransformerModel = false
+                self.transformerCleanupTask = nil
+                self.showToast(.success, String(localized: "Transformer 模型已清理"))
+            } catch is CancellationError {
+                self.isClearingTransformerModel = false
+                self.transformerCleanupTask = nil
+            } catch {
+                self.isClearingTransformerModel = false
+                self.transformerCleanupTask = nil
+                self.showToast(
+                    .error,
+                    String(
+                        format: String(localized: "清理 Transformer 模型失败：%@"),
+                        error.localizedDescription
+                    )
+                )
+            }
         }
     }
 
@@ -534,46 +797,57 @@ public final class SiftAppModel {
         transformerDownloadPhase = .downloading
         transformerDownloadTask = Task { [weak self] in
             guard let self else { return }
-            let (progressStream, progressContinuation) = AsyncStream<TransformerModelDownloadProgress>.makeStream(
+            let (updateStream, updateContinuation) = AsyncStream<TransformerDownloadUIUpdate>.makeStream(
                 bufferingPolicy: .bufferingNewest(1)
             )
-            let progressConsumer = Task { @MainActor [weak self] in
-                for await progress in progressStream {
-                    guard let self, self.isTransformerDownloadActive else {
+            let updateConsumer = Task { @MainActor [weak self] in
+                for await update in updateStream {
+                    guard let self else {
                         return
                     }
-                    self.updateTransformerDownloadProgress(progress)
+                    switch update {
+                    case .progress(let progress):
+                        guard self.transformerDownloadPhase == .downloading else {
+                            continue
+                        }
+                        self.updateTransformerDownloadProgress(progress)
+                    case .phase(.downloading):
+                        self.transformerDownloadPhase = .downloading
+                    case .phase(.installing):
+                        self.transformerDownloadPhase = .installing
+                    }
                 }
             }
             defer {
-                progressContinuation.finish()
-                progressConsumer.cancel()
+                updateContinuation.finish()
+                updateConsumer.cancel()
             }
 
             do {
-                try await transformerDownloader.download(plan) { progress in
-                    progressContinuation.yield(progress)
-                }
-                guard !Task.isCancelled else { return }
-                progressContinuation.finish()
-                await progressConsumer.value
-                await MainActor.run { [weak self] in
-                    guard let self else { return }
-                    transformerDownloadPhase = .installing
-                    isTransformerModelAvailable = TransformerClassifierLoader.isAvailable()
-                    transformerDownloadPhase = isTransformerModelAvailable ? .ready : .failed(String(localized: "高级模型安装失败"))
-                    transformerDownloadTask = nil
-                    if isTransformerModelAvailable {
-                        switchToModelVariant(.transformer)
-                    } else {
-                        showToast(.error, String(localized: "高级模型安装失败"))
+                try await transformerDownloader.download(
+                    plan,
+                    progress: { progress in
+                        updateContinuation.yield(.progress(progress))
+                    },
+                    phase: { phase in
+                        updateContinuation.yield(.phase(phase))
                     }
+                )
+                guard !Task.isCancelled else { return }
+                updateContinuation.finish()
+                await updateConsumer.value
+                isTransformerModelDownloaded = TransformerClassifierLoader.isDownloadedModelAvailable()
+                isTransformerModelAvailable = TransformerClassifierLoader.isAvailable()
+                transformerDownloadPhase = isTransformerModelAvailable ? .ready : .failed(String(localized: "高级模型安装失败"))
+                transformerDownloadTask = nil
+                if isTransformerModelAvailable {
+                    switchToModelVariant(.transformer)
+                } else {
+                    showToast(.error, String(localized: "高级模型安装失败"))
                 }
             } catch {
                 guard !Task.isCancelled else { return }
-                await MainActor.run { [weak self] in
-                    self?.handleTransformerDownloadFailure(error)
-                }
+                handleTransformerDownloadFailure(error)
             }
         }
     }
@@ -592,19 +866,26 @@ public final class SiftAppModel {
     /// Builds the classifier stack for a variant, layering the persisted
     /// personalization adapter on top when the variant allows local
     /// fine-tuning. Safe to call from any executor.
+    @concurrent
     private nonisolated static func makeClassifierStack(
-        for variant: ModelVariant
-    ) -> (base: any MessageClassifier, pipeline: ClassificationPipeline) {
-        let base = AppleClassifierLoader.classifier(for: variant)
-        if
-            variant.supportsLocalPersonalization,
-            let personalized = loadPersistedPersonalization()
-        {
-            return (base, ClassificationPipeline(
-                classifier: CascadingClassifier(primary: personalized, fallback: base)
-            ))
+        for variant: ModelVariant,
+        loader: any SiftModelClassifierLoading
+    ) async -> SiftClassifierStack? {
+        guard !Task.isCancelled, let base = await loader.classifier(for: variant), !Task.isCancelled else {
+            return nil
         }
-        return (base, ClassificationPipeline(classifier: base))
+        if variant == .classic, let personalized = loadPersistedPersonalization() {
+            return SiftClassifierStack(
+                base: base,
+                pipeline: ClassificationPipeline(
+                    classifier: CascadingClassifier(primary: personalized, fallback: base)
+                )
+            )
+        }
+        return SiftClassifierStack(
+            base: base,
+            pipeline: ClassificationPipeline(classifier: base)
+        )
     }
 
     private nonisolated static func loadPersistedPersonalization() -> (any MessageClassifier)? {
@@ -673,7 +954,7 @@ public final class SiftAppModel {
 
     public var canClassifyCurrentDraft: Bool {
         let body = testBody.trimmingCharacters(in: .whitespacesAndNewlines)
-        return !body.isEmpty
+        return !body.isEmpty && !isSwitchingModelVariant
     }
 
     /// 单条样本的最大长度(与训练侧长度过滤一致)。
@@ -681,7 +962,11 @@ public final class SiftAppModel {
 
     public var canSubmitSample: Bool {
         let text = submissionText.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !text.isEmpty, text.count <= Self.maxSubmissionTextLength else {
+        guard
+            !text.isEmpty,
+            text.count <= Self.maxSubmissionTextLength,
+            !isSwitchingModelVariant
+        else {
             return false
         }
         if submissionDestination == .remote && !hasAcceptedRemoteSamplePrivacy {
@@ -796,6 +1081,9 @@ public final class SiftAppModel {
     }
 
     public func clearCurrentDecision() {
+        draftClassificationTask?.cancel()
+        draftClassificationTask = nil
+        draftClassificationRequestID = nil
         lastDecision = nil
     }
 
@@ -825,14 +1113,39 @@ public final class SiftAppModel {
         let body = testBody.trimmingCharacters(in: .whitespacesAndNewlines)
 
         guard !body.isEmpty else {
-            lastDecision = nil
+            clearCurrentDecision()
             return
         }
 
-        // Route through the full pipeline so the preview honors the user's
-        // custom rules exactly like the message-filter extension does.
-        lastDecision = pipeline.classify(sender: nil, body: body, rules: rules)
-            .applying(categoryMappings: categoryMappings)
+        draftClassificationTask?.cancel()
+        let requestID = UUID()
+        draftClassificationRequestID = requestID
+        let worker = draftClassificationWorker
+        let pipeline = pipeline
+        let rules = rules
+        let categoryMappings = categoryMappings
+
+        // Transformer inference must never occupy the main actor. The request
+        // id prevents a stale result from replacing a newer draft or model.
+        draftClassificationTask = Task { [weak self] in
+            let decision = await worker.classify(
+                pipeline: pipeline,
+                body: body,
+                rules: rules,
+                categoryMappings: categoryMappings
+            )
+            guard
+                let self,
+                !Task.isCancelled,
+                self.draftClassificationRequestID == requestID,
+                self.testBody.trimmingCharacters(in: .whitespacesAndNewlines) == body
+            else {
+                return
+            }
+            self.lastDecision = decision
+            self.draftClassificationTask = nil
+            self.draftClassificationRequestID = nil
+        }
     }
 
     public func submitSample() {
@@ -918,6 +1231,7 @@ public final class SiftAppModel {
             isSubmittingSample = true
             let worker = sanitizationWorker
             let classifier = baseClassifier
+            let receiptGeneration = transientReceiptGeneration
             Task { [weak self] in
                 guard let self else { return }
                 defer { isSubmittingSample = false }
@@ -955,7 +1269,9 @@ public final class SiftAppModel {
                         assessment: assessment
                     )
                     if receipt.accepted, let receiptToken = receipt.receiptToken {
-                        lastReceiptToken = receiptToken
+                        if transientReceiptGeneration == receiptGeneration {
+                            lastReceiptToken = receiptToken
+                        }
                         SubmissionLedger.increment(defaults: self.ledgerDefaults)
                         submittedSampleCount = SubmissionLedger.count(defaults: self.ledgerDefaults)
                         cacheRemoteSubmission(
@@ -969,6 +1285,7 @@ public final class SiftAppModel {
                         } else {
                             showSubmissionFeedback(.success, String(localized: "已通过 iCloud 匿名共享脱敏样本，可用回执删除。"))
                         }
+                        showToast(.success, String(localized: "匿名样本提交成功"))
                         submissionText = ""
                     } else {
                         showSubmissionFeedback(.error, String(localized: "样本未被接收，请稍后重试"))
@@ -1038,6 +1355,7 @@ public final class SiftAppModel {
         let previousHasLoadedHistory = hasLoadedSubmissionHistory
         let previousCount = submittedSampleCount
         let previousReceiptToken = lastReceiptToken
+        let previousReceiptGeneration = transientReceiptGeneration
 
         isErasingRemoteData = true
         lastReceiptToken = nil
@@ -1058,7 +1376,9 @@ public final class SiftAppModel {
                     showToast(.success, String(localized: "已抹除 \(deletedSamples) 条提交样本"))
                 }
             } catch {
-                lastReceiptToken = previousReceiptToken
+                if transientReceiptGeneration == previousReceiptGeneration {
+                    lastReceiptToken = previousReceiptToken
+                }
                 SubmissionLedger.set(previousCount, defaults: self.ledgerDefaults)
                 submittedSampleCount = previousCount
                 submissionHistory = previousHistory
@@ -1207,6 +1527,7 @@ public final class SiftAppModel {
         }
 
         let wasLastReceipt = lastReceiptToken == summary.recordName
+        let receiptGeneration = transientReceiptGeneration
         submissionHistory.remove(at: index)
         SubmissionLedger.decrement(defaults: ledgerDefaults)
         submittedSampleCount = SubmissionLedger.count(defaults: ledgerDefaults)
@@ -1229,7 +1550,11 @@ public final class SiftAppModel {
                 }
                 SubmissionLedger.increment(defaults: self.ledgerDefaults)
                 submittedSampleCount = SubmissionLedger.count(defaults: self.ledgerDefaults)
-                if wasLastReceipt, lastReceiptToken == nil {
+                if
+                    wasLastReceipt,
+                    lastReceiptToken == nil,
+                    transientReceiptGeneration == receiptGeneration
+                {
                     lastReceiptToken = summary.recordName
                 }
                 persistSubmissionHistoryCache()
@@ -1313,11 +1638,16 @@ public final class SiftAppModel {
     }
 
     public func showToast(_ kind: SiftToast.Kind, _ message: String) {
-        currentToast = SiftToast(kind: kind, message: message)
+        toastCenter.show(kind, message)
     }
 
     public func showSubmissionFeedback(_ kind: SiftToast.Kind, _ message: String) {
         sampleSubmissionFeedback = SampleSubmissionFeedback(kind: kind, message: message)
+    }
+
+    public func clearTransientReceipt() {
+        transientReceiptGeneration &+= 1
+        lastReceiptToken = nil
     }
 
     @discardableResult
@@ -1479,14 +1809,14 @@ public final class SiftAppModel {
     }
 
     private static let remoteSamplePrivacyConsentKey = "Sift.hasAcceptedRemoteSamplePrivacy"
-    private static let lastRemoteSampleReceiptTokenKey = "Sift.lastRemoteSampleReceiptToken"
+    private static let filterSetupConfirmationKey = "Sift.hasConfirmedFilterSetup"
 
     private func persistRules() {
-        SharedRuleStore.save(rules)
+        SharedRuleStore.save(rules, defaults: ruleDefaults)
     }
 
-    private static func loadPersistedRules() -> [CustomRule] {
-        SharedRuleStore.load()
+    private static func loadPersistedRules(defaults: UserDefaults?) -> [CustomRule] {
+        SharedRuleStore.load(defaults: defaults)
     }
 
     private static func displayDate(for timestamp: String) -> String {

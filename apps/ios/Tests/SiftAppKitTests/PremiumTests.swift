@@ -1,7 +1,7 @@
 #if canImport(Testing)
 import Foundation
 import MessageFilterCore
-import SiftAppKit
+@testable import SiftAppKit
 import Testing
 
 // MARK: - Premium gating
@@ -77,10 +77,88 @@ private struct MockTransformerDownloader: TransformerModelDownloading {
 
     func download(
         _ plan: TransformerModelDownloadPlan,
-        progress: @Sendable @escaping (TransformerModelDownloadProgress) -> Void
+        progress: @Sendable @escaping (TransformerModelDownloadProgress) -> Void,
+        phase: @Sendable @escaping (TransformerModelDownloadWorkPhase) -> Void
     ) async throws {
         await recorder.recordDownload()
+        phase(.downloading)
         progress(TransformerModelDownloadProgress(receivedBytes: plan.displayByteCount ?? 1, totalBytes: plan.displayByteCount))
+        phase(.installing)
+    }
+}
+
+private struct MockSiftModelClassifierLoader: SiftModelClassifierLoading {
+    @concurrent
+    func classifier(for variant: ModelVariant) async -> (any MessageClassifier)? {
+        HeuristicClassifier()
+    }
+}
+
+private struct SlowTransformerClassifierLoader: SiftModelClassifierLoading {
+    let delay: Duration
+
+    @concurrent
+    func classifier(for variant: ModelVariant) async -> (any MessageClassifier)? {
+        if variant == .transformer {
+            try? await Task.sleep(for: delay)
+        }
+        return HeuristicClassifier()
+    }
+}
+
+private actor ModelLoadRecorder {
+    private var variants: [ModelVariant] = []
+
+    func record(_ variant: ModelVariant) {
+        variants.append(variant)
+    }
+
+    func recordedVariants() -> [ModelVariant] {
+        variants
+    }
+}
+
+private struct RecordingModelClassifierLoader: SiftModelClassifierLoading {
+    let recorder: ModelLoadRecorder
+
+    @concurrent
+    func classifier(for variant: ModelVariant) async -> (any MessageClassifier)? {
+        await recorder.record(variant)
+        return HeuristicClassifier()
+    }
+}
+
+private actor TransformerRemovalRecorder {
+    private(set) var callCount = 0
+    private var releaseContinuation: CheckedContinuation<Void, Never>?
+
+    func recordRemoval() async {
+        callCount += 1
+        await withCheckedContinuation { continuation in
+            releaseContinuation = continuation
+        }
+    }
+
+    func releaseRemoval() {
+        releaseContinuation?.resume()
+        releaseContinuation = nil
+    }
+}
+
+private enum MockTransformerRemovalError: Error, Sendable {
+    case failed
+}
+
+private struct MockTransformerModelRemover: TransformerModelRemoving {
+    let recorder: TransformerRemovalRecorder
+    var error: MockTransformerRemovalError? = nil
+
+    @concurrent
+    func removeInstalledModel() async throws {
+        await recorder.recordRemoval()
+        if let error {
+            throw error
+        }
     }
 }
 
@@ -97,13 +175,20 @@ private func mockTransformerDownloadPlan(
         maxSequenceLength: 8,
         doLowerCase: false,
         tokenizerKind: "bpe",
-        tokenizerArtifact: "SiftTransformerClassifier.tokenizer.json",
+        tokenizerArtifact: "SiftTransformerClassifier.tokenizer.siftbpe",
         modelArtifact: "SiftTransformerClassifier.mlpackage",
+        sha256: "model-sha256",
+        taxonomyHash: "taxonomy-sha256",
         remoteArtifacts: [
             TransformerRemoteArtifact(
-                path: "SiftTransformerClassifier.tokenizer.json",
-                sha256: nil,
+                path: "SiftTransformerClassifier.tokenizer.siftbpe",
+                sha256: "tokenizer-sha256",
                 byteCount: 1024
+            ),
+            TransformerRemoteArtifact(
+                path: "SiftTransformerClassifier.mlpackage/model.mlmodel",
+                sha256: "model-sha256",
+                byteCount: 2048
             )
         ],
         downloadBytes: 176_160_768
@@ -113,9 +198,16 @@ private func mockTransformerDownloadPlan(
         manifestURL: URL(string: "https://example.com/SiftTransformerClassifier.manifest.json")!,
         artifacts: [
             TransformerModelDownloadArtifact(
-                remoteURL: URL(string: "https://example.com/SiftTransformerClassifier.tokenizer.json")!,
-                relativePath: "SiftTransformerClassifier.tokenizer.json",
+                remoteURL: URL(string: "https://example.com/SiftTransformerClassifier.tokenizer.siftbpe")!,
+                relativePath: "SiftTransformerClassifier.tokenizer.siftbpe",
+                sha256: "tokenizer-sha256",
                 byteCount: 1024
+            ),
+            TransformerModelDownloadArtifact(
+                remoteURL: URL(string: "https://example.com/SiftTransformerClassifier.mlpackage/model.mlmodel")!,
+                relativePath: "SiftTransformerClassifier.mlpackage/model.mlmodel",
+                sha256: "model-sha256",
+                byteCount: 2048
             )
         ],
         exactByteCount: 176_160_768,
@@ -199,6 +291,178 @@ func unlockedTransformerSelectionOnMeteredNetworkWaitsForConfirmation() async th
 
 @MainActor
 @Test
+func transformerModelLoadingReturnsControlToMainActorImmediately() async throws {
+    let suiteName = "SiftTests.modelSelection.nonblocking.\(UUID().uuidString)"
+    let defaults = try #require(UserDefaults(suiteName: suiteName))
+    defer { defaults.removePersistentDomain(forName: suiteName) }
+
+    let model = SiftAppModel(
+        premiumBackend: MockPremiumBackend(entitled: true, outcome: .cancelled),
+        transformerAvailabilityOverride: true,
+        transformerDownloadedOverride: true,
+        transformerDownloader: nil,
+        modelClassifierLoader: SlowTransformerClassifierLoader(delay: .milliseconds(200)),
+        modelSelectionDefaults: defaults
+    )
+    try await waitForPremiumRefresh(model)
+
+    let clock = ContinuousClock()
+    let startedAt = clock.now
+    model.selectModelVariant(.transformer)
+    let callDuration = startedAt.duration(to: clock.now)
+
+    #expect(callDuration < .milliseconds(50))
+    #expect(model.isSwitchingModelVariant)
+    #expect(model.selectedModelVariant == .classic)
+    try await waitFor { !model.isSwitchingModelVariant }
+    #expect(model.selectedModelVariant == .transformer)
+}
+
+@Test
+func transformerDownloadAcceptsCurrentCompactManifest() throws {
+    let manifest = mockTransformerDownloadPlan().manifest
+    try TransformerModelDownloadClient.validateManifestForDownload(manifest)
+}
+
+@Test
+func transformerDownloadRejectsManifestMissingCompactTokenizerFile() {
+    let current = mockTransformerDownloadPlan().manifest
+    let manifest = TransformerModelManifest(
+        version: current.version,
+        trainedAt: current.trainedAt,
+        algorithm: current.algorithm,
+        backbone: current.backbone,
+        languages: current.languages,
+        labels: current.labels,
+        maxSequenceLength: current.maxSequenceLength,
+        doLowerCase: current.doLowerCase,
+        tokenizerKind: current.tokenizerKind,
+        tokenizerArtifact: current.tokenizerArtifact,
+        modelArtifact: current.modelArtifact,
+        sha256: current.sha256,
+        taxonomyHash: current.taxonomyHash,
+        remoteArtifacts: current.remoteArtifacts.filter { $0.path != current.tokenizerArtifact },
+        downloadBytes: current.downloadBytes
+    )
+
+    #expect(throws: TransformerModelDownloadError.invalidManifestResponse) {
+        try TransformerModelDownloadClient.validateManifestForDownload(manifest)
+    }
+}
+
+@MainActor
+@Test
+func storedTransformerStartupLoadsOnlyTransformer() async throws {
+    let suiteName = "SiftTests.modelSelection.startup.\(UUID().uuidString)"
+    let defaults = try #require(UserDefaults(suiteName: suiteName))
+    defer { defaults.removePersistentDomain(forName: suiteName) }
+    ModelSelectionStore.save(.transformer, defaults: defaults)
+
+    let recorder = ModelLoadRecorder()
+    let model = SiftAppModel(
+        premiumBackend: MockPremiumBackend(entitled: true, outcome: .cancelled),
+        transformerAvailabilityOverride: true,
+        transformerDownloadedOverride: true,
+        transformerDownloader: nil,
+        modelClassifierLoader: RecordingModelClassifierLoader(recorder: recorder),
+        modelSelectionDefaults: defaults
+    )
+
+    try await waitFor { model.premium.isEntitlementResolved && !model.isSwitchingModelVariant }
+    #expect(model.selectedModelVariant == .transformer)
+    #expect(await recorder.recordedVariants() == [.transformer])
+}
+
+@MainActor
+@Test
+func clearingActiveTransformerSwitchesToClassicBeforeRemovingFiles() async throws {
+    let suiteName = "SiftTests.modelSelection.cleanup.active.\(UUID().uuidString)"
+    let defaults = try #require(UserDefaults(suiteName: suiteName))
+    defer { defaults.removePersistentDomain(forName: suiteName) }
+    ModelSelectionStore.save(.transformer, defaults: defaults)
+
+    let recorder = TransformerRemovalRecorder()
+    let model = SiftAppModel(
+        premiumBackend: MockPremiumBackend(entitled: true, outcome: .cancelled),
+        transformerAvailabilityOverride: true,
+        transformerDownloadedOverride: true,
+        transformerDownloader: nil,
+        transformerModelRemover: MockTransformerModelRemover(recorder: recorder),
+        modelClassifierLoader: MockSiftModelClassifierLoader(),
+        modelSelectionDefaults: defaults
+    )
+    try await waitForPremiumRefresh(model)
+    #expect(model.selectedModelVariant == .transformer)
+
+    model.clearDownloadedTransformerModel()
+    #expect(model.isClearingTransformerModel)
+    try await waitForTransformerRemovalCall(recorder, count: 1)
+    #expect(model.selectedModelVariant == .classic)
+    #expect(ModelSelectionStore.load(defaults: defaults) == .classic)
+    await recorder.releaseRemoval()
+    try await waitFor { !model.isClearingTransformerModel }
+
+    #expect(model.isTransformerModelDownloaded == false)
+    #expect(model.toastCenter.toast?.kind == .success)
+}
+
+@MainActor
+@Test
+func transformerCleanupFailureKeepsDownloadedStateAndShowsError() async throws {
+    let suiteName = "SiftTests.modelSelection.cleanup.failure.\(UUID().uuidString)"
+    let defaults = try #require(UserDefaults(suiteName: suiteName))
+    defer { defaults.removePersistentDomain(forName: suiteName) }
+
+    let recorder = TransformerRemovalRecorder()
+    let model = SiftAppModel(
+        premiumBackend: MockPremiumBackend(entitled: true, outcome: .cancelled),
+        transformerAvailabilityOverride: true,
+        transformerDownloadedOverride: true,
+        transformerDownloader: nil,
+        transformerModelRemover: MockTransformerModelRemover(
+            recorder: recorder,
+            error: .failed
+        ),
+        modelClassifierLoader: MockSiftModelClassifierLoader(),
+        modelSelectionDefaults: defaults
+    )
+    try await waitForPremiumRefresh(model)
+
+    model.clearDownloadedTransformerModel()
+    try await waitForTransformerRemovalCall(recorder, count: 1)
+    await recorder.releaseRemoval()
+    try await waitFor { !model.isClearingTransformerModel }
+
+    #expect(model.selectedModelVariant == .classic)
+    #expect(model.isTransformerModelDownloaded)
+    #expect(model.toastCenter.toast?.kind == .error)
+}
+
+@MainActor
+@Test
+func unresolvedStoredTransformerFallsBackWhenInitialEntitlementIsMissing() async throws {
+    let suiteName = "SiftTests.modelSelection.entitlement.\(UUID().uuidString)"
+    let defaults = try #require(UserDefaults(suiteName: suiteName))
+    defer { defaults.removePersistentDomain(forName: suiteName) }
+    ModelSelectionStore.save(.transformer, defaults: defaults)
+
+    let model = SiftAppModel(
+        premiumBackend: MockPremiumBackend(entitled: false, outcome: .cancelled),
+        transformerAvailabilityOverride: true,
+        transformerDownloadedOverride: true,
+        transformerDownloader: nil,
+        modelClassifierLoader: MockSiftModelClassifierLoader(),
+        modelSelectionDefaults: defaults
+    )
+
+    try await waitFor { model.premium.isEntitlementResolved && !model.isSwitchingModelVariant }
+    #expect(model.premium.isUnlocked == false)
+    #expect(model.selectedModelVariant == .classic)
+    #expect(ModelSelectionStore.load(defaults: defaults) == .classic)
+}
+
+@MainActor
+@Test
 func purchaseOutcomesProduceUserFacingFeedback() async throws {
     let pendingModel = SiftAppModel(premiumBackend: MockPremiumBackend(entitled: false, outcome: .pending))
     let pendingFeedback = await pendingModel.premium.purchase()
@@ -253,7 +517,7 @@ func submissionLengthValidationBlocksOverlongSamples() {
 @MainActor
 private func waitForPremiumRefresh(_ model: SiftAppModel) async throws {
     for _ in 0..<100 {
-        if case .available = model.premium.productState {
+        if case .available = model.premium.productState, !model.isSwitchingModelVariant {
             return
         }
         try await Task.sleep(nanoseconds: 10_000_000)
@@ -297,6 +561,19 @@ private func waitForTransformerDownloadCall(
         try await Task.sleep(nanoseconds: 10_000_000)
     }
     Issue.record("Timed out waiting for transformer download call")
+}
+
+private func waitForTransformerRemovalCall(
+    _ recorder: TransformerRemovalRecorder,
+    count: Int
+) async throws {
+    for _ in 0..<100 {
+        if await recorder.callCount >= count {
+            return
+        }
+        try await Task.sleep(nanoseconds: 10_000_000)
+    }
+    Issue.record("Timed out waiting for transformer removal call")
 }
 
 // MARK: - Submission history paging
@@ -409,7 +686,7 @@ func failedOptimisticSubmissionDeletionRestoresCacheAndCounter() async throws {
     #expect(model.submittedSampleCount == 0)
 
     try await waitFor {
-        model.submissionHistory == [cached] && model.currentToast?.kind == .error
+        model.submissionHistory == [cached] && model.toastCenter.toast?.kind == .error
     }
     #expect(model.submittedSampleCount == 1)
     #expect(SubmissionHistoryCache.load(defaults: defaults)?.submissions == [cached])

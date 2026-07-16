@@ -8,8 +8,8 @@ Filtering happens in two tiers:
 1. Rule tier (stdlib only, always on): taxonomy validation, normalization,
    length bounds, junk heuristics, sanitizer-placeholder rehydration, exact +
    near duplicate removal, cross-label conflict removal, language allowlist.
-2. Model tier (optional, needs the training venv): embeds every row with the
-   SetFit backbone and drops rows whose embedding sits closer to another
+2. Model tier (optional, needs the training venv): embeds every row with a
+   sentence-transformer backbone and drops rows whose embedding sits closer to another
    label's centroid than to its own (classic label-noise / mislabeled data).
 
 The audit step verifies the per-label × per-language matrix and enforces that

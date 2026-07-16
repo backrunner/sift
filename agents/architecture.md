@@ -5,7 +5,7 @@
 ```text
 +- SiftApp (main bundle) -------------------------------------------+
 |  SiftAppKit: SiftRootView (dashboard, submit, rules)              |
-|    - SettingsView (Premium, restore, submissions, export, erase)  |
+|    - SettingsView (Premium, model storage, submissions, export)   |
 |    - PremiumPaywallView (StoreKit 2, PremiumStore)                |
 |    - SubmissionHistoryView (CloudKit pagination, item deletion)   |
 |  Localizable.xcstrings (zh-Hans source, en/ja translations)       |

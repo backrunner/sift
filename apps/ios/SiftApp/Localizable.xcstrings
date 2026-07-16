@@ -1,6 +1,246 @@
 {
   "sourceLanguage" : "zh-Hans",
   "strings" : {
+    "匿名样本提交成功" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Anonymous sample submitted"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "匿名サンプルを送信しました"
+          }
+        }
+      }
+    },
+    "高级模型下载格式已更新，请稍后重试" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The Premium model download format has been updated. Please try again later."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "プレミアムモデルのダウンロード形式が更新されました。しばらくしてからもう一度お試しください。"
+          }
+        }
+      }
+    },
+    "Transformer 模型" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Transformer Model"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Transformerモデル"
+          }
+        }
+      }
+    },
+    "Transformer 模型已清理" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Transformer model removed"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Transformerモデルを削除しました"
+          }
+        }
+      }
+    },
+    "将删除已下载的 Transformer 模型文件。再次使用时需要重新下载。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The downloaded Transformer model files will be removed. You will need to download them again to use Transformer."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ダウンロード済みのTransformerモデルファイルを削除します。再度使用するには、もう一度ダウンロードする必要があります。"
+          }
+        }
+      }
+    },
+    "存储管理" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Storage Management"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ストレージ管理"
+          }
+        }
+      }
+    },
+    "正在切换模型…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Switching models…"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "モデルを切り替えています…"
+          }
+        }
+      }
+    },
+    "正在切换至%@…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Switching to %@…"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@に切り替えています…"
+          }
+        }
+      }
+    },
+    "清理 Transformer 存储？" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clear Transformer Storage?"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Transformerのストレージを消去しますか？"
+          }
+        }
+      }
+    },
+    "清理 Transformer 模型失败：%@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Failed to remove the Transformer model: %@"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Transformerモデルの削除に失敗しました：%@"
+          }
+        }
+      }
+    },
+    "清理后会切换回经典模型，并删除已下载的 Transformer 模型文件。再次使用时需要重新下载。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sift will switch back to the Classic model, then remove the downloaded Transformer model files. You will need to download them again to use Transformer."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "クラシックモデルに切り替えてから、ダウンロード済みのTransformerモデルファイルを削除します。再度使用するには、もう一度ダウンロードする必要があります。"
+          }
+        }
+      }
+    },
+    "清理存储" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clear Storage"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ストレージを消去"
+          }
+        }
+      }
+    },
+    "存储占用" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Storage Used"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ストレージ使用量"
+          }
+        }
+      }
+    },
+    "已下载 · 版本 %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Downloaded · Version %@"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ダウンロード済み・バージョン %@"
+          }
+        }
+      }
+    },
+    "高级模型加载失败" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Failed to load the Premium model"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "プレミアムモデルを読み込めませんでした"
+          }
+        }
+      }
+    },
     "行为" : {
       "localizations" : {
         "en" : {
@@ -2029,6 +2269,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "削除できるリモートサンプルが見つかりません"
+          }
+        }
+      }
+    },
+    "未知" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unknown"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "不明"
           }
         }
       }

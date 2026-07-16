@@ -60,6 +60,7 @@ public final class PremiumStore {
 
     public private(set) var productState: PremiumProductState = .loading
     public private(set) var isUnlocked: Bool = false
+    public private(set) var isEntitlementResolved: Bool = false
     public private(set) var isPurchasing: Bool = false
     public private(set) var isRestoring: Bool = false
 
@@ -73,7 +74,13 @@ public final class PremiumStore {
     /// Fired on entitlement transitions (purchase / restore / refund) so the
     /// app model can react (e.g. revert the Transformer selection on refund).
     @ObservationIgnored
-    public var onEntitlementChange: ((Bool) -> Void)?
+    public var onEntitlementChange: ((Bool) -> Void)? {
+        didSet {
+            if isEntitlementResolved {
+                onEntitlementChange?(isUnlocked)
+            }
+        }
+    }
 
     @ObservationIgnored
     private let backend: any PremiumPurchasing
@@ -91,11 +98,7 @@ public final class PremiumStore {
             ?? Self.defaultProductIdentifier
         let promo = bundle.object(forInfoDictionaryKey: "SiftPremiumPromoText") as? String
         self.promoText = (promo?.isEmpty == false) ? promo : nil
-        #if canImport(StoreKit)
-        self.backend = backend ?? StoreKitPremiumBackend()
-        #else
-        self.backend = backend ?? UnavailablePremiumBackend()
-        #endif
+        self.backend = Self.resolveBackend(backend)
 
         refresh()
         observeEntitlementUpdates()
@@ -175,11 +178,30 @@ public final class PremiumStore {
     }
 
     private func setUnlocked(_ unlocked: Bool) {
-        let changed = unlocked != isUnlocked
+        let shouldNotify = unlocked != isUnlocked || !isEntitlementResolved
         isUnlocked = unlocked
-        if changed {
+        isEntitlementResolved = true
+        if shouldNotify {
             onEntitlementChange?(unlocked)
         }
+    }
+
+    private static func resolveBackend(
+        _ backend: (any PremiumPurchasing)?
+    ) -> any PremiumPurchasing {
+        if let backend {
+            return backend
+        }
+        #if DEBUG
+        if ProcessInfo.processInfo.environment["SIFT_DEBUG_PREMIUM_UNLOCKED"] == "1" {
+            return DebugUnlockedPremiumBackend()
+        }
+        #endif
+        #if canImport(StoreKit)
+        return StoreKitPremiumBackend()
+        #else
+        return UnavailablePremiumBackend()
+        #endif
     }
 
     private static var priceUnavailableMessage: String {
@@ -274,6 +296,28 @@ struct StoreKitPremiumBackend: PremiumPurchasing {
             continuation.onTermination = { _ in
                 task.cancel()
             }
+        }
+    }
+}
+#endif
+
+#if DEBUG
+private struct DebugUnlockedPremiumBackend: PremiumPurchasing {
+    func loadProduct(identifier: String) async throws -> PremiumProductInfo? {
+        PremiumProductInfo(
+            identifier: identifier,
+            displayName: String(localized: "已解锁"),
+            displayPrice: String(localized: "限时免费"),
+            price: 0
+        )
+    }
+
+    func purchase(identifier: String) async -> PremiumPurchaseOutcome { .purchased }
+    func isEntitled(identifier: String) async -> Bool { true }
+    func restore(identifier: String) async throws -> Bool { true }
+    func entitlementUpdates(identifier: String) -> AsyncStream<Bool> {
+        AsyncStream { continuation in
+            continuation.finish()
         }
     }
 }

@@ -11,17 +11,17 @@ import CoreML
 /// single downloadable file.
 public struct TransformerRemoteArtifact: Codable, Hashable, Sendable {
     public let path: String
-    public let sha256: String?
-    public let byteCount: Int64?
+    public let sha256: String
+    public let byteCount: Int64
 
-    public init(path: String, sha256: String? = nil, byteCount: Int64? = nil) {
+    public init(path: String, sha256: String, byteCount: Int64) {
         self.path = path
         self.sha256 = sha256
         self.byteCount = byteCount
     }
 }
 
-/// Sidecar metadata for the bundled transformer Core ML model.
+/// Release metadata for the downloadable transformer Core ML model.
 public struct TransformerModelManifest: Codable, Hashable, Sendable {
     public let version: String
     public let trainedAt: String
@@ -31,15 +31,14 @@ public struct TransformerModelManifest: Codable, Hashable, Sendable {
     public let labels: [String]
     public let maxSequenceLength: Int
     public let doLowerCase: Bool
-    public let tokenizerKind: String?
-    public let tokenizerArtifact: String?
-    public let vocabularyArtifact: String?
+    public let tokenizerKind: String
+    public let tokenizerArtifact: String
     public let modelArtifact: String
-    public let sha256: String?
-    public let taxonomyHash: String?
+    public let sha256: String
+    public let taxonomyHash: String
     public let remoteBaseURL: String?
-    public let remoteArtifacts: [TransformerRemoteArtifact]?
-    public let downloadBytes: Int64?
+    public let remoteArtifacts: [TransformerRemoteArtifact]
+    public let downloadBytes: Int64
 
     public init(
         version: String,
@@ -50,15 +49,14 @@ public struct TransformerModelManifest: Codable, Hashable, Sendable {
         labels: [String],
         maxSequenceLength: Int,
         doLowerCase: Bool,
-        tokenizerKind: String? = nil,
-        tokenizerArtifact: String? = nil,
-        vocabularyArtifact: String? = nil,
+        tokenizerKind: String,
+        tokenizerArtifact: String,
         modelArtifact: String,
-        sha256: String? = nil,
-        taxonomyHash: String? = nil,
+        sha256: String,
+        taxonomyHash: String,
         remoteBaseURL: String? = nil,
-        remoteArtifacts: [TransformerRemoteArtifact]? = nil,
-        downloadBytes: Int64? = nil
+        remoteArtifacts: [TransformerRemoteArtifact],
+        downloadBytes: Int64
     ) {
         self.version = version
         self.trainedAt = trainedAt
@@ -70,7 +68,6 @@ public struct TransformerModelManifest: Codable, Hashable, Sendable {
         self.doLowerCase = doLowerCase
         self.tokenizerKind = tokenizerKind
         self.tokenizerArtifact = tokenizerArtifact
-        self.vocabularyArtifact = vocabularyArtifact
         self.modelArtifact = modelArtifact
         self.sha256 = sha256
         self.taxonomyHash = taxonomyHash
@@ -85,58 +82,27 @@ public enum TransformerClassifierLoader {
 
     public static func manifest(
         resourceName: String = defaultResourceName,
-        bundles: [Bundle] = [.main],
-        includeDownloaded: Bool = true
+        fileManager: FileManager = .default
     ) -> TransformerModelManifest? {
-        if
-            includeDownloaded,
-            let installed = TransformerModelStore.installedModel(resourceName: resourceName)
-        {
-            return installed.manifest
-        }
-
-        for bundle in bundles {
-            guard let url = bundle.url(forResource: "\(resourceName).manifest", withExtension: "json") else {
-                continue
-            }
-            if
-                let data = try? Data(contentsOf: url),
-                let manifest = try? JSONDecoder().decode(TransformerModelManifest.self, from: data)
-            {
-                return manifest
-            }
-        }
-        return nil
+        TransformerModelStore.installedModel(
+            resourceName: resourceName,
+            fileManager: fileManager,
+            validateChecksums: false
+        )?.manifest
     }
 
-    /// True when every artifact needed to run the transformer variant ships
-    /// in one of the given bundles.
     public static func isAvailable(
         resourceName: String = defaultResourceName,
-        bundles: [Bundle] = [.main],
-        includeDownloaded: Bool = true
+        fileManager: FileManager = .default
     ) -> Bool {
-        if includeDownloaded, TransformerModelStore.installedModel(resourceName: resourceName) != nil {
-            return true
-        }
-        guard let manifest = manifest(resourceName: resourceName, bundles: bundles, includeDownloaded: false) else {
-            return false
-        }
-        return tokenizerURL(manifest: manifest, resourceName: resourceName, bundles: bundles) != nil
-            && modelURL(resourceName: resourceName, bundles: bundles) != nil
+        isDownloadedModelReady(resourceName: resourceName, fileManager: fileManager)
     }
 
-    /// Loads the downloaded transformer model when present; otherwise falls
-    /// back to an optional bundled model.
     public static func available(
         resourceName: String = defaultResourceName,
-        bundles: [Bundle] = [.main],
         confidenceThreshold: Double = 0.5
     ) -> (any MessageClassifier)? {
-        if let downloaded = downloaded(resourceName: resourceName, confidenceThreshold: confidenceThreshold) {
-            return downloaded
-        }
-        return bundled(resourceName: resourceName, bundles: bundles, confidenceThreshold: confidenceThreshold)
+        downloaded(resourceName: resourceName, confidenceThreshold: confidenceThreshold)
     }
 
     public static func downloaded(
@@ -144,13 +110,32 @@ public enum TransformerClassifierLoader {
         confidenceThreshold: Double = 0.5
     ) -> (any MessageClassifier)? {
         #if canImport(CoreML)
-        guard let installed = TransformerModelStore.installedModel(resourceName: resourceName) else {
+        guard
+            let installed = TransformerModelStore.installedModel(
+                resourceName: resourceName,
+                validateChecksums: false
+            ),
+            installed.manifest.tokenizerKind == "bpe",
+            installed.tokenizerURL.pathExtension == "siftbpe"
+        else {
             return nil
         }
 
         do {
             let tokenizer = try makeTokenizer(manifest: installed.manifest, tokenizerURL: installed.tokenizerURL)
-            let compiledURL = try compiledModelURL(from: installed.modelURL)
+            let compiledURL: URL
+            if installed.modelURL.pathExtension == "mlmodelc" {
+                compiledURL = installed.modelURL
+            } else {
+                let cachedURL = TransformerModelStore.compiledModelURL(
+                    resourceName: resourceName,
+                    in: installed.directoryURL
+                )
+                guard FileManager.default.fileExists(atPath: cachedURL.path) else {
+                    return nil
+                }
+                compiledURL = cachedURL
+            }
             return try TransformerTextClassifier(
                 modelURL: compiledURL,
                 tokenizer: tokenizer,
@@ -165,108 +150,95 @@ public enum TransformerClassifierLoader {
         #endif
     }
 
-    public static func bundled(
+    public static func isDownloadedModelAvailable(
         resourceName: String = defaultResourceName,
-        bundles: [Bundle] = [.main],
-        confidenceThreshold: Double = 0.5
-    ) -> (any MessageClassifier)? {
+        fileManager: FileManager = .default
+    ) -> Bool {
+        TransformerModelStore.installedModel(
+            resourceName: resourceName,
+            fileManager: fileManager,
+            validateChecksums: false
+        ) != nil
+    }
+
+    public static func isDownloadedModelReady(
+        resourceName: String = defaultResourceName,
+        fileManager: FileManager = .default
+    ) -> Bool {
+        guard let installed = TransformerModelStore.installedModel(
+            resourceName: resourceName,
+            fileManager: fileManager,
+            validateChecksums: false
+        ) else {
+            return false
+        }
+        return isReady(installed, resourceName: resourceName, fileManager: fileManager)
+    }
+
+    public static func isReady(
+        _ installed: InstalledTransformerModel,
+        resourceName: String = defaultResourceName,
+        fileManager: FileManager = .default
+    ) -> Bool {
+        if installed.modelURL.pathExtension == "mlmodelc" {
+            return true
+        }
+        return fileManager.fileExists(atPath: TransformerModelStore.compiledModelURL(
+            resourceName: resourceName,
+            in: installed.directoryURL,
+            fileManager: fileManager
+        ).path)
+    }
+
+    public static func prepareDownloadedModel(
+        in directory: URL,
+        resourceName: String = defaultResourceName,
+        fileManager: FileManager = .default
+    ) throws {
         #if canImport(CoreML)
         guard
-            let manifest = manifest(resourceName: resourceName, bundles: bundles, includeDownloaded: false),
-            let tokenizerURL = tokenizerURL(manifest: manifest, resourceName: resourceName, bundles: bundles),
-            let modelURL = modelURL(resourceName: resourceName, bundles: bundles)
+            let installed = TransformerModelStore.model(
+                in: directory,
+                resourceName: resourceName,
+                fileManager: fileManager,
+                validateChecksums: false
+            ),
+            installed.manifest.tokenizerKind == "bpe",
+            installed.tokenizerURL.pathExtension == "siftbpe"
         else {
-            return nil
+            throw CocoaError(.fileReadCorruptFile)
+        }
+        guard installed.modelURL.pathExtension != "mlmodelc" else {
+            return
         }
 
-        do {
-            let tokenizer = try makeTokenizer(manifest: manifest, tokenizerURL: tokenizerURL)
-            let compiledURL = try compiledModelURL(from: modelURL)
-            return try TransformerTextClassifier(
-                modelURL: compiledURL,
-                tokenizer: tokenizer,
-                labels: manifest.labels,
-                confidenceThreshold: confidenceThreshold
-            )
-        } catch {
-            return nil
+        let targetURL = TransformerModelStore.compiledModelURL(
+            resourceName: resourceName,
+            in: directory,
+            fileManager: fileManager
+        )
+        if fileManager.fileExists(atPath: targetURL.path) {
+            return
         }
-        #else
-        return nil
+        let compiledURL = try MLModel.compileModel(at: installed.modelURL)
+        do {
+            try fileManager.moveItem(at: compiledURL, to: targetURL)
+        } catch {
+            try? fileManager.removeItem(at: compiledURL)
+            throw error
+        }
         #endif
     }
 
-    static func vocabularyURL(
-        manifest: TransformerModelManifest,
-        resourceName: String,
-        bundles: [Bundle]
-    ) -> URL? {
-        guard let vocabularyArtifact = manifest.vocabularyArtifact else {
-            return nil
-        }
-        return artifactURL(named: vocabularyArtifact, bundles: bundles, defaultExtension: "txt")
-    }
-
-    static func tokenizerURL(
-        manifest: TransformerModelManifest,
-        resourceName: String,
-        bundles: [Bundle]
-    ) -> URL? {
-        if let tokenizerArtifact = manifest.tokenizerArtifact {
-            return artifactURL(named: tokenizerArtifact, bundles: bundles, defaultExtension: "json")
-        }
-        return vocabularyURL(manifest: manifest, resourceName: resourceName, bundles: bundles)
-    }
-
-    private static func artifactURL(named artifactName: String, bundles: [Bundle], defaultExtension: String) -> URL? {
-        let artifact = artifactName as NSString
-        let name = artifact.deletingPathExtension
-        let ext = artifact.pathExtension.isEmpty ? defaultExtension : artifact.pathExtension
-        for bundle in bundles {
-            if let url = bundle.url(forResource: name, withExtension: ext) {
-                return url
-            }
-        }
-        return nil
-    }
-
     static func makeTokenizer(manifest: TransformerModelManifest, tokenizerURL: URL) throws -> any TextTokenizing {
-        switch manifest.tokenizerKind?.lowercased() {
-        case "bpe":
-            return try BPETokenizer(
-                tokenizerJSONURL: tokenizerURL,
-                configuration: BPETokenizer.Configuration(maxSequenceLength: manifest.maxSequenceLength)
-            )
-        default:
-            return try WordPieceTokenizer(
-                vocabularyFileURL: tokenizerURL,
-                configuration: WordPieceTokenizer.Configuration(
-                    doLowerCase: manifest.doLowerCase,
-                    maxSequenceLength: manifest.maxSequenceLength
-                )
-            )
+        guard manifest.tokenizerKind == "bpe", tokenizerURL.pathExtension == "siftbpe" else {
+            throw BPETokenizer.TokenizerError.invalidCompactArtifact
         }
+        return try BPETokenizer(
+            tokenizerURL: tokenizerURL,
+            configuration: BPETokenizer.Configuration(maxSequenceLength: manifest.maxSequenceLength)
+        )
     }
-
-    static func modelURL(resourceName: String, bundles: [Bundle]) -> URL? {
-        for bundle in bundles {
-            for ext in ["mlmodelc", "mlpackage", "mlmodel"] {
-                if let url = bundle.url(forResource: resourceName, withExtension: ext) {
-                    return url
-                }
-            }
-        }
-        return nil
-    }
-
-    #if canImport(CoreML)
-    private static func compiledModelURL(from url: URL) throws -> URL {
-        if url.pathExtension == "mlmodelc" {
-            return url
-        }
-        return try MLModel.compileModel(at: url)
-    }
-    #endif
 }
 
 #if canImport(CoreML)

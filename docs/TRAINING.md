@@ -142,7 +142,8 @@ pnpm pipeline -- train-transformer \
 - Every run writes `transformer-model/checkpoint/` and `training-report.html`
   with loss curves, per-label accuracy, and confusion pairs.
 - Size controls: `--quantize int8` and `--truncate-layers N`. The BPE tokenizer
-  is exported as `SiftTransformerClassifier.tokenizer.json`.
+  is exported as the memory-mapped
+  `SiftTransformerClassifier.tokenizer.siftbpe` artifact.
 - The exported `SiftTransformerClassifier.manifest.json` includes
   `remoteArtifacts` and `downloadBytes`. `.mlpackage` is a directory package,
   so remote distribution downloads the listed files individually.
@@ -305,7 +306,7 @@ and per-language evaluation.
 | --- | --- |
 | `build/pipeline/train.ndjson` | Input for both trainers |
 | `build/pipeline/apple-model/SiftSMSClassifier.{mlmodel,manifest.json}` | App and extension classic model |
-| `build/pipeline/transformer-model/SiftTransformerClassifier.{mlpackage,tokenizer.json,manifest.json}` | Upload to `https://sift.alkinum.io/models/` for Premium on-demand download |
+| `build/pipeline/transformer-model/SiftTransformerClassifier.{mlpackage,tokenizer.siftbpe,manifest.json}` | Upload to `https://sift.alkinum.io/models/` for Premium on-demand download |
 | `build/pipeline/transformer-model/checkpoint/` | Fine-tuning starting point |
 | `build/pipeline/transformer-model/training-report.html` | Training report |
 | `build/pii-model/SiftPIIDetector.*` | Optional app PII model |

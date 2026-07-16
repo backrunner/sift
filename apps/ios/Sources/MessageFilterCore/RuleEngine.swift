@@ -88,59 +88,6 @@ public struct CustomRule: Codable, Hashable, Identifiable, Sendable {
         self.createdAt = createdAt
     }
 
-    private enum CodingKeys: String, CodingKey {
-        case id
-        case name
-        case enabled
-        case priority
-        case sender
-        case text
-        case action
-        case targetLabelID
-        case createdAt
-    }
-
-    public init(from decoder: any Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        id = try container.decodeIfPresent(UUID.self, forKey: .id) ?? UUID()
-        name = try container.decode(String.self, forKey: .name)
-        enabled = try container.decodeIfPresent(Bool.self, forKey: .enabled) ?? true
-        priority = try container.decodeIfPresent(Int.self, forKey: .priority) ?? 0
-        sender = try container.decodeIfPresent(SenderMatcher.self, forKey: .sender)
-        text = try container.decodeIfPresent(TextMatcher.self, forKey: .text)
-        createdAt = try container.decodeIfPresent(Date.self, forKey: .createdAt) ?? .now
-
-        if let decodedAction = try container.decodeIfPresent(RuleAction.self, forKey: .action) {
-            action = decodedAction
-        } else {
-            let legacyLabelID = try container.decodeIfPresent(String.self, forKey: .targetLabelID)
-            action = Self.migratedAction(from: legacyLabelID)
-        }
-    }
-
-    public func encode(to encoder: any Encoder) throws {
-        var container = encoder.container(keyedBy: CodingKeys.self)
-        try container.encode(id, forKey: .id)
-        try container.encode(name, forKey: .name)
-        try container.encode(enabled, forKey: .enabled)
-        try container.encode(priority, forKey: .priority)
-        try container.encodeIfPresent(sender, forKey: .sender)
-        try container.encodeIfPresent(text, forKey: .text)
-        try container.encode(action, forKey: .action)
-        try container.encode(createdAt, forKey: .createdAt)
-    }
-
-    private static func migratedAction(from legacyLabelID: String?) -> RuleAction {
-        guard let legacyLabelID, let label = SiftTaxonomy.leaf(id: legacyLabelID) else {
-            return .block
-        }
-        switch label.systemAction {
-        case .none, .transaction:
-            return .allow
-        case .promotion, .junk:
-            return .block
-        }
-    }
 }
 
 public struct RuleMatch: Hashable, Sendable {

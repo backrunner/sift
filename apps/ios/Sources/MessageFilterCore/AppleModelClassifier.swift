@@ -69,15 +69,12 @@ public enum AppleClassifierLoader {
 
     /// Builds the classifier stack for the selected model variant. Falls back
     /// to the classic stack when transformer artifacts are not installed.
-    public static func classifier(
-        for variant: ModelVariant,
-        bundles: [Bundle] = [.main]
-    ) -> any MessageClassifier {
+    public static func classifier(for variant: ModelVariant) -> any MessageClassifier {
         switch variant {
         case .classic:
             return defaultClassifier()
         case .transformer:
-            guard let transformer = TransformerClassifierLoader.available(bundles: bundles) else {
+            guard let transformer = TransformerClassifierLoader.available() else {
                 return defaultClassifier()
             }
             return CascadingClassifier(

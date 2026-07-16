@@ -65,30 +65,56 @@ public enum TransformerModelStore {
             .appendingPathComponent("\(resourceName).manifest.json", isDirectory: false)
     }
 
+    public static func compiledModelURL(
+        resourceName: String = TransformerClassifierLoader.defaultResourceName,
+        in directory: URL? = nil,
+        fileManager: FileManager = .default
+    ) -> URL {
+        (directory ?? modelDirectory(resourceName: resourceName, fileManager: fileManager))
+            .appendingPathComponent("\(resourceName).mlmodelc", isDirectory: true)
+    }
+
     public static func installedModel(
         resourceName: String = TransformerClassifierLoader.defaultResourceName,
-        fileManager: FileManager = .default
+        fileManager: FileManager = .default,
+        validateChecksums: Bool = true
     ) -> InstalledTransformerModel? {
         let directory = modelDirectory(resourceName: resourceName, fileManager: fileManager)
-        return model(in: directory, resourceName: resourceName, fileManager: fileManager)
+        return model(
+            in: directory,
+            resourceName: resourceName,
+            fileManager: fileManager,
+            validateChecksums: validateChecksums
+        )
     }
 
     public static func model(
         in directory: URL,
         resourceName: String = TransformerClassifierLoader.defaultResourceName,
-        fileManager: FileManager = .default
+        fileManager: FileManager = .default,
+        validateChecksums: Bool = true
     ) -> InstalledTransformerModel? {
         let manifestURL = manifestURL(resourceName: resourceName, in: directory, fileManager: fileManager)
         guard
             let data = try? Data(contentsOf: manifestURL),
             let manifest = try? JSONDecoder().decode(TransformerModelManifest.self, from: data),
             let tokenizerURL = tokenizerURL(for: manifest, in: directory, fileManager: fileManager),
-            let modelURL = artifactURL(named: manifest.modelArtifact, in: directory, fileManager: fileManager)
+            let modelURL = artifactURL(named: manifest.modelArtifact, in: directory, fileManager: fileManager),
+            manifest.tokenizerKind == "bpe",
+            tokenizerURL.pathExtension == "siftbpe"
         else {
             return nil
         }
 
-        guard validateInstalledArtifacts(manifest: manifest, directory: directory, modelURL: modelURL, fileManager: fileManager) else {
+        guard
+            !validateChecksums
+                || validateInstalledArtifacts(
+                    manifest: manifest,
+                    directory: directory,
+                    modelURL: modelURL,
+                    fileManager: fileManager
+                )
+        else {
             return nil
         }
 
@@ -139,18 +165,57 @@ public enum TransformerModelStore {
         }
     }
 
+    @concurrent
+    public static func installedModelByteCount(
+        resourceName: String = TransformerClassifierLoader.defaultResourceName
+    ) async -> Int64? {
+        let fileManager = FileManager.default
+        let directory = modelDirectory(resourceName: resourceName, fileManager: fileManager)
+        return try? directoryByteCount(at: directory, fileManager: fileManager)
+    }
+
+    public static func directoryByteCount(
+        at url: URL,
+        fileManager: FileManager = .default
+    ) throws -> Int64 {
+        var isDirectory: ObjCBool = false
+        guard fileManager.fileExists(atPath: url.path, isDirectory: &isDirectory) else {
+            throw CocoaError(.fileNoSuchFile)
+        }
+        if !isDirectory.boolValue {
+            return Int64(try url.resourceValues(forKeys: [.fileSizeKey]).fileSize ?? 0)
+        }
+
+        let resourceKeys: Set<URLResourceKey> = [.isRegularFileKey, .fileSizeKey]
+        guard let enumerator = fileManager.enumerator(
+            at: url,
+            includingPropertiesForKeys: Array(resourceKeys),
+            options: []
+        ) else {
+            throw CocoaError(.fileReadUnknown)
+        }
+
+        var byteCount: Int64 = 0
+        for case let fileURL as URL in enumerator {
+            let values = try fileURL.resourceValues(forKeys: resourceKeys)
+            guard values.isRegularFile == true, let fileSize = values.fileSize else {
+                continue
+            }
+            let size = Int64(fileSize)
+            guard byteCount <= Int64.max - size else {
+                throw CocoaError(.fileReadTooLarge)
+            }
+            byteCount += size
+        }
+        return byteCount
+    }
+
     public static func tokenizerURL(
         for manifest: TransformerModelManifest,
         in directory: URL,
         fileManager: FileManager = .default
     ) -> URL? {
-        if let tokenizerArtifact = manifest.tokenizerArtifact {
-            return artifactURL(named: tokenizerArtifact, in: directory, fileManager: fileManager)
-        }
-        guard let vocabularyArtifact = manifest.vocabularyArtifact else {
-            return nil
-        }
-        return artifactURL(named: vocabularyArtifact, in: directory, fileManager: fileManager)
+        artifactURL(named: manifest.tokenizerArtifact, in: directory, fileManager: fileManager)
     }
 
     public static func artifactURL(
@@ -175,9 +240,9 @@ public enum TransformerModelStore {
 
     public static func fileSHA256(at url: URL) throws -> String {
         #if canImport(CryptoKit)
-        let data = try Data(contentsOf: url)
-        let digest = SHA256.hash(data: data)
-        return digest.map { String(format: "%02x", $0) }.joined()
+        var digest = SHA256()
+        try update(&digest, withContentsOf: url)
+        return digest.finalize().map { String(format: "%02x", $0) }.joined()
         #else
         return ""
         #endif
@@ -214,7 +279,7 @@ public enum TransformerModelStore {
         for file in files {
             let relativePath = String(file.path.dropFirst(url.path.count + 1))
             digest.update(data: Data(relativePath.utf8))
-            digest.update(data: try Data(contentsOf: file))
+            try update(&digest, withContentsOf: file)
         }
         return digest.finalize().map { String(format: "%02x", $0) }.joined()
         #else
@@ -222,28 +287,32 @@ public enum TransformerModelStore {
         #endif
     }
 
+    #if canImport(CryptoKit)
+    private static func update(_ digest: inout SHA256, withContentsOf url: URL) throws {
+        let handle = try FileHandle(forReadingFrom: url)
+        defer { try? handle.close() }
+
+        while let data = try handle.read(upToCount: 1_048_576), !data.isEmpty {
+            digest.update(data: data)
+        }
+    }
+    #endif
+
     private static func validateInstalledArtifacts(
         manifest: TransformerModelManifest,
         directory: URL,
         modelURL: URL,
         fileManager: FileManager
     ) -> Bool {
-        if let remoteArtifacts = manifest.remoteArtifacts {
-            for artifact in remoteArtifacts {
-                guard
-                    let artifactURL = artifactURL(named: artifact.path, in: directory, fileManager: fileManager)
-                else {
-                    return false
-                }
-                if let expected = artifact.sha256, (try? fileSHA256(at: artifactURL)) != expected {
-                    return false
-                }
+        for artifact in manifest.remoteArtifacts {
+            guard
+                let artifactURL = artifactURL(named: artifact.path, in: directory, fileManager: fileManager),
+                (try? fileSHA256(at: artifactURL)) == artifact.sha256
+            else {
+                return false
             }
         }
 
-        if let expected = manifest.sha256 {
-            return (try? directorySHA256(at: modelURL, fileManager: fileManager)) == expected
-        }
-        return true
+        return (try? directorySHA256(at: modelURL, fileManager: fileManager)) == manifest.sha256
     }
 }

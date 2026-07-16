@@ -37,6 +37,10 @@ the `group.com.alkinum.sift` app group):
   while selected, the app hides local fine-tuning UI and only offers anonymous
   CloudKit contribution.
 
+For local Simulator or device testing, set the Debug scheme environment
+variable `SIFT_DEBUG_PREMIUM_UNLOCKED=1`. This selects an unlocked in-process
+Premium backend only in `DEBUG`; Release builds always use StoreKit.
+
 The message-filter extension re-reads the shared selection (and custom rules)
 on every query, so switching models in the app takes effect in the system
 filter immediately — including when iOS keeps the extension process alive

@@ -22,10 +22,10 @@ public struct TransformerNetworkCondition: Hashable, Sendable {
 public struct TransformerModelDownloadArtifact: Hashable, Sendable {
     public let remoteURL: URL
     public let relativePath: String
-    public let sha256: String?
-    public let byteCount: Int64?
+    public let sha256: String
+    public let byteCount: Int64
 
-    public init(remoteURL: URL, relativePath: String, sha256: String? = nil, byteCount: Int64? = nil) {
+    public init(remoteURL: URL, relativePath: String, sha256: String, byteCount: Int64) {
         self.remoteURL = remoteURL
         self.relativePath = relativePath
         self.sha256 = sha256
@@ -89,11 +89,16 @@ public enum TransformerModelDownloadPhase: Hashable, Sendable {
     case failed(String)
 }
 
-public enum TransformerModelDownloadError: Error, LocalizedError, Sendable {
+public enum TransformerModelDownloadWorkPhase: Hashable, Sendable {
+    case downloading
+    case installing
+}
+
+public enum TransformerModelDownloadError: Error, LocalizedError, Hashable, Sendable {
     case missingRemoteManifestURL
     case invalidManifestResponse
-    case invalidArtifactList
     case missingRemoteArtifactList
+    case unsupportedTokenizerArtifact
     case unsafeArtifactPath(String)
     case checksumMismatch(String)
     case installFailed
@@ -104,10 +109,10 @@ public enum TransformerModelDownloadError: Error, LocalizedError, Sendable {
             return String(localized: "高级模型下载地址未配置")
         case .invalidManifestResponse:
             return String(localized: "高级模型清单不可用")
-        case .invalidArtifactList:
-            return String(localized: "高级模型清单格式不正确")
         case .missingRemoteArtifactList:
             return String(localized: "高级模型缺少可下载文件清单")
+        case .unsupportedTokenizerArtifact:
+            return String(localized: "高级模型下载格式已更新，请稍后重试")
         case let .unsafeArtifactPath(path):
             return String(format: String(localized: "高级模型文件路径不安全：%@"), path)
         case let .checksumMismatch(path):
@@ -127,8 +132,23 @@ public protocol TransformerModelDownloading: Sendable {
     @concurrent
     func download(
         _ plan: TransformerModelDownloadPlan,
-        progress: @Sendable @escaping (TransformerModelDownloadProgress) -> Void
+        progress: @Sendable @escaping (TransformerModelDownloadProgress) -> Void,
+        phase: @Sendable @escaping (TransformerModelDownloadWorkPhase) -> Void
     ) async throws
+}
+
+public protocol TransformerModelRemoving: Sendable {
+    @concurrent
+    func removeInstalledModel() async throws
+}
+
+public struct TransformerModelStoreRemover: TransformerModelRemoving {
+    public init() {}
+
+    @concurrent
+    public func removeInstalledModel() async throws {
+        try TransformerModelStore.remove()
+    }
 }
 
 public struct PathNetworkConditionChecker: TransformerNetworkConditionChecking {
@@ -233,6 +253,7 @@ public final class TransformerModelDownloadClient: TransformerModelDownloading, 
     public func prepareDownload() async throws -> TransformerModelDownloadPlan {
         let condition = await networkConditionChecker.currentCondition()
         let manifest = try await fetchManifest()
+        try Self.validateManifestForDownload(manifest)
         let artifacts = try await resolveArtifacts(for: manifest)
         let exactBytes = exactByteCount(for: manifest, artifacts: artifacts)
 
@@ -246,11 +267,40 @@ public final class TransformerModelDownloadClient: TransformerModelDownloading, 
         )
     }
 
+    static func validateManifestForDownload(_ manifest: TransformerModelManifest) throws {
+        guard
+            manifest.tokenizerKind == "bpe",
+            manifest.tokenizerArtifact.hasSuffix(".siftbpe")
+        else {
+            throw TransformerModelDownloadError.unsupportedTokenizerArtifact
+        }
+        guard !manifest.remoteArtifacts.isEmpty else {
+            throw TransformerModelDownloadError.missingRemoteArtifactList
+        }
+        let paths = manifest.remoteArtifacts.map(\.path)
+        guard
+            Set(paths).count == paths.count,
+            paths.contains(manifest.tokenizerArtifact),
+            paths.contains(where: {
+                $0 == manifest.modelArtifact || $0.hasPrefix(manifest.modelArtifact + "/")
+            }),
+            manifest.remoteArtifacts.allSatisfy({
+                TransformerModelStore.isSafeRelativePath($0.path)
+                    && !$0.sha256.isEmpty
+                    && $0.byteCount > 0
+            })
+        else {
+            throw TransformerModelDownloadError.invalidManifestResponse
+        }
+    }
+
     @concurrent
     public func download(
         _ plan: TransformerModelDownloadPlan,
-        progress: @Sendable @escaping (TransformerModelDownloadProgress) -> Void
+        progress: @Sendable @escaping (TransformerModelDownloadProgress) -> Void,
+        phase: @Sendable @escaping (TransformerModelDownloadWorkPhase) -> Void
     ) async throws {
+        phase(.downloading)
         let staging = TransformerModelStore.stagingDirectory(resourceName: resourceName, fileManager: fileManager)
         if fileManager.fileExists(atPath: staging.path) {
             try fileManager.removeItem(at: staging)
@@ -281,15 +331,40 @@ public final class TransformerModelDownloadClient: TransformerModelDownloading, 
                 completedBytes += received
                 progress(TransformerModelDownloadProgress(receivedBytes: completedBytes, totalBytes: plan.displayByteCount))
 
-                if let expected = artifact.sha256, try TransformerModelStore.fileSHA256(at: targetURL) != expected {
+                if try TransformerModelStore.fileSHA256(at: targetURL) != artifact.sha256 {
                     throw TransformerModelDownloadError.checksumMismatch(artifact.relativePath)
                 }
             }
 
             try Task.checkCancellation()
-            guard TransformerModelStore.model(in: staging, resourceName: resourceName, fileManager: fileManager) != nil else {
+            phase(.installing)
+            if
+                let modelURL = TransformerModelStore.artifactURL(
+                    named: plan.manifest.modelArtifact,
+                    in: staging,
+                    fileManager: fileManager
+                ),
+                try TransformerModelStore.directorySHA256(at: modelURL, fileManager: fileManager) != plan.manifest.sha256
+            {
+                throw TransformerModelDownloadError.checksumMismatch(plan.manifest.modelArtifact)
+            }
+
+            guard
+                TransformerModelStore.model(
+                    in: staging,
+                    resourceName: resourceName,
+                    fileManager: fileManager,
+                    validateChecksums: false
+                ) != nil
+            else {
                 throw TransformerModelDownloadError.installFailed
             }
+            try Task.checkCancellation()
+            try TransformerClassifierLoader.prepareDownloadedModel(
+                in: staging,
+                resourceName: resourceName,
+                fileManager: fileManager
+            )
             try Task.checkCancellation()
             try TransformerModelStore.activate(stagedDirectory: staging, resourceName: resourceName, fileManager: fileManager)
         } catch {
@@ -317,44 +392,21 @@ public final class TransformerModelDownloadClient: TransformerModelDownloading, 
                 throw TransformerModelDownloadError.unsafeArtifactPath(artifact.path)
             }
             let remoteURL = baseURL.appendingPathComponent(artifact.path, isDirectory: false)
-            let byteCount: Int64?
-            if let artifactByteCount = artifact.byteCount {
-                byteCount = artifactByteCount
-            } else {
-                byteCount = try? await remoteContentLength(for: remoteURL)
-            }
             artifacts.append(TransformerModelDownloadArtifact(
                 remoteURL: remoteURL,
                 relativePath: artifact.path,
                 sha256: artifact.sha256,
-                byteCount: byteCount
+                byteCount: artifact.byteCount
             ))
-        }
-
-        guard !artifacts.isEmpty else {
-            throw TransformerModelDownloadError.invalidArtifactList
         }
         return artifacts
     }
 
     private func remoteArtifacts(for manifest: TransformerModelManifest) throws -> [TransformerRemoteArtifact] {
-        if let remoteArtifacts = manifest.remoteArtifacts, !remoteArtifacts.isEmpty {
-            return remoteArtifacts
-        }
-
-        guard !manifest.modelArtifact.hasSuffix(".mlpackage"), !manifest.modelArtifact.hasSuffix(".mlmodelc") else {
+        guard !manifest.remoteArtifacts.isEmpty else {
             throw TransformerModelDownloadError.missingRemoteArtifactList
         }
-
-        let tokenizerArtifact = manifest.tokenizerArtifact ?? manifest.vocabularyArtifact
-        guard let tokenizerArtifact else {
-            throw TransformerModelDownloadError.invalidArtifactList
-        }
-
-        return [
-            TransformerRemoteArtifact(path: manifest.modelArtifact),
-            TransformerRemoteArtifact(path: tokenizerArtifact)
-        ]
+        return manifest.remoteArtifacts
     }
 
     private func remoteBaseURL(for manifest: TransformerModelManifest) -> URL {
@@ -372,24 +424,10 @@ public final class TransformerModelDownloadClient: TransformerModelDownloading, 
         for manifest: TransformerModelManifest,
         artifacts: [TransformerModelDownloadArtifact]
     ) -> Int64? {
-        if let downloadBytes = manifest.downloadBytes, downloadBytes > 0 {
-            return downloadBytes
+        if manifest.downloadBytes > 0 {
+            return manifest.downloadBytes
         }
-        let sizes = artifacts.compactMap(\.byteCount)
-        guard sizes.count == artifacts.count else {
-            return nil
-        }
-        return sizes.reduce(0, +)
-    }
-
-    private func remoteContentLength(for url: URL) async throws -> Int64 {
-        var request = URLRequest(url: url)
-        request.httpMethod = "HEAD"
-        let (_, response) = try await session.data(for: request)
-        guard response.isSuccessfulHTTPResponse else {
-            throw TransformerModelDownloadError.invalidManifestResponse
-        }
-        return response.expectedContentLength > 0 ? response.expectedContentLength : 0
+        return artifacts.map(\.byteCount).reduce(0, +)
     }
 
     private func downloadArtifact(

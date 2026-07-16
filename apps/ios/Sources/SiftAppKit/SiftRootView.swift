@@ -8,13 +8,16 @@ import UIKit
 #endif
 
 public struct SiftRootView: View {
-    @State private var model = SiftAppModel()
+    private let model: SiftAppModel
+    @State private var hasEnteredBackground = false
+    @Environment(\.scenePhase) private var scenePhase
 
-    public init() {}
+    public init(model: SiftAppModel) {
+        self.model = model
+    }
 
     public var body: some View {
-        @Bindable var model = model
-        return NavigationStack {
+        NavigationStack {
             ScrollView {
                 dashboardSections
             }
@@ -23,14 +26,13 @@ public struct SiftRootView: View {
             .scrollDismissesKeyboard(.interactively)
             #endif
             .background(AtmosphericBackground())
-            .ignoresSafeArea(edges: .top)
             #if os(iOS)
             .toolbar(.hidden, for: .navigationBar)
             #endif
         }
         .tint(.siftMint)
         .overlay(alignment: .top) {
-            ToastOverlay(toast: $model.currentToast)
+            ToastOverlay(center: model.toastCenter)
         }
         .alert("iCloud", isPresented: remoteAccountAlertBinding) {
             Button(String(localized: "关闭"), role: .cancel) {
@@ -42,6 +44,19 @@ public struct SiftRootView: View {
         #if canImport(UIKit)
         .background(KeyboardDismissInstaller())
         #endif
+        .onChange(of: scenePhase) { _, newPhase in
+            switch newPhase {
+            case .background:
+                hasEnteredBackground = true
+            case .active where hasEnteredBackground:
+                hasEnteredBackground = false
+                model.clearTransientReceipt()
+            case .active, .inactive:
+                break
+            @unknown default:
+                break
+            }
+        }
     }
 
     @ViewBuilder
@@ -57,19 +72,8 @@ public struct SiftRootView: View {
             CategoryMappingPanel(model: model)
         }
         .padding(.horizontal, 16)
-        .padding(.top, safeAreaTop + 14)
+        .padding(.top, 14)
         .padding(.bottom, 32)
-    }
-
-    private var safeAreaTop: CGFloat {
-        #if canImport(UIKit)
-        UIApplication.shared.connectedScenes
-            .compactMap { $0 as? UIWindowScene }
-            .flatMap { $0.windows }
-            .first(where: \.isKeyWindow)?.safeAreaInsets.top ?? 44
-        #else
-        0
-        #endif
     }
 
     private var remoteAccountAlertBinding: Binding<Bool> {
@@ -88,21 +92,39 @@ struct AtmosphericBackground: View {
             Color.siftCanvas
                 .ignoresSafeArea()
 
-            // 柔和强调色光斑：左上 mint，右下 cool blue。
-            // 让亮色不再"白板"，暗色下也提供方向感的色温。
+            // Radial gradients preserve the soft glow without the large
+            // offscreen blur passes that are costly during overlay animation.
             GeometryReader { proxy in
                 let size = max(proxy.size.width, proxy.size.height)
                 ZStack {
-                    Circle()
-                        .fill(Color.siftMint.opacity(colorScheme == .dark ? 0.18 : 0.14))
+                    Ellipse()
+                        .fill(
+                            RadialGradient(
+                                colors: [
+                                    Color.siftMint.opacity(colorScheme == .dark ? 0.18 : 0.14),
+                                    Color.siftMint.opacity(0)
+                                ],
+                                center: .center,
+                                startRadius: 0,
+                                endRadius: size * 0.48
+                            )
+                        )
                         .frame(width: size * 0.95, height: size * 0.95)
-                        .blur(radius: 90)
                         .offset(x: -size * 0.35, y: -size * 0.45)
 
-                    Circle()
-                        .fill(Color.siftHalo.opacity(colorScheme == .dark ? 0.22 : 0.16))
+                    Ellipse()
+                        .fill(
+                            RadialGradient(
+                                colors: [
+                                    Color.siftHalo.opacity(colorScheme == .dark ? 0.22 : 0.16),
+                                    Color.siftHalo.opacity(0)
+                                ],
+                                center: .center,
+                                startRadius: 0,
+                                endRadius: size * 0.43
+                            )
+                        )
                         .frame(width: size * 0.85, height: size * 0.85)
-                        .blur(radius: 100)
                         .offset(x: size * 0.4, y: size * 0.55)
                 }
             }
@@ -201,6 +223,12 @@ private struct DashboardHero: View {
             }
             return String(localized: "下载中")
         }
+        if let target = model.modelVariantBeingLoaded {
+            return String(
+                format: String(localized: "正在切换至%@…"),
+                target.title
+            )
+        }
         return model.selectedModelVariant.title
     }
 }
@@ -221,11 +249,8 @@ private struct ModelPickerView: View {
                         isSelected: model.selectedModelVariant == variant,
                         isAvailable: model.isModelVariantAvailable(variant),
                         isLockedByPremium: isLocked,
-                        // The premium model is identified by its 高级版 tag;
-                        // its downloadable manifest version is not user-facing.
-                        version: variant == .transformer
-                            ? nil
-                            : model.modelVersion(for: variant).map(formatModelVersion),
+                        isSwitchingTo: model.modelVariantBeingLoaded == variant,
+                        version: model.modelVersion(for: variant).map(formatModelVersion),
                         downloadPhase: variant == .transformer ? model.transformerDownloadPhase : nil,
                         downloadProgress: variant == .transformer ? model.transformerDownloadProgress : nil,
                         downloadSizeText: variant == .transformer ? model.transformerDownloadByteCountText : nil
@@ -262,7 +287,6 @@ private struct ModelPickerView: View {
             .padding(.horizontal, 16)
             .padding(.top, 16)
             .padding(.bottom, 24)
-            .animation(.snappy(duration: 0.22), value: model.selectedModelVariant)
         }
         .scrollIndicators(.hidden)
         .background(AtmosphericBackground())
@@ -304,6 +328,7 @@ private struct ModelVariantCard: View {
     let isSelected: Bool
     let isAvailable: Bool
     var isLockedByPremium: Bool = false
+    var isSwitchingTo: Bool = false
     let version: String?
     var downloadPhase: TransformerModelDownloadPhase?
     var downloadProgress: TransformerModelDownloadProgress?
@@ -343,18 +368,6 @@ private struct ModelVariantCard: View {
                                 .padding(.vertical, 2)
                                 .background(Color.siftInsetFill, in: Capsule())
                         }
-                        if variant == .transformer {
-                            HStack(spacing: 3) {
-                                Image(systemName: "crown.fill")
-                                    .font(.system(size: 8, weight: .bold))
-                                Text(String(localized: "高级版"))
-                                    .font(.caption2.weight(.bold))
-                            }
-                            .foregroundStyle(Color.siftAmber)
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 2)
-                            .background(Color.siftAmber.opacity(0.14), in: Capsule())
-                        }
                     }
                     Text(variant.subtitle)
                         .font(.caption)
@@ -382,7 +395,15 @@ private struct ModelVariantCard: View {
 
     @ViewBuilder
     private var downloadStatusView: some View {
-        if variant == .transformer, let downloadPhase {
+        if isSwitchingTo {
+            downloadLine(
+                icon: nil,
+                text: String(localized: "正在切换模型…"),
+                tint: Color.siftMint,
+                progress: nil,
+                showsSpinner: true
+            )
+        } else if variant == .transformer, let downloadPhase {
             switch downloadPhase {
             case .notDownloaded:
                 if !isLockedByPremium && !isSelected {
@@ -778,10 +799,6 @@ private struct SubmitSamplePanel: View {
         .padding(18)
         .cardSurface()
         .onAppear { model.refreshRemoteAccountStatus() }
-        .animation(.snappy(duration: 0.22), value: model.sampleSubmissionFeedback?.id)
-        .animation(.snappy(duration: 0.22), value: model.submissionDestination)
-        .animation(.snappy(duration: 0.22), value: model.selectedModelVariant)
-        .animation(.snappy(duration: 0.22), value: model.submissionValidationMessage)
     }
 }
 
@@ -2379,16 +2396,15 @@ struct ActionButton: View {
 }
 
 private struct ToastOverlay: View {
-    @Binding var toast: SiftToast?
+    @Bindable var center: SiftToastCenter
 
     var body: some View {
-        Group {
-            if let toast {
+        ZStack(alignment: .top) {
+            if let toast = center.toast {
                 ToastBubble(toast: toast)
                     .id(toast.id)
                     .padding(.top, 12)
                     .padding(.horizontal, 16)
-                    .transition(.move(edge: .top).combined(with: .opacity))
                     .onTapGesture {
                         clear()
                     }
@@ -2398,19 +2414,20 @@ private struct ToastOverlay: View {
                         } catch {
                             return
                         }
-                        guard self.toast?.id == toast.id else {
+                        guard center.toast?.id == toast.id else {
                             return
                         }
                         clear()
-                    }
+                }
             }
         }
-        .frame(maxWidth: .infinity, alignment: .top)
-        .animation(.snappy(duration: 0.28), value: toast?.id)
+        // Keep the overlay's layout fixed so toast insertion never animates
+        // the NavigationStack or the scroll view underneath it.
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
     }
 
     private func clear() {
-        toast = nil
+        center.toast = nil
     }
 }
 

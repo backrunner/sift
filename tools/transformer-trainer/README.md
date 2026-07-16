@@ -14,7 +14,7 @@ variant.
 | file | purpose |
 | --- | --- |
 | `SiftTransformerClassifier.mlpackage` | fused body + head, Core ML classifier (`input_ids`/`attention_mask` int32 `[1, maxLength]` → label + probability dict) |
-| `SiftTransformerClassifier.tokenizer.json` | Hugging Face BPE tokenizer consumed by the Swift `BPETokenizer` |
+| `SiftTransformerClassifier.tokenizer.siftbpe` | compact memory-mapped BPE tokenizer consumed by the Swift `BPETokenizer` |
 | `SiftTransformerClassifier.manifest.json` | metadata read by `TransformerClassifierLoader` (labels, max length, casing, version, remote file list, download size) |
 
 Do **not** ship these files inside the app. Upload the manifest, tokenizer,
@@ -25,18 +25,14 @@ user explicitly switches to the Transformer variant.
 ## Backbone requirements
 
 The default backbone is `jhu-clsp/mmBERT-small` (ModernBERT architecture,
-metaspace BPE tokenizer). The iOS runtime now supports the legacy WordPiece
-artifact shape and the mmBERT BPE tokenizer JSON; new transformer exports use
-`tokenizerKind: "bpe"` in the manifest.
+metaspace BPE tokenizer). Transformer exports and the iOS runtime use only the
+compact `.siftbpe` artifact with `tokenizerKind: "bpe"` in the manifest.
 
 Size levers for the message-filter extension's tight memory budget:
 
 - `--quantize int8` — linear weight quantization (default is fp16)
 - `--truncate-layers N` — keep only the first N encoder layers before training
   for smaller spike builds
-
-The old SetFit trainer remains as `train_setfit.py` for comparison and
-rollback; the pipeline calls `train_mmbert.py`.
 
 ## Device support (Apple Silicon MPS / NVIDIA CUDA / AMD ROCm)
 

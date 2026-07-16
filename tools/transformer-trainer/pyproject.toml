@@ -4,7 +4,6 @@ version = "0.1.0"
 description = "Train multilingual transformer SMS classifiers and export frozen Core ML models for Sift."
 requires-python = ">=3.10,<3.13"
 dependencies = [
-    "setfit>=1.1.0,<2",
     "sentence-transformers>=3.0,<4",
     "transformers>=4.44,<4.50",
     "datasets>=2.20,<4",

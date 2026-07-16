@@ -3,6 +3,10 @@ import Foundation
 import MessageFilterCore
 import Testing
 
+#if canImport(CryptoKit)
+import CryptoKit
+#endif
+
 // MARK: - WordPieceTokenizer
 
 private func makeTokenizer(
@@ -107,60 +111,116 @@ func vocabularyFileKeepsIdAlignmentAroundBlankLines() throws {
     #expect(Array(encoded.inputIDs.prefix(4)) == [2, 6, 4, 3])
 }
 
-// MARK: - BPETokenizer
+// MARK: - Compact BPETokenizer
 
-private func makeBPETokenizer(maxSequenceLength: Int = 8) throws -> BPETokenizer {
-    let json = """
-    {
-      "model": {
-        "type": "BPE",
-        "vocab": {
-          "<pad>": 0, "<eos>": 1, "<bos>": 2, "<unk>": 3,
-          "▁": 4,
-          "h": 5, "e": 6, "l": 7, "o": 8,
-          "w": 9, "r": 10, "d": 11,
-          "▁h": 12, "▁he": 13, "▁hel": 14, "▁hell": 15, "▁hello": 16,
-          "▁w": 17, "▁wo": 18, "▁wor": 19, "▁worl": 20, "▁world": 21
-        },
-        "merges": [
-          ["▁", "h"], ["▁h", "e"], ["▁he", "l"], ["▁hel", "l"], ["▁hell", "o"],
-          ["▁", "w"], ["▁w", "o"], ["▁wo", "r"], ["▁wor", "l"], ["▁worl", "d"]
-        ],
-        "byte_fallback": false,
-        "unk_token": "<unk>"
-      },
-      "post_processor": {
-        "special_tokens": {
-          "<bos>": { "ids": [2], "tokens": ["<bos>"] },
-          "<eos>": { "ids": [1], "tokens": ["<eos>"] }
-        }
-      }
-    }
-    """
+@Test
+func compactBPETokenizerUsesMemoryMappedIndexes() throws {
+    let tokens = ["<pad>", "<eos>", "<bos>", "<unk>", "▁", "h", "i", "▁h", "▁hi"]
+    let merges: [(first: UInt32, second: UInt32, result: UInt32)] = [
+        (4, 5, 7),
+        (7, 6, 8),
+    ]
     let url = FileManager.default.temporaryDirectory
-        .appendingPathComponent("sift-bpe-\(UUID().uuidString).json")
-    try json.write(to: url, atomically: true, encoding: .utf8)
+        .appendingPathComponent("sift-compact-bpe-\(UUID().uuidString).siftbpe")
     defer { try? FileManager.default.removeItem(at: url) }
-    return try BPETokenizer(
-        tokenizerJSONURL: url,
-        configuration: BPETokenizer.Configuration(maxSequenceLength: maxSequenceLength)
+    try compactTokenizerData(tokens: tokens, merges: merges).write(to: url)
+
+    let tokenizer = try BPETokenizer(
+        tokenizerURL: url,
+        configuration: BPETokenizer.Configuration(maxSequenceLength: 6)
     )
+
+    #expect(tokenizer.tokens("hi") == ["▁hi"])
+    #expect(tokenizer.tokens("  hi") == ["▁", "▁hi"])
+    #expect(tokenizer.tokenizeText("hi").inputIDs == [2, 8, 1, 0, 0, 0])
 }
 
 @Test
-func bpeTokenizerAppliesMetaspaceMergesAndSpecialTokens() throws {
-    let tokenizer = try makeBPETokenizer()
-    #expect(tokenizer.tokens("hello world") == ["▁hello", "▁world"])
+func compactBPETokenizerRejectsOversizedBlobLengthWithoutTrapping() throws {
+    let url = FileManager.default.temporaryDirectory
+        .appendingPathComponent("sift-invalid-compact-bpe-\(UUID().uuidString).siftbpe")
+    defer { try? FileManager.default.removeItem(at: url) }
 
-    let encoded = tokenizer.tokenizeText("hello world")
-    #expect(encoded.inputIDs == [2, 16, 21, 1, 0, 0, 0, 0])
-    #expect(encoded.attentionMask == [1, 1, 1, 1, 0, 0, 0, 0])
+    var data = compactTokenizerData(
+        tokens: ["<pad>", "<eos>", "<bos>", "<unk>"],
+        merges: []
+    )
+    data.replaceSubrange(40..<48, with: withUnsafeBytes(of: UInt64.max.littleEndian) { Data($0) })
+    try data.write(to: url)
+
+    #expect(throws: BPETokenizer.TokenizerError.invalidCompactArtifact) {
+        try BPETokenizer(tokenizerURL: url)
+    }
 }
 
-@Test
-func bpeTokenizerPreservesRepeatedSpacesAsMetaspaceTokens() throws {
-    let tokenizer = try makeBPETokenizer()
-    #expect(tokenizer.tokens("  hello") == ["▁", "▁hello"])
+private func compactTokenizerData(
+    tokens: [String],
+    merges: [(first: UInt32, second: UInt32, result: UInt32)]
+) -> Data {
+    var tokenBlob = Data()
+    var tokenRecords: [(offset: UInt32, length: UInt32)] = []
+    var hashRecords: [(hash: UInt64, id: UInt32)] = []
+    for (id, token) in tokens.enumerated() {
+        let bytes = Data(token.utf8)
+        tokenRecords.append((UInt32(tokenBlob.count), UInt32(bytes.count)))
+        tokenBlob.append(bytes)
+        hashRecords.append((compactTokenizerHash(Array(bytes)), UInt32(id)))
+    }
+    hashRecords.sort { lhs, rhs in
+        lhs.hash == rhs.hash ? lhs.id < rhs.id : lhs.hash < rhs.hash
+    }
+
+    var data = Data("SIFTBPE1".utf8)
+    data.appendLittleEndian(UInt32(1))
+    data.appendLittleEndian(UInt32(0))
+    data.appendLittleEndian(UInt32(tokens.count))
+    data.appendLittleEndian(UInt32(merges.count))
+    data.appendLittleEndian(UInt32(3))
+    data.appendLittleEndian(UInt32(2))
+    data.appendLittleEndian(UInt32(1))
+    data.appendLittleEndian(UInt32(0))
+    data.appendLittleEndian(UInt64(tokenBlob.count))
+    for record in tokenRecords {
+        data.appendLittleEndian(record.offset)
+        data.appendLittleEndian(record.length)
+    }
+    for record in hashRecords {
+        data.appendLittleEndian(record.hash)
+        data.appendLittleEndian(record.id)
+        data.appendLittleEndian(UInt32(0))
+    }
+    for (rank, merge) in merges.enumerated().sorted(by: {
+        compactPairKey($0.element.first, $0.element.second)
+            < compactPairKey($1.element.first, $1.element.second)
+    }) {
+        data.appendLittleEndian(compactPairKey(merge.first, merge.second))
+        data.appendLittleEndian(UInt32(rank))
+        data.appendLittleEndian(merge.result)
+    }
+    data.append(tokenBlob)
+    return data
+}
+
+private func compactPairKey(_ first: UInt32, _ second: UInt32) -> UInt64 {
+    UInt64(first) << 32 | UInt64(second)
+}
+
+private func compactTokenizerHash(_ bytes: [UInt8]) -> UInt64 {
+    var hash: UInt64 = 14_695_981_039_346_656_037
+    for byte in bytes {
+        hash ^= UInt64(byte)
+        hash &*= 1_099_511_628_211
+    }
+    return hash
+}
+
+private extension Data {
+    mutating func appendLittleEndian<T: FixedWidthInteger>(_ value: T) {
+        var value = value.littleEndian
+        Swift.withUnsafeBytes(of: &value) { bytes in
+            append(contentsOf: bytes)
+        }
+    }
 }
 
 // MARK: - SharedRuleStore
@@ -186,15 +246,6 @@ func sharedRuleStoreRoundTripsRules() throws {
     #expect(loaded.first?.id == rule.id)
     #expect(loaded.first?.sender?.pattern == "955")
     #expect(loaded.first?.action == .allow)
-}
-
-@Test
-func legacyRuleTargetsMigrateToActions() throws {
-    let allowJSON = Data(#"{"id":"00000000-0000-0000-0000-000000000001","name":"Bank","enabled":true,"priority":10,"sender":{"kind":"prefix","pattern":"955"},"targetLabelID":"finance.bank","createdAt":0}"#.utf8)
-    let blockJSON = Data(#"{"id":"00000000-0000-0000-0000-000000000002","name":"Spam","enabled":true,"priority":10,"text":{"kind":"substring","pattern":"offer"},"targetLabelID":"promotion","createdAt":0}"#.utf8)
-
-    #expect(try JSONDecoder().decode(CustomRule.self, from: allowJSON).action == .allow)
-    #expect(try JSONDecoder().decode(CustomRule.self, from: blockJSON).action == .block)
 }
 
 // MARK: - ModelVariant / ModelSelectionStore
@@ -223,29 +274,26 @@ func transformerVariantDisablesLocalPersonalization() {
 // MARK: - TransformerModelManifest
 
 @Test
-func transformerManifestDecodesTrainerOutput() throws {
+func piiManifestDecodesCurrentTrainerOutput() throws {
     let json = """
     {
-      "version": "setfit-0.1",
-      "trainedAt": "2026-07-04T08:00:00.000Z",
-      "algorithm": "setfit-sentence-transformer",
-      "backbone": "sentence-transformers/distiluse-base-multilingual-cased-v2",
-      "languages": ["zh", "en", "es"],
-      "labels": ["spam", "promotion", "verification"],
+      "version": "pii-boundary-v5",
+      "trainedAt": "2026-07-11T07:56:19.924Z",
+      "algorithm": "token-classification-pii",
+      "backbone": "distilbert-base-multilingual-cased",
+      "languages": ["zh", "en", "ja", "multi"],
+      "labels": ["O", "PHONE", "EMAIL"],
       "maxSequenceLength": 96,
       "doLowerCase": false,
-      "vocabularyArtifact": "SiftTransformerClassifier.vocab.txt",
-      "modelArtifact": "SiftTransformerClassifier.mlpackage",
-      "sha256": "abc",
-      "taxonomyHash": "def"
+      "vocabularyArtifact": "SiftPIIDetector.vocab.txt",
+      "modelArtifact": "SiftPIIDetector.mlpackage",
+      "sha256": "abc"
     }
     """
-    let manifest = try JSONDecoder().decode(TransformerModelManifest.self, from: Data(json.utf8))
-    #expect(manifest.version == "setfit-0.1")
-    #expect(manifest.labels.count == 3)
-    #expect(manifest.maxSequenceLength == 96)
-    #expect(!manifest.doLowerCase)
-    #expect(manifest.languages.contains("zh"))
+    let manifest = try JSONDecoder().decode(PIIModelManifest.self, from: Data(json.utf8))
+    #expect(manifest.version == "pii-boundary-v5")
+    #expect(manifest.vocabularyArtifact == "SiftPIIDetector.vocab.txt")
+    #expect(manifest.labels == ["O", "PHONE", "EMAIL"])
 }
 
 @Test
@@ -261,22 +309,31 @@ func transformerManifestDecodesMmbertTrainerOutput() throws {
       "maxSequenceLength": 96,
       "doLowerCase": false,
       "tokenizerKind": "bpe",
-      "tokenizerArtifact": "SiftTransformerClassifier.tokenizer.json",
+      "tokenizerArtifact": "SiftTransformerClassifier.tokenizer.siftbpe",
       "modelArtifact": "SiftTransformerClassifier.mlpackage",
       "sha256": "abc",
-      "taxonomyHash": "def"
+      "taxonomyHash": "def",
+      "remoteArtifacts": [
+        {
+          "path": "SiftTransformerClassifier.tokenizer.siftbpe",
+          "sha256": "ghi",
+          "byteCount": 123
+        },
+        {
+          "path": "SiftTransformerClassifier.mlpackage/Data/model.mlmodel",
+          "sha256": "jkl",
+          "byteCount": 456
+        }
+      ],
+      "downloadBytes": 579
     }
     """
     let manifest = try JSONDecoder().decode(TransformerModelManifest.self, from: Data(json.utf8))
     #expect(manifest.version == "mmbert-0.1")
     #expect(manifest.tokenizerKind == "bpe")
-    #expect(manifest.tokenizerArtifact == "SiftTransformerClassifier.tokenizer.json")
-    #expect(manifest.vocabularyArtifact == nil)
-}
-
-@Test
-func transformerLoaderReportsUnavailableWithoutBundledArtifacts() {
-    #expect(!TransformerClassifierLoader.isAvailable(bundles: [.main], includeDownloaded: false))
+    #expect(manifest.tokenizerArtifact == "SiftTransformerClassifier.tokenizer.siftbpe")
+    #expect(manifest.remoteArtifacts.count == 2)
+    #expect(manifest.downloadBytes == 579)
 }
 
 @Test
@@ -286,8 +343,12 @@ func transformerModelStoreValidatesInstalledDirectory() throws {
     defer { try? FileManager.default.removeItem(at: directory) }
     try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
 
-    let vocabURL = directory.appendingPathComponent("SiftTransformerClassifier.vocab.txt")
-    try "[PAD]\n[UNK]\n[CLS]\n[SEP]\nhello\n".write(to: vocabURL, atomically: true, encoding: .utf8)
+    let tokenizerURL = directory.appendingPathComponent("SiftTransformerClassifier.tokenizer.siftbpe")
+    let tokenizerData = compactTokenizerData(
+        tokens: ["<pad>", "<eos>", "<bos>", "<unk>", "▁", "h", "i", "▁h", "▁hi"],
+        merges: [(4, 5, 7), (7, 6, 8)]
+    )
+    try tokenizerData.write(to: tokenizerURL)
 
     let modelURL = directory.appendingPathComponent("SiftTransformerClassifier.mlmodel")
     try Data("fake-model".utf8).write(to: modelURL)
@@ -301,14 +362,16 @@ func transformerModelStoreValidatesInstalledDirectory() throws {
         labels: ["spam", "promotion"],
         maxSequenceLength: 8,
         doLowerCase: false,
-        vocabularyArtifact: vocabURL.lastPathComponent,
+        tokenizerKind: "bpe",
+        tokenizerArtifact: tokenizerURL.lastPathComponent,
         modelArtifact: modelURL.lastPathComponent,
         sha256: try TransformerModelStore.fileSHA256(at: modelURL),
+        taxonomyHash: "taxonomy-hash",
         remoteArtifacts: [
             TransformerRemoteArtifact(
-                path: vocabURL.lastPathComponent,
-                sha256: try TransformerModelStore.fileSHA256(at: vocabURL),
-                byteCount: Int64((try Data(contentsOf: vocabURL)).count)
+                path: tokenizerURL.lastPathComponent,
+                sha256: try TransformerModelStore.fileSHA256(at: tokenizerURL),
+                byteCount: Int64(tokenizerData.count)
             ),
             TransformerRemoteArtifact(
                 path: modelURL.lastPathComponent,
@@ -323,8 +386,25 @@ func transformerModelStoreValidatesInstalledDirectory() throws {
 
     let installed = try #require(TransformerModelStore.model(in: directory))
     #expect(installed.manifest.version == "remote-0.1")
-    #expect(installed.tokenizerURL.lastPathComponent == vocabURL.lastPathComponent)
+    #expect(installed.tokenizerURL.lastPathComponent == tokenizerURL.lastPathComponent)
     #expect(installed.modelURL.lastPathComponent == modelURL.lastPathComponent)
+}
+
+@Test
+func transformerModelStoreCountsInstalledFileBytes() throws {
+    let directory = FileManager.default.temporaryDirectory
+        .appendingPathComponent("sift-transformer-size-\(UUID().uuidString)", isDirectory: true)
+    defer { try? FileManager.default.removeItem(at: directory) }
+    let nestedDirectory = directory.appendingPathComponent("Model", isDirectory: true)
+    try FileManager.default.createDirectory(at: nestedDirectory, withIntermediateDirectories: true)
+    try Data(repeating: 0xA5, count: 1_024).write(
+        to: directory.appendingPathComponent("tokenizer.siftbpe")
+    )
+    try Data(repeating: 0x5A, count: 2_048).write(
+        to: nestedDirectory.appendingPathComponent("weights.bin")
+    )
+
+    #expect(try TransformerModelStore.directoryByteCount(at: directory) == 3_072)
 }
 
 @Test
@@ -333,4 +413,21 @@ func transformerModelStoreRejectsUnsafeArtifactPaths() {
     #expect(!TransformerModelStore.isSafeRelativePath("../model.mlpackage"))
     #expect(!TransformerModelStore.isSafeRelativePath("/tmp/model.mlpackage"))
 }
+
+#if canImport(CryptoKit)
+@Test
+func transformerModelStoreStreamsLargeFileHashes() throws {
+    let fileURL = FileManager.default.temporaryDirectory
+        .appendingPathComponent("sift-transformer-hash-\(UUID().uuidString).bin")
+    defer { try? FileManager.default.removeItem(at: fileURL) }
+
+    let data = Data(repeating: 0xA5, count: 2_500_000)
+    try data.write(to: fileURL)
+    let expected = SHA256.hash(data: data)
+        .map { String(format: "%02x", $0) }
+        .joined()
+
+    #expect(try TransformerModelStore.fileSHA256(at: fileURL) == expected)
+}
+#endif
 #endif

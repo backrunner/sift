@@ -1,9 +1,6 @@
 import Foundation
 
-/// Hugging Face BPE tokenizer subset used by mmBERT.
-///
-/// Supports the mmBERT tokenizer JSON shape: metaspace pre-tokenization,
-/// template processing with BOS/EOS, BPE merge ranks, and byte fallback.
+/// Memory-mapped BPE tokenizer used by the downloadable mmBERT model.
 public struct BPETokenizer: TextTokenizing, Sendable {
     public struct Configuration: Hashable, Sendable {
         public var maxSequenceLength: Int
@@ -14,142 +11,232 @@ public struct BPETokenizer: TextTokenizing, Sendable {
     }
 
     public enum TokenizerError: Error, Hashable {
-        case missingModel
-        case unsupportedModel(String)
-        case missingSpecialToken(String)
-        case invalidMerge
+        case invalidCompactArtifact
+        case unsupportedCompactVersion(UInt32)
     }
 
-    private struct TokenizerDocument: Decodable {
-        let model: Model
-        let postProcessor: PostProcessor?
-
-        enum CodingKeys: String, CodingKey {
-            case model
-            case postProcessor = "post_processor"
-        }
+    private struct MergeValue: Sendable {
+        let rank: Int
+        let resultID: Int32
     }
 
-    private struct Model: Decodable {
-        let type: String
-        let vocab: [String: Int32]
-        let merges: [Merge]
-        let byteFallback: Bool?
-        let unknownToken: String?
+    private struct CompactStorage: Sendable {
+        static let magic = Array("SIFTBPE1".utf8)
+        static let headerSize = 48
+        static let tokenRecordSize = 8
+        static let hashRecordSize = 16
+        static let mergeRecordSize = 16
 
-        enum CodingKeys: String, CodingKey {
-            case type
-            case vocab
-            case merges
-            case byteFallback = "byte_fallback"
-            case unknownToken = "unk_token"
-        }
-    }
+        let data: Data
+        let vocabularyCount: Int
+        let mergeCount: Int
+        let tokenRecordsOffset: Int
+        let hashRecordsOffset: Int
+        let mergeRecordsOffset: Int
+        let tokenBlobOffset: Int
 
-    private struct Merge: Decodable {
-        let first: String
-        let second: String
-
-        init(from decoder: Decoder) throws {
-            if var container = try? decoder.unkeyedContainer() {
-                first = try container.decode(String.self)
-                second = try container.decode(String.self)
-                return
+        init(data: Data) throws {
+            guard
+                data.count >= Self.headerSize,
+                Array(data.prefix(Self.magic.count)) == Self.magic
+            else {
+                throw TokenizerError.invalidCompactArtifact
             }
-            let container = try decoder.singleValueContainer()
-            let raw = try container.decode(String.self)
-            guard let separator = raw.firstIndex(of: " ") else {
-                throw TokenizerError.invalidMerge
+
+            let version = Self.readUInt32(data, at: 8)
+            guard version == 1 else {
+                throw TokenizerError.unsupportedCompactVersion(version)
             }
-            first = String(raw[..<separator])
-            second = String(raw[raw.index(after: separator)...])
+
+            let vocabularyCount = Int(Self.readUInt32(data, at: 16))
+            let mergeCount = Int(Self.readUInt32(data, at: 20))
+            guard let tokenBlobSize = Int(exactly: Self.readUInt64(data, at: 40)) else {
+                throw TokenizerError.invalidCompactArtifact
+            }
+            let tokenRecordsOffset = Self.headerSize
+            let hashRecordsOffset = tokenRecordsOffset + vocabularyCount * Self.tokenRecordSize
+            let mergeRecordsOffset = hashRecordsOffset + vocabularyCount * Self.hashRecordSize
+            let tokenBlobOffset = mergeRecordsOffset + mergeCount * Self.mergeRecordSize
+
+            guard
+                vocabularyCount > 0,
+                tokenBlobOffset <= data.count,
+                tokenBlobSize == data.count - tokenBlobOffset
+            else {
+                throw TokenizerError.invalidCompactArtifact
+            }
+
+            let specialTokenIDs = [
+                Self.readUInt32(data, at: 24),
+                Self.readUInt32(data, at: 28),
+                Self.readUInt32(data, at: 32),
+                Self.readUInt32(data, at: 36),
+            ]
+            guard specialTokenIDs.allSatisfy({ $0 < UInt32(vocabularyCount) }) else {
+                throw TokenizerError.invalidCompactArtifact
+            }
+
+            self.data = data
+            self.vocabularyCount = vocabularyCount
+            self.mergeCount = mergeCount
+            self.tokenRecordsOffset = tokenRecordsOffset
+            self.hashRecordsOffset = hashRecordsOffset
+            self.mergeRecordsOffset = mergeRecordsOffset
+            self.tokenBlobOffset = tokenBlobOffset
+        }
+
+        var byteFallback: Bool {
+            Self.readUInt32(data, at: 12) & 1 == 1
+        }
+
+        var unknownID: Int32 { Int32(bitPattern: Self.readUInt32(data, at: 24)) }
+        var beginID: Int32 { Int32(bitPattern: Self.readUInt32(data, at: 28)) }
+        var endID: Int32 { Int32(bitPattern: Self.readUInt32(data, at: 32)) }
+        var paddingID: Int32 { Int32(bitPattern: Self.readUInt32(data, at: 36)) }
+
+        func tokenID(for token: String) -> Int32? {
+            let bytes = Array(token.utf8)
+            let hash = BPETokenizer.fnv1a64(bytes)
+            var lower = 0
+            var upper = vocabularyCount
+            while lower < upper {
+                let middle = lower + (upper - lower) / 2
+                if hashValue(at: middle) < hash {
+                    lower = middle + 1
+                } else {
+                    upper = middle
+                }
+            }
+
+            var index = lower
+            while index < vocabularyCount, hashValue(at: index) == hash {
+                let id = Int32(bitPattern: Self.readUInt32(
+                    data,
+                    at: hashRecordsOffset + index * Self.hashRecordSize + 8
+                ))
+                if tokenBytes(for: id, equal: bytes) {
+                    return id
+                }
+                index += 1
+            }
+            return nil
+        }
+
+        func token(for id: Int32) -> String? {
+            guard id >= 0, Int(id) < vocabularyCount else {
+                return nil
+            }
+            let recordOffset = tokenRecordsOffset + Int(id) * Self.tokenRecordSize
+            let offset = Int(Self.readUInt32(data, at: recordOffset))
+            let length = Int(Self.readUInt32(data, at: recordOffset + 4))
+            guard offset >= 0, length >= 0, offset + length <= data.count - tokenBlobOffset else {
+                return nil
+            }
+            return String(decoding: data[(tokenBlobOffset + offset)..<(tokenBlobOffset + offset + length)], as: UTF8.self)
+        }
+
+        func merge(for key: UInt64) -> MergeValue? {
+            var lower = 0
+            var upper = mergeCount
+            while lower < upper {
+                let middle = lower + (upper - lower) / 2
+                let recordOffset = mergeRecordsOffset + middle * Self.mergeRecordSize
+                let current = Self.readUInt64(data, at: recordOffset)
+                if current < key {
+                    lower = middle + 1
+                } else {
+                    upper = middle
+                }
+            }
+            guard lower < mergeCount else {
+                return nil
+            }
+            let recordOffset = mergeRecordsOffset + lower * Self.mergeRecordSize
+            guard Self.readUInt64(data, at: recordOffset) == key else {
+                return nil
+            }
+            return MergeValue(
+                rank: Int(Self.readUInt32(data, at: recordOffset + 8)),
+                resultID: Int32(bitPattern: Self.readUInt32(data, at: recordOffset + 12))
+            )
+        }
+
+        private func hashValue(at index: Int) -> UInt64 {
+            Self.readUInt64(data, at: hashRecordsOffset + index * Self.hashRecordSize)
+        }
+
+        private func tokenBytes(for id: Int32, equal expected: [UInt8]) -> Bool {
+            guard id >= 0, Int(id) < vocabularyCount else {
+                return false
+            }
+            let recordOffset = tokenRecordsOffset + Int(id) * Self.tokenRecordSize
+            let offset = Int(Self.readUInt32(data, at: recordOffset))
+            let length = Int(Self.readUInt32(data, at: recordOffset + 4))
+            guard
+                length == expected.count,
+                offset >= 0,
+                offset + length <= data.count - tokenBlobOffset
+            else {
+                return false
+            }
+            for index in expected.indices where data[tokenBlobOffset + offset + index] != expected[index] {
+                return false
+            }
+            return true
+        }
+
+        private static func readUInt32(_ data: Data, at offset: Int) -> UInt32 {
+            data.withUnsafeBytes { bytes in
+                bytes.loadUnaligned(fromByteOffset: offset, as: UInt32.self).littleEndian
+            }
+        }
+
+        private static func readUInt64(_ data: Data, at offset: Int) -> UInt64 {
+            data.withUnsafeBytes { bytes in
+                bytes.loadUnaligned(fromByteOffset: offset, as: UInt64.self).littleEndian
+            }
         }
     }
 
-    private struct PostProcessor: Decodable {
-        let specialTokens: [String: SpecialToken]?
-
-        enum CodingKeys: String, CodingKey {
-            case specialTokens = "special_tokens"
-        }
-    }
-
-    private struct SpecialToken: Decodable {
-        let ids: [Int32]
-        let tokens: [String]
+    private struct MergeCandidate {
+        let firstID: Int32
+        let secondID: Int32
+        let rank: Int
+        let resultID: Int32
     }
 
     public let configuration: Configuration
-    private let vocabulary: [String: Int32]
-    private let mergeRanks: [PairKey: Int]
-    private let unknownToken: String
+    private let storage: CompactStorage
     private let unknownID: Int32
     private let beginID: Int32
     private let endID: Int32
     private let paddingID: Int32
     private let byteFallback: Bool
 
-    private struct PairKey: Hashable, Sendable {
-        let first: String
-        let second: String
-    }
-
-    public init(tokenizerJSONURL: URL, configuration: Configuration = Configuration()) throws {
-        let data = try Data(contentsOf: tokenizerJSONURL)
-        let document = try JSONDecoder().decode(TokenizerDocument.self, from: data)
-        try self.init(document: document, configuration: configuration)
-    }
-
-    init(tokenizerJSONData: Data, configuration: Configuration = Configuration()) throws {
-        let document = try JSONDecoder().decode(TokenizerDocument.self, from: tokenizerJSONData)
-        try self.init(document: document, configuration: configuration)
-    }
-
-    private init(document: TokenizerDocument, configuration: Configuration) throws {
-        guard document.model.type == "BPE" else {
-            throw TokenizerError.unsupportedModel(document.model.type)
-        }
-        let vocabulary = document.model.vocab
-        let unknownToken = document.model.unknownToken ?? "<unk>"
-        let beginToken = document.postProcessor?.specialTokens?["<bos>"]?.tokens.first ?? "<bos>"
-        let endToken = document.postProcessor?.specialTokens?["<eos>"]?.tokens.first ?? "<eos>"
-        let paddingToken = "<pad>"
-        guard let unknownID = vocabulary[unknownToken] else {
-            throw TokenizerError.missingSpecialToken(unknownToken)
-        }
-        guard let beginID = vocabulary[beginToken] else {
-            throw TokenizerError.missingSpecialToken(beginToken)
-        }
-        guard let endID = vocabulary[endToken] else {
-            throw TokenizerError.missingSpecialToken(endToken)
-        }
-        guard let paddingID = vocabulary[paddingToken] else {
-            throw TokenizerError.missingSpecialToken(paddingToken)
-        }
-
-        var ranks: [PairKey: Int] = [:]
-        ranks.reserveCapacity(document.model.merges.count)
-        for (rank, merge) in document.model.merges.enumerated() {
-            ranks[PairKey(first: merge.first, second: merge.second)] = rank
-        }
-
+    public init(tokenizerURL: URL, configuration: Configuration = Configuration()) throws {
+        let data = try Data(contentsOf: tokenizerURL, options: [.mappedIfSafe])
+        let storage = try CompactStorage(data: data)
         self.configuration = configuration
-        self.vocabulary = vocabulary
-        self.mergeRanks = ranks
-        self.unknownToken = unknownToken
-        self.unknownID = unknownID
-        self.beginID = beginID
-        self.endID = endID
-        self.paddingID = paddingID
-        self.byteFallback = document.model.byteFallback ?? false
+        self.storage = storage
+        self.unknownID = storage.unknownID
+        self.beginID = storage.beginID
+        self.endID = storage.endID
+        self.paddingID = storage.paddingID
+        self.byteFallback = storage.byteFallback
     }
 
     public func tokenizeText(_ text: String) -> TokenizedText {
         let bodyBudget = max(configuration.maxSequenceLength - 2, 0)
         var ids: [Int32] = [beginID]
         ids.reserveCapacity(configuration.maxSequenceLength)
-        for token in preTokenize(text).flatMap({ bpeTokens(for: $0) }).prefix(bodyBudget) {
-            ids.append(vocabulary[token] ?? unknownID)
+
+        outer: for token in preTokenize(text) {
+            for id in bpeTokenIDs(for: token) {
+                guard ids.count <= bodyBudget else {
+                    break outer
+                }
+                ids.append(id)
+            }
         }
         ids.append(endID)
 
@@ -163,7 +250,9 @@ public struct BPETokenizer: TextTokenizing, Sendable {
     }
 
     public func tokens(_ text: String) -> [String] {
-        preTokenize(text).flatMap { bpeTokens(for: $0) }
+        preTokenize(text)
+            .flatMap { bpeTokenIDs(for: $0) }
+            .compactMap(token(for:))
     }
 
     private func preTokenize(_ text: String) -> [String] {
@@ -188,22 +277,23 @@ public struct BPETokenizer: TextTokenizing, Sendable {
         return tokens
     }
 
-    private func bpeTokens(for token: String) -> [String] {
-        var pieces = initialPieces(for: token)
+    private func bpeTokenIDs(for token: String) -> [Int32] {
+        var pieces = initialIDs(for: token)
         guard pieces.count > 1 else {
             return pieces
         }
 
         while let merge = bestMerge(in: pieces) {
-            var merged: [String] = []
+            var merged: [Int32] = []
+            merged.reserveCapacity(pieces.count)
             var index = 0
             while index < pieces.count {
                 if
                     index < pieces.count - 1,
-                    pieces[index] == merge.first,
-                    pieces[index + 1] == merge.second
+                    pieces[index] == merge.firstID,
+                    pieces[index + 1] == merge.secondID
                 {
-                    merged.append(merge.first + merge.second)
+                    merged.append(merge.resultID)
                     index += 2
                 } else {
                     merged.append(pieces[index])
@@ -218,37 +308,67 @@ public struct BPETokenizer: TextTokenizing, Sendable {
         return pieces
     }
 
-    private func initialPieces(for token: String) -> [String] {
-        token.map { character in
+    private func initialIDs(for token: String) -> [Int32] {
+        token.flatMap { character -> [Int32] in
             let piece = String(character)
-            if vocabulary[piece] != nil {
-                return [piece]
+            if let id = tokenID(for: piece) {
+                return [id]
             }
             guard byteFallback else {
-                return [unknownToken]
+                return [unknownID]
             }
-            let bytes = String(character).utf8.map { byte in
-                String(format: "<0x%02X>", byte)
+            let ids = String(character).utf8.compactMap { byte in
+                tokenID(for: String(format: "<0x%02X>", byte))
             }
-            return bytes.allSatisfy { vocabulary[$0] != nil } ? bytes : [unknownToken]
+            return ids.count == String(character).utf8.count ? ids : [unknownID]
         }
-        .flatMap { $0 }
     }
 
-    private func bestMerge(in pieces: [String]) -> PairKey? {
+    private func bestMerge(in pieces: [Int32]) -> MergeCandidate? {
         guard pieces.count > 1 else {
             return nil
         }
-        var bestPair: PairKey?
-        var bestRank = Int.max
+        var best: MergeCandidate?
         for index in 0..<(pieces.count - 1) {
-            let pair = PairKey(first: pieces[index], second: pieces[index + 1])
-            guard let rank = mergeRanks[pair], rank < bestRank else {
+            let firstID = pieces[index]
+            let secondID = pieces[index + 1]
+            guard let value = mergeValue(for: Self.pairKey(firstID, secondID)) else {
                 continue
             }
-            bestRank = rank
-            bestPair = pair
+            if best.map({ value.rank < $0.rank }) ?? true {
+                best = MergeCandidate(
+                    firstID: firstID,
+                    secondID: secondID,
+                    rank: value.rank,
+                    resultID: value.resultID
+                )
+            }
         }
-        return bestPair
+        return best
+    }
+
+    private func tokenID(for token: String) -> Int32? {
+        storage.tokenID(for: token)
+    }
+
+    private func token(for id: Int32) -> String? {
+        storage.token(for: id)
+    }
+
+    private func mergeValue(for key: UInt64) -> MergeValue? {
+        storage.merge(for: key)
+    }
+
+    private static func pairKey(_ firstID: Int32, _ secondID: Int32) -> UInt64 {
+        UInt64(UInt32(bitPattern: firstID)) << 32 | UInt64(UInt32(bitPattern: secondID))
+    }
+
+    private static func fnv1a64(_ bytes: [UInt8]) -> UInt64 {
+        var hash: UInt64 = 14_695_981_039_346_656_037
+        for byte in bytes {
+            hash ^= UInt64(byte)
+            hash &*= 1_099_511_628_211
+        }
+        return hash
     }
 }

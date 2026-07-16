@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 """Train the Sift transformer variant with mmBERT and export Core ML.
 
-This trainer uses supervised fine-tuning (`AutoModelForSequenceClassification`)
-instead of SetFit. The default backbone is `jhu-clsp/mmBERT-small`, a
+This trainer uses supervised fine-tuning (`AutoModelForSequenceClassification`).
+The default backbone is `jhu-clsp/mmBERT-small`, a
 ModernBERT multilingual encoder with a Gemma-style metaspace BPE tokenizer.
 
 Artifacts:
 
   SiftTransformerClassifier.mlpackage       Core ML classifier
-  SiftTransformerClassifier.tokenizer.json  Hugging Face tokenizer JSON
+  SiftTransformerClassifier.tokenizer.siftbpe  memory-mapped BPE tokenizer
   SiftTransformerClassifier.manifest.json   iOS loader metadata
 
 The Core ML model takes `input_ids` / `attention_mask` int32 tensors of shape
@@ -31,6 +31,8 @@ from collections import Counter, defaultdict
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
+
+from compact_tokenizer import write_compact_bpe_tokenizer
 
 os.environ.setdefault("PYTORCH_ENABLE_MPS_FALLBACK", "1")
 
@@ -545,11 +547,11 @@ def remote_artifacts(paths: list[Path], root: Path) -> list[dict]:
 
 
 def write_tokenizer_artifact(tokenizer, out_dir: Path, model_name: str) -> Path:
-    artifact = out_dir / f"{model_name}.tokenizer.json"
+    artifact = out_dir / f"{model_name}.tokenizer.siftbpe"
     with tempfile.TemporaryDirectory() as temp:
         temp_dir = Path(temp)
         tokenizer.save_pretrained(temp_dir)
-        shutil.copy2(temp_dir / "tokenizer.json", artifact)
+        write_compact_bpe_tokenizer(temp_dir / "tokenizer.json", artifact)
     return artifact
 
 

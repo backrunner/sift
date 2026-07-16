@@ -350,6 +350,8 @@ struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.openURL) private var openURL
     @State private var isConfirmingErase = false
+    @State private var isConfirmingTransformerCleanup = false
+    @State private var transformerStorageByteCount: Int64?
     @State private var exportedJSON: String?
     @State private var isExporting = false
 
@@ -358,6 +360,9 @@ struct SettingsView: View {
             VStack(alignment: .leading, spacing: 16) {
                 premiumSection
                 dataSection
+                if model.isTransformerModelDownloaded {
+                    storageManagementSection
+                }
                 legalSection
                 aboutSection
             }
@@ -370,6 +375,13 @@ struct SettingsView: View {
         .scrollIndicators(.hidden)
         .background(AtmosphericBackground())
         .onAppear { model.refreshRemoteAccountStatus() }
+        .task(id: model.isTransformerModelDownloaded) {
+            guard model.isTransformerModelDownloaded else {
+                transformerStorageByteCount = nil
+                return
+            }
+            transformerStorageByteCount = await TransformerModelStore.installedModelByteCount()
+        }
         .alert("iCloud", isPresented: remoteAccountAlertBinding) {
             Button(String(localized: "关闭"), role: .cancel) {
                 model.dismissRemoteAccountAlert()
@@ -403,6 +415,17 @@ struct SettingsView: View {
             Button(String(localized: "取消"), role: .cancel) {}
         } message: {
             Text(String(localized: "将从云端删除你匿名提交的全部样本，此操作不可撤销，不影响本地功能。"))
+        }
+        .alert(
+            String(localized: "清理 Transformer 存储？"),
+            isPresented: $isConfirmingTransformerCleanup
+        ) {
+            Button(String(localized: "清理存储"), role: .destructive) {
+                model.clearDownloadedTransformerModel()
+            }
+            Button(String(localized: "取消"), role: .cancel) {}
+        } message: {
+            Text(transformerCleanupConfirmationMessage)
         }
     }
 
@@ -441,30 +464,82 @@ struct SettingsView: View {
             }
             .buttonStyle(.plain)
             .insetSurface(cornerRadius: 12)
+        }
+        .padding(18)
+        .cardSurface()
+    }
+
+    private var storageManagementSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            SectionHeader(title: String(localized: "存储管理"), icon: "internaldrive.fill")
+
+            SettingsRowContent(
+                title: String(localized: "Transformer 模型"),
+                subtitle: transformerStorageSubtitle,
+                icon: "brain.filled.head.profile"
+            ) {
+                if let transformerStorageByteCount {
+                    VStack(alignment: .trailing, spacing: 2) {
+                        Text(Self.formatStorageByteCount(transformerStorageByteCount))
+                            .font(.callout.monospacedDigit())
+                            .foregroundStyle(.secondary)
+                        Text(String(localized: "存储占用"))
+                            .font(.caption2.weight(.medium))
+                            .foregroundStyle(.tertiary)
+                    }
+                } else {
+                    ProgressView()
+                        .controlSize(.small)
+                }
+            }
+            .insetSurface(cornerRadius: 12)
 
             Button {
-                Task {
-                    let feedback = await model.premium.restorePurchases()
-                    model.showToast(feedback.kind, feedback.message)
-                }
+                isConfirmingTransformerCleanup = true
             } label: {
                 SettingsRowContent(
-                    title: String(localized: "恢复购买"),
-                    icon: "arrow.clockwise",
-                    isEnabled: !model.premium.isRestoring
+                    title: String(localized: "清理存储"),
+                    icon: "trash.fill",
+                    tint: .red,
+                    isEnabled: canClearTransformerModel
                 ) {
-                    if model.premium.isRestoring {
+                    if model.isClearingTransformerModel {
                         ProgressView().controlSize(.small)
                     }
                 }
             }
             .buttonStyle(.plain)
-            .foregroundStyle(.primary)
+            .foregroundStyle(.red)
             .insetSurface(cornerRadius: 12)
-            .disabled(model.premium.isRestoring)
+            .disabled(!canClearTransformerModel)
         }
         .padding(18)
         .cardSurface()
+    }
+
+    private var transformerStorageSubtitle: String {
+        let version = model.modelVersion(for: .transformer) ?? String(localized: "未知")
+        return String(
+            format: String(localized: "已下载 · 版本 %@"),
+            version
+        )
+    }
+
+    private static func formatStorageByteCount(_ byteCount: Int64) -> String {
+        ByteCountFormatter.string(fromByteCount: byteCount, countStyle: .file)
+    }
+
+    private var canClearTransformerModel: Bool {
+        !model.isClearingTransformerModel
+            && !model.isTransformerDownloadActive
+            && !model.isSwitchingModelVariant
+    }
+
+    private var transformerCleanupConfirmationMessage: String {
+        if model.selectedModelVariant == .transformer {
+            return String(localized: "清理后会切换回经典模型，并删除已下载的 Transformer 模型文件。再次使用时需要重新下载。")
+        }
+        return String(localized: "将删除已下载的 Transformer 模型文件。再次使用时需要重新下载。")
     }
 
     private var dataSection: some View {
@@ -631,27 +706,18 @@ struct SettingsView: View {
                 icon: model.selectedModelVariant.symbol,
                 tint: .siftMint
             ) {
-                if model.selectedModelVariant == .transformer {
-                    Text(String(localized: "高级版"))
-                        .font(.caption2.weight(.bold))
-                        .foregroundStyle(Color.siftAmber)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 3)
-                        .background(Color.siftAmber.opacity(0.14), in: Capsule())
-                } else {
-                    VStack(alignment: .trailing, spacing: 2) {
-                        Text(model.modelVersion)
-                            .font(.callout.monospacedDigit())
-                            .foregroundStyle(.secondary)
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.72)
-                        Text(settingsModelTypeTitle)
-                            .font(.caption2.weight(.medium))
-                            .foregroundStyle(.tertiary)
-                            .lineLimit(1)
-                    }
-                    .frame(minWidth: 96, alignment: .trailing)
+                VStack(alignment: .trailing, spacing: 2) {
+                    Text(model.modelVersion)
+                        .font(.callout.monospacedDigit())
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.72)
+                    Text(settingsModelTypeTitle)
+                        .font(.caption2.weight(.medium))
+                        .foregroundStyle(.tertiary)
+                        .lineLimit(1)
                 }
+                .frame(minWidth: 96, alignment: .trailing)
             }
             .insetSurface(cornerRadius: 12)
         }

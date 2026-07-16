@@ -97,16 +97,12 @@ def parse_arguments() -> argparse.Namespace:
     training.add_argument("--backbone", default="jhu-clsp/mmBERT-small", help="transformer backbone")
     training.add_argument("--device", choices=["auto", "cpu", "cuda", "mps"], default="auto")
     training.add_argument("--quantize", choices=["fp16", "int8"], default="int8")
-    training.add_argument("--prune-vocab", action="store_true", default=True, help="legacy SetFit option; ignored by mmBERT")
-    training.add_argument("--no-prune-vocab", dest="prune_vocab", action="store_false")
     training.add_argument("--truncate-layers", type=int, default=0)
     training.add_argument("--resume-from", type=Path, default=None, help="mmBERT checkpoint dir (e.g. build/pipeline/transformer-model/checkpoint)")
     training.add_argument("--learning-rate", type=float, default=None, help="supervised fine-tuning LR; finetune defaults to 1e-5")
-    training.add_argument("--body-learning-rate", type=float, default=None, help="deprecated alias for --learning-rate")
     training.add_argument("--num-epochs", type=int, default=3)
     training.add_argument("--batch-size", type=int, default=8)
     training.add_argument("--warmup-ratio", type=float, default=0.06)
-    training.add_argument("--head-only", action="store_true", help="legacy SetFit option; ignored by mmBERT")
     training.add_argument("--install-ios", action="store_true", help="install trained artifacts into apps/ios/GeneratedModels")
 
     return parser.parse_args()
@@ -262,7 +258,7 @@ def stage_train_transformer(arguments: argparse.Namespace, finetune: bool = Fals
     require_holdout_isolation(TRAIN_SET)
 
     resume_from = arguments.resume_from
-    learning_rate = arguments.learning_rate if arguments.learning_rate is not None else arguments.body_learning_rate
+    learning_rate = arguments.learning_rate
     if finetune:
         resume_from = resume_from or (TRANSFORMER_OUT / "checkpoint")
         if not resume_from.exists():

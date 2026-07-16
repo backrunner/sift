@@ -257,15 +257,22 @@ def read_manifest(path: Path) -> dict[str, Any]:
 def normalize_manifest(manifest: dict[str, Any], model_dir: Path, model_name: str, base_url: str) -> dict[str, Any]:
     manifest = dict(manifest)
     model_artifact = require_string(manifest, "modelArtifact")
-    tokenizer_artifact = manifest.get("tokenizerArtifact") or manifest.get("vocabularyArtifact")
-    if not isinstance(tokenizer_artifact, str) or not tokenizer_artifact:
-        raise SystemExit("error: manifest needs tokenizerArtifact or vocabularyArtifact")
+    tokenizer_artifact = require_string(manifest, "tokenizerArtifact")
+    if manifest.get("tokenizerKind") != "bpe" or not tokenizer_artifact.endswith(".siftbpe"):
+        raise SystemExit("error: tokenizer must be a BPE .siftbpe artifact")
 
     artifacts = manifest.get("remoteArtifacts")
     if not isinstance(artifacts, list) or not artifacts:
         artifacts = derive_remote_artifacts(model_dir, [model_artifact, tokenizer_artifact])
     else:
         artifacts = normalize_remote_artifacts(model_dir, artifacts)
+
+    remote_paths = {item["path"] for item in artifacts}
+    if tokenizer_artifact not in remote_paths:
+        raise SystemExit(
+            "error: tokenizerArtifact is missing from remoteArtifacts: "
+            f"{tokenizer_artifact}"
+        )
 
     manifest["remoteBaseURL"] = base_url
     manifest["remoteArtifacts"] = artifacts
@@ -442,7 +449,11 @@ def run_upload_command(items: list[UploadItem], template: str) -> None:
 def verify_http(items: list[UploadItem], base_url: str) -> None:
     for item in items:
         url = f"{base_url}/{item.path}"
-        request = urllib.request.Request(url, method="HEAD")
+        request = urllib.request.Request(
+            url,
+            method="HEAD",
+            headers={"User-Agent": "SiftModelPublisher/1.0 (+https://sift.alkinum.io)"},
+        )
         try:
             with urllib.request.urlopen(request, timeout=20) as response:
                 if response.status < 200 or response.status >= 300:

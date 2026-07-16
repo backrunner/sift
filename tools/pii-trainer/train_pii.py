@@ -293,7 +293,7 @@ def threshold_predictions(logits, threshold: float):
     return torch.where(keep, predictions, torch.zeros_like(predictions))
 
 
-# --- Model surgery (shared ideas with train_setfit) ----------------------------
+# --- Model surgery -------------------------------------------------------------
 
 def truncate_layers(auto_model, keep: int) -> None:
     import torch
