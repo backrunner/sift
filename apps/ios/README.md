@@ -10,15 +10,23 @@ Local package checks:
 ```bash
 swift test
 swift run CoreSmokeTests
+swift run ClassicMessageFilterArtifactTests \
+  --model GeneratedModels/SiftSMSClassifier.mlmodel \
+  --fixed ../../tools/apple-trainer/Evaluation/classification-regressions.ndjson \
+  --promotion ../../tools/apple-trainer/Evaluation/promotion-regressions.ndjson \
+  --conversation ../../tools/transformer-trainer/Evaluation/conversation-regressions.ndjson \
+  --output ../../build/pipeline/apple-model/classic-message-filter-report.json
 ```
 
 Train or refresh the bundled base model from the shared generic `text`/`label`
 NDJSON corpus:
 
 ```bash
-cd ../../tools/apple-trainer
-swift run SiftAppleTrainer --build-public-corpus ../../build/public-corpus.ndjson --per-label 80 --public-per-label 500
-swift run SiftAppleTrainer --input ../../build/public-corpus.ndjson --out ../../build/apple-model --algorithm maxent --install-ios
+cd ../..
+pnpm pipeline -- fetch-public
+pnpm pipeline -- curate --strict-audit
+pnpm pipeline -- augment
+pnpm pipeline -- train-classic --algorithm-classic maxent --install-ios
 ```
 
 ## Model variants
@@ -37,15 +45,34 @@ the `group.com.alkinum.sift` app group):
   while selected, the app hides local fine-tuning UI and only offers anonymous
   CloudKit contribution.
 
+The Premium Transformer requires an A12-class Neural Engine or newer
+(`iPhone11,*` / `iPad8,*` minimum). Older iPhones and iPads, iPods, simulators,
+and unknown hardware identifiers stay on Classic. The app disables the Premium
+settings row, blocks purchase/download/model switching with localized feedback,
+and the message-filter engine independently refuses to load the Transformer so
+a restored App Group selection cannot bypass the device gate.
+
 For local Simulator or device testing, set the Debug scheme environment
 variable `SIFT_DEBUG_PREMIUM_UNLOCKED=1`. This selects an unlocked in-process
 Premium backend only in `DEBUG`; Release builds always use StoreKit.
 
-The message-filter extension re-reads the shared selection (and custom rules)
-on every query, so switching models in the app takes effect in the system
-filter immediately — including when iOS keeps the extension process alive
-across queries. On device this requires the `group.com.alkinum.sift` App
-Group to be provisioned for both targets.
+Release builds must inject the raw Ed25519 public key used to verify the signed
+model channel and immutable release manifest:
+
+```bash
+xcodebuild ... \
+  SIFT_TRANSFORMER_MODEL_PUBLIC_KEY_ID=release-2026 \
+  SIFT_TRANSFORMER_MODEL_PUBLIC_KEY='<raw-public-key-base64>'
+```
+
+The private key remains only on the publisher. An empty public-key build keeps
+the installed model but disables update discovery and download.
+
+The message-filter extension reads one atomic shared configuration snapshot on
+every query. It refreshes the Transformer runtime when the artifact identity
+changes, while rules and category mappings take effect immediately even if iOS
+keeps the extension process alive. On device this requires the
+`group.com.alkinum.sift` App Group to be provisioned for both targets.
 
 ## Sanitization (two tracks)
 

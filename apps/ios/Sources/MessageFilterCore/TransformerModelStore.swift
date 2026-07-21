@@ -56,6 +56,34 @@ public enum TransformerModelStore {
             .appendingPathComponent(".\(resourceName).staging-\(UUID().uuidString)", isDirectory: true)
     }
 
+    public static func previousModelDirectory(
+        resourceName: String = TransformerClassifierLoader.defaultResourceName,
+        fileManager: FileManager = .default
+    ) -> URL {
+        baseDirectory(fileManager: fileManager)
+            .appendingPathComponent("\(resourceName).previous", isDirectory: true)
+    }
+
+    public static func downloadResumeDataDirectory(
+        resourceName: String = TransformerClassifierLoader.defaultResourceName,
+        fileManager: FileManager = .default
+    ) -> URL {
+        baseDirectory(fileManager: fileManager)
+            .appendingPathComponent(".\(resourceName).resume", isDirectory: true)
+    }
+
+    public static func downloadResumeDataURL(
+        artifactSHA256: String,
+        resourceName: String = TransformerClassifierLoader.defaultResourceName,
+        fileManager: FileManager = .default
+    ) -> URL? {
+        guard isSHA256(artifactSHA256) else {
+            return nil
+        }
+        return downloadResumeDataDirectory(resourceName: resourceName, fileManager: fileManager)
+            .appendingPathComponent("\(artifactSHA256).resume", isDirectory: false)
+    }
+
     public static func manifestURL(
         resourceName: String = TransformerClassifierLoader.defaultResourceName,
         in directory: URL? = nil,
@@ -136,17 +164,17 @@ public enum TransformerModelStore {
         let parent = activeDirectory.deletingLastPathComponent()
         try fileManager.createDirectory(at: parent, withIntermediateDirectories: true)
 
-        let backup = parent.appendingPathComponent(".\(resourceName).previous-\(UUID().uuidString)", isDirectory: true)
+        let backup = previousModelDirectory(resourceName: resourceName, fileManager: fileManager)
         let hadActive = fileManager.fileExists(atPath: activeDirectory.path)
+        if fileManager.fileExists(atPath: backup.path) {
+            try fileManager.removeItem(at: backup)
+        }
         if hadActive {
             try fileManager.moveItem(at: activeDirectory, to: backup)
         }
 
         do {
             try fileManager.moveItem(at: stagedDirectory, to: activeDirectory)
-            if hadActive {
-                try? fileManager.removeItem(at: backup)
-            }
         } catch {
             if hadActive, fileManager.fileExists(atPath: backup.path) {
                 try? fileManager.moveItem(at: backup, to: activeDirectory)
@@ -160,8 +188,16 @@ public enum TransformerModelStore {
         fileManager: FileManager = .default
     ) throws {
         let directory = modelDirectory(resourceName: resourceName, fileManager: fileManager)
+        let previous = previousModelDirectory(resourceName: resourceName, fileManager: fileManager)
+        let resumeData = downloadResumeDataDirectory(resourceName: resourceName, fileManager: fileManager)
         if fileManager.fileExists(atPath: directory.path) {
             try fileManager.removeItem(at: directory)
+        }
+        if fileManager.fileExists(atPath: previous.path) {
+            try fileManager.removeItem(at: previous)
+        }
+        if fileManager.fileExists(atPath: resumeData.path) {
+            try fileManager.removeItem(at: resumeData)
         }
     }
 
@@ -236,6 +272,12 @@ public enum TransformerModelStore {
             && !path.hasPrefix("/")
             && !components.contains("..")
             && !components.contains(".")
+    }
+
+    public static func isSHA256(_ value: String) -> Bool {
+        value.count == 64 && value.unicodeScalars.allSatisfy {
+            (48...57).contains($0.value) || (97...102).contains($0.value)
+        }
     }
 
     public static func fileSHA256(at url: URL) throws -> String {

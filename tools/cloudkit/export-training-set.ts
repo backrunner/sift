@@ -34,6 +34,11 @@ interface TrainingRow {
   readonly text: string;
   readonly label: string;
   readonly textLanguage: string | null;
+  readonly predictedLabel: string | null;
+  readonly predictedConfidence: number | null;
+  readonly agreement: number | null;
+  readonly modelVersion: string | null;
+  readonly schemaVersion: number | null;
 }
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));
@@ -51,7 +56,7 @@ Options:
   --key <path>          PEM private key path ($CLOUDKIT_PRIVATE_KEY).
   --out <path>          Output NDJSON. Defaults to build/remote-training.ndjson.
   --raw                 Keep all metadata columns instead of the training-safe
-                        text/label/textLanguage rows.
+                        privacy-safe training rows with quality metadata.
   --since <iso-date>    Only export records with createdAt after this instant.
   --max <n>             Stop after n records (debugging).
   --min-length <n>      Drop rows shorter than n characters. Default 8.
@@ -245,7 +250,16 @@ async function main(): Promise<void> {
             createdAt: fieldNumber(record, "createdAt"),
             recordName: record.recordName,
           }
-        : { text, label, textLanguage: fieldString(record, "textLanguage") },
+        : {
+            text,
+            label,
+            textLanguage: fieldString(record, "textLanguage"),
+            predictedLabel: fieldString(record, "predictedLabel"),
+            predictedConfidence: fieldNumber(record, "predictedConfidence"),
+            agreement: fieldNumber(record, "agreement"),
+            modelVersion: fieldString(record, "modelVersion"),
+            schemaVersion: fieldNumber(record, "schemaVersion"),
+          },
     );
   }
 

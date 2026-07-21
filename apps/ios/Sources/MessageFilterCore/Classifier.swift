@@ -1,5 +1,25 @@
 import Foundation
 
+public enum ModelOutputContract {
+    public static let abstainLabel = "__sift_abstain__"
+
+    public static func isAbstainLabel(_ label: String) -> Bool {
+        label == abstainLabel
+    }
+
+    public static func abstentionDecision(confidence: Double) -> ClassificationDecision {
+        ClassificationDecision(
+            labelID: abstainLabel,
+            labelTitle: String(localized: "未分类"),
+            groupID: "",
+            groupTitle: "",
+            confidence: confidence,
+            systemAction: .none,
+            source: .fallback
+        )
+    }
+}
+
 public protocol MessageClassifier: Sendable {
     func classify(sender: String?, body: String) -> ClassificationDecision
 }
@@ -114,6 +134,9 @@ public struct CascadingClassifier: MessageClassifier {
 
     public func classify(sender: String?, body: String) -> ClassificationDecision {
         let primaryDecision = primary.classify(sender: sender, body: body)
+        if ModelOutputContract.isAbstainLabel(primaryDecision.labelID) {
+            return primaryDecision
+        }
         if primaryDecision.source != .fallback, primaryDecision.confidence >= primaryThreshold {
             return primaryDecision
         }
@@ -146,6 +169,9 @@ public struct ClassificationPipeline: Sendable {
         }
 
         let decision = classifier.classify(sender: sender, body: body)
+        if ModelOutputContract.isAbstainLabel(decision.labelID) {
+            return decision
+        }
         if decision.confidence < 0.6 {
             if let fallback = SiftTaxonomy.leaf(id: "transaction.other") {
                 return ClassificationDecision(

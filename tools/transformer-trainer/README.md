@@ -15,7 +15,7 @@ variant.
 | --- | --- |
 | `SiftTransformerClassifier.mlpackage` | fused body + head, Core ML classifier (`input_ids`/`attention_mask` int32 `[1, maxLength]` → label + probability dict) |
 | `SiftTransformerClassifier.tokenizer.siftbpe` | compact memory-mapped BPE tokenizer consumed by the Swift `BPETokenizer` |
-| `SiftTransformerClassifier.manifest.json` | metadata read by `TransformerClassifierLoader` (labels, max length, casing, version, remote file list, download size) |
+| `SiftTransformerClassifier.manifest.json` | signed v2 release metadata read by `TransformerClassifierLoader` (ABI, compatibility, quantization, validation, labels, remote file list) |
 
 Do **not** ship these files inside the app. Upload the manifest, tokenizer,
 and every file inside the `.mlpackage` to the public model CDN with
@@ -28,9 +28,128 @@ The default backbone is `jhu-clsp/mmBERT-small` (ModernBERT architecture,
 metaspace BPE tokenizer). Transformer exports and the iOS runtime use only the
 compact `.siftbpe` artifact with `tokenizerKind: "bpe"` in the manifest.
 
-Size levers for the message-filter extension's tight memory budget:
+Size levers for the message-filter extension's tight memory budget are evaluated
+as a tournament, not selected from validation accuracy alone. The checked-in
+`quantization-profiles.json` includes W8A16, W8A8 and W4 block-16/block-32
+profiles. A W4 QAT profile is only enabled when its PTQ predecessor fails the
+quality gates.
 
-- `--quantize int8` — linear weight quantization (default is fp16)
+Every quantized candidate also runs the production Swift MessageFilter artifact
+suite with the versioned trilingual readable cases. A readable-case mismatch
+fails the tournament before device metrics or candidate selection can proceed.
+
+Provide QAT-trained FP16 exports with repeated
+`--qat-model PROFILE_ID=/path/to/model.mlpackage` arguments. The selector only
+considers each QAT report when its exact PTQ predecessor fails quality gates;
+it never uses QAT to bypass a passing, smaller PTQ candidate.
+
+Generate the FP16 baseline and all candidates after training:
+
+```bash
+pnpm pipeline -- train-transformer --version-transformer mmbert-boundary-v9
+pnpm pipeline -- quantize-transformer --version-transformer mmbert-boundary-v9
+```
+
+The FP16 source package must target iOS 18 because Core ML rejects W4
+per-block compression for older deployment targets. A8 profiles calibrate the
+FP16 graph once, persist a SHA-bound activation base, then derive W8A8 and both
+W4A8 block profiles in the Core ML recommended activation-then-weight order.
+Candidate reuse additionally binds the Core ML Tools version, profile,
+tokenizer, calibration sample set, and max sequence length.
+
+The candidate reports must then be completed with separate A12 and
+current-generation iPhone evidence for acceleration, peak physical footprint,
+latency, jetsam and memory drift. For each candidate:
+
+```bash
+./run_ios_device_benchmark.sh \
+  --device <device-udid> \
+  --candidate ../../build/pipeline/<run>/candidates/<profile> \
+  --output ../../build/device-evidence/<device>/<profile> \
+  --allow-provisioning-updates
+
+python3 record_device_metrics.py \
+  --report ../../build/pipeline/transformer-model/quantization-tournament/reports/w8a16-channel-ptq.report.json \
+  --runtime-benchmark ../../build/device-evidence/a12/<profile>/DeviceEvidence/runtime-benchmark.json \
+  --extension-evidence /path/to/a12-extension.json \
+  --current-runtime-benchmark ../../build/device-evidence/current/<profile>/DeviceEvidence/runtime-benchmark.json \
+  --current-extension-evidence /path/to/current-extension.json
+```
+
+The device script never bundles the Premium model. It installs the signed host
+app, copies the candidate to an App Group staging directory with `devicectl`,
+then the hosted XCTest validates hashes, compiles on the iPhone, runs the
+trilingual smoke cases, activates the release, and exports the runtime JSON.
+The same run exports `message-filter-snapshot.json`, a content-free aggregate
+of real IdentityLookup queries grouped by requested artifact identity. It
+contains cold/warm latency buckets, fallback/error counts, watchdogs and
+physical-footprint drift, but never sender or body.
+
+The runtime XCTest and MessageFilter snapshot are preflight evidence. They do
+not replace a Core ML Instruments trace or the actual extension stress runs.
+Runtime memory drift is measured from the post-warmup footprint to the final
+inference footprint. `MLComputePlan` allocations are recorded separately and
+do not contribute to the inference peak or drift gate.
+`record_device_metrics.py` still rejects reports without a non-zero accelerator
+trace count, 30 cold extension runs, 10,000 warm system queries, zero jetsam,
+and the GPU-contention/Low-Power/memory-pressure sign-offs.
+
+After the real extension runs and Core ML Instruments capture are complete,
+convert the exported aggregate into the strict extension-evidence schema:
+
+```bash
+python3 export_message_filter_evidence.py \
+  --snapshot /path/to/DeviceEvidence/message-filter-snapshot.json \
+  --output /path/to/extension-evidence.json \
+  --release-sequence 9 \
+  --device-model iPhone11,8 \
+  --os-version 18.6 \
+  --coreml-trace /path/to/coreml.trace \
+  --coreml-trace-accelerator-execution-count 42 \
+  --jetsam-count 0 \
+  --contention-fallback-p99-ms 590 \
+  --gpu-contention-passed \
+  --low-power-passed \
+  --memory-pressure-passed
+```
+
+The converter uses each bucket's upper bound, so the resulting percentiles are
+conservative. It refuses unbounded `>=1s` samples, insufficient query counts,
+missing stress sign-offs, any jetsam, or a trace with zero accelerator work.
+
+Only after every report has both device results can the deterministic selector
+run:
+
+```bash
+pnpm pipeline -- select-transformer --release-sequence 9
+```
+
+`selected-candidate.json` is SHA-bound to the winning report. The publisher
+refuses to upload any candidate without that file, valid Ed25519 signing key,
+and all fixed/promotion/action/device gates.
+
+Before collecting iPhone evidence, a candidate can be installed into the local
+App Group store and exercised through the production Swift tokenizer,
+`MessageFilterEngine`, rules, action/subaction mapping, and `.all` compute plan:
+
+```bash
+cd ../../apps/ios
+swift run MessageFilterArtifactTests \
+  --model ../../build/pipeline/<run>/candidates/<profile>/SiftTransformerClassifier.mlpackage \
+  --tokenizer ../../build/pipeline/<run>/candidates/<profile>/SiftTransformerClassifier.tokenizer.siftbpe \
+  --manifest ../../build/pipeline/<run>/candidates/<profile>/SiftTransformerClassifier.manifest.json \
+  --fixed ../../tools/apple-trainer/Evaluation/classification-regressions.ndjson \
+  --promotion ../../tools/apple-trainer/Evaluation/promotion-regressions.ndjson \
+  --output ../../build/pipeline/<run>/candidates/<profile>/production-dynamic-validation.json \
+  --install-dynamic --readable-cases --inspect-compute-plan
+```
+
+`--install-dynamic` uses the same staging, Core ML compilation, trilingual smoke,
+active/previous rotation, and installed runtime loader as production. It is a
+development-only unsigned local install; CDN publication still requires the
+signed manifests and `selected-candidate.json`. A Mac compute plan is diagnostic
+only and never satisfies the A12/current-iPhone accelerator gate.
+
 - `--truncate-layers N` — keep only the first N encoder layers before training
   for smaller spike builds
 
@@ -94,6 +213,12 @@ match the raw-SMS distribution seen at inference without attempting to recover
 the submitted original) → exact + near-duplicate dedupe →
 cross-label conflict removal → language allowlist.
 
+The pipeline then runs `augment_dataset.py` with the versioned
+`generalization-augmentation.json`. It adds only label/language-scoped semantic
+replacements and reviewed boundary rows, caps additions per label, and repeats
+exact/digit-normalized holdout and template-cluster checks before producing the
+final `train.ndjson`.
+
 CloudKit exports retain the device-detected `textLanguage`. Curation normalizes
 that hint (`zh-Hans` → `zh`, `ja-JP` → `ja`) and only falls back to script
 detection when the hint is absent, so kanji-only Japanese samples are not
@@ -134,13 +259,15 @@ uv run train_mmbert.py \
   --quantize int8 \
   --version mmbert-0.1
 
-# validate and upload to the public model URL used by the iOS app
+# validate and upload only the selected candidate
 cp ../../.env.transformer-model.example ../../.env.transformer-model
 python3 upload_transformer_model.py \
-  --model-dir ../../build/transformer-model \
+  --model-dir ../../build/pipeline/transformer-model/quantization-tournament/candidates/w8a16-channel-ptq \
+  --selection ../../build/pipeline/transformer-model/selected-candidate.json \
   --dry-run
 python3 upload_transformer_model.py \
-  --model-dir ../../build/transformer-model \
+  --model-dir ../../build/pipeline/transformer-model/quantization-tournament/candidates/w8a16-channel-ptq \
+  --selection ../../build/pipeline/transformer-model/selected-candidate.json \
   --r2-bucket "$SIFT_MODEL_R2_BUCKET" \
   --verify-http
 

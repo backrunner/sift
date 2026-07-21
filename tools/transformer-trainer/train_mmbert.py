@@ -33,6 +33,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from compact_tokenizer import write_compact_bpe_tokenizer
+from model_contract import MODEL_ABI_V3, model_labels
 
 os.environ.setdefault("PYTORCH_ENABLE_MPS_FALLBACK", "1")
 
@@ -65,6 +66,11 @@ class Arguments:
     freeze_encoder: bool
     truncate_layers: int
     quantize: str
+    quantization_profile: str
+    release_sequence: int
+    model_abi: str
+    minimum_app_build: int
+    maximum_app_build: int
     device: str
     resume_from: Path | None
     save_checkpoint: str
@@ -104,6 +110,11 @@ def parse_arguments() -> Arguments:
     parser.add_argument("--freeze-encoder", action="store_true", help="train only the classification head")
     parser.add_argument("--truncate-layers", type=int, default=0, help="keep only the first N encoder layers before training")
     parser.add_argument("--quantize", choices=["fp16", "int8"], default="int8")
+    parser.add_argument("--quantization-profile", default=None, help="v2 profile id recorded in the release manifest")
+    parser.add_argument("--release-sequence", type=int, default=0)
+    parser.add_argument("--model-abi", default=MODEL_ABI_V3)
+    parser.add_argument("--minimum-app-build", type=int, default=1)
+    parser.add_argument("--maximum-app-build", type=int, default=2_147_483_647)
     parser.add_argument("--device", choices=["auto", "cpu", "cuda", "mps"], default="auto")
     parser.add_argument("--resume-from", type=Path, default=None, help="checkpoint dir produced by this trainer")
     parser.add_argument("--save-checkpoint", default="auto", help="'auto' = <out>/checkpoint, 'off' disables saving")
@@ -139,6 +150,11 @@ def parse_arguments() -> Arguments:
         freeze_encoder=raw.freeze_encoder,
         truncate_layers=raw.truncate_layers,
         quantize=raw.quantize,
+        quantization_profile=raw.quantization_profile or ("fp16-baseline" if raw.quantize == "fp16" else "w8a16-channel-ptq"),
+        release_sequence=raw.release_sequence,
+        model_abi=raw.model_abi,
+        minimum_app_build=raw.minimum_app_build,
+        maximum_app_build=raw.maximum_app_build,
         device=raw.device,
         resume_from=(raw.resume_from.expanduser().resolve() if raw.resume_from else None),
         save_checkpoint=raw.save_checkpoint,
@@ -506,7 +522,7 @@ def export_coreml(model, labels: list[str], max_length: int, quantize: str):
         classifier_config=ct.ClassifierConfig(class_labels=labels),
         compute_precision=ct.precision.FLOAT16,
         convert_to="mlprogram",
-        minimum_deployment_target=ct.target.iOS17,
+        minimum_deployment_target=ct.target.iOS18,
     )
     if quantize == "int8":
         from coremltools.optimize.coreml import OpLinearQuantizerConfig, OptimizationConfig, linear_quantize_weights
@@ -625,7 +641,7 @@ def main() -> None:
     repo_root = locate_repo_root()
 
     rows = load_rows(arguments.input, max_rows=arguments.max_rows)
-    valid_labels = load_taxonomy_labels(repo_root)
+    valid_labels = model_labels(load_taxonomy_labels(repo_root))
     unknown = {row["label"] for row in rows} - valid_labels
     if unknown:
         raise SystemExit(f"error: unknown labels in dataset: {', '.join(sorted(unknown))}")
@@ -768,6 +784,30 @@ def main() -> None:
     tokenizer_path = write_tokenizer_artifact(tokenizer, out, arguments.model_name)
     downloadable_artifacts = remote_artifacts([package_path, tokenizer_path], out)
     manifest = {
+        "schemaVersion": 2,
+        "releaseSequence": arguments.release_sequence,
+        "modelABI": arguments.model_abi,
+        "minimumAppBuild": arguments.minimum_app_build,
+        "maximumAppBuild": arguments.maximum_app_build,
+        "minimumOSVersion": "18.0",
+        "runtimeProfile": {
+            "computeUnits": "all",
+            "modelType": "mlProgram",
+            "transformerBudgetMilliseconds": 500,
+        },
+        "quantizationProfile": {
+            "identifier": arguments.quantization_profile,
+            "weightBits": 16 if arguments.quantize == "fp16" else 8,
+            "activationBits": 16,
+            "method": "baseline" if arguments.quantize == "fp16" else "ptq",
+            "granularity": "per-tensor" if arguments.quantize == "fp16" else "per-channel",
+        },
+        "validationMetrics": {
+            "fixedAccuracy": 0.0,
+            "promotionAccuracy": test_accuracy or 0.0,
+            "fp16Agreement": 0.0,
+            "languageAccuracy": {},
+        },
         "version": arguments.version,
         "trainedAt": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z",
         "algorithm": "supervised-sequence-classification",
@@ -781,6 +821,7 @@ def main() -> None:
         "modelArtifact": package_path.name,
         "sha256": directory_sha256(package_path),
         "taxonomyHash": file_sha256(repo_root / "packages/taxonomy/taxonomy.json"),
+        "tokenizerSHA256": file_sha256(tokenizer_path),
         "remoteArtifacts": downloadable_artifacts,
         "downloadBytes": sum(item["byteCount"] for item in downloadable_artifacts),
         "validationAccuracy": accuracy,

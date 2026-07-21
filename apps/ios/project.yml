@@ -8,7 +8,7 @@ settings:
   SWIFT_VERSION: "6.0"
   GENERATE_INFOPLIST_FILE: YES
   MARKETING_VERSION: "1.0"
-  CURRENT_PROJECT_VERSION: "7"
+  CURRENT_PROJECT_VERSION: "8"
   SUPPORTED_PLATFORMS: "iphoneos iphonesimulator"
   TARGETED_DEVICE_FAMILY: "1"
   SUPPORTS_MACCATALYST: NO
@@ -95,6 +95,9 @@ targets:
       GENERATE_INFOPLIST_FILE: NO
       INFOPLIST_FILE: SiftApp/Info.plist
       ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+      SIFT_TRANSFORMER_MODEL_CHANNEL_URL: https://sift.alkinum.io/models/channels/v2/SiftTransformerClassifier.channel.json
+      SIFT_TRANSFORMER_MODEL_PUBLIC_KEY_ID: release-2026
+      SIFT_TRANSFORMER_MODEL_PUBLIC_KEY: "EWT4wUWJG73N72DqkoNZ8MoDZYlYWPN7YrkL6QgjQKY="
   MessageFilterExtension:
     type: app-extension
     platform: iOS
@@ -117,3 +120,41 @@ targets:
       TARGETED_DEVICE_FAMILY: "1"
       GENERATE_INFOPLIST_FILE: NO
       INFOPLIST_FILE: MessageFilterExtension/Info.plist
+  TransformerDeviceTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - DeviceTests
+    dependencies:
+      - target: SiftApp
+      - target: MessageFilterCore
+      - target: MessageFilterExtensionKit
+    settings:
+      CODE_SIGN_STYLE: Automatic
+      DEVELOPMENT_TEAM: PB8H83VL3Z
+      PROVISIONING_PROFILE_SPECIFIER: ""
+      PRODUCT_BUNDLE_IDENTIFIER: com.alkinum.sift.TransformerDeviceTests
+      GENERATE_INFOPLIST_FILE: YES
+schemes:
+  SiftApp:
+    build:
+      targets:
+        SiftApp: all
+    run:
+      config: Debug
+    archive:
+      config: Release
+    profile:
+      config: Release
+    analyze:
+      config: Debug
+  TransformerDeviceTests:
+    build:
+      targets:
+        SiftApp: all
+        TransformerDeviceTests:
+          - test
+    test:
+      config: Release
+      targets:
+        - TransformerDeviceTests

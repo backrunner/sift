@@ -1,8 +1,9 @@
 # Sift training pipeline
 
-One command drives the full loop — dataset download/refresh, CloudKit sample
-export, quality curation + coverage audit, both model trainings, and Core ML
-installation into the iOS app:
+The pipeline drives dataset refresh, quality curation, both model trainings,
+and a fresh Transformer quantization tournament. Selecting and publishing the
+Transformer remain separate release steps because they require evidence from
+real devices and an offline Ed25519 key:
 
 ```bash
 pnpm pipeline -- all --install-ios            # everything, fresh
@@ -11,11 +12,16 @@ pnpm pipeline -- curate --model-filter off    # re-run one stage, light mode
 pnpm pipeline -- finetune                     # resume last checkpoint, low LR
 pnpm pipeline -- train-transformer \
   --resume-from build/pipeline/transformer-model/checkpoint
+pnpm pipeline -- quantize-transformer \
+  --version-transformer mmbert-boundary-v9 --release-sequence 9 \
+  --minimum-app-build 7 --maximum-app-build 20
+# Add --qat-model w4a16-block16-qat=/path/to/qat.mlpackage when PTQ quality fails.
 ```
 
-Stages: `fetch-public` → `fetch-remote` → `curate` → `train-classic` →
-`train-transformer`. Each stage validates its own inputs, so any stage can be
-re-run in isolation; artifacts live under `build/pipeline/`.
+Stages: `fetch-public` → `fetch-remote` → `curate` → `augment` → `train-classic` →
+`train-transformer` → `quantize-transformer`. Each stage validates its own
+inputs, so any stage can be re-run in isolation; artifacts live under
+`build/pipeline/`.
 
 - `fetch-remote` needs `CLOUDKIT_KEY_ID` + `CLOUDKIT_PRIVATE_KEY`; without
   them it skips politely (pass `--require-remote` to fail instead).
@@ -26,6 +32,10 @@ re-run in isolation; artifacts live under `build/pipeline/`.
   digit-normalized collisions against both fixed external holdouts before any
   model can train or be installed. Both train stages repeat the collision check
   and refuse stale or manually replaced `train.ndjson` files.
+- `augment` reads `train.curated.ndjson`, applies only versioned label/language
+  transformations and reviewed boundary rows, rejects both external holdouts,
+  template-deduplicates the result, and writes the final `train.ndjson` plus
+  `augmentation-report.json`.
 - `train-classic` uses Create ML MaxEnt by default (`--algorithm-classic
   maxent`) because it is the validated high-accuracy, tiny-model baseline for
   the current 50-label SMS corpus; pass `--algorithm-classic bert` or `auto`
@@ -35,6 +45,10 @@ re-run in isolation; artifacts live under `build/pipeline/`.
   cuda (NVIDIA/ROCm) → mps (Apple Silicon) → cpu automatically, always writes
   a resumable checkpoint, and emits
   `training-report.html` (loss curve, per-label accuracy, confusion pairs).
+- `quantize-transformer` regenerates FP16, W8A16, W8A8, W4A16 and W4A8
+  candidates for the current checkpoint. It never reuses the previous
+  release's winner. W4 QAT candidates are considered only when their paired
+  PTQ candidate fails quality gates.
 - `finetune` is the incremental path after new data lands: it resumes the
   latest checkpoint with a low learning rate (default 1e-5) instead of
   retraining from scratch.
@@ -42,3 +56,38 @@ re-run in isolation; artifacts live under `build/pipeline/`.
 Tool requirements per stage: `swift` (fetch-public, train-classic), `pnpm`
 (fetch-remote), `uv` (train-transformer, and curate when the model filter is
 enabled). The orchestrator itself is stdlib-only Python 3.10+.
+
+## Transformer release gate
+
+For every candidate report under
+`build/pipeline/transformer-model/quantization-tournament/reports`, run
+`TransformerRuntimeBenchmark` and the real IdentityLookup extension suite on
+both an A12/iOS 18 device and a current-generation iPhone. Merge both evidence
+sets into the report:
+
+```bash
+python3 tools/transformer-trainer/record_device_metrics.py \
+  --report build/pipeline/transformer-model/quantization-tournament/reports/w8a16-channel-ptq.report.json \
+  --runtime-benchmark /path/to/a12-runtime.json \
+  --extension-evidence /path/to/a12-extension.json \
+  --current-runtime-benchmark /path/to/current-runtime.json \
+  --current-extension-evidence /path/to/current-extension.json
+```
+
+After every candidate has device evidence, select the winner. Selection fails
+instead of falling back to FP16 when no int8/int4 candidate passes:
+
+```bash
+pnpm pipeline -- select-transformer --release-sequence 9
+```
+
+Publish only the selected candidate. The publisher verifies the report SHA,
+artifact SHA, profile, all quality/action/device gates and Ed25519 signatures
+before writing the immutable release and mutable channel pointer:
+
+```bash
+python3 tools/transformer-trainer/upload_transformer_model.py \
+  --model-dir build/pipeline/transformer-model/quantization-tournament/candidates/w8a16-channel-ptq \
+  --selection build/pipeline/transformer-model/selected-candidate.json \
+  --r2-bucket "$SIFT_MODEL_R2_BUCKET" --verify-http
+```

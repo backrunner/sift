@@ -51,11 +51,16 @@ public struct SiftRootView: View {
             case .active where hasEnteredBackground:
                 hasEnteredBackground = false
                 model.clearTransientReceipt()
+                model.checkForTransformerUpdate()
             case .active, .inactive:
                 break
             @unknown default:
                 break
             }
+        }
+        .task {
+            await Task.yield()
+            model.checkForTransformerUpdate()
         }
     }
 
@@ -163,6 +168,14 @@ private struct DashboardHero: View {
                     Text(modelSwitchTitle)
                         .font(.caption2.weight(.semibold))
                         .foregroundStyle(.white.opacity(0.85))
+                    if model.selectedModelVariant == .transformer, model.hasCompatibleTransformerUpdate {
+                        Text(String(localized: "有更新"))
+                            .font(.system(size: 9, weight: .bold))
+                            .foregroundStyle(Color.siftAmber)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(.white, in: Capsule())
+                    }
                     Image(systemName: "chevron.up.chevron.down")
                         .font(.system(size: 8, weight: .bold))
                         .foregroundStyle(.white.opacity(0.7))
@@ -236,30 +249,48 @@ private struct DashboardHero: View {
 private struct ModelPickerView: View {
     @Bindable var model: SiftAppModel
     @Environment(\.dismiss) private var dismiss
+    @State private var isShowingTransformerDetails = false
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 12) {
                 ForEach(model.availableModelVariants) { variant in
-                    let isLocked = variant == .transformer && !model.premium.isUnlocked
+                    let isBlockedByDevice = variant == .transformer && !model.isTransformerDeviceSupported
+                    let isLocked = variant == .transformer
+                        && model.isTransformerDeviceSupported
+                        && !model.premium.isUnlocked
                     let shouldDismissAfterTap = variant == .classic
-                        || (variant == .transformer && model.isTransformerModelAvailable && model.premium.isUnlocked)
+                        || (
+                            variant == .transformer
+                                && model.isTransformerDeviceSupported
+                                && model.isTransformerModelAvailable
+                                && model.premium.isUnlocked
+                        )
                     ModelVariantCard(
                         variant: variant,
                         isSelected: model.selectedModelVariant == variant,
                         isAvailable: model.isModelVariantAvailable(variant),
                         isLockedByPremium: isLocked,
+                        isBlockedByDevice: isBlockedByDevice,
                         isSwitchingTo: model.modelVariantBeingLoaded == variant,
                         version: model.modelVersion(for: variant).map(formatModelVersion),
                         downloadPhase: variant == .transformer ? model.transformerDownloadPhase : nil,
                         downloadProgress: variant == .transformer ? model.transformerDownloadProgress : nil,
-                        downloadSizeText: variant == .transformer ? model.transformerDownloadByteCountText : nil
+                        downloadSizeText: variant == .transformer ? model.transformerDownloadByteCountText : nil,
+                        updateStatusText: variant == .transformer ? model.transformerUpdateStatusText : nil
                     ) {
                         // 未购买时 selectModelVariant 会转为打开购买引导:
                         // 此时保持选择器在场,paywall 作为嵌套 sheet 叠加展示,
                         // 购买成功后用户再次点 Transformer 才开始下载/切换。
-                        model.selectModelVariant(variant)
-                        if shouldDismissAfterTap {
+                        if isBlockedByDevice {
+                            model.showTransformerUnsupportedMessage()
+                        } else if variant == .transformer, model.isTransformerModelDownloaded,
+                           model.transformerUpdateReleaseID != nil {
+                            isShowingTransformerDetails = true
+                        } else {
+                            model.selectModelVariant(variant)
+                        }
+                        if shouldDismissAfterTap && !isShowingTransformerDetails {
                             dismiss()
                         }
                     }
@@ -290,6 +321,12 @@ private struct ModelPickerView: View {
         }
         .scrollIndicators(.hidden)
         .background(AtmosphericBackground())
+        .task {
+            model.checkForTransformerUpdate(force: true)
+        }
+        .navigationDestination(isPresented: $isShowingTransformerDetails) {
+            TransformerModelDetailView(model: model)
+        }
         .sheet(isPresented: $model.isShowingPaywall) {
             NavigationStack {
                 PremiumPaywallView(model: model)
@@ -328,11 +365,13 @@ private struct ModelVariantCard: View {
     let isSelected: Bool
     let isAvailable: Bool
     var isLockedByPremium: Bool = false
+    var isBlockedByDevice: Bool = false
     var isSwitchingTo: Bool = false
     let version: String?
     var downloadPhase: TransformerModelDownloadPhase?
     var downloadProgress: TransformerModelDownloadProgress?
     var downloadSizeText: String?
+    var updateStatusText: String?
     let action: () -> Void
 
     var body: some View {
@@ -361,7 +400,7 @@ private struct ModelVariantCard: View {
                                 .background(Color.siftMint.opacity(0.12), in: Capsule())
                         }
                         if !isAvailable {
-                            Text(String(localized: "未内置"))
+                            Text(isBlockedByDevice ? String(localized: "设备不支持") : String(localized: "未内置"))
                                 .font(.caption2.weight(.semibold))
                                 .foregroundStyle(.secondary)
                                 .padding(.horizontal, 6)
@@ -373,6 +412,14 @@ private struct ModelVariantCard: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
                     downloadStatusView
+                    if variant == .transformer, !isBlockedByDevice, let updateStatusText {
+                        downloadLine(
+                            icon: "arrow.down.circle.fill",
+                            text: updateStatusText,
+                            tint: Color.siftAmber,
+                            progress: nil
+                        )
+                    }
                 }
 
                 Spacer(minLength: 0)
@@ -390,12 +437,19 @@ private struct ModelVariantCard: View {
             .opacity(isAvailable ? 1 : 0.55)
         }
         .buttonStyle(.plain)
-        .disabled(!isAvailable)
+        .disabled(!isAvailable && !isBlockedByDevice)
     }
 
     @ViewBuilder
     private var downloadStatusView: some View {
-        if isSwitchingTo {
+        if isBlockedByDevice {
+            downloadLine(
+                icon: "exclamationmark.triangle.fill",
+                text: String(localized: "此设备不支持 Transformer 高级模型"),
+                tint: Color.siftAmber,
+                progress: nil
+            )
+        } else if isSwitchingTo {
             downloadLine(
                 icon: nil,
                 text: String(localized: "正在切换模型…"),
@@ -514,6 +568,92 @@ private struct ModelVariantCard: View {
             }
         }
         .padding(.top, 3)
+    }
+}
+
+private struct TransformerModelDetailView: View {
+    @Bindable var model: SiftAppModel
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 20) {
+                VStack(alignment: .leading, spacing: 8) {
+                    Label("Transformer", systemImage: ModelVariant.transformer.symbol)
+                        .font(.title3.weight(.semibold))
+                    Text(String(localized: "多语言 · 不支持本地微调"))
+                        .font(.callout)
+                        .foregroundStyle(.secondary)
+                }
+
+                Divider()
+
+                VStack(alignment: .leading, spacing: 10) {
+                    modelDetailRow(
+                        String(localized: "当前版本"),
+                        value: model.modelVersion(for: .transformer).map(formatModelVersion) ?? "-"
+                    )
+                    modelDetailRow(
+                        String(localized: "最新版本"),
+                        value: model.transformerUpdateReleaseID ?? "-"
+                    )
+                    if let size = model.transformerUpdateDownloadSizeText {
+                        modelDetailRow(String(localized: "下载大小"), value: size)
+                    }
+                    if let status = model.transformerUpdateStatusText {
+                        modelDetailRow(String(localized: "兼容状态"), value: status)
+                    }
+                }
+
+                updateAction
+            }
+            .padding(20)
+        }
+        .background(AtmosphericBackground())
+        .navigationTitle(String(localized: "模型详情"))
+        .toolbarTitleDisplayMode(.inline)
+    }
+
+    private func modelDetailRow(_ title: String, value: String) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 12) {
+            Text(title)
+                .foregroundStyle(.secondary)
+            Spacer(minLength: 12)
+            Text(value)
+                .multilineTextAlignment(.trailing)
+        }
+        .font(.callout)
+    }
+
+    @ViewBuilder
+    private var updateAction: some View {
+        if model.isTransformerDownloadActive {
+            HStack(spacing: 10) {
+                ProgressView()
+                Text(model.transformerDownloadProgressText ?? String(localized: "正在下载…"))
+                    .font(.callout.weight(.semibold))
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 12)
+        } else if model.hasCompatibleTransformerUpdate {
+            Button {
+                model.downloadTransformerUpdate()
+            } label: {
+                Label(String(localized: "下载更新"), systemImage: "arrow.down.circle.fill")
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.borderedProminent)
+            .controlSize(.large)
+        } else if case .requiresAppUpdate = model.transformerUpdateState {
+            Label(String(localized: "需要更新 App 后使用"), systemImage: "exclamationmark.triangle.fill")
+                .foregroundStyle(Color.siftAmber)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 12)
+        } else {
+            Label(String(localized: "已是最新版本"), systemImage: "checkmark.circle.fill")
+                .foregroundStyle(Color.siftMint)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 12)
+        }
     }
 }
 

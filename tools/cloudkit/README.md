@@ -31,7 +31,11 @@ pnpm export:training -- --env production \
 pnpm export:training -- --env production --raw --out ../../build/remote-raw.ndjson
 ```
 
-Rows contain `text`, `label`, and the optional device-detected `textLanguage`.
+Rows contain `text`, `label`, optional device-detected `textLanguage`, and the
+non-identifying assessment fields `predictedLabel`, `predictedConfidence`,
+`agreement`, `modelVersion`, and `schemaVersion`. Curation validates and
+downsamples high-confidence disagreements before emitting training-only
+`text`/`label` rows.
 They are validated against `packages/taxonomy/taxonomy.json`, deduplicated on
 `label + text`, and length-filtered (8–500 characters) so the file can feed the
 curation pipeline directly:

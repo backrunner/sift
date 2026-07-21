@@ -1,21 +1,27 @@
 #!/usr/bin/env python3
 """Validate and upload a Sift transformer Core ML release.
 
-The app downloads `SiftTransformerClassifier.manifest.json` first, then each
-file listed in `remoteArtifacts`. `.mlpackage` is a directory package, so the
-manifest lists the package's files individually instead of uploading a zip.
+The app checks a signed channel manifest, then downloads an immutable signed
+release and the files listed in `remoteArtifacts`. `.mlpackage` is a directory
+package, so the release lists each file instead of uploading a zip.
 
 Examples:
 
   # Dry-run a freshly trained model.
   python3 tools/transformer-trainer/upload_transformer_model.py \
-    --model-dir build/pipeline/transformer-model \
+    --model-dir build/pipeline/transformer-model/quantization-tournament/candidates/w8a16-channel-ptq \
+    --selection build/pipeline/transformer-model/selected-candidate.json \
+    --signing-key ~/.config/sift/model-release-ed25519.pem \
+    --signing-key-id release-2026 \
     --base-url https://sift.alkinum.io/models \
     --dry-run
 
   # Copy into a local static/CDN publish directory.
   python3 tools/transformer-trainer/upload_transformer_model.py \
-    --model-dir build/pipeline/transformer-model \
+    --model-dir build/pipeline/transformer-model/quantization-tournament/candidates/w8a16-channel-ptq \
+    --selection build/pipeline/transformer-model/selected-candidate.json \
+    --signing-key ~/.config/sift/model-release-ed25519.pem \
+    --signing-key-id release-2026 \
     --base-url https://sift.alkinum.io/models \
     --dest-dir /tmp/sift-models
 
@@ -23,7 +29,8 @@ Examples:
   # .env.transformer-model.example to .env.transformer-model first; do not
   # commit the real dotenv file.
   python3 tools/transformer-trainer/upload_transformer_model.py \
-    --model-dir build/pipeline/transformer-model \
+    --model-dir build/pipeline/transformer-model/quantization-tournament/candidates/w8a16-channel-ptq \
+    --selection build/pipeline/transformer-model/selected-candidate.json \
     --r2-bucket "$SIFT_MODEL_R2_BUCKET" \
     --verify-http
 
@@ -31,7 +38,10 @@ Examples:
   # The template is split with shlex and supports {src}, {path},
   # {content_type}, and {cache_control}.
   python3 tools/transformer-trainer/upload_transformer_model.py \
-    --model-dir build/pipeline/transformer-model \
+    --model-dir build/pipeline/transformer-model/quantization-tournament/candidates/w8a16-channel-ptq \
+    --selection build/pipeline/transformer-model/selected-candidate.json \
+    --signing-key ~/.config/sift/model-release-ed25519.pem \
+    --signing-key-id release-2026 \
     --base-url https://sift.alkinum.io/models \
     --upload-command 'rclone copyto {src} r2:sift-public/models/{path}'
 """
@@ -39,6 +49,7 @@ Examples:
 from __future__ import annotations
 
 import argparse
+import base64
 import hashlib
 import json
 import mimetypes
@@ -78,6 +89,11 @@ def parse_arguments() -> argparse.Namespace:
 
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--model-dir", type=Path, required=True, help="directory containing the exported transformer artifacts")
+    parser.add_argument("--selection", type=Path, required=True, help="selected-candidate.json produced by the quantization gate")
+    parser.add_argument("--release-id", default=None, help="immutable release directory name; defaults to manifest version")
+    parser.add_argument("--channel-path", default="channels/v2/SiftTransformerClassifier.channel.json")
+    parser.add_argument("--signing-key", type=Path, default=os.getenv("SIFT_MODEL_SIGNING_KEY"))
+    parser.add_argument("--signing-key-id", default=os.getenv("SIFT_MODEL_SIGNING_KEY_ID"))
     parser.add_argument("--model-name", default=DEFAULT_MODEL_NAME)
     parser.add_argument(
         "--base-url",
@@ -199,12 +215,30 @@ def main() -> None:
 
     manifest_path = model_dir / f"{args.model_name}.manifest.json"
     manifest = read_manifest(manifest_path)
-    manifest = normalize_manifest(manifest, model_dir, args.model_name, base_url)
+    verify_selected_candidate(args.selection.expanduser().resolve(), manifest, model_dir)
+    release_id = args.release_id or require_string(manifest, "version")
+    ensure_safe_relative_path(release_id)
+    release_prefix = f"releases/{release_id}"
+    release_base_url = f"{base_url}/{release_prefix}"
+    manifest = normalize_manifest(manifest, model_dir, args.model_name, release_base_url)
     validate_manifest_artifacts(manifest, model_dir)
+    signing_key = require_signing_key(args.signing_key, args.signing_key_id)
+    manifest["keyID"] = args.signing_key_id
+    manifest["signature"] = sign_payload(canonical_release_payload(manifest), signing_key)
 
     with tempfile.TemporaryDirectory(prefix="sift-model-upload-") as temp:
         staged_manifest = Path(temp) / manifest_path.name
         staged_manifest.write_text(json.dumps(manifest, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+        channel = make_channel_manifest(
+            manifest=manifest,
+            release_id=release_id,
+            release_manifest_url=f"{release_base_url}/{manifest_path.name}",
+            release_manifest_sha256=file_sha256(staged_manifest),
+            key_id=args.signing_key_id,
+            signing_key=signing_key,
+        )
+        staged_channel = Path(temp) / "channel.json"
+        staged_channel.write_text(json.dumps(channel, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
 
         items = upload_items(
             manifest=manifest,
@@ -212,6 +246,9 @@ def main() -> None:
             staged_manifest=staged_manifest,
             manifest_cache_control=args.manifest_cache_control,
             artifact_cache_control=args.artifact_cache_control,
+            release_prefix=release_prefix,
+            channel_path=args.channel_path,
+            staged_channel=staged_channel,
         )
 
         print_plan(items, base_url)
@@ -337,17 +374,189 @@ def validate_manifest_artifacts(manifest: dict[str, Any], model_dir: Path) -> No
             raise SystemExit(f"error: remote artifact byte count mismatch: {path}")
 
 
+def verify_selected_candidate(selection_path: Path, manifest: dict[str, Any], model_dir: Path) -> None:
+    if not selection_path.exists():
+        raise SystemExit(f"error: selected candidate file not found: {selection_path}")
+    selection = read_manifest(selection_path)
+    if selection.get("schemaVersion") != 1:
+        raise SystemExit("error: unsupported selected candidate schema")
+    selected_sha = selection.get("artifactSHA256")
+    manifest_sha = manifest.get("sha256")
+    profile_id = manifest.get("quantizationProfile", {}).get("identifier")
+    if selected_sha != manifest_sha:
+        raise SystemExit(
+            "error: refusing to upload a candidate that is not selected: "
+            f"selected={selected_sha}, manifest={manifest_sha}"
+        )
+    if selection.get("profileID") != profile_id:
+        raise SystemExit("error: selected candidate profile does not match manifest")
+    report_path = Path(str(selection.get("reportPath", "")))
+    if not report_path.is_absolute():
+        report_path = (selection_path.parent / report_path).resolve()
+    if not report_path.is_file() or file_sha256(report_path) != selection.get("reportSHA256"):
+        raise SystemExit("error: selected candidate report is missing or has changed")
+    report = read_manifest(report_path)
+    if report.get("profileID") != selection.get("profileID"):
+        raise SystemExit("error: selected candidate report profile does not match selection")
+    if report.get("artifactSHA256") != selected_sha:
+        raise SystemExit("error: selected candidate report artifact does not match selection")
+    if report.get("downloadBytes") != manifest.get("downloadBytes"):
+        raise SystemExit("error: selected candidate report download size does not match manifest")
+    metrics = report.get("metrics", {})
+    actions = report.get("messageFilterActions", {})
+    device = report.get("deviceMetrics", {})
+    current_device = device.get("currentDevice", {})
+    if report.get("deviceMetrics", {}).get("accelerationVerified") is not True:
+        raise SystemExit("error: candidate lacks ANE/GPU evidence")
+    if actions.get("rulesOverrideRate", 0) < 1.0:
+        raise SystemExit("error: MessageFilter rules override gate failed")
+    if metrics.get("fixedAccuracy", 0) < 0.99:
+        raise SystemExit("error: fixed accuracy gate failed")
+    if metrics.get("promotionAccuracy", 0) < 0.97:
+        raise SystemExit("error: promotion accuracy gate failed")
+    if metrics.get("fp16Top1Agreement", 0) < 0.985:
+        raise SystemExit("error: FP16 top-1 agreement gate failed")
+    if metrics.get("probabilitiesFinite") is not True or metrics.get("probabilitySumsValid") is not True:
+        raise SystemExit("error: probability validity gate failed")
+    if actions.get("fixedAccuracy", 0) < 0.99 or actions.get("promotionAccuracy", 0) < 0.97:
+        raise SystemExit("error: MessageFilter action accuracy gate failed")
+    if actions.get("benignOrTransactionToJunk", 1) != 0:
+        raise SystemExit("error: MessageFilter benign/transaction junk gate failed")
+    if actions.get("promotionFalsePositiveRate", 1) > 0.01:
+        raise SystemExit("error: MessageFilter promotion false-positive gate failed")
+    if actions.get("scamJunkRecall", 0) < 1.0:
+        raise SystemExit("error: MessageFilter scam recall gate failed")
+    if (
+        device.get("extensionColdP95Milliseconds", float("inf")) > 750
+        or device.get("extensionColdP99Milliseconds", float("inf")) > 900
+        or device.get("extensionColdMaximumMilliseconds", float("inf")) >= 1000
+        or device.get("extensionWarmP95Milliseconds", float("inf")) > 150
+        or device.get("extensionWarmP99Milliseconds", float("inf")) > 250
+        or device.get("contentionFallbackP99Milliseconds", float("inf")) > 600
+    ):
+        raise SystemExit("error: MessageFilter device latency gate failed")
+    if device.get("jetsamCount", 1) != 0:
+        raise SystemExit("error: MessageFilter jetsam gate failed")
+    if (
+        device.get("memoryDriftBytes", float("inf")) > 16 * 1024 * 1024
+        or device.get("memoryDriftFraction", float("inf")) > 0.10
+    ):
+        raise SystemExit("error: MessageFilter memory drift gate failed")
+    if device.get("stressConditionsPassed") is not True:
+        raise SystemExit("error: MessageFilter stress-condition gate failed")
+    if current_device.get("accelerationVerified") is not True:
+        raise SystemExit("error: candidate lacks current-device ANE/GPU evidence")
+    if (
+        current_device.get("p95LatencyMilliseconds", float("inf")) > 150
+        or current_device.get("p99LatencyMilliseconds", float("inf")) > 250
+        or current_device.get("extensionColdP95Milliseconds", float("inf")) > 750
+        or current_device.get("extensionColdP99Milliseconds", float("inf")) > 900
+        or current_device.get("extensionColdMaximumMilliseconds", float("inf")) >= 1000
+        or current_device.get("extensionWarmP95Milliseconds", float("inf")) > 150
+        or current_device.get("extensionWarmP99Milliseconds", float("inf")) > 250
+        or current_device.get("contentionFallbackP99Milliseconds", float("inf")) > 600
+    ):
+        raise SystemExit("error: current-device latency gate failed")
+    if current_device.get("jetsamCount", 1) != 0:
+        raise SystemExit("error: current-device jetsam gate failed")
+    if (
+        current_device.get("memoryDriftBytes", float("inf")) > 16 * 1024 * 1024
+        or current_device.get("memoryDriftFraction", float("inf")) > 0.10
+    ):
+        raise SystemExit("error: current-device memory drift gate failed")
+    if current_device.get("stressConditionsPassed") is not True:
+        raise SystemExit("error: current-device stress-condition gate failed")
+    if not model_dir.is_dir():
+        raise SystemExit(f"error: candidate directory is not a directory: {model_dir}")
+
+
+def canonical_release_payload(manifest: dict[str, Any]) -> bytes:
+    fields = (
+        "schemaVersion", "releaseSequence", "modelABI", "minimumAppBuild", "maximumAppBuild",
+        "minimumOSVersion", "runtimeProfile", "quantizationProfile", "validationMetrics",
+        "version", "trainedAt", "algorithm", "backbone", "languages", "labels",
+        "maxSequenceLength", "doLowerCase", "tokenizerKind", "tokenizerArtifact",
+        "modelArtifact", "sha256", "taxonomyHash", "tokenizerSHA256", "keyID",
+        "remoteBaseURL", "remoteArtifacts", "downloadBytes",
+    )
+    payload = {key: manifest[key] for key in fields if key in manifest}
+    return json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
+
+
+def canonical_channel_payload(channel: dict[str, Any]) -> bytes:
+    payload = {key: value for key, value in channel.items() if key != "signature"}
+    return json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
+
+
+def require_signing_key(path: Path | None, key_id: str | None) -> Path:
+    if path is None or not key_id:
+        raise SystemExit("error: --signing-key and --signing-key-id are required for v2 model releases")
+    resolved = Path(path).expanduser().resolve()
+    if not resolved.exists():
+        raise SystemExit(f"error: signing key not found: {resolved}")
+    return resolved
+
+
+def sign_payload(payload: bytes, signing_key: Path) -> str:
+    # Apple's OpenSSL/LibreSSL pkeyutl requires a seekable input for Ed25519
+    # one-shot operations; stdin fails with "unable to determine file size".
+    with tempfile.NamedTemporaryFile(prefix="sift-manifest-payload-") as source:
+        source.write(payload)
+        source.flush()
+        result = subprocess.run(
+            [
+                "openssl", "pkeyutl", "-sign", "-inkey", str(signing_key),
+                "-rawin", "-in", source.name,
+            ],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+        )
+    if result.returncode != 0:
+        raise SystemExit(f"error: Ed25519 signing failed: {result.stderr.decode(errors='replace').strip()}")
+    return base64.b64encode(result.stdout).decode("ascii")
+
+
+def make_channel_manifest(
+    manifest: dict[str, Any],
+    release_id: str,
+    release_manifest_url: str,
+    release_manifest_sha256: str,
+    key_id: str,
+    signing_key: Path,
+) -> dict[str, Any]:
+    channel = {
+        "schemaVersion": 2,
+        "releaseSequence": manifest["releaseSequence"],
+        "releaseID": release_id,
+        "releaseManifestURL": release_manifest_url,
+        "releaseManifestSHA256": release_manifest_sha256,
+        "modelABI": manifest["modelABI"],
+        "minimumAppBuild": manifest["minimumAppBuild"],
+        "maximumAppBuild": manifest["maximumAppBuild"],
+        "minimumOSVersion": manifest["minimumOSVersion"],
+        "downloadBytes": manifest["downloadBytes"],
+        "keyID": key_id,
+    }
+    channel["signature"] = sign_payload(canonical_channel_payload(channel), signing_key)
+    return channel
+
+
 def upload_items(
     manifest: dict[str, Any],
     model_dir: Path,
     staged_manifest: Path,
     manifest_cache_control: str,
     artifact_cache_control: str,
+    release_prefix: str = "",
+    channel_path: str | None = None,
+    staged_channel: Path | None = None,
 ) -> list[UploadItem]:
+    prefix = f"{release_prefix}/" if release_prefix else ""
     items = [
         UploadItem(
             source=staged_manifest,
-            path=staged_manifest.name,
+            path=f"{prefix}{staged_manifest.name}",
             content_type="application/json",
             cache_control=manifest_cache_control,
         )
@@ -356,9 +565,16 @@ def upload_items(
         path = artifact["path"]
         items.append(UploadItem(
             source=model_dir / path,
-            path=path,
+            path=f"{prefix}{path}",
             content_type=content_type_for(path),
             cache_control=artifact_cache_control,
+        ))
+    if channel_path and staged_channel:
+        items.append(UploadItem(
+            source=staged_channel,
+            path=channel_path,
+            content_type="application/json",
+            cache_control=manifest_cache_control,
         ))
     return items
 

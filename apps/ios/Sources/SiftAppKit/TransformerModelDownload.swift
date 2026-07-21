@@ -96,6 +96,9 @@ public enum TransformerModelDownloadWorkPhase: Hashable, Sendable {
 
 public enum TransformerModelDownloadError: Error, LocalizedError, Hashable, Sendable {
     case missingRemoteManifestURL
+    case invalidChannelManifest
+    case incompatibleModel
+    case invalidManifestSignature
     case invalidManifestResponse
     case missingRemoteArtifactList
     case unsupportedTokenizerArtifact
@@ -107,6 +110,12 @@ public enum TransformerModelDownloadError: Error, LocalizedError, Hashable, Send
         switch self {
         case .missingRemoteManifestURL:
             return String(localized: "高级模型下载地址未配置")
+        case .invalidChannelManifest:
+            return String(localized: "高级模型更新信息不可用")
+        case .incompatibleModel:
+            return String(localized: "此模型版本与当前 App 不兼容")
+        case .invalidManifestSignature:
+            return String(localized: "高级模型签名校验失败")
         case .invalidManifestResponse:
             return String(localized: "高级模型清单不可用")
         case .missingRemoteArtifactList:
@@ -135,6 +144,10 @@ public protocol TransformerModelDownloading: Sendable {
         progress: @Sendable @escaping (TransformerModelDownloadProgress) -> Void,
         phase: @Sendable @escaping (TransformerModelDownloadWorkPhase) -> Void
     ) async throws
+}
+
+public protocol TransformerModelUpdateChecking: Sendable {
+    func checkForUpdate(currentIdentity: ModelArtifactIdentity?) async -> TransformerUpdateState
 }
 
 public protocol TransformerModelRemoving: Sendable {
@@ -205,13 +218,20 @@ private final class NetworkConditionContinuation: @unchecked Sendable {
 }
 #endif
 
-public final class TransformerModelDownloadClient: TransformerModelDownloading, @unchecked Sendable {
+public final class TransformerModelDownloadClient: TransformerModelDownloading, TransformerModelUpdateChecking, @unchecked Sendable {
     private let manifestURL: URL
+    private let channelURL: URL?
+    private let manifestVerifier: TransformerManifestVerifier?
+    private let appBuild: Int
+    private let operatingSystemVersion: OperatingSystemVersion
     private let estimatedByteCount: Int64?
     private let resourceName: String
     private let session: URLSession
     private let networkConditionChecker: any TransformerNetworkConditionChecking
     private let fileManager: FileManager
+    private let stateLock = NSLock()
+    private var channelETag: String?
+    private var cachedChannel: TransformerChannelManifestV2?
 
     public init(
         manifestURL: URL,
@@ -222,6 +242,10 @@ public final class TransformerModelDownloadClient: TransformerModelDownloading, 
         fileManager: FileManager = .default
     ) {
         self.manifestURL = manifestURL
+        self.channelURL = nil
+        self.manifestVerifier = nil
+        self.appBuild = 0
+        self.operatingSystemVersion = ProcessInfo.processInfo.operatingSystemVersion
         self.estimatedByteCount = estimatedByteCount
         self.resourceName = resourceName
         self.session = session
@@ -229,9 +253,32 @@ public final class TransformerModelDownloadClient: TransformerModelDownloading, 
         self.fileManager = fileManager
     }
 
-    public static func configured(bundle: Bundle = .main) -> (any TransformerModelDownloading)? {
-        let keys = ["SiftTransformerModelManifestURL", "SIFT_TRANSFORMER_MODEL_MANIFEST_URL"]
-        let manifestURL = keys.compactMap { key -> URL? in
+    public init(
+        channelURL: URL,
+        publicKeys: [String: String],
+        appBuild: Int,
+        operatingSystemVersion: OperatingSystemVersion = ProcessInfo.processInfo.operatingSystemVersion,
+        estimatedByteCount: Int64? = nil,
+        resourceName: String = TransformerClassifierLoader.defaultResourceName,
+        session: URLSession = .shared,
+        networkConditionChecker: any TransformerNetworkConditionChecking = PathNetworkConditionChecker(),
+        fileManager: FileManager = .default
+    ) {
+        self.manifestURL = channelURL
+        self.channelURL = channelURL
+        self.manifestVerifier = TransformerManifestVerifier(publicKeys: publicKeys)
+        self.appBuild = appBuild
+        self.operatingSystemVersion = operatingSystemVersion
+        self.estimatedByteCount = estimatedByteCount
+        self.resourceName = resourceName
+        self.session = session
+        self.networkConditionChecker = networkConditionChecker
+        self.fileManager = fileManager
+    }
+
+    public static func configured(bundle: Bundle = .main) -> TransformerModelDownloadClient? {
+        let keys = ["SiftTransformerModelChannelURL", "SIFT_TRANSFORMER_MODEL_CHANNEL_URL"]
+        let channelURL = keys.compactMap { key -> URL? in
             guard
                 let value = bundle.object(forInfoDictionaryKey: key) as? String,
                 let url = URL(string: value),
@@ -242,24 +289,71 @@ public final class TransformerModelDownloadClient: TransformerModelDownloading, 
             return url
         }.first
 
-        guard let manifestURL else {
+        let keyID = bundle.object(forInfoDictionaryKey: "SiftTransformerModelPublicKeyID") as? String ?? "release-2026"
+        let configuredKey = bundle.object(forInfoDictionaryKey: "SiftTransformerModelPublicKey") as? String
+        let dictionaryKeys = bundle.object(forInfoDictionaryKey: "SiftTransformerModelPublicKeys") as? [String: String] ?? [:]
+        var publicKeys = dictionaryKeys
+        if let configuredKey, !configuredKey.isEmpty {
+            publicKeys[keyID] = configuredKey
+        }
+        guard let channelURL, !publicKeys.isEmpty else {
             return nil
         }
 
         let estimatedBytes = (bundle.object(forInfoDictionaryKey: "SiftTransformerModelEstimatedBytes") as? NSNumber)?.int64Value
-        return TransformerModelDownloadClient(manifestURL: manifestURL, estimatedByteCount: estimatedBytes)
+        let appBuild = Int(bundle.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "") ?? 0
+        return TransformerModelDownloadClient(
+            channelURL: channelURL,
+            publicKeys: publicKeys,
+            appBuild: appBuild,
+            estimatedByteCount: estimatedBytes
+        )
     }
 
     public func prepareDownload() async throws -> TransformerModelDownloadPlan {
         let condition = await networkConditionChecker.currentCondition()
-        let manifest = try await fetchManifest()
+        let releaseURL: URL
+        let manifest: TransformerModelManifest
+        if let channelURL, let manifestVerifier {
+            let channel = try await fetchChannel(at: channelURL, verifier: manifestVerifier)
+            let currentSequence = TransformerClassifierLoader.manifest()?.releaseSequence ?? 0
+            guard manifestVerifier.compatibility(
+                of: channel,
+                appBuild: appBuild,
+                operatingSystemVersion: operatingSystemVersion,
+                currentReleaseSequence: currentSequence
+            ) == .compatible else {
+                throw TransformerModelDownloadError.incompatibleModel
+            }
+            guard let url = URL(string: channel.releaseManifestURL), url.scheme == "https" else {
+                throw TransformerModelDownloadError.invalidChannelManifest
+            }
+            releaseURL = url
+            let (data, response) = try await session.data(from: releaseURL)
+            guard response.isSuccessfulHTTPResponse else {
+                throw TransformerModelDownloadError.invalidManifestResponse
+            }
+            guard manifestVerifier.checksum(for: data) == channel.releaseManifestSHA256 else {
+                throw TransformerManifestValidationError.releaseManifestChecksumMismatch
+            }
+            manifest = try JSONDecoder().decode(TransformerModelManifest.self, from: data)
+            do {
+                try manifestVerifier.verifySignature(of: manifest)
+                try manifestVerifier.validateRelease(manifest, for: channel)
+            } catch {
+                throw TransformerModelDownloadError.invalidManifestSignature
+            }
+        } else {
+            releaseURL = manifestURL
+            manifest = try await fetchManifest(at: releaseURL)
+        }
         try Self.validateManifestForDownload(manifest)
-        let artifacts = try await resolveArtifacts(for: manifest)
+        let artifacts = try await resolveArtifacts(for: manifest, manifestURL: releaseURL)
         let exactBytes = exactByteCount(for: manifest, artifacts: artifacts)
 
         return TransformerModelDownloadPlan(
             manifest: manifest,
-            manifestURL: manifestURL,
+            manifestURL: releaseURL,
             artifacts: artifacts,
             exactByteCount: exactBytes,
             estimatedByteCount: estimatedByteCount,
@@ -267,10 +361,45 @@ public final class TransformerModelDownloadClient: TransformerModelDownloading, 
         )
     }
 
+    public func checkForUpdate(currentIdentity: ModelArtifactIdentity?) async -> TransformerUpdateState {
+        guard let channelURL, let manifestVerifier else {
+            return .failed(TransformerModelDownloadError.missingRemoteManifestURL.localizedDescription)
+        }
+        do {
+            let channel = try await fetchChannel(at: channelURL, verifier: manifestVerifier)
+            let currentSequence = currentIdentity?.variant == .transformer
+                ? currentIdentity?.releaseSequence ?? 0
+                : 0
+            let compatibility = manifestVerifier.compatibility(
+                of: channel,
+                appBuild: appBuild,
+                operatingSystemVersion: operatingSystemVersion,
+                currentReleaseSequence: currentSequence
+            )
+            switch compatibility {
+            case .compatible:
+                return channel.releaseSequence > currentSequence ? .updateAvailable(channel) : .current
+            case .appBuildTooOld:
+                return .requiresAppUpdate(channel)
+            case .unsupportedSchema, .unsupportedABI, .appBuildTooNew,
+                 .operatingSystemTooOld, .releaseRollback:
+                return .incompatible(channel)
+            }
+        } catch {
+            return .failed(error.localizedDescription)
+        }
+    }
+
     static func validateManifestForDownload(_ manifest: TransformerModelManifest) throws {
         guard
+            manifest.schemaVersion == TransformerManifestVerifier.supportedSchemaVersion,
+            TransformerManifestVerifier.supportedModelABIs.contains(manifest.modelABI),
+            manifest.runtimeProfile.computeUnits == "all",
+            [4, 8].contains(manifest.quantizationProfile.weightBits),
             manifest.tokenizerKind == "bpe",
-            manifest.tokenizerArtifact.hasSuffix(".siftbpe")
+            manifest.tokenizerArtifact.hasSuffix(".siftbpe"),
+            TransformerModelStore.isSHA256(manifest.sha256),
+            TransformerModelStore.isSHA256(manifest.tokenizerSHA256)
         else {
             throw TransformerModelDownloadError.unsupportedTokenizerArtifact
         }
@@ -286,9 +415,19 @@ public final class TransformerModelDownloadClient: TransformerModelDownloading, 
             }),
             manifest.remoteArtifacts.allSatisfy({
                 TransformerModelStore.isSafeRelativePath($0.path)
-                    && !$0.sha256.isEmpty
+                    && TransformerModelStore.isSHA256($0.sha256)
                     && $0.byteCount > 0
             })
+        else {
+            throw TransformerModelDownloadError.invalidManifestResponse
+        }
+        guard
+            manifest.validationMetrics.fixedAccuracy >= 0.99,
+            manifest.validationMetrics.promotionAccuracy >= 0.97,
+            manifest.validationMetrics.fp16Agreement >= 0.985,
+            manifest.languages.contains("zh"),
+            manifest.languages.contains("en"),
+            manifest.languages.contains("ja")
         else {
             throw TransformerModelDownloadError.invalidManifestResponse
         }
@@ -367,23 +506,65 @@ public final class TransformerModelDownloadClient: TransformerModelDownloading, 
             )
             try Task.checkCancellation()
             try TransformerModelStore.activate(stagedDirectory: staging, resourceName: resourceName, fileManager: fileManager)
+            FilterConfigurationSnapshotStore.refreshModelArtifactIdentity()
+            let resumeDirectory = TransformerModelStore.downloadResumeDataDirectory(
+                resourceName: resourceName,
+                fileManager: fileManager
+            )
+            if fileManager.fileExists(atPath: resumeDirectory.path) {
+                try? fileManager.removeItem(at: resumeDirectory)
+            }
         } catch {
             try? fileManager.removeItem(at: staging)
             throw error
         }
     }
 
-    private func fetchManifest() async throws -> TransformerModelManifest {
-        let (data, response) = try await session.data(from: manifestURL)
+    private func fetchManifest(at url: URL) async throws -> TransformerModelManifest {
+        let (data, response) = try await session.data(from: url)
         guard response.isSuccessfulHTTPResponse else {
             throw TransformerModelDownloadError.invalidManifestResponse
         }
         return try JSONDecoder().decode(TransformerModelManifest.self, from: data)
     }
 
-    private func resolveArtifacts(for manifest: TransformerModelManifest) async throws -> [TransformerModelDownloadArtifact] {
+    private func fetchChannel(
+        at url: URL,
+        verifier: TransformerManifestVerifier
+    ) async throws -> TransformerChannelManifestV2 {
+        var request = URLRequest(url: url)
+        let (etag, cached) = stateLock.withLock {
+            (channelETag, cachedChannel)
+        }
+        if let etag {
+            request.setValue(etag, forHTTPHeaderField: "If-None-Match")
+        }
+        let (data, response) = try await session.data(for: request)
+        if let http = response as? HTTPURLResponse, http.statusCode == 304, let cached {
+            return cached
+        }
+        guard response.isSuccessfulHTTPResponse else {
+            throw TransformerModelDownloadError.invalidChannelManifest
+        }
+        let channel = try JSONDecoder().decode(TransformerChannelManifestV2.self, from: data)
+        do {
+            try verifier.verifySignature(of: channel)
+        } catch {
+            throw TransformerModelDownloadError.invalidManifestSignature
+        }
+        stateLock.withLock {
+            channelETag = (response as? HTTPURLResponse)?.value(forHTTPHeaderField: "ETag")
+            cachedChannel = channel
+        }
+        return channel
+    }
+
+    private func resolveArtifacts(
+        for manifest: TransformerModelManifest,
+        manifestURL: URL
+    ) async throws -> [TransformerModelDownloadArtifact] {
         let remoteArtifacts = try remoteArtifacts(for: manifest)
-        let baseURL = remoteBaseURL(for: manifest)
+        let baseURL = remoteBaseURL(for: manifest, manifestURL: manifestURL)
         var artifacts: [TransformerModelDownloadArtifact] = []
         artifacts.reserveCapacity(remoteArtifacts.count)
 
@@ -409,7 +590,7 @@ public final class TransformerModelDownloadClient: TransformerModelDownloading, 
         return manifest.remoteArtifacts
     }
 
-    private func remoteBaseURL(for manifest: TransformerModelManifest) -> URL {
+    private func remoteBaseURL(for manifest: TransformerModelManifest, manifestURL: URL) -> URL {
         if
             let raw = manifest.remoteBaseURL,
             let url = URL(string: raw),
@@ -435,8 +616,16 @@ public final class TransformerModelDownloadClient: TransformerModelDownloading, 
         to targetURL: URL,
         progress: @Sendable @escaping (Int64) -> Void
     ) async throws -> Int64 {
+        guard let resumeDataURL = TransformerModelStore.downloadResumeDataURL(
+            artifactSHA256: artifact.sha256,
+            resourceName: resourceName,
+            fileManager: fileManager
+        ) else {
+            throw TransformerModelDownloadError.invalidManifestResponse
+        }
         let operation = TransformerArtifactDownloadOperation(
             targetURL: targetURL,
+            resumeDataURL: resumeDataURL,
             fileManager: fileManager,
             progress: progress
         )
@@ -470,6 +659,7 @@ private final class TransformerArtifactDownloadOperation: NSObject, URLSessionDo
     private static let progressIntervalNanoseconds: UInt64 = 100_000_000
 
     private let targetURL: URL
+    private let resumeDataURL: URL
     private let fileManager: FileManager
     private let progress: @Sendable (Int64) -> Void
     private let lock = NSLock()
@@ -485,10 +675,12 @@ private final class TransformerArtifactDownloadOperation: NSObject, URLSessionDo
 
     init(
         targetURL: URL,
+        resumeDataURL: URL,
         fileManager: FileManager,
         progress: @Sendable @escaping (Int64) -> Void
     ) {
         self.targetURL = targetURL
+        self.resumeDataURL = resumeDataURL
         self.fileManager = fileManager
         self.progress = progress
     }
@@ -512,7 +704,12 @@ private final class TransformerArtifactDownloadOperation: NSObject, URLSessionDo
                     delegate: self,
                     delegateQueue: nil
                 )
-                let task = session.downloadTask(with: url)
+                let task: URLSessionDownloadTask
+                if let resumeData = try? Data(contentsOf: resumeDataURL), !resumeData.isEmpty {
+                    task = session.downloadTask(withResumeData: resumeData)
+                } else {
+                    task = session.downloadTask(with: url)
+                }
 
                 lock.lock()
                 self.session = session
@@ -535,7 +732,9 @@ private final class TransformerArtifactDownloadOperation: NSObject, URLSessionDo
         cancellationRequested = true
         let task = self.task
         lock.unlock()
-        task?.cancel()
+        task?.cancel(byProducingResumeData: { [weak self] resumeData in
+            self?.persistResumeData(resumeData)
+        })
     }
 
     func urlSession(
@@ -579,6 +778,7 @@ private final class TransformerArtifactDownloadOperation: NSObject, URLSessionDo
                 withIntermediateDirectories: true
             )
             try fileManager.moveItem(at: location, to: targetURL)
+            try? fileManager.removeItem(at: resumeDataURL)
         } catch {
             lock.lock()
             installationError = error
@@ -602,6 +802,15 @@ private final class TransformerArtifactDownloadOperation: NSObject, URLSessionDo
         let receivedBytes = latestReceivedBytes
         lock.unlock()
 
+        if let error = completionError as NSError? {
+            let resumeData = error.userInfo[NSURLSessionDownloadTaskResumeData] as? Data
+            if let resumeData {
+                persistResumeData(resumeData)
+            } else if error.code != NSURLErrorCancelled {
+                try? fileManager.removeItem(at: resumeDataURL)
+            }
+        }
+
         session?.finishTasksAndInvalidate()
         guard let continuation else {
             return
@@ -610,6 +819,22 @@ private final class TransformerArtifactDownloadOperation: NSObject, URLSessionDo
             continuation.resume(throwing: completionError)
         } else {
             continuation.resume(returning: receivedBytes)
+        }
+    }
+
+    private func persistResumeData(_ data: Data?) {
+        guard let data, !data.isEmpty else {
+            return
+        }
+        do {
+            try fileManager.createDirectory(
+                at: resumeDataURL.deletingLastPathComponent(),
+                withIntermediateDirectories: true
+            )
+            try data.write(to: resumeDataURL, options: .atomic)
+        } catch {
+            // Resume data is an optimization. A failed write falls back to a
+            // clean download without weakening artifact checksum validation.
         }
     }
 }

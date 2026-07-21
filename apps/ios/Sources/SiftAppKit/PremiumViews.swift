@@ -278,7 +278,14 @@ struct PremiumPaywallView: View {
 
     @ViewBuilder
     private var purchaseButton: some View {
-        if model.premium.isUnlocked {
+        if !model.isTransformerDeviceSupported {
+            Label(String(localized: "此设备不支持 Transformer 高级模型"), systemImage: "exclamationmark.triangle.fill")
+                .font(.callout.weight(.semibold))
+                .foregroundStyle(Color.siftAmber)
+                .frame(maxWidth: .infinity)
+                .frame(height: 46)
+                .background(Color.siftAmber.opacity(0.12), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        } else if model.premium.isUnlocked {
             Label(String(localized: "已解锁高级版"), systemImage: "checkmark.seal.fill")
                 .font(.callout.weight(.semibold))
                 .foregroundStyle(Color.siftMint)
@@ -306,6 +313,9 @@ struct PremiumPaywallView: View {
     }
 
     private var canPurchase: Bool {
+        guard model.isTransformerDeviceSupported else {
+            return false
+        }
         if case .available = model.premium.productState {
             return !model.premium.isPurchasing
         }
@@ -441,16 +451,17 @@ struct SettingsView: View {
             SectionHeader(title: String(localized: "高级版"), icon: "crown.fill")
 
             Button {
-                guard !model.premium.isUnlocked else { return }
+                guard model.isTransformerDeviceSupported, !model.premium.isUnlocked else { return }
                 model.isShowingPaywall = true
             } label: {
                 SettingsRowContent(
-                    title: model.premium.isUnlocked ? String(localized: "已解锁") : String(localized: "未解锁"),
-                    subtitle: model.premium.isUnlocked ? String(localized: "Transformer 多语言模型永久可用") : String(localized: "解锁 Transformer 多语言模型"),
-                    icon: model.premium.isUnlocked ? "checkmark.seal.fill" : "crown.fill",
-                    tint: model.premium.isUnlocked ? .siftMint : .siftAmber
+                    title: premiumSettingsTitle,
+                    subtitle: premiumSettingsSubtitle,
+                    icon: premiumSettingsIcon,
+                    tint: premiumSettingsTint,
+                    isEnabled: model.isTransformerDeviceSupported
                 ) {
-                    if !model.premium.isUnlocked {
+                    if model.isTransformerDeviceSupported, !model.premium.isUnlocked {
                         if case .available(let product) = model.premium.productState {
                             Text(product.isFree ? String(localized: "限时免费") : product.displayPrice)
                                 .font(.caption.weight(.bold).monospacedDigit())
@@ -463,10 +474,41 @@ struct SettingsView: View {
                 }
             }
             .buttonStyle(.plain)
+            .disabled(!model.isTransformerDeviceSupported || model.premium.isUnlocked)
             .insetSurface(cornerRadius: 12)
         }
         .padding(18)
         .cardSurface()
+    }
+
+    private var premiumSettingsTitle: String {
+        guard model.isTransformerDeviceSupported else {
+            return String(localized: "设备不支持")
+        }
+        return model.premium.isUnlocked ? String(localized: "已解锁") : String(localized: "未解锁")
+    }
+
+    private var premiumSettingsSubtitle: String {
+        guard model.isTransformerDeviceSupported else {
+            return String(localized: "高级模型需要 A12 或更新芯片")
+        }
+        return model.premium.isUnlocked
+            ? String(localized: "Transformer 多语言模型永久可用")
+            : String(localized: "解锁 Transformer 多语言模型")
+    }
+
+    private var premiumSettingsIcon: String {
+        guard model.isTransformerDeviceSupported else {
+            return "exclamationmark.triangle.fill"
+        }
+        return model.premium.isUnlocked ? "checkmark.seal.fill" : "crown.fill"
+    }
+
+    private var premiumSettingsTint: Color {
+        guard model.isTransformerDeviceSupported else {
+            return .secondary
+        }
+        return model.premium.isUnlocked ? .siftMint : .siftAmber
     }
 
     private var storageManagementSection: some View {

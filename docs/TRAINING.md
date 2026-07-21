@@ -118,10 +118,16 @@ python3 tools/apple-trainer/Scripts/prepare_classic_candidate.py \
 ```
 
 The script rejects exact and digit-normalized near duplicates before either
-classic or transformer training. `maxent-boundary-v7` remains the accepted
-classic baseline at 98.95% on the
-fixed 474 rows. It scores 86.67% on the breadth-first 150-row promotion set;
-the expanded coverage is primarily optimized for the Premium transformer.
+classic or transformer training. `maxent-boundary-v9` is the accepted classic
+baseline at 98.95% on the fixed 474 rows and 96.00% on the breadth-first
+150-row promotion set. Its hidden abstain output reaches 30/30 on the isolated
+trilingual conversation set, so private chats complete with the `.none` action.
+
+`pnpm pipeline -- train-classic --install-ios` runs the real compiled model
+through `NLModelTextClassifier`, `CascadingClassifier`, and
+`MessageFilterEngine` before copying it into `GeneratedModels`. The artifact
+suite blocks installation unless Fixed, Promotion, Conversation, and unsafe
+junk-action gates pass.
 
 Training prints the weakest 12 labels and the top confusion pairs. Use those
 reports as the main improvement loop: add targeted templates or samples, then
@@ -147,6 +153,9 @@ pnpm pipeline -- train-transformer \
 - The exported `SiftTransformerClassifier.manifest.json` includes
   `remoteArtifacts` and `downloadBytes`. `.mlpackage` is a directory package,
   so remote distribution downloads the listed files individually.
+- Core ML export targets iOS 18.0. This is required for W4 per-block PTQ;
+  exporting at an older deployment target makes Core ML reject block
+  quantization before quality evaluation.
 - The accepted `mmbert-boundary-v8` checkpoint keeps 99.58% fixed-set accuracy
   and reaches 98.00% on the breadth-first 150-row promotion boundary set after
   one epoch at `1e-5`. The 96 added zh/en/ja variants cover game marketplaces,
@@ -238,6 +247,10 @@ Release acceptance:
    download. Expensive or Low Data Mode networks should show the traffic prompt.
 4. Until download and checksum validation complete, the extension must keep
    using the classic model. It switches only after validation.
+5. On pre-A12 hardware, the Premium settings row must show an unsupported-device
+   state, model selection must not start purchase or download, and the actual
+   IdentityLookup extension must fall back to Classic without loading the
+   Transformer runtime.
 
 ### 2.6 Incremental Fine-Tuning
 
@@ -305,6 +318,8 @@ and per-language evaluation.
 | File | Destination |
 | --- | --- |
 | `build/pipeline/train.ndjson` | Input for both trainers |
+| `build/pipeline/train.curated.ndjson` | CloudKit/public corpus after quality and diversity filtering, before augmentation |
+| `build/pipeline/augmentation-report.json` | Added/rejected generalization rows by label and family |
 | `build/pipeline/apple-model/SiftSMSClassifier.{mlmodel,manifest.json}` | App and extension classic model |
 | `build/pipeline/transformer-model/SiftTransformerClassifier.{mlpackage,tokenizer.siftbpe,manifest.json}` | Upload to `https://sift.alkinum.io/models/` for Premium on-demand download |
 | `build/pipeline/transformer-model/checkpoint/` | Fine-tuning starting point |

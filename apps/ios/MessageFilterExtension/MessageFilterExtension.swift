@@ -4,37 +4,57 @@ import MessageFilterExtensionKit
 
 @objc(MessageFilterExtension)
 final class MessageFilterExtension: ILMessageFilterExtension, ILMessageFilterQueryHandling, ILMessageFilterCapabilitiesQueryHandling {
-    /// Honors the model variant the user picked in the app; the selection and
-    /// custom rules are shared through the app-group defaults. iOS may keep
-    /// this process alive across queries, so the selection is re-checked per
-    /// query and the pipeline rebuilt when the user switched models in the
-    /// app meanwhile. Falls back to the classic stack when transformer
-    /// artifacts are missing.
-    private var activeVariant: ModelVariant
-    private var pipeline: ClassificationPipeline
-    private var rules: [CustomRule]
-    private var categoryMappings: [String: CategoryMappingTarget]
-    override init() {
-        let variant = ModelSelectionStore.load()
-        self.activeVariant = variant
-        self.pipeline = ClassificationPipeline(classifier: AppleClassifierLoader.classifier(for: variant))
-        self.rules = SharedRuleStore.load()
-        self.categoryMappings = SharedCategoryMappingStore.load()
-        super.init()
-    }
+    private static let sessionTracker = MessageFilterSessionTracker()
+
+    private let engine = MessageFilterEngine()
+    private let diagnostics = MessageFilterOSLogDiagnosticsRecorder()
 
     func handle(_ queryRequest: ILMessageFilterQueryRequest, context: ILMessageFilterExtensionContext, completion: @escaping (ILMessageFilterQueryResponse) -> Void) {
-        refreshSharedStateIfNeeded()
-
-        let decision = pipeline.classify(
+        let gate = CompletionOnceGate<(ILMessageFilterAction, ILMessageFilterSubAction)> { value in
+            let response = ILMessageFilterQueryResponse()
+            response.action = value.0
+            response.subAction = value.1
+            completion(response)
+        }
+        let request = MessageFilterRequest(
             sender: queryRequest.sender,
-            body: queryRequest.messageBody ?? "",
-            rules: rules
-        ).applying(categoryMappings: categoryMappings)
-        let response = ILMessageFilterQueryResponse()
-        response.action = MessageFilterActionMapper.filterAction(for: decision)
-        response.subAction = MessageFilterActionMapper.filterSubAction(for: decision)
-        completion(response)
+            body: queryRequest.messageBody ?? ""
+        )
+        let configuration = FilterConfigurationSnapshotStore.load()
+        let isColdStart = Self.sessionTracker.beginQuery()
+        let clock = ContinuousClock()
+        let startedAt = clock.now
+        Task { [engine, diagnostics] in
+            let result = await engine.classify(request, configuration: configuration)
+            let didComplete = gate.complete((
+                MessageFilterActionMapper.filterAction(for: result.systemAction),
+                MessageFilterActionMapper.filterSubAction(for: result.systemSubAction)
+            ))
+            if didComplete {
+                diagnostics.record(MessageFilterDiagnosticEvent(
+                    artifactIdentity: result.modelArtifactIdentity,
+                    latencyBucket: MessageFilterLatencyBucket(elapsed: startedAt.duration(to: clock.now)),
+                    fallbackReason: result.fallbackReason,
+                    requestedArtifactIdentity: configuration.modelArtifactIdentity,
+                    isColdStart: isColdStart,
+                    physicalFootprintBytes: MessageFilterProcessMetrics.currentPhysicalFootprintBytes()
+                ))
+            }
+        }
+        Task { [diagnostics] in
+            try? await Task.sleep(for: .milliseconds(600))
+            if gate.complete((.none, .none)) {
+                diagnostics.record(MessageFilterDiagnosticEvent(
+                    artifactIdentity: configuration.modelArtifactIdentity,
+                    latencyBucket: MessageFilterLatencyBucket(elapsed: startedAt.duration(to: clock.now)),
+                    fallbackReason: .transformerTimedOut,
+                    errorCode: "handler_watchdog",
+                    requestedArtifactIdentity: configuration.modelArtifactIdentity,
+                    isColdStart: isColdStart,
+                    physicalFootprintBytes: MessageFilterProcessMetrics.currentPhysicalFootprintBytes()
+                ))
+            }
+        }
     }
 
     func handle(_ capabilitiesQueryRequest: ILMessageFilterCapabilitiesQueryRequest, context: ILMessageFilterExtensionContext, completion: @escaping (ILMessageFilterCapabilitiesQueryResponse) -> Void) {
@@ -42,15 +62,5 @@ final class MessageFilterExtension: ILMessageFilterExtension, ILMessageFilterQue
         response.transactionalSubActions = MessageFilterActionMapper.filterTransactionalSubActions
         response.promotionalSubActions = MessageFilterActionMapper.filterPromotionalSubActions
         completion(response)
-    }
-
-    private func refreshSharedStateIfNeeded() {
-        let variant = ModelSelectionStore.load()
-        if variant != activeVariant {
-            activeVariant = variant
-            pipeline = ClassificationPipeline(classifier: AppleClassifierLoader.classifier(for: variant))
-        }
-        rules = SharedRuleStore.load()
-        categoryMappings = SharedCategoryMappingStore.load()
     }
 }

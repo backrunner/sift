@@ -53,6 +53,10 @@ public enum ModelSelectionStore {
     static let selectionKey = "Sift.selectedModelVariant"
 
     public static func load(defaults: UserDefaults? = nil) -> ModelVariant {
+        FilterConfigurationSnapshotStore.load(defaults: defaults).selectedVariant
+    }
+
+    static func loadLegacy(defaults: UserDefaults? = nil) -> ModelVariant {
         let store = defaults ?? sharedDefaults()
         guard
             let raw = store.string(forKey: selectionKey),
@@ -63,8 +67,18 @@ public enum ModelSelectionStore {
         return variant
     }
 
-    public static func save(_ variant: ModelVariant, defaults: UserDefaults? = nil) {
-        (defaults ?? sharedDefaults()).set(variant.rawValue, forKey: selectionKey)
+    public static func save(
+        _ variant: ModelVariant,
+        defaults: UserDefaults? = nil,
+        artifactIdentity: ModelArtifactIdentity? = nil
+    ) {
+        let store = defaults ?? sharedDefaults()
+        store.set(variant.rawValue, forKey: selectionKey)
+        FilterConfigurationSnapshotStore.update(
+            defaults: store,
+            selectedVariant: variant,
+            modelArtifactIdentity: artifactIdentity ?? FilterConfigurationSnapshotStore.identity(for: variant)
+        )
     }
 
     /// Falls back to standard defaults when the app group is not provisioned
@@ -83,10 +97,16 @@ public enum SharedRuleStore {
         guard let data = try? JSONEncoder().encode(rules) else {
             return
         }
-        (defaults ?? ModelSelectionStore.sharedDefaults()).set(data, forKey: rulesKey)
+        let store = defaults ?? ModelSelectionStore.sharedDefaults()
+        store.set(data, forKey: rulesKey)
+        FilterConfigurationSnapshotStore.update(defaults: store, rules: rules)
     }
 
     public static func load(defaults: UserDefaults? = nil) -> [CustomRule] {
+        FilterConfigurationSnapshotStore.load(defaults: defaults).rules
+    }
+
+    static func loadLegacy(defaults: UserDefaults? = nil) -> [CustomRule] {
         let store = defaults ?? ModelSelectionStore.sharedDefaults()
         guard let data = store.data(forKey: rulesKey) else {
             return []
@@ -150,10 +170,16 @@ public enum SharedCategoryMappingStore {
         guard let data = try? JSONEncoder().encode(validMappings) else {
             return
         }
-        (defaults ?? ModelSelectionStore.sharedDefaults()).set(data, forKey: mappingsKey)
+        let store = defaults ?? ModelSelectionStore.sharedDefaults()
+        store.set(data, forKey: mappingsKey)
+        FilterConfigurationSnapshotStore.update(defaults: store, categoryMappings: validMappings)
     }
 
     public static func load(defaults: UserDefaults? = nil) -> [String: CategoryMappingTarget] {
+        FilterConfigurationSnapshotStore.load(defaults: defaults).categoryMappings
+    }
+
+    static func loadLegacy(defaults: UserDefaults? = nil) -> [String: CategoryMappingTarget] {
         let store = defaults ?? ModelSelectionStore.sharedDefaults()
         guard
             let data = store.data(forKey: mappingsKey),

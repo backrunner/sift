@@ -1,0 +1,74 @@
+{
+  "schemaVersion": 1,
+  "minimumSemanticChange": 0.04,
+  "replacementRules": [
+    {
+      "id": "spam-advance-fee-zh",
+      "labels": ["spam"],
+      "languages": ["zh"],
+      "replacements": [["无需审核", "免审核"], ["先缴纳", "预先支付"], ["解冻费", "账户解锁费"], ["添加客服", "联系放款专员"]]
+    },
+    {
+      "id": "spam-advance-fee-en",
+      "labels": ["spam"],
+      "languages": ["en"],
+      "replacements": [["no credit check", "approval without a credit review"], ["upfront fee", "prepaid release charge"], ["contact the agent", "message the payout representative"]]
+    },
+    {
+      "id": "spam-advance-fee-ja",
+      "labels": ["spam"],
+      "languages": ["ja"],
+      "replacements": [["審査なし", "無審査"], ["先に", "入金前に"], ["手数料", "解除費用"], ["担当者へ連絡", "融資担当へメッセージ"]]
+    },
+    {
+      "id": "express-status",
+      "labels": ["life.express"],
+      "languages": ["zh", "en", "ja"],
+      "replacements": [["稍后发送", "随后另行通知"], ["Details to follow", "Pickup information will arrive separately"], ["後ほど", "別途"]]
+    },
+    {
+      "id": "pickup-code-status",
+      "labels": ["life.pickup_code"],
+      "languages": ["zh", "en", "ja"],
+      "replacements": [["取件码", "提货码"], ["pickup code", "collection PIN"], ["受取コード", "引取番号"]]
+    },
+    {
+      "id": "carrier-rewards",
+      "labels": ["carrier.promotion"],
+      "languages": ["zh", "en", "ja"],
+      "replacements": [["积分商城", "运营商积分专区"], ["rewards draw", "subscriber points campaign"], ["ポイント交換", "契約者ポイント特典"]]
+    }
+  ],
+  "boundaryRows": [
+    {"family": "advance-fee-scam", "language": "zh", "label": "spam", "text": "游戏借款宣称免审秒到账，但要求放款前支付账户解锁费并私聊专员。"},
+    {"family": "advance-fee-scam", "language": "zh", "label": "spam", "text": "所谓游戏充值贷款已批准，先转保证金才能解除冻结并收到款项。"},
+    {"family": "advance-fee-scam", "language": "zh", "label": "spam", "text": "无征信借款通知：领取资金前需购买点卡作为验证，并添加个人客服。"},
+    {"family": "advance-fee-scam", "language": "en", "label": "spam", "text": "Your gaming loan is supposedly approved, but the agent demands a prepaid account-release charge before payout."},
+    {"family": "advance-fee-scam", "language": "en", "label": "spam", "text": "Instant game-credit financing with no review asks you to buy gift cards before the funds can be unlocked."},
+    {"family": "advance-fee-scam", "language": "en", "label": "spam", "text": "A private lender promises same-day game funds after you message an agent and send a security deposit first."},
+    {"family": "advance-fee-scam", "language": "ja", "label": "spam", "text": "ゲーム融資が承認されたという連絡ですが、入金前に口座解除費用を個人担当へ送るよう要求しています。"},
+    {"family": "advance-fee-scam", "language": "ja", "label": "spam", "text": "無審査のゲーム資金を即日送金すると称し、先にギフトカード購入と担当者への連絡を求めています。"},
+    {"family": "advance-fee-scam", "language": "ja", "label": "spam", "text": "凍結中の融資を受け取るには保証金を前払いせよという、個人窓口からの案内です。"},
+    {"family": "legitimate-bank-negative", "language": "zh", "label": "finance.bank", "text": "您的贷款申请资料已进入银行复核，结果和完整费用仅在官方 App 查询，无需预付任何款项。"},
+    {"family": "legitimate-bank-negative", "language": "en", "label": "finance.bank", "text": "Your bank loan application is under review; see the official app for terms and never pay an advance release fee."},
+    {"family": "legitimate-bank-negative", "language": "ja", "label": "finance.bank", "text": "銀行ローン申請を審査中です。条件は公式アプリで確認でき、事前の解除費用は不要です。"},
+    {"family": "carrier-vs-generic-promotion", "language": "zh", "label": "carrier.promotion", "text": "本月兑换任意流量包可参加运营商积分抽奖，奖品为话费券和手机。"},
+    {"family": "carrier-vs-generic-promotion", "language": "en", "label": "carrier.promotion", "text": "Subscribers who redeem a data bundle this month enter the carrier points draw for airtime and a handset."},
+    {"family": "carrier-vs-generic-promotion", "language": "ja", "label": "carrier.promotion", "text": "今月データパックを交換した契約者は、通信会社ポイントの端末・通話券抽選に参加できます。"},
+    {"family": "game-update-negative", "language": "zh", "label": "transaction.message", "text": "游戏客户端更新已完成，服务器维护结束，本次没有充值优惠或礼包活动。"},
+    {"family": "game-update-negative", "language": "en", "label": "transaction.message", "text": "The game client update and server maintenance are complete; this is a status notice, not a top-up offer."},
+    {"family": "game-update-negative", "language": "ja", "label": "transaction.message", "text": "ゲーム更新とサーバーメンテナンスが完了しました。課金特典ではなく状態通知です。"},
+    {"family": "points-negative", "language": "zh", "label": "transaction.points", "text": "您本次消费获得 680 积分，账户余额已更新，此消息不包含兑换促销。"},
+    {"family": "points-negative", "language": "en", "label": "transaction.points", "text": "You earned 680 points from the completed purchase; your balance was updated with no promotional offer."},
+    {"family": "points-negative", "language": "ja", "label": "transaction.points", "text": "今回の購入で680ポイントを獲得し、残高を更新しました。交換キャンペーンの案内ではありません。"},
+    {"family": "express-before-code", "language": "zh", "label": "life.express", "text": "包裹已经转运到社区代收点，具体货架和领取信息将在入库后另行通知。"},
+    {"family": "express-before-code", "language": "zh", "label": "life.express", "text": "快件正在送往自提门店，目前尚未生成提货码，请等待后续入库消息。"},
+    {"family": "express-before-code", "language": "en", "label": "life.express", "text": "Your parcel was routed to a neighborhood collection point; shelf and pickup details will be sent after check-in."},
+    {"family": "express-before-code", "language": "en", "label": "life.express", "text": "The shipment is moving to the pickup shop and no collection PIN has been issued yet; wait for the next notice."},
+    {"family": "express-before-code", "language": "ja", "label": "life.express", "text": "荷物は受取店舗へ輸送中で、棚番号と受取情報は入庫後に別途通知されます。"},
+    {"family": "express-before-code", "language": "ja", "label": "life.express", "text": "配送品を受取拠点へ移送しています。まだ引取番号は発行されていません。"},
+    {"family": "actual-pickup-code", "language": "zh", "label": "life.pickup_code", "text": "包裹已在松林驿站 3 号架入库，提货码 581924，请在营业时间内领取。"},
+    {"family": "actual-pickup-code", "language": "en", "label": "life.pickup_code", "text": "Parcel checked in at Pine Locker shelf 3. Collection PIN 581924 is ready for pickup."},
+    {"family": "actual-pickup-code", "language": "ja", "label": "life.pickup_code", "text": "荷物は松林受取所3番棚に入庫しました。引取番号581924で受け取れます。"}
+  ]
+}

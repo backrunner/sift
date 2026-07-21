@@ -4,6 +4,8 @@ import CryptoKit
 import Foundation
 import NaturalLanguage
 
+let modelAbstainLabel = "__sift_abstain__"
+
 /// Canonical framework-neutral dataset row. Persisted corpora and CloudKit
 /// exports stay in this shape; Core ML/Create ML adaptation happens only at
 /// the training boundary.
@@ -370,11 +372,12 @@ enum SiftAppleTrainer {
 
         let rows = try loadRows(from: inputURL)
         let validLabels = try loadTaxonomyLabels(from: taxonomyURL)
-        try validate(rows: rows, validLabels: validLabels)
+        let validModelLabels = validLabels.union([modelAbstainLabel])
+        try validate(rows: rows, validLabels: validModelLabels)
         let testRows: [SampleRow]
         if let testInputURL = arguments.testInputURL {
             testRows = try loadRows(from: testInputURL)
-            try validate(rows: testRows, validLabels: validLabels, requiresMultipleLabels: false)
+            try validate(rows: testRows, validLabels: validModelLabels, requiresMultipleLabels: false)
         } else {
             testRows = []
         }

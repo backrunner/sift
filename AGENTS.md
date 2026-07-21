@@ -77,7 +77,7 @@ The product is not launched yet; backward compatibility is not required.
 
 | Variant | Version | Fixed 474 | Promotion 150 | Notes |
 | --- | --- | ---: | ---: | --- |
-| Classic | `maxent-boundary-v7` | 98.95% | 86.67% | 297.5 KB; retained as classic baseline |
+| Classic | `maxent-boundary-v9` | 98.95% | 96.00% | 347.3 KB; Conversation 30/30 abstain |
 | Premium | `mmbert-boundary-v8` | 99.58% | 98.00% | int8 Core ML; 176,372,925 download bytes |
 | PII | `pii-boundary-v5` | n/a | n/a | F1 99.37%; clean FPR 0/498 and 0/45 |
 

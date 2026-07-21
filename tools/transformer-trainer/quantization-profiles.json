@@ -1,0 +1,114 @@
+{
+  "schemaVersion": 1,
+  "profiles": [
+    {
+      "id": "fp16-baseline",
+      "eligibleForRelease": false,
+      "method": "baseline",
+      "weightBits": 16,
+      "activationBits": 16,
+      "granularity": "per-tensor"
+    },
+    {
+      "id": "w8a16-channel-ptq",
+      "eligibleForRelease": true,
+      "method": "ptq",
+      "weightBits": 8,
+      "activationBits": 16,
+      "granularity": "per-channel"
+    },
+    {
+      "id": "w8a8-channel-ptq",
+      "eligibleForRelease": true,
+      "method": "ptq",
+      "weightBits": 8,
+      "activationBits": 8,
+      "granularity": "per-channel",
+      "calibrationLimit": 256
+    },
+    {
+      "id": "w4a16-block16-ptq",
+      "eligibleForRelease": true,
+      "method": "ptq",
+      "weightBits": 4,
+      "activationBits": 16,
+      "granularity": "per-block",
+      "blockSize": 16,
+      "qatFallback": "w4a16-block16-qat"
+    },
+    {
+      "id": "w4a16-block32-ptq",
+      "eligibleForRelease": true,
+      "method": "ptq",
+      "weightBits": 4,
+      "activationBits": 16,
+      "granularity": "per-block",
+      "blockSize": 32,
+      "qatFallback": "w4a16-block32-qat"
+    },
+    {
+      "id": "w4a8-block16-ptq",
+      "eligibleForRelease": true,
+      "method": "ptq",
+      "weightBits": 4,
+      "activationBits": 8,
+      "granularity": "per-block",
+      "blockSize": 16,
+      "calibrationLimit": 256,
+      "qatFallback": "w4a8-block16-qat"
+    },
+    {
+      "id": "w4a8-block32-ptq",
+      "eligibleForRelease": true,
+      "method": "ptq",
+      "weightBits": 4,
+      "activationBits": 8,
+      "granularity": "per-block",
+      "blockSize": 32,
+      "calibrationLimit": 256,
+      "qatFallback": "w4a8-block32-qat"
+    },
+    {
+      "id": "w4a16-block16-qat",
+      "eligibleForRelease": true,
+      "method": "qat",
+      "weightBits": 4,
+      "activationBits": 16,
+      "granularity": "per-block",
+      "blockSize": 16,
+      "enabledWhenPTQQualityFails": true
+    },
+    {
+      "id": "w4a8-block16-qat",
+      "eligibleForRelease": true,
+      "method": "qat",
+      "weightBits": 4,
+      "activationBits": 8,
+      "granularity": "per-block",
+      "blockSize": 16,
+      "calibrationLimit": 256,
+      "enabledWhenPTQQualityFails": true
+    },
+    {
+      "id": "w4a16-block32-qat",
+      "eligibleForRelease": true,
+      "method": "qat",
+      "weightBits": 4,
+      "activationBits": 16,
+      "granularity": "per-block",
+      "blockSize": 32,
+      "enabledWhenPTQQualityFails": true
+    },
+    {
+      "id": "w4a8-block32-qat",
+      "eligibleForRelease": true,
+      "method": "qat",
+      "weightBits": 4,
+      "activationBits": 8,
+      "granularity": "per-block",
+      "blockSize": 32,
+      "calibrationLimit": 256,
+      "enabledWhenPTQQualityFails": true
+    }
+  ]
+}

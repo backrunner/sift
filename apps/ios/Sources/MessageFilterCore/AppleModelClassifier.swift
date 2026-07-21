@@ -97,27 +97,23 @@ public final class NLModelTextClassifier: MessageClassifier, @unchecked Sendable
     }
 
     public func classify(sender: String?, body: String) -> ClassificationDecision {
+        let topLabel = model.predictedLabel(for: body)
         let hypotheses = model.predictedLabelHypotheses(for: body, maximumCount: 3)
-        let best = hypotheses.max { lhs, rhs in
-            lhs.value < rhs.value
-        }
+        let predicted = topLabel ?? hypotheses.max { lhs, rhs in lhs.value < rhs.value }?.key
 
-        if let best {
+        if let predicted {
+            let confidence = hypotheses[predicted] ?? confidenceThreshold
+            if ModelOutputContract.isAbstainLabel(predicted) {
+                return ModelOutputContract.abstentionDecision(confidence: confidence)
+            }
             guard
-                let leaf = SiftTaxonomy.leaf(id: best.key),
-                best.value >= confidenceThreshold
+                let leaf = SiftTaxonomy.leaf(id: predicted),
+                confidence >= confidenceThreshold
             else {
-                return fallbackDecision(confidence: best.value)
+                return fallbackDecision(confidence: confidence)
             }
 
-            return decision(for: leaf, confidence: best.value)
-        }
-
-        if
-            let predicted = model.predictedLabel(for: body),
-            let leaf = SiftTaxonomy.leaf(id: predicted)
-        {
-            return decision(for: leaf, confidence: confidenceThreshold)
+            return decision(for: leaf, confidence: confidence)
         }
 
         return fallbackDecision(confidence: 0)

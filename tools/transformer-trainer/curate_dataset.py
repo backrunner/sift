@@ -32,6 +32,8 @@ from collections import Counter, defaultdict
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from model_contract import model_labels
+
 CORE_LANGUAGES = ("zh", "en", "ja")
 SUPPORTED_LANGUAGES = ("zh", "en", "ja", "es", "pt", "fr", "de", "ru", "ko", "id", "vi", "th")
 PLACEHOLDER_PATTERN = re.compile(r"\{\{(PHONE|URL|EMAIL|ADDRESS|CARD|ID|ORDER_ID|AMOUNT|CODE|PLATE|NAME)\}\}")
@@ -43,6 +45,11 @@ class Row:
     label: str
     source: str
     language: str = "unknown"
+    predicted_label: str | None = None
+    predicted_confidence: float | None = None
+    agreement: int | None = None
+    model_version: str | None = None
+    schema_version: int | None = None
 
 
 @dataclass
@@ -97,6 +104,12 @@ def parse_arguments() -> argparse.Namespace:
         help="fraction of gray-zone rows (hard-floor <= margin < 0) kept per label, best margins first",
     )
     parser.add_argument("--min-centroid-rows", type=int, default=8, help="labels with fewer rows are exempt from the model filter")
+    parser.add_argument(
+        "--remote-disagreement-keep",
+        type=float,
+        default=0.5,
+        help="deterministic keep fraction for CloudKit rows that disagree with a >=0.8-confidence local prediction",
+    )
     parser.add_argument("--audit", action="store_true", help="print the label × language coverage matrix summary")
     parser.add_argument("--audit-only", action="store_true", help="skip filtering/output; only audit the merged inputs")
     parser.add_argument("--strict-audit", action="store_true", help="exit non-zero when core-language coverage gaps exist")
@@ -143,7 +156,20 @@ def load_rows(paths: list[Path], report: Report) -> list[Row]:
                 text, label = str(record.get("text", "")), str(record.get("label", ""))
                 if text and label:
                     language = normalize_language_hint(record.get("textLanguage") or record.get("language"))
-                    rows.append(Row(text=text, label=label, source=path.name, language=language))
+                    confidence = record.get("predictedConfidence")
+                    agreement = record.get("agreement")
+                    schema_version = record.get("schemaVersion")
+                    rows.append(Row(
+                        text=text,
+                        label=label,
+                        source=path.name,
+                        language=language,
+                        predicted_label=(str(record["predictedLabel"]).strip() if record.get("predictedLabel") else None),
+                        predicted_confidence=(float(confidence) if isinstance(confidence, (int, float)) else None),
+                        agreement=(int(agreement) if isinstance(agreement, (int, float)) else None),
+                        model_version=(str(record["modelVersion"]).strip() if record.get("modelVersion") else None),
+                        schema_version=(int(schema_version) if isinstance(schema_version, (int, float)) else None),
+                    ))
                     count += 1
         report.inputs[str(path)] = count
     return rows
@@ -311,6 +337,44 @@ def near_duplicate_signature(text: str) -> str:
     return collapsed[:80]
 
 
+def template_signature(text: str) -> str:
+    collapsed = unicodedata.normalize("NFKC", text).lower()
+    collapsed = re.sub(r"https?://\S+|\b\w+[\w.+-]*@\w[\w.-]*\.[a-z]{2,}\b", " dynamicurl ", collapsed)
+    collapsed = re.sub(r"^\s*(?:\[[^\]]{1,30}\]|【[^】]{1,30}】|official\s*:|公式\s*[:：])\s*", "", collapsed)
+    collapsed = re.sub(r"(?:reply|txt)\s+stop\b.*$|回复\s*[a-z]\s*退订.*$|配信停止.*$", "", collapsed)
+    collapsed = re.sub(r"\b[a-z]{1,5}[-_]?[a-z0-9]{6,}\b", " dynamicid ", collapsed)
+    collapsed = re.sub(r"\d+", " dynamicnumber ", collapsed)
+    collapsed = re.sub(r"[\W_]+", "", collapsed, flags=re.UNICODE)
+    return collapsed
+
+
+def assessment_rejection_reason(
+    row: Row,
+    valid_labels: set[str],
+    disagreement_keep: float,
+) -> str | None:
+    fields_present = any(value is not None for value in (
+        row.predicted_label, row.predicted_confidence, row.agreement,
+    ))
+    if not fields_present:
+        return None
+    if (
+        row.predicted_label not in valid_labels
+        or row.predicted_confidence is None
+        or not 0 <= row.predicted_confidence <= 1
+        or row.agreement not in (0, 1)
+        or (row.agreement == 1) != (row.predicted_label == row.label)
+    ):
+        return "invalid-assessment"
+    if row.agreement == 0 and row.predicted_confidence >= 0.8:
+        keep = min(max(disagreement_keep, 0), 1)
+        digest = hashlib.sha256(f"{row.label}\x1f{row.text}\x1f{row.model_version or ''}".encode("utf-8")).digest()
+        score = int.from_bytes(digest[:8], "big") / float(1 << 64)
+        if score >= keep:
+            return "remote-disagreement-downsample"
+    return None
+
+
 def load_holdout_keys(paths: list[Path], report: Report) -> tuple[set[str], set[str]]:
     exact: set[str] = set()
     signatures: set[str] = set()
@@ -369,6 +433,7 @@ def apply_rule_tier(
     kept: list[Row] = []
     seen_exact: set[str] = set()
     seen_signatures: set[str] = set()
+    seen_templates: set[str] = set()
     text_to_labels: dict[str, set[str]] = defaultdict(set)
 
     prepared: list[Row] = []
@@ -377,6 +442,20 @@ def apply_rule_tier(
         if not text or row.label not in valid_labels:
             report.rejected["unknown-label" if text else "empty"] += 1
             rejected_sink.append({"text": row.text, "label": row.label, "source": row.source, "reason": "unknown-label"})
+            continue
+        assessment_reason = assessment_rejection_reason(
+            row,
+            valid_labels,
+            getattr(arguments, "remote_disagreement_keep", 0.5),
+        )
+        if assessment_reason is not None:
+            report.rejected[assessment_reason] += 1
+            rejected_sink.append({
+                "text": row.text,
+                "label": row.label,
+                "source": row.source,
+                "reason": assessment_reason,
+            })
             continue
         if is_placeholder_only(text):
             report.rejected["placeholder-only"] += 1
@@ -400,6 +479,7 @@ def apply_rule_tier(
         if reason is None and row.text.lower() in conflicting_texts:
             reason = "cross-label-conflict"
         signature = near_duplicate_signature(row.text)
+        template = template_signature(row.text)
         if reason is None and row.text.lower() in holdout_exact:
             reason = "holdout-exact"
         if reason is None and signature in holdout_signatures:
@@ -415,6 +495,11 @@ def apply_rule_tier(
                     reason = "near-duplicate"
                 else:
                     seen_signatures.add(label_signature)
+                    label_template = f"{row.label}\x1f{template}"
+                    if template and label_template in seen_templates:
+                        reason = "template-duplicate"
+                    else:
+                        seen_templates.add(label_template)
 
         if reason is None:
             kept.append(row)
@@ -556,7 +641,7 @@ def main() -> None:
     arguments = parse_arguments()
     repo_root = locate_repo_root()
     taxonomy_path = arguments.taxonomy or repo_root / "packages/taxonomy/taxonomy.json"
-    valid_labels = load_taxonomy_labels(taxonomy_path)
+    valid_labels = model_labels(load_taxonomy_labels(taxonomy_path))
 
     if arguments.languages.strip().lower() == "all":
         allowed_languages = set(SUPPORTED_LANGUAGES)

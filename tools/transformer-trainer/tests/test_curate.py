@@ -26,6 +26,7 @@ from curate_dataset import (  # noqa: E402
     load_rows,
     rehydrate_placeholders,
     stable_rng,
+    template_signature,
 )
 
 
@@ -68,6 +69,26 @@ class DetectLanguageTests(unittest.TestCase):
 
         self.assertEqual(rows[0].language, "ja")
 
+    def test_cloudkit_quality_metadata_is_loaded(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "remote-training.ndjson"
+            path.write_text(json.dumps({
+                "text": "A deliberately corrected banking message",
+                "label": "spam",
+                "textLanguage": "en",
+                "predictedLabel": "finance.bank",
+                "predictedConfidence": 0.97,
+                "agreement": 0,
+                "modelVersion": "classic-v7",
+                "schemaVersion": 2,
+            }) + "\n", encoding="utf-8")
+
+            row = load_rows([path], Report())[0]
+
+        self.assertEqual(row.predicted_label, "finance.bank")
+        self.assertEqual(row.predicted_confidence, 0.97)
+        self.assertEqual(row.agreement, 0)
+
 
 class JunkReasonTests(unittest.TestCase):
     def test_length_bounds(self):
@@ -103,6 +124,11 @@ class NearDuplicateTests(unittest.TestCase):
         a = near_duplicate_signature("您的验证码是 123456")
         b = near_duplicate_signature("您的快递已经到达驿站")
         self.assertNotEqual(a, b)
+
+    def test_template_signature_removes_brand_dynamic_values_and_opt_out_footer(self):
+        first = template_signature("[Bank A] Loan 991122 approved. Visit https://a.example/x. Reply STOP to end")
+        second = template_signature("[Bank B] Loan 448899 approved. Visit https://b.example/y. Txt STOP")
+        self.assertEqual(first, second)
 
 
 class RuleTierTests(unittest.TestCase):
@@ -186,6 +212,59 @@ class RuleTierTests(unittest.TestCase):
         self.assertEqual([row.text for row in kept], ["Your parcel is ready at locker 4."])
         self.assertEqual(report.rejected["holdout-exact"], 1)
         self.assertEqual(report.rejected["holdout-near"], 1)
+
+    def test_high_confidence_remote_disagreements_are_deterministically_downsampled(self):
+        row = Row(
+            text="No-review game loan requires an unlock fee before payout",
+            label="spam",
+            source="remote-training.ndjson",
+            language="en",
+            predicted_label="finance.bank",
+            predicted_confidence=0.96,
+            agreement=0,
+            model_version="classic-v7",
+        )
+        report = Report()
+        rejected: list[dict] = []
+        arguments = SimpleNamespace(min_length=8, max_length=500, remote_disagreement_keep=0)
+
+        kept = apply_rule_tier([row], {"spam", "finance.bank"}, {"en"}, arguments, report, rejected)
+
+        self.assertEqual(kept, [])
+        self.assertEqual(report.rejected["remote-disagreement-downsample"], 1)
+
+    def test_inconsistent_remote_assessment_is_rejected(self):
+        row = Row(
+            text="Your account notice is available in the official app",
+            label="finance.bank",
+            source="remote-training.ndjson",
+            language="en",
+            predicted_label="finance.bank",
+            predicted_confidence=0.9,
+            agreement=0,
+        )
+        report = Report()
+        rejected: list[dict] = []
+        arguments = SimpleNamespace(min_length=8, max_length=500, remote_disagreement_keep=1)
+
+        kept = apply_rule_tier([row], {"finance.bank"}, {"en"}, arguments, report, rejected)
+
+        self.assertEqual(kept, [])
+        self.assertEqual(report.rejected["invalid-assessment"], 1)
+
+    def test_template_variants_are_cluster_deduplicated(self):
+        report = Report()
+        rejected: list[dict] = []
+        arguments = SimpleNamespace(min_length=8, max_length=500, remote_disagreement_keep=1)
+        rows = [
+            Row(text="[Bank A] Loan 991122 approved. Visit https://a.example/x", label="finance.bank", source="a", language="en"),
+            Row(text="[Bank B] Loan 448899 approved. Visit https://b.example/y", label="finance.bank", source="b", language="en"),
+        ]
+
+        kept = apply_rule_tier(rows, {"finance.bank"}, {"en"}, arguments, report, rejected)
+
+        self.assertEqual(len(kept), 1)
+        self.assertEqual(report.rejected["template-duplicate"], 1)
 
 
 class RehydrationTests(unittest.TestCase):

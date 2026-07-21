@@ -21,8 +21,92 @@ public struct TransformerRemoteArtifact: Codable, Hashable, Sendable {
     }
 }
 
+public struct TransformerRuntimeProfile: Codable, Hashable, Sendable {
+    public let computeUnits: String
+    public let modelType: String
+    public let transformerBudgetMilliseconds: Int
+
+    public init(
+        computeUnits: String = "all",
+        modelType: String = "mlProgram",
+        transformerBudgetMilliseconds: Int = 500
+    ) {
+        self.computeUnits = computeUnits
+        self.modelType = modelType
+        self.transformerBudgetMilliseconds = transformerBudgetMilliseconds
+    }
+}
+
+public struct TransformerQuantizationProfile: Codable, Hashable, Sendable {
+    public let identifier: String
+    public let weightBits: Int
+    public let activationBits: Int
+    public let method: String
+    public let granularity: String
+    public let blockSize: Int?
+
+    public init(
+        identifier: String,
+        weightBits: Int,
+        activationBits: Int,
+        method: String,
+        granularity: String,
+        blockSize: Int? = nil
+    ) {
+        self.identifier = identifier
+        self.weightBits = weightBits
+        self.activationBits = activationBits
+        self.method = method
+        self.granularity = granularity
+        self.blockSize = blockSize
+    }
+
+    public static let legacyInt8 = TransformerQuantizationProfile(
+        identifier: "legacy-int8",
+        weightBits: 8,
+        activationBits: 16,
+        method: "ptq",
+        granularity: "per-channel"
+    )
+}
+
+public struct TransformerValidationMetrics: Codable, Hashable, Sendable {
+    public let fixedAccuracy: Double
+    public let promotionAccuracy: Double
+    public let fp16Agreement: Double
+    public let languageAccuracy: [String: Double]
+
+    public init(
+        fixedAccuracy: Double,
+        promotionAccuracy: Double,
+        fp16Agreement: Double,
+        languageAccuracy: [String: Double]
+    ) {
+        self.fixedAccuracy = fixedAccuracy
+        self.promotionAccuracy = promotionAccuracy
+        self.fp16Agreement = fp16Agreement
+        self.languageAccuracy = languageAccuracy
+    }
+
+    public static let unavailable = TransformerValidationMetrics(
+        fixedAccuracy: 0,
+        promotionAccuracy: 0,
+        fp16Agreement: 0,
+        languageAccuracy: [:]
+    )
+}
+
 /// Release metadata for the downloadable transformer Core ML model.
 public struct TransformerModelManifest: Codable, Hashable, Sendable {
+    public let schemaVersion: Int
+    public let releaseSequence: Int
+    public let modelABI: String
+    public let minimumAppBuild: Int
+    public let maximumAppBuild: Int
+    public let minimumOSVersion: String
+    public let runtimeProfile: TransformerRuntimeProfile
+    public let quantizationProfile: TransformerQuantizationProfile
+    public let validationMetrics: TransformerValidationMetrics
     public let version: String
     public let trainedAt: String
     public let algorithm: String
@@ -36,11 +120,23 @@ public struct TransformerModelManifest: Codable, Hashable, Sendable {
     public let modelArtifact: String
     public let sha256: String
     public let taxonomyHash: String
+    public let tokenizerSHA256: String
+    public let keyID: String?
+    public let signature: String?
     public let remoteBaseURL: String?
     public let remoteArtifacts: [TransformerRemoteArtifact]
     public let downloadBytes: Int64
 
     public init(
+        schemaVersion: Int = 1,
+        releaseSequence: Int = 0,
+        modelABI: String = "legacy-mmbert-v1",
+        minimumAppBuild: Int = 0,
+        maximumAppBuild: Int = .max,
+        minimumOSVersion: String = "18.0",
+        runtimeProfile: TransformerRuntimeProfile = TransformerRuntimeProfile(),
+        quantizationProfile: TransformerQuantizationProfile = .legacyInt8,
+        validationMetrics: TransformerValidationMetrics = .unavailable,
         version: String,
         trainedAt: String,
         algorithm: String,
@@ -54,10 +150,22 @@ public struct TransformerModelManifest: Codable, Hashable, Sendable {
         modelArtifact: String,
         sha256: String,
         taxonomyHash: String,
+        tokenizerSHA256: String = "",
+        keyID: String? = nil,
+        signature: String? = nil,
         remoteBaseURL: String? = nil,
         remoteArtifacts: [TransformerRemoteArtifact],
         downloadBytes: Int64
     ) {
+        self.schemaVersion = schemaVersion
+        self.releaseSequence = releaseSequence
+        self.modelABI = modelABI
+        self.minimumAppBuild = minimumAppBuild
+        self.maximumAppBuild = maximumAppBuild
+        self.minimumOSVersion = minimumOSVersion
+        self.runtimeProfile = runtimeProfile
+        self.quantizationProfile = quantizationProfile
+        self.validationMetrics = validationMetrics
         self.version = version
         self.trainedAt = trainedAt
         self.algorithm = algorithm
@@ -71,10 +179,175 @@ public struct TransformerModelManifest: Codable, Hashable, Sendable {
         self.modelArtifact = modelArtifact
         self.sha256 = sha256
         self.taxonomyHash = taxonomyHash
+        self.tokenizerSHA256 = tokenizerSHA256
+        self.keyID = keyID
+        self.signature = signature
         self.remoteBaseURL = remoteBaseURL
         self.remoteArtifacts = remoteArtifacts
         self.downloadBytes = downloadBytes
     }
+
+    public var artifactIdentity: ModelArtifactIdentity {
+        ModelArtifactIdentity(
+            variant: .transformer,
+            modelABI: modelABI,
+            releaseSequence: releaseSequence,
+            sha256: sha256
+        )
+    }
+
+    public func canonicalPayload() -> Data {
+        let unsigned = TransformerModelManifest(
+            schemaVersion: schemaVersion,
+            releaseSequence: releaseSequence,
+            modelABI: modelABI,
+            minimumAppBuild: minimumAppBuild,
+            maximumAppBuild: maximumAppBuild,
+            minimumOSVersion: minimumOSVersion,
+            runtimeProfile: runtimeProfile,
+            quantizationProfile: quantizationProfile,
+            validationMetrics: validationMetrics,
+            version: version,
+            trainedAt: trainedAt,
+            algorithm: algorithm,
+            backbone: backbone,
+            languages: languages,
+            labels: labels,
+            maxSequenceLength: maxSequenceLength,
+            doLowerCase: doLowerCase,
+            tokenizerKind: tokenizerKind,
+            tokenizerArtifact: tokenizerArtifact,
+            modelArtifact: modelArtifact,
+            sha256: sha256,
+            taxonomyHash: taxonomyHash,
+            tokenizerSHA256: tokenizerSHA256,
+            keyID: keyID,
+            signature: nil,
+            remoteBaseURL: remoteBaseURL,
+            remoteArtifacts: remoteArtifacts,
+            downloadBytes: downloadBytes
+        )
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.sortedKeys, .withoutEscapingSlashes]
+        return (try? encoder.encode(unsigned)) ?? Data()
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case schemaVersion, releaseSequence, modelABI, minimumAppBuild, maximumAppBuild, minimumOSVersion
+        case runtimeProfile, quantizationProfile, validationMetrics
+        case version, trainedAt, algorithm, backbone, languages, labels, maxSequenceLength, doLowerCase
+        case tokenizerKind, tokenizerArtifact, modelArtifact, sha256, taxonomyHash, tokenizerSHA256
+        case keyID, signature, remoteBaseURL, remoteArtifacts, downloadBytes
+    }
+
+    public init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.schemaVersion = try container.decodeIfPresent(Int.self, forKey: .schemaVersion) ?? 1
+        self.releaseSequence = try container.decodeIfPresent(Int.self, forKey: .releaseSequence) ?? 0
+        self.modelABI = try container.decodeIfPresent(String.self, forKey: .modelABI) ?? "legacy-mmbert-v1"
+        self.minimumAppBuild = try container.decodeIfPresent(Int.self, forKey: .minimumAppBuild) ?? 0
+        self.maximumAppBuild = try container.decodeIfPresent(Int.self, forKey: .maximumAppBuild) ?? .max
+        self.minimumOSVersion = try container.decodeIfPresent(String.self, forKey: .minimumOSVersion) ?? "18.0"
+        self.runtimeProfile = try container.decodeIfPresent(TransformerRuntimeProfile.self, forKey: .runtimeProfile)
+            ?? TransformerRuntimeProfile()
+        self.quantizationProfile = try container.decodeIfPresent(TransformerQuantizationProfile.self, forKey: .quantizationProfile)
+            ?? .legacyInt8
+        self.validationMetrics = try container.decodeIfPresent(TransformerValidationMetrics.self, forKey: .validationMetrics)
+            ?? .unavailable
+        self.version = try container.decode(String.self, forKey: .version)
+        self.trainedAt = try container.decode(String.self, forKey: .trainedAt)
+        self.algorithm = try container.decode(String.self, forKey: .algorithm)
+        self.backbone = try container.decode(String.self, forKey: .backbone)
+        self.languages = try container.decode([String].self, forKey: .languages)
+        self.labels = try container.decode([String].self, forKey: .labels)
+        self.maxSequenceLength = try container.decode(Int.self, forKey: .maxSequenceLength)
+        self.doLowerCase = try container.decode(Bool.self, forKey: .doLowerCase)
+        self.tokenizerKind = try container.decode(String.self, forKey: .tokenizerKind)
+        self.tokenizerArtifact = try container.decode(String.self, forKey: .tokenizerArtifact)
+        self.modelArtifact = try container.decode(String.self, forKey: .modelArtifact)
+        self.sha256 = try container.decode(String.self, forKey: .sha256)
+        self.taxonomyHash = try container.decode(String.self, forKey: .taxonomyHash)
+        self.tokenizerSHA256 = try container.decodeIfPresent(String.self, forKey: .tokenizerSHA256) ?? ""
+        self.keyID = try container.decodeIfPresent(String.self, forKey: .keyID)
+        self.signature = try container.decodeIfPresent(String.self, forKey: .signature)
+        self.remoteBaseURL = try container.decodeIfPresent(String.self, forKey: .remoteBaseURL)
+        self.remoteArtifacts = try container.decodeIfPresent([TransformerRemoteArtifact].self, forKey: .remoteArtifacts) ?? []
+        self.downloadBytes = try container.decodeIfPresent(Int64.self, forKey: .downloadBytes) ?? 0
+    }
+}
+
+public typealias TransformerReleaseManifestV2 = TransformerModelManifest
+
+public struct TransformerChannelManifestV2: Codable, Hashable, Sendable {
+    public let schemaVersion: Int
+    public let releaseSequence: Int
+    public let releaseID: String
+    public let releaseManifestURL: String
+    public let releaseManifestSHA256: String
+    public let modelABI: String
+    public let minimumAppBuild: Int
+    public let maximumAppBuild: Int
+    public let minimumOSVersion: String
+    public let downloadBytes: Int64
+    public let keyID: String
+    public let signature: String?
+
+    public init(
+        schemaVersion: Int = 2,
+        releaseSequence: Int,
+        releaseID: String,
+        releaseManifestURL: String,
+        releaseManifestSHA256: String,
+        modelABI: String,
+        minimumAppBuild: Int,
+        maximumAppBuild: Int,
+        minimumOSVersion: String,
+        downloadBytes: Int64 = 0,
+        keyID: String,
+        signature: String? = nil
+    ) {
+        self.schemaVersion = schemaVersion
+        self.releaseSequence = releaseSequence
+        self.releaseID = releaseID
+        self.releaseManifestURL = releaseManifestURL
+        self.releaseManifestSHA256 = releaseManifestSHA256
+        self.modelABI = modelABI
+        self.minimumAppBuild = minimumAppBuild
+        self.maximumAppBuild = maximumAppBuild
+        self.minimumOSVersion = minimumOSVersion
+        self.downloadBytes = downloadBytes
+        self.keyID = keyID
+        self.signature = signature
+    }
+
+    public func canonicalPayload() -> Data {
+        let unsigned = TransformerChannelManifestV2(
+            schemaVersion: schemaVersion,
+            releaseSequence: releaseSequence,
+            releaseID: releaseID,
+            releaseManifestURL: releaseManifestURL,
+            releaseManifestSHA256: releaseManifestSHA256,
+            modelABI: modelABI,
+            minimumAppBuild: minimumAppBuild,
+            maximumAppBuild: maximumAppBuild,
+            minimumOSVersion: minimumOSVersion,
+            downloadBytes: downloadBytes,
+            keyID: keyID
+        )
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.sortedKeys, .withoutEscapingSlashes]
+        return (try? encoder.encode(unsigned)) ?? Data()
+    }
+}
+
+public enum TransformerUpdateState: Hashable, Sendable {
+    case unknown
+    case checking
+    case current
+    case updateAvailable(TransformerChannelManifestV2)
+    case requiresAppUpdate(TransformerChannelManifestV2)
+    case incompatible(TransformerChannelManifestV2)
+    case failed(String)
 }
 
 public enum TransformerClassifierLoader {
@@ -209,6 +482,7 @@ public enum TransformerClassifierLoader {
             throw CocoaError(.fileReadCorruptFile)
         }
         guard installed.modelURL.pathExtension != "mlmodelc" else {
+            try smokeTestDownloadedModel(installed: installed, modelURL: installed.modelURL)
             return
         }
 
@@ -217,18 +491,57 @@ public enum TransformerClassifierLoader {
             in: directory,
             fileManager: fileManager
         )
-        if fileManager.fileExists(atPath: targetURL.path) {
-            return
+        if !fileManager.fileExists(atPath: targetURL.path) {
+            let compiledURL = try MLModel.compileModel(at: installed.modelURL)
+            do {
+                try fileManager.moveItem(at: compiledURL, to: targetURL)
+            } catch {
+                try? fileManager.removeItem(at: compiledURL)
+                throw error
+            }
         }
-        let compiledURL = try MLModel.compileModel(at: installed.modelURL)
-        do {
-            try fileManager.moveItem(at: compiledURL, to: targetURL)
-        } catch {
-            try? fileManager.removeItem(at: compiledURL)
-            throw error
-        }
+
+        try smokeTestDownloadedModel(installed: installed, modelURL: targetURL)
         #endif
     }
+
+    #if canImport(CoreML)
+    private static func smokeTestDownloadedModel(
+        installed: InstalledTransformerModel,
+        modelURL: URL
+    ) throws {
+        guard !installed.manifest.labels.isEmpty else {
+            throw CocoaError(.fileReadCorruptFile)
+        }
+        let tokenizer = try makeTokenizer(
+            manifest: installed.manifest,
+            tokenizerURL: installed.tokenizerURL
+        )
+        let classifier = try TransformerTextClassifier(
+            modelURL: modelURL,
+            tokenizer: tokenizer,
+            labels: installed.manifest.labels,
+            confidenceThreshold: 0
+        )
+        let smokeBodies = [
+            "您的验证码是 482913，请勿泄露。",
+            "Your verification code is 482913. Do not share it.",
+            "認証コードは482913です。他人に教えないでください。",
+        ]
+        for body in smokeBodies {
+            let decision = classifier.classify(sender: nil, body: body)
+            guard
+                decision.source == .model,
+                decision.confidence.isFinite,
+                decision.confidence >= 0,
+                decision.confidence <= 1,
+                installed.manifest.labels.contains(decision.labelID)
+            else {
+                throw CocoaError(.fileReadCorruptFile)
+            }
+        }
+    }
+    #endif
 
     static func makeTokenizer(manifest: TransformerModelManifest, tokenizerURL: URL) throws -> any TextTokenizing {
         guard manifest.tokenizerKind == "bpe", tokenizerURL.pathExtension == "siftbpe" else {
@@ -242,6 +555,14 @@ public enum TransformerClassifierLoader {
 }
 
 #if canImport(CoreML)
+public enum TransformerModelContract {
+    public static let abstainLabel = ModelOutputContract.abstainLabel
+
+    public static func isAbstainLabel(_ label: String) -> Bool {
+        ModelOutputContract.isAbstainLabel(label)
+    }
+}
+
 /// Runs the exported transformer classifier.
 ///
 /// The Core ML model takes tokenizer-produced `input_ids` / `attention_mask` tensors
@@ -263,9 +584,10 @@ public final class TransformerTextClassifier: MessageClassifier, @unchecked Send
         confidenceThreshold: Double = 0.5
     ) throws {
         let configuration = MLModelConfiguration()
-        // The message-filter extension has a tight memory budget; prefer
-        // CPU+NE over GPU to avoid large staging allocations.
-        configuration.computeUnits = .cpuAndNeuralEngine
+        // Low-bit ML Programs currently produce incorrect predictions when
+        // GPU fallback is excluded. Core ML still chooses the cheapest
+        // supported accelerator for each operation under `.all`.
+        configuration.computeUnits = .all
         self.model = try MLModel(contentsOf: modelURL, configuration: configuration)
         self.tokenizer = tokenizer
         self.labels = labels
@@ -289,6 +611,10 @@ public final class TransformerTextClassifier: MessageClassifier, @unchecked Send
             let output = try model.prediction(from: MLDictionaryFeatureProvider(dictionary: features))
             guard let best = bestPrediction(from: output) else {
                 return fallbackDecision(confidence: 0)
+            }
+
+            if TransformerModelContract.isAbstainLabel(best.label) {
+                return ModelOutputContract.abstentionDecision(confidence: best.confidence)
             }
 
             guard

@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		00DB5ADC9F0CE9D1B178F56F /* MessageFilterCore.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = DE9062B3BA12FA49279965C9 /* MessageFilterCore.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		073CB7A790AA6C8CEE1F847B /* MessageFilterExtensionKit.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 6CBD4DFE2D496DF56947A303 /* MessageFilterExtensionKit.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		0C531EFADABA41DCC6083EB8 /* MessageFilterExtensionKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6CBD4DFE2D496DF56947A303 /* MessageFilterExtensionKit.framework */; };
 		0C78DF462A5FAC3F6A6AA4FB /* MessageFilterExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = F580BBE41F0C66D0E4695772 /* MessageFilterExtension.swift */; };
 		13988EDB6F5E1DCE2DA7FD70 /* SiftAppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F43A09AA5745101A244CF132 /* SiftAppModel.swift */; };
@@ -18,11 +19,14 @@
 		382E91E8A2CDB0FEB8D96AAB /* AppleModelClassifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = A106E2DC9BA09A3E71EBD4BB /* AppleModelClassifier.swift */; };
 		3D99F36498C1C6D795ED49D5 /* MessageFilterExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 95714DBDDEB14E7636B61DEB /* MessageFilterExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		4428BAF5EA8D38D82262CABC /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 414E55D72A3C1BB0973F2C21 /* Assets.xcassets */; };
+		45DC38B4F7B039C35E05BB06 /* QuantizationCandidateReport.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF742F4A5D504466A8E1245E /* QuantizationCandidateReport.swift */; };
+		4BD0A2674B602EA226FD8744 /* TransformerDeviceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 950DD6FAB2F723FE6849996D /* TransformerDeviceTests.swift */; };
 		4D723A300D58F861A7AF3CC5 /* MessageFilterCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DE9062B3BA12FA49279965C9 /* MessageFilterCore.framework */; };
 		4D78855A78F3C73FF3C76608 /* SampleStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D5C960A4586578B74DD045F /* SampleStore.swift */; };
 		4D90C615FA1371A4048092D5 /* SiftAppKit.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 11B4806EA8A49EA7B49DFE06 /* SiftAppKit.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		4EACC4E6045FD27E320A09B1 /* TransformerModelStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = D223CAF057207615C499AD65 /* TransformerModelStore.swift */; };
 		501B66CEEF014D5CA0C9FDDF /* SiftPIIDetector.mlpackage in Sources */ = {isa = PBXBuildFile; fileRef = F4D17437D44ADF0B5804FADB /* SiftPIIDetector.mlpackage */; };
+		56E27DCFC2D7CB9D8787BDB6 /* TransformerRuntimeBenchmark.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C7ABA6DEF13A9B99018FAE9 /* TransformerRuntimeBenchmark.swift */; };
 		5825DED50EE74D98B233C0DA /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = F94B8A23D8B6D58EDFE4D12B /* PrivacyInfo.xcprivacy */; };
 		58F0198193B053CD63CE0944 /* SiftSMSClassifier.mlmodel in Sources */ = {isa = PBXBuildFile; fileRef = 20B9AC80820B87C5D1C1A9F4 /* SiftSMSClassifier.mlmodel */; };
 		5AEDA33C9EA687897EC905C6 /* RuleEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 753C8AF04FE9FA5CE3C68EC1 /* RuleEngine.swift */; };
@@ -30,19 +34,25 @@
 		5F3D38AECFF72DFFCE517F45 /* SiftApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94BE665417F14F6013BCD08F /* SiftApp.swift */; };
 		632A870ACC0BF0C36277286E /* Taxonomy.swift in Sources */ = {isa = PBXBuildFile; fileRef = E646B03461B9CD0523D39416 /* Taxonomy.swift */; };
 		68E9C0CAAEE4F4719B65EBDD /* ModelManifest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6552BE571000D043A0B5FEC8 /* ModelManifest.swift */; };
+		7786BF200DE97ADA7FF253C9 /* MessageFilterCore.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = DE9062B3BA12FA49279965C9 /* MessageFilterCore.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		7A0ACE2C8B8F199047B3270A /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = F3453A1235E4C653C2B05667 /* PrivacyInfo.xcprivacy */; };
 		80EA440A0B3377EEBF648BA7 /* Classifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 91A2208F6DF258C04BFA1DBF /* Classifier.swift */; };
 		8BB645CC14EFDD4FF2C4F3A3 /* PrivacySanitizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85A81258E948F5F731486B23 /* PrivacySanitizer.swift */; };
 		9432635D3D3C7B4052D34978 /* PIIDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7618B89E17DF7C4ABFB2C888 /* PIIDetector.swift */; };
+		99BAB583F3D574F4DD484FE8 /* MessageFilterDiagnostics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5706640DAE9D8F5892114E9A /* MessageFilterDiagnostics.swift */; };
+		9B92351F2E1304AA1995EF86 /* TransformerDeviceSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = E6A961C64234B77537332168 /* TransformerDeviceSupport.swift */; };
 		9C33A935CBCD37F0BE95309C /* MessageFilterActionMapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90D8C514C04E418B11B62568 /* MessageFilterActionMapper.swift */; };
 		A08F823208268F7EBE0DA032 /* SiftSMSClassifier.manifest.json in Resources */ = {isa = PBXBuildFile; fileRef = 03A3CC79E2485F5F94485559 /* SiftSMSClassifier.manifest.json */; };
 		A597B3E2DE38645AFDF3E2B1 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 3621E146033750FC68CED506 /* PrivacyInfo.xcprivacy */; };
 		A77C4C165DF3190A800A90FC /* MessageFilterExtensionKit.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 6CBD4DFE2D496DF56947A303 /* MessageFilterExtensionKit.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		AAC82133210D1D4DAA00A4F6 /* TransformerModelDownload.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A2F30DFD01633E2520EBBAA /* TransformerModelDownload.swift */; };
+		AEAF5B3E6477A9F7ED9C3165 /* MessageFilterCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DE9062B3BA12FA49279965C9 /* MessageFilterCore.framework */; };
 		B03AD5D16E2BB20888D457DA /* PremiumStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36F6A1D8E3C1E952689092F2 /* PremiumStore.swift */; };
+		B2AC69F61A1AE7A91D462B55 /* MessageFilterExtensionKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6CBD4DFE2D496DF56947A303 /* MessageFilterExtensionKit.framework */; };
 		BD66089BC2094323F89BC153 /* SiftPIIDetector.vocab.txt in Resources */ = {isa = PBXBuildFile; fileRef = 68E31588A615F637BCA1A72A /* SiftPIIDetector.vocab.txt */; };
 		BD98F94128FED4D69A01C995 /* MessageModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27DA7D06EC28D68B6A037EB8 /* MessageModels.swift */; };
 		C56E33680ED9B0782A91EB61 /* MessageFilterCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DE9062B3BA12FA49279965C9 /* MessageFilterCore.framework */; };
+		C5F7AC12FB949D4DC7DDBF24 /* CompletionOnceGate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83EBBF829A830D239BD73773 /* CompletionOnceGate.swift */; };
 		C949FF2E312F2B3292269D7C /* WordPieceTokenizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2AD0B23B094B7F19C398D6C6 /* WordPieceTokenizer.swift */; };
 		C97F06BC823C58D4E211ABB5 /* CoreMLBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF848914EC70ED6F39C774C3 /* CoreMLBridge.swift */; };
 		C9F138E6EF756C5EBDE526B9 /* CloudKitSampleClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B97F0AAEE63E8477A369B76 /* CloudKitSampleClient.swift */; };
@@ -58,6 +68,7 @@
 		EBFD9A4F351BB9EB58054D56 /* CategoryMappingViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = D197F691EEB888D8F4045EBD /* CategoryMappingViews.swift */; };
 		EEDF46A3A85CE48E61DF029D /* TextTokenizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A71CD9ED836EF882CA66B67 /* TextTokenizer.swift */; };
 		F5F35629D1518DB8FBB4D0E8 /* SiftRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49D7FE397BA0808616CA19CE /* SiftRootView.swift */; };
+		FB8A70D83AC111E0CA411B4A /* MessageFilterEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3992F041CBC4AE7AFC4B3556 /* MessageFilterEngine.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -103,6 +114,20 @@
 			remoteGlobalIDString = BCBE6147C7CD01829DD2F984;
 			remoteInfo = MessageFilterCore;
 		};
+		8B0BA3D52BFD018C5BAB5E58 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = DF5A71E18F356690F069FA36 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = BCBE6147C7CD01829DD2F984;
+			remoteInfo = MessageFilterCore;
+		};
+		98F80237F02F0640924E3F9E /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = DF5A71E18F356690F069FA36 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 4F533FA55A5F48A7B79AA24A;
+			remoteInfo = MessageFilterExtensionKit;
+		};
 		A4EB2E077D675D72CD540FF4 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = DF5A71E18F356690F069FA36 /* Project object */;
@@ -117,9 +142,28 @@
 			remoteGlobalIDString = BCBE6147C7CD01829DD2F984;
 			remoteInfo = MessageFilterCore;
 		};
+		EB06A92D3CC32BA768B748C6 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = DF5A71E18F356690F069FA36 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = C3324A12402929775996737E;
+			remoteInfo = SiftApp;
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
+		1E7F04151E30EE21F4CA9C36 /* Embed Frameworks */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				7786BF200DE97ADA7FF253C9 /* MessageFilterCore.framework in Embed Frameworks */,
+				073CB7A790AA6C8CEE1F847B /* MessageFilterExtensionKit.framework in Embed Frameworks */,
+			);
+			name = "Embed Frameworks";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		3794767403624B9FA7D81511 /* Embed Foundation Extensions */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
@@ -152,6 +196,7 @@
 		11B4806EA8A49EA7B49DFE06 /* SiftAppKit.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = SiftAppKit.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		188D3402D6C10DAE8AE2CF7F /* SubmissionHistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubmissionHistoryView.swift; sourceTree = "<group>"; };
 		1A71CD9ED836EF882CA66B67 /* TextTokenizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextTokenizer.swift; sourceTree = "<group>"; };
+		1C7ABA6DEF13A9B99018FAE9 /* TransformerRuntimeBenchmark.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransformerRuntimeBenchmark.swift; sourceTree = "<group>"; };
 		20B9AC80820B87C5D1C1A9F4 /* SiftSMSClassifier.mlmodel */ = {isa = PBXFileReference; lastKnownFileType = file.mlmodel; path = SiftSMSClassifier.mlmodel; sourceTree = "<group>"; };
 		27DA7D06EC28D68B6A037EB8 /* MessageModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessageModels.swift; sourceTree = "<group>"; };
 		2AD0B23B094B7F19C398D6C6 /* WordPieceTokenizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WordPieceTokenizer.swift; sourceTree = "<group>"; };
@@ -162,9 +207,11 @@
 		3567C7E3C28918AC491F49A2 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		3621E146033750FC68CED506 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		36F6A1D8E3C1E952689092F2 /* PremiumStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PremiumStore.swift; sourceTree = "<group>"; };
+		3992F041CBC4AE7AFC4B3556 /* MessageFilterEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessageFilterEngine.swift; sourceTree = "<group>"; };
 		414E55D72A3C1BB0973F2C21 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		484100600463D6DE7C77A4EC /* TransformerClassifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransformerClassifier.swift; sourceTree = "<group>"; };
 		49D7FE397BA0808616CA19CE /* SiftRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SiftRootView.swift; sourceTree = "<group>"; };
+		5706640DAE9D8F5892114E9A /* MessageFilterDiagnostics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessageFilterDiagnostics.swift; sourceTree = "<group>"; };
 		6552BE571000D043A0B5FEC8 /* ModelManifest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelManifest.swift; sourceTree = "<group>"; };
 		68E31588A615F637BCA1A72A /* SiftPIIDetector.vocab.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = SiftPIIDetector.vocab.txt; sourceTree = "<group>"; };
 		6CBD4DFE2D496DF56947A303 /* MessageFilterExtensionKit.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = MessageFilterExtensionKit.framework; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -173,27 +220,32 @@
 		7A2F30DFD01633E2520EBBAA /* TransformerModelDownload.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransformerModelDownload.swift; sourceTree = "<group>"; };
 		7D5C960A4586578B74DD045F /* SampleStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SampleStore.swift; sourceTree = "<group>"; };
 		7EA84B55EFAA05AB592B06F3 /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
+		83EBBF829A830D239BD73773 /* CompletionOnceGate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompletionOnceGate.swift; sourceTree = "<group>"; };
 		85A81258E948F5F731486B23 /* PrivacySanitizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivacySanitizer.swift; sourceTree = "<group>"; };
 		874872CE3C4DDB3875720851 /* SiftApp.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = SiftApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		90D8C514C04E418B11B62568 /* MessageFilterActionMapper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessageFilterActionMapper.swift; sourceTree = "<group>"; };
 		91A2208F6DF258C04BFA1DBF /* Classifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Classifier.swift; sourceTree = "<group>"; };
 		94BE665417F14F6013BCD08F /* SiftApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SiftApp.swift; sourceTree = "<group>"; };
+		950DD6FAB2F723FE6849996D /* TransformerDeviceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransformerDeviceTests.swift; sourceTree = "<group>"; };
 		95714DBDDEB14E7636B61DEB /* MessageFilterExtension.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = MessageFilterExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		A106E2DC9BA09A3E71EBD4BB /* AppleModelClassifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleModelClassifier.swift; sourceTree = "<group>"; };
 		B01E8E89CED9145777F73B53 /* PremiumViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PremiumViews.swift; sourceTree = "<group>"; };
 		B3EB4AEB1B78C380B40F692D /* BPETokenizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BPETokenizer.swift; sourceTree = "<group>"; };
 		C29F041CB845ED5477E6AC11 /* ModelSelection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelSelection.swift; sourceTree = "<group>"; };
+		CF742F4A5D504466A8E1245E /* QuantizationCandidateReport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuantizationCandidateReport.swift; sourceTree = "<group>"; };
 		D197F691EEB888D8F4045EBD /* CategoryMappingViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CategoryMappingViews.swift; sourceTree = "<group>"; };
 		D223CAF057207615C499AD65 /* TransformerModelStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransformerModelStore.swift; sourceTree = "<group>"; };
 		DE9062B3BA12FA49279965C9 /* MessageFilterCore.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = MessageFilterCore.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		DF0856AE1DE18210A3372A0A /* MessageFilterExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = MessageFilterExtension.entitlements; sourceTree = "<group>"; };
 		DF848914EC70ED6F39C774C3 /* CoreMLBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoreMLBridge.swift; sourceTree = "<group>"; };
 		E646B03461B9CD0523D39416 /* Taxonomy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Taxonomy.swift; sourceTree = "<group>"; };
+		E6A961C64234B77537332168 /* TransformerDeviceSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransformerDeviceSupport.swift; sourceTree = "<group>"; };
 		F3453A1235E4C653C2B05667 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		F43A09AA5745101A244CF132 /* SiftAppModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SiftAppModel.swift; sourceTree = "<group>"; };
 		F4D17437D44ADF0B5804FADB /* SiftPIIDetector.mlpackage */ = {isa = PBXFileReference; path = SiftPIIDetector.mlpackage; sourceTree = "<group>"; };
 		F580BBE41F0C66D0E4695772 /* MessageFilterExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessageFilterExtension.swift; sourceTree = "<group>"; };
 		F94B8A23D8B6D58EDFE4D12B /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		FF809F7998B462E2401866E6 /* TransformerDeviceTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = TransformerDeviceTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -222,6 +274,15 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		8CDAD0649598447EB461B8A5 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AEAF5B3E6477A9F7ED9C3165 /* MessageFilterCore.framework in Frameworks */,
+				B2AC69F61A1AE7A91D462B55 /* MessageFilterExtensionKit.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		A6BFD4175FC0B6E8CFA24E1F /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -247,6 +308,14 @@
 			path = GeneratedModels;
 			sourceTree = "<group>";
 		};
+		24835EEAD82113E792A73AE9 /* DeviceTests */ = {
+			isa = PBXGroup;
+			children = (
+				950DD6FAB2F723FE6849996D /* TransformerDeviceTests.swift */,
+			);
+			path = DeviceTests;
+			sourceTree = "<group>";
+		};
 		45CA59FC210B6C618C2FB69C /* Products */ = {
 			isa = PBXGroup;
 			children = (
@@ -255,6 +324,7 @@
 				6CBD4DFE2D496DF56947A303 /* MessageFilterExtensionKit.framework */,
 				874872CE3C4DDB3875720851 /* SiftApp.app */,
 				11B4806EA8A49EA7B49DFE06 /* SiftAppKit.framework */,
+				FF809F7998B462E2401866E6 /* TransformerDeviceTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -280,17 +350,21 @@
 				2B97F0AAEE63E8477A369B76 /* CloudKitSampleClient.swift */,
 				DF848914EC70ED6F39C774C3 /* CoreMLBridge.swift */,
 				2F94E7D7E6D9B2D3624A6493 /* FeatureHasher.swift */,
+				3992F041CBC4AE7AFC4B3556 /* MessageFilterEngine.swift */,
 				27DA7D06EC28D68B6A037EB8 /* MessageModels.swift */,
 				6552BE571000D043A0B5FEC8 /* ModelManifest.swift */,
 				C29F041CB845ED5477E6AC11 /* ModelSelection.swift */,
 				7618B89E17DF7C4ABFB2C888 /* PIIDetector.swift */,
 				85A81258E948F5F731486B23 /* PrivacySanitizer.swift */,
+				CF742F4A5D504466A8E1245E /* QuantizationCandidateReport.swift */,
 				753C8AF04FE9FA5CE3C68EC1 /* RuleEngine.swift */,
 				7D5C960A4586578B74DD045F /* SampleStore.swift */,
 				E646B03461B9CD0523D39416 /* Taxonomy.swift */,
 				1A71CD9ED836EF882CA66B67 /* TextTokenizer.swift */,
 				484100600463D6DE7C77A4EC /* TransformerClassifier.swift */,
+				E6A961C64234B77537332168 /* TransformerDeviceSupport.swift */,
 				D223CAF057207615C499AD65 /* TransformerModelStore.swift */,
+				1C7ABA6DEF13A9B99018FAE9 /* TransformerRuntimeBenchmark.swift */,
 				2AD0B23B094B7F19C398D6C6 /* WordPieceTokenizer.swift */,
 			);
 			name = MessageFilterCore;
@@ -300,7 +374,9 @@
 		B484A585FC39C535F68D1C88 /* MessageFilterExtensionKit */ = {
 			isa = PBXGroup;
 			children = (
+				83EBBF829A830D239BD73773 /* CompletionOnceGate.swift */,
 				90D8C514C04E418B11B62568 /* MessageFilterActionMapper.swift */,
+				5706640DAE9D8F5892114E9A /* MessageFilterDiagnostics.swift */,
 			);
 			name = MessageFilterExtensionKit;
 			path = Sources/MessageFilterExtensionKit;
@@ -343,6 +419,7 @@
 		D852F6552D37B1F8043D7CEB = {
 			isa = PBXGroup;
 			children = (
+				24835EEAD82113E792A73AE9 /* DeviceTests */,
 				13DDE3D65F3A2DDFAC5B4A07 /* GeneratedModels */,
 				E643484260BC75B7B1D8354F /* MessageFilterCore */,
 				8F482B84A9DFF3E9A75BAF44 /* MessageFilterCore */,
@@ -377,6 +454,28 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		11ADBB1401FB539D9A321A8B /* TransformerDeviceTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = DF7F4647FFE26082A3C596EA /* Build configuration list for PBXNativeTarget "TransformerDeviceTests" */;
+			buildPhases = (
+				A8789DF30FE7E2553B8B13CC /* Sources */,
+				8CDAD0649598447EB461B8A5 /* Frameworks */,
+				1E7F04151E30EE21F4CA9C36 /* Embed Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				DE5F1CF4B0256E12D4A0A8E2 /* PBXTargetDependency */,
+				F4612C52C0A2F0E4419F2C93 /* PBXTargetDependency */,
+				2CAB571AF182A9813104F753 /* PBXTargetDependency */,
+			);
+			name = TransformerDeviceTests;
+			packageProductDependencies = (
+			);
+			productName = TransformerDeviceTests;
+			productReference = FF809F7998B462E2401866E6 /* TransformerDeviceTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 		4F533FA55A5F48A7B79AA24A /* MessageFilterExtensionKit */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = A362CF13FA6F4DE405E8D734 /* Build configuration list for PBXNativeTarget "MessageFilterExtensionKit" */;
@@ -489,6 +588,10 @@
 				BuildIndependentTargetsInParallel = YES;
 				LastUpgradeCheck = 1430;
 				TargetAttributes = {
+					11ADBB1401FB539D9A321A8B = {
+						DevelopmentTeam = PB8H83VL3Z;
+						ProvisioningStyle = Automatic;
+					};
 					4F533FA55A5F48A7B79AA24A = {
 						DevelopmentTeam = PB8H83VL3Z;
 						ProvisioningStyle = Automatic;
@@ -532,6 +635,7 @@
 				4F533FA55A5F48A7B79AA24A /* MessageFilterExtensionKit */,
 				C3324A12402929775996737E /* SiftApp */,
 				C049A5D793556533D5F38600 /* SiftAppKit */,
+				11ADBB1401FB539D9A321A8B /* TransformerDeviceTests */,
 			);
 		};
 /* End PBXProject section */
@@ -587,17 +691,21 @@
 				C9F138E6EF756C5EBDE526B9 /* CloudKitSampleClient.swift in Sources */,
 				C97F06BC823C58D4E211ABB5 /* CoreMLBridge.swift in Sources */,
 				1A2430A7C99CA6258D6305A4 /* FeatureHasher.swift in Sources */,
+				FB8A70D83AC111E0CA411B4A /* MessageFilterEngine.swift in Sources */,
 				BD98F94128FED4D69A01C995 /* MessageModels.swift in Sources */,
 				68E9C0CAAEE4F4719B65EBDD /* ModelManifest.swift in Sources */,
 				1FC39F0616712256D1C1B9F4 /* ModelSelection.swift in Sources */,
 				9432635D3D3C7B4052D34978 /* PIIDetector.swift in Sources */,
 				8BB645CC14EFDD4FF2C4F3A3 /* PrivacySanitizer.swift in Sources */,
+				45DC38B4F7B039C35E05BB06 /* QuantizationCandidateReport.swift in Sources */,
 				5AEDA33C9EA687897EC905C6 /* RuleEngine.swift in Sources */,
 				4D78855A78F3C73FF3C76608 /* SampleStore.swift in Sources */,
 				632A870ACC0BF0C36277286E /* Taxonomy.swift in Sources */,
 				EEDF46A3A85CE48E61DF029D /* TextTokenizer.swift in Sources */,
 				DA9E0BDA7A47D675C779EB6E /* TransformerClassifier.swift in Sources */,
+				9B92351F2E1304AA1995EF86 /* TransformerDeviceSupport.swift in Sources */,
 				4EACC4E6045FD27E320A09B1 /* TransformerModelStore.swift in Sources */,
+				56E27DCFC2D7CB9D8787BDB6 /* TransformerRuntimeBenchmark.swift in Sources */,
 				C949FF2E312F2B3292269D7C /* WordPieceTokenizer.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -606,7 +714,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				C5F7AC12FB949D4DC7DDBF24 /* CompletionOnceGate.swift in Sources */,
 				9C33A935CBCD37F0BE95309C /* MessageFilterActionMapper.swift in Sources */,
+				99BAB583F3D574F4DD484FE8 /* MessageFilterDiagnostics.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -626,6 +736,14 @@
 			files = (
 				0C78DF462A5FAC3F6A6AA4FB /* MessageFilterExtension.swift in Sources */,
 				DA1BE1AFA1A47145D8E20860 /* SiftSMSClassifier.mlmodel in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A8789DF30FE7E2553B8B13CC /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				4BD0A2674B602EA226FD8744 /* TransformerDeviceTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -651,6 +769,11 @@
 			target = 4F533FA55A5F48A7B79AA24A /* MessageFilterExtensionKit */;
 			targetProxy = 4975289FB7E036C09C721D20 /* PBXContainerItemProxy */;
 		};
+		2CAB571AF182A9813104F753 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 4F533FA55A5F48A7B79AA24A /* MessageFilterExtensionKit */;
+			targetProxy = 98F80237F02F0640924E3F9E /* PBXContainerItemProxy */;
+		};
 		509A55D752DCA9843E4CAC5B /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = BCBE6147C7CD01829DD2F984 /* MessageFilterCore */;
@@ -671,6 +794,11 @@
 			target = C7B074B15045AF82A82E305E /* MessageFilterExtension */;
 			targetProxy = 2931A1521ABDC2294AD48432 /* PBXContainerItemProxy */;
 		};
+		DE5F1CF4B0256E12D4A0A8E2 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = C3324A12402929775996737E /* SiftApp */;
+			targetProxy = EB06A92D3CC32BA768B748C6 /* PBXContainerItemProxy */;
+		};
 		E475B8429B402866FB2FAF69 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = BCBE6147C7CD01829DD2F984 /* MessageFilterCore */;
@@ -680,6 +808,11 @@
 			isa = PBXTargetDependency;
 			target = BCBE6147C7CD01829DD2F984 /* MessageFilterCore */;
 			targetProxy = C2E2F079FDD6B6C26C4B0F56 /* PBXContainerItemProxy */;
+		};
+		F4612C52C0A2F0E4419F2C93 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = BCBE6147C7CD01829DD2F984 /* MessageFilterCore */;
+			targetProxy = 8B0BA3D52BFD018C5BAB5E58 /* PBXContainerItemProxy */;
 		};
 		FC2ECD62D9410F6DBD51408B /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
@@ -781,6 +914,9 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.alkinum.sift;
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SDKROOT = iphoneos;
+				SIFT_TRANSFORMER_MODEL_CHANNEL_URL = "https://sift.alkinum.io/models/channels/v2/SiftTransformerClassifier.channel.json";
+				SIFT_TRANSFORMER_MODEL_PUBLIC_KEY = "EWT4wUWJG73N72DqkoNZ8MoDZYlYWPN7YrkL6QgjQKY=";
+				SIFT_TRANSFORMER_MODEL_PUBLIC_KEY_ID = "release-2026";
 				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Release;
@@ -864,7 +1000,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 7;
+				CURRENT_PROJECT_VERSION = 8;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -892,6 +1028,46 @@
 				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Release;
+		};
+		B9A6E9E4FAE36402B6000B5A /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = PB8H83VL3Z;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.alkinum.sift.TransformerDeviceTests;
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/SiftApp.app/SiftApp";
+			};
+			name = Release;
+		};
+		C76AB22810BF69A840C4D631 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = PB8H83VL3Z;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.alkinum.sift.TransformerDeviceTests;
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/SiftApp.app/SiftApp";
+			};
+			name = Debug;
 		};
 		C8204BBE142407A10E33235C /* Release */ = {
 			isa = XCBuildConfiguration;
@@ -935,6 +1111,9 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.alkinum.sift;
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SDKROOT = iphoneos;
+				SIFT_TRANSFORMER_MODEL_CHANNEL_URL = "https://sift.alkinum.io/models/channels/v2/SiftTransformerClassifier.channel.json";
+				SIFT_TRANSFORMER_MODEL_PUBLIC_KEY = "EWT4wUWJG73N72DqkoNZ8MoDZYlYWPN7YrkL6QgjQKY=";
+				SIFT_TRANSFORMER_MODEL_PUBLIC_KEY_ID = "release-2026";
 				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Debug;
@@ -973,7 +1152,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 7;
+				CURRENT_PROJECT_VERSION = 8;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
@@ -1089,6 +1268,15 @@
 			buildConfigurations = (
 				F8A36C31D5F9CF61C5E01980 /* Debug */,
 				0C909DD6E7855F3CF73870D5 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		DF7F4647FFE26082A3C596EA /* Build configuration list for PBXNativeTarget "TransformerDeviceTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				C76AB22810BF69A840C4D631 /* Debug */,
+				B9A6E9E4FAE36402B6000B5A /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;

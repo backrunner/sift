@@ -87,6 +87,14 @@ private struct MockTransformerDownloader: TransformerModelDownloading {
     }
 }
 
+private struct MockTransformerUpdateChecker: TransformerModelUpdateChecking {
+    let state: TransformerUpdateState
+
+    func checkForUpdate(currentIdentity: ModelArtifactIdentity?) async -> TransformerUpdateState {
+        state
+    }
+}
+
 private struct MockSiftModelClassifierLoader: SiftModelClassifierLoading {
     @concurrent
     func classifier(for variant: ModelVariant) async -> (any MessageClassifier)? {
@@ -166,6 +174,26 @@ private func mockTransformerDownloadPlan(
     networkCondition: TransformerNetworkCondition = TransformerNetworkCondition()
 ) -> TransformerModelDownloadPlan {
     let manifest = TransformerModelManifest(
+        schemaVersion: 2,
+        releaseSequence: 1,
+        modelABI: "sift-mmbert-v2",
+        minimumAppBuild: 1,
+        maximumAppBuild: 100,
+        minimumOSVersion: "18.0",
+        runtimeProfile: TransformerRuntimeProfile(),
+        quantizationProfile: TransformerQuantizationProfile(
+            identifier: "w8a16-channel-ptq",
+            weightBits: 8,
+            activationBits: 16,
+            method: "ptq",
+            granularity: "per-channel"
+        ),
+        validationMetrics: TransformerValidationMetrics(
+            fixedAccuracy: 0.9958,
+            promotionAccuracy: 0.98,
+            fp16Agreement: 0.99,
+            languageAccuracy: ["zh": 0.99, "en": 0.99, "ja": 0.99]
+        ),
         version: "remote-0.1",
         trainedAt: "2026-07-07T08:00:00.000Z",
         algorithm: "supervised-sequence-classification",
@@ -177,17 +205,18 @@ private func mockTransformerDownloadPlan(
         tokenizerKind: "bpe",
         tokenizerArtifact: "SiftTransformerClassifier.tokenizer.siftbpe",
         modelArtifact: "SiftTransformerClassifier.mlpackage",
-        sha256: "model-sha256",
+        sha256: String(repeating: "b", count: 64),
         taxonomyHash: "taxonomy-sha256",
+        tokenizerSHA256: String(repeating: "d", count: 64),
         remoteArtifacts: [
             TransformerRemoteArtifact(
                 path: "SiftTransformerClassifier.tokenizer.siftbpe",
-                sha256: "tokenizer-sha256",
+                sha256: String(repeating: "d", count: 64),
                 byteCount: 1024
             ),
             TransformerRemoteArtifact(
                 path: "SiftTransformerClassifier.mlpackage/model.mlmodel",
-                sha256: "model-sha256",
+                sha256: String(repeating: "e", count: 64),
                 byteCount: 2048
             )
         ],
@@ -200,13 +229,13 @@ private func mockTransformerDownloadPlan(
             TransformerModelDownloadArtifact(
                 remoteURL: URL(string: "https://example.com/SiftTransformerClassifier.tokenizer.siftbpe")!,
                 relativePath: "SiftTransformerClassifier.tokenizer.siftbpe",
-                sha256: "tokenizer-sha256",
+                sha256: String(repeating: "d", count: 64),
                 byteCount: 1024
             ),
             TransformerModelDownloadArtifact(
                 remoteURL: URL(string: "https://example.com/SiftTransformerClassifier.mlpackage/model.mlmodel")!,
                 relativePath: "SiftTransformerClassifier.mlpackage/model.mlmodel",
-                sha256: "model-sha256",
+                sha256: String(repeating: "e", count: 64),
                 byteCount: 2048
             )
         ],
@@ -234,6 +263,36 @@ func lockedTransformerSelectionOpensPaywallInsteadOfSwitching() async throws {
 
 @MainActor
 @Test
+func unsupportedDeviceBlocksTransformerBeforePurchaseOrDownload() async throws {
+    let recorder = TransformerDownloadRecorder()
+    let model = SiftAppModel(
+        premiumBackend: MockPremiumBackend(entitled: false, outcome: .cancelled),
+        transformerAvailabilityOverride: false,
+        transformerDeviceSupportOverride: TransformerDeviceSupport(
+            status: .unsupported,
+            reason: .belowMinimumNeuralEngine
+        ),
+        transformerDownloader: MockTransformerDownloader(
+            plan: mockTransformerDownloadPlan(),
+            recorder: recorder
+        )
+    )
+    try await waitForPremiumRefresh(model)
+
+    #expect(!model.isTransformerDeviceSupported)
+    #expect(!model.isModelVariantAvailable(.transformer))
+    model.selectModelVariant(.transformer)
+
+    #expect(!model.isShowingPaywall)
+    #expect(model.selectedModelVariant == .classic)
+    #expect(model.toastCenter.toast?.message == String(localized: "此设备不支持 Transformer 高级模型"))
+    let counts = await recorder.counts()
+    #expect(counts.prepare == 0)
+    #expect(counts.download == 0)
+}
+
+@MainActor
+@Test
 func unlockedTransformerDoesNotDownloadUntilUserSelectsIt() async throws {
     let recorder = TransformerDownloadRecorder()
     let downloader = MockTransformerDownloader(
@@ -253,6 +312,46 @@ func unlockedTransformerDoesNotDownloadUntilUserSelectsIt() async throws {
     let counts = await recorder.counts()
     #expect(counts.prepare == 0)
     #expect(counts.download == 0)
+}
+
+@MainActor
+@Test
+func transformerUpdateCheckIsMetadataOnlyAndSurfacesCompatibleRelease() async throws {
+    let suiteName = "SiftTests.modelUpdate.metadata.\(UUID().uuidString)"
+    let defaults = try #require(UserDefaults(suiteName: suiteName))
+    defer { defaults.removePersistentDomain(forName: suiteName) }
+    let channel = TransformerChannelManifestV2(
+        releaseSequence: 2,
+        releaseID: "mmbert-boundary-v9",
+        releaseManifestURL: "https://example.com/release.json",
+        releaseManifestSHA256: "release-sha",
+        modelABI: "sift-mmbert-v2",
+        minimumAppBuild: 1,
+        maximumAppBuild: 100,
+        minimumOSVersion: "18.0",
+        downloadBytes: 100_000_000,
+        keyID: "test"
+    )
+    let model = SiftAppModel(
+        premiumBackend: MockPremiumBackend(entitled: true, outcome: .cancelled),
+        transformerAvailabilityOverride: true,
+        transformerDownloadedOverride: true,
+        transformerDownloader: nil,
+        transformerUpdateChecker: MockTransformerUpdateChecker(state: .updateAvailable(channel)),
+        modelSelectionDefaults: defaults,
+        appDefaults: defaults
+    )
+    try await waitForPremiumRefresh(model)
+
+    model.checkForTransformerUpdate(force: true)
+    try await waitFor {
+        if case .updateAvailable = model.transformerUpdateState { return true }
+        return false
+    }
+
+    #expect(model.hasCompatibleTransformerUpdate)
+    #expect(model.transformerUpdateReleaseID == "mmbert-boundary-v9")
+    #expect(model.transformerUpdateDownloadSizeText != nil)
 }
 
 @MainActor
@@ -328,6 +427,15 @@ func transformerDownloadAcceptsCurrentCompactManifest() throws {
 func transformerDownloadRejectsManifestMissingCompactTokenizerFile() {
     let current = mockTransformerDownloadPlan().manifest
     let manifest = TransformerModelManifest(
+        schemaVersion: current.schemaVersion,
+        releaseSequence: current.releaseSequence,
+        modelABI: current.modelABI,
+        minimumAppBuild: current.minimumAppBuild,
+        maximumAppBuild: current.maximumAppBuild,
+        minimumOSVersion: current.minimumOSVersion,
+        runtimeProfile: current.runtimeProfile,
+        quantizationProfile: current.quantizationProfile,
+        validationMetrics: current.validationMetrics,
         version: current.version,
         trainedAt: current.trainedAt,
         algorithm: current.algorithm,
@@ -341,6 +449,9 @@ func transformerDownloadRejectsManifestMissingCompactTokenizerFile() {
         modelArtifact: current.modelArtifact,
         sha256: current.sha256,
         taxonomyHash: current.taxonomyHash,
+        tokenizerSHA256: current.tokenizerSHA256,
+        keyID: current.keyID,
+        signature: current.signature,
         remoteArtifacts: current.remoteArtifacts.filter { $0.path != current.tokenizerArtifact },
         downloadBytes: current.downloadBytes
     )

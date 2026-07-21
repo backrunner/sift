@@ -1,6 +1,126 @@
 {
   "sourceLanguage" : "zh-Hans",
   "strings" : {
+    "未分类" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Unclassified" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "未分類" } }
+      }
+    },
+    "有更新" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Update" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "更新" } }
+      }
+    },
+    "正在检查模型更新…" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Checking for model updates…" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "モデルの更新を確認中…" } }
+      }
+    },
+    "有新版本可下载" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "A new version is available" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "新しいバージョンをダウンロードできます" } }
+      }
+    },
+    "需要更新 App 后使用" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Update the app to use this model" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "このモデルを使うにはAppを更新してください" } }
+      }
+    },
+    "此模型与当前设备不兼容" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "This model is incompatible with this device" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "このモデルは現在のデバイスに対応していません" } }
+      }
+    },
+    "此设备不支持 Transformer 高级模型" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "This device does not support the Premium Transformer model" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "このデバイスはプレミアムTransformerモデルに対応していません" } }
+      }
+    },
+    "设备不支持" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Device Not Supported" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "デバイス非対応" } }
+      }
+    },
+    "高级模型需要 A12 或更新芯片" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "The premium model requires an A12 chip or newer" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "プレミアムモデルにはA12以降のチップが必要です" } }
+      }
+    },
+    "暂时无法检查更新" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Updates are temporarily unavailable" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "現在、更新を確認できません" } }
+      }
+    },
+    "高级模型更新信息不可用" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Premium model update information is unavailable" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "プレミアムモデルの更新情報を取得できません" } }
+      }
+    },
+    "此模型版本与当前 App 不兼容" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "This model version is incompatible with the current app" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "このモデルバージョンは現在のAppに対応していません" } }
+      }
+    },
+    "高级模型签名校验失败" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Premium model signature verification failed" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "プレミアムモデルの署名検証に失敗しました" } }
+      }
+    },
+    "当前版本" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Current version" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "現在のバージョン" } }
+      }
+    },
+    "最新版本" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Latest version" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "最新バージョン" } }
+      }
+    },
+    "下载大小" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Download size" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "ダウンロードサイズ" } }
+      }
+    },
+    "兼容状态" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Compatibility" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "互換性" } }
+      }
+    },
+    "模型详情" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Model details" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "モデルの詳細" } }
+      }
+    },
+    "下载更新" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Download update" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "更新をダウンロード" } }
+      }
+    },
+    "已是最新版本" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "You have the latest version" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "最新バージョンです" } }
+      }
+    },
     "匿名样本提交成功" : {
       "localizations" : {
         "en" : {

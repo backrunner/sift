@@ -183,14 +183,17 @@ public final class SiftAppModel {
     public var modelDate: String = "2026-05-06"
     public var modelVersion: String = "corpus-0.1"
     public private(set) var selectedModelVariant: ModelVariant = .classic
+    public private(set) var transformerDeviceSupport: TransformerDeviceSupport
     public private(set) var isSwitchingModelVariant: Bool = false
     public private(set) var modelVariantBeingLoaded: ModelVariant?
     public private(set) var isTransformerModelAvailable: Bool
     public private(set) var isTransformerModelDownloaded: Bool
+    public private(set) var installedTransformerVersion: String?
     public private(set) var isClearingTransformerModel: Bool = false
     public private(set) var transformerDownloadPhase: TransformerModelDownloadPhase = .notDownloaded
     public private(set) var transformerDownloadProgress: TransformerModelDownloadProgress?
     public private(set) var pendingTransformerDownloadPlan: TransformerModelDownloadPlan?
+    public private(set) var transformerUpdateState: TransformerUpdateState = .unknown
     public var isShowingMeteredTransformerDownloadConfirmation: Bool = false
     public var submissionDestination: SubmissionDestination = .local
     public var testBody: String = ""
@@ -280,10 +283,22 @@ public final class SiftAppModel {
     private let transformerDownloader: (any TransformerModelDownloading)?
 
     @ObservationIgnored
+    private let transformerUpdateChecker: (any TransformerModelUpdateChecking)?
+
+    @ObservationIgnored
     private let modelClassifierLoader: any SiftModelClassifierLoading
 
     @ObservationIgnored
     private var transformerDownloadTask: Task<Void, Never>?
+
+    @ObservationIgnored
+    private var transformerUpdateCheckTask: Task<Void, Never>?
+
+    @ObservationIgnored
+    private var installedTransformerIdentity: ModelArtifactIdentity?
+
+    @ObservationIgnored
+    private var installedTransformerTrainedAt: String?
 
     @ObservationIgnored
     private let transformerModelRemover: any TransformerModelRemoving
@@ -344,7 +359,9 @@ public final class SiftAppModel {
         premiumBackend: (any PremiumPurchasing)? = nil,
         transformerAvailabilityOverride: Bool? = nil,
         transformerDownloadedOverride: Bool? = nil,
+        transformerDeviceSupportOverride: TransformerDeviceSupport? = nil,
         transformerDownloader: (any TransformerModelDownloading)? = TransformerModelDownloadClient.configured(),
+        transformerUpdateChecker: (any TransformerModelUpdateChecking)? = nil,
         transformerModelRemover: any TransformerModelRemoving = TransformerModelStoreRemover(),
         modelClassifierLoader: any SiftModelClassifierLoading = DefaultSiftModelClassifierLoader(),
         modelSelectionDefaults: UserDefaults? = nil,
@@ -367,11 +384,19 @@ public final class SiftAppModel {
             containerIdentifier: CloudKitSampleClient.configuredContainerIdentifier()
         )
         self.transformerDownloader = transformerDownloader
+        self.transformerUpdateChecker = transformerUpdateChecker
+            ?? (transformerDownloader as? any TransformerModelUpdateChecking)
+            ?? TransformerModelDownloadClient.configured()
         self.transformerModelRemover = transformerModelRemover
         self.modelClassifierLoader = modelClassifierLoader
+        let resolvedTransformerDeviceSupport = transformerDeviceSupportOverride ?? .current()
+        self.transformerDeviceSupport = resolvedTransformerDeviceSupport
         self.premium = PremiumStore(backend: premiumBackend)
 
         let installedTransformer = TransformerModelStore.installedModel(validateChecksums: false)
+        self.installedTransformerVersion = installedTransformer?.manifest.version
+        self.installedTransformerTrainedAt = installedTransformer?.manifest.trainedAt
+        self.installedTransformerIdentity = installedTransformer?.manifest.artifactIdentity
         let transformerDownloaded = transformerDownloadedOverride ?? (installedTransformer != nil)
         let transformerAvailable = transformerAvailabilityOverride
             ?? (installedTransformer.map { TransformerClassifierLoader.isReady($0) } == true)
@@ -379,7 +404,9 @@ public final class SiftAppModel {
         self.isTransformerModelAvailable = transformerAvailable
         self.transformerDownloadPhase = transformerAvailable ? .ready : .notDownloaded
         let storedVariant = ModelSelectionStore.load(defaults: modelSelectionDefaults)
-        let shouldRestoreTransformer = storedVariant == .transformer && transformerAvailable
+        let shouldRestoreTransformer = storedVariant == .transformer
+            && transformerAvailable
+            && resolvedTransformerDeviceSupport.isSupported
         if shouldRestoreTransformer {
             self.modelVariantToRestoreAfterEntitlement = .transformer
         } else if storedVariant == .transformer {
@@ -467,15 +494,98 @@ public final class SiftAppModel {
         selectedModelVariant.supportsLocalPersonalization
     }
 
+    public var isTransformerDeviceSupported: Bool {
+        transformerDeviceSupport.isSupported
+    }
+
+    public var hasCompatibleTransformerUpdate: Bool {
+        if case .updateAvailable = transformerUpdateState {
+            return isTransformerModelDownloaded
+        }
+        return false
+    }
+
+    public var transformerUpdateReleaseID: String? {
+        switch transformerUpdateState {
+        case let .updateAvailable(channel), let .requiresAppUpdate(channel), let .incompatible(channel):
+            return channel.releaseID
+        case .unknown, .checking, .current, .failed:
+            return nil
+        }
+    }
+
+    public var transformerUpdateDownloadSizeText: String? {
+        guard case let .updateAvailable(channel) = transformerUpdateState, channel.downloadBytes > 0 else {
+            return nil
+        }
+        return Self.formatByteCount(channel.downloadBytes)
+    }
+
+    public var transformerUpdateStatusText: String? {
+        switch transformerUpdateState {
+        case .unknown, .current:
+            return nil
+        case .checking:
+            return String(localized: "正在检查模型更新…")
+        case .updateAvailable:
+            return String(localized: "有新版本可下载")
+        case .requiresAppUpdate:
+            return String(localized: "需要更新 App 后使用")
+        case .incompatible:
+            return String(localized: "此模型与当前设备不兼容")
+        case .failed:
+            return String(localized: "暂时无法检查更新")
+        }
+    }
+
+    public func checkForTransformerUpdate(force: Bool = false) {
+        guard isTransformerDeviceSupported else {
+            return
+        }
+        guard transformerUpdateCheckTask == nil, let transformerUpdateChecker else {
+            return
+        }
+        let lastCheck = appDefaults.object(forKey: Self.transformerUpdateLastCheckKey) as? Date
+        if
+            !force,
+            let lastCheck,
+            Date().timeIntervalSince(lastCheck) < Self.transformerUpdateCheckInterval
+        {
+            return
+        }
+        transformerUpdateState = .checking
+        let identity = installedTransformerIdentity
+        transformerUpdateCheckTask = Task { [weak self] in
+            guard let self else { return }
+            let state = await transformerUpdateChecker.checkForUpdate(currentIdentity: identity)
+            self.transformerUpdateCheckTask = nil
+            guard !Task.isCancelled else { return }
+            transformerUpdateState = state
+            appDefaults.set(Date(), forKey: Self.transformerUpdateLastCheckKey)
+        }
+    }
+
+    public func downloadTransformerUpdate() {
+        guard isTransformerDeviceSupported else {
+            showTransformerUnsupportedMessage()
+            return
+        }
+        guard hasCompatibleTransformerUpdate, premium.isUnlocked else {
+            return
+        }
+        beginTransformerDownloadAndSwitch(allowMeteredNetwork: false)
+    }
+
     public var availableModelVariants: [ModelVariant] {
         ModelVariant.allCases
     }
 
     public func isModelVariantAvailable(_ variant: ModelVariant) -> Bool {
         variant != .transformer
-            || isTransformerModelAvailable
-            || transformerDownloader != nil
-            || !premium.isUnlocked
+            || (
+                isTransformerDeviceSupported
+                    && (isTransformerModelAvailable || transformerDownloader != nil || !premium.isUnlocked)
+            )
     }
 
     /// Manifest version for a variant, for display in the model picker.
@@ -484,7 +594,7 @@ public final class SiftAppModel {
         case .classic:
             return nil
         case .transformer:
-            return TransformerClassifierLoader.manifest()?.version ?? pendingTransformerDownloadPlan?.manifest.version
+            return installedTransformerVersion ?? pendingTransformerDownloadPlan?.manifest.version
         }
     }
 
@@ -494,6 +604,10 @@ public final class SiftAppModel {
             variant != modelVariantBeingLoaded,
             !isClearingTransformerModel
         else {
+            return
+        }
+        if variant == .transformer, !isTransformerDeviceSupported {
+            showTransformerUnsupportedMessage()
             return
         }
         if variant == .transformer, !premium.isUnlocked {
@@ -509,12 +623,21 @@ public final class SiftAppModel {
         switchToModelVariant(variant)
     }
 
+    public func showTransformerUnsupportedMessage() {
+        showToast(.info, String(localized: "此设备不支持 Transformer 高级模型"))
+    }
+
     private func switchToModelVariant(
         _ variant: ModelVariant,
         showsSuccessToast: Bool = true,
         priority: TaskPriority = .userInitiated,
         completion: (@MainActor @Sendable (Bool) -> Void)? = nil
     ) {
+        guard variant != .transformer || isTransformerDeviceSupported else {
+            showTransformerUnsupportedMessage()
+            completion?(false)
+            return
+        }
         modelSwitchTask?.cancel()
         let requestID = UUID()
         modelSwitchRequestID = requestID
@@ -571,7 +694,11 @@ public final class SiftAppModel {
                 withExtendedLifetime(retiredStack) {}
             }
             self.selectedModelVariant = variant
-            ModelSelectionStore.save(variant, defaults: self.modelSelectionDefaults)
+            ModelSelectionStore.save(
+                variant,
+                defaults: self.modelSelectionDefaults,
+                artifactIdentity: variant == .transformer ? self.installedTransformerIdentity : .classic
+            )
             self.refreshModelMetadataDisplay()
             if !variant.supportsLocalPersonalization {
                 if self.submissionDestination == .local {
@@ -632,11 +759,14 @@ public final class SiftAppModel {
             do {
                 try await remover.removeInstalledModel()
                 guard !Task.isCancelled else { return }
-                self.isTransformerModelDownloaded = TransformerClassifierLoader.isDownloadedModelAvailable()
-                self.isTransformerModelAvailable = TransformerClassifierLoader.isAvailable()
-                self.transformerDownloadPhase = self.isTransformerModelAvailable ? .ready : .notDownloaded
+                self.isTransformerModelDownloaded = false
+                self.isTransformerModelAvailable = false
+                self.transformerDownloadPhase = .notDownloaded
                 self.pendingTransformerDownloadPlan = nil
                 self.transformerDownloadProgress = nil
+                self.installedTransformerVersion = nil
+                self.installedTransformerTrainedAt = nil
+                self.installedTransformerIdentity = nil
                 self.isClearingTransformerModel = false
                 self.transformerCleanupTask = nil
                 self.showToast(.success, String(localized: "Transformer 模型已清理"))
@@ -732,6 +862,11 @@ public final class SiftAppModel {
 
     public func confirmMeteredTransformerDownload() {
         isShowingMeteredTransformerDownloadConfirmation = false
+        guard isTransformerDeviceSupported else {
+            cancelPendingTransformerDownload()
+            showTransformerUnsupportedMessage()
+            return
+        }
         guard let pendingTransformerDownloadPlan else {
             beginTransformerDownloadAndSwitch(allowMeteredNetwork: true)
             return
@@ -749,6 +884,10 @@ public final class SiftAppModel {
     }
 
     private func beginTransformerDownloadAndSwitch(allowMeteredNetwork: Bool) {
+        guard isTransformerDeviceSupported else {
+            showTransformerUnsupportedMessage()
+            return
+        }
         guard transformerDownloadTask == nil else {
             return
         }
@@ -783,6 +922,11 @@ public final class SiftAppModel {
     }
 
     private func downloadPreparedTransformerPlan(_ plan: TransformerModelDownloadPlan) {
+        guard isTransformerDeviceSupported else {
+            cancelPendingTransformerDownload()
+            showTransformerUnsupportedMessage()
+            return
+        }
         guard transformerDownloadTask == nil else {
             return
         }
@@ -841,6 +985,17 @@ public final class SiftAppModel {
                 transformerDownloadPhase = isTransformerModelAvailable ? .ready : .failed(String(localized: "高级模型安装失败"))
                 transformerDownloadTask = nil
                 if isTransformerModelAvailable {
+                    installedTransformerVersion = plan.manifest.version
+                    installedTransformerTrainedAt = plan.manifest.trainedAt
+                    installedTransformerIdentity = plan.manifest.artifactIdentity
+                    transformerUpdateState = .current
+                    if selectedModelVariant == .transformer {
+                        ModelSelectionStore.save(
+                            .transformer,
+                            defaults: modelSelectionDefaults,
+                            artifactIdentity: plan.manifest.artifactIdentity
+                        )
+                    }
                     switchToModelVariant(.transformer)
                 } else {
                     showToast(.error, String(localized: "高级模型安装失败"))
@@ -904,9 +1059,9 @@ public final class SiftAppModel {
                 modelVersion = manifest.version
             }
         case .transformer:
-            if let manifest = TransformerClassifierLoader.manifest() {
-                modelDate = Self.displayDate(for: manifest.trainedAt)
-                modelVersion = manifest.version
+            if let installedTransformerVersion, let installedTransformerTrainedAt {
+                modelDate = Self.displayDate(for: installedTransformerTrainedAt)
+                modelVersion = installedTransformerVersion
             }
         }
     }
@@ -1810,6 +1965,8 @@ public final class SiftAppModel {
 
     private static let remoteSamplePrivacyConsentKey = "Sift.hasAcceptedRemoteSamplePrivacy"
     private static let filterSetupConfirmationKey = "Sift.hasConfirmedFilterSetup"
+    private static let transformerUpdateLastCheckKey = "Sift.transformerUpdateLastCheck.v1"
+    private static let transformerUpdateCheckInterval: TimeInterval = 6 * 60 * 60
 
     private func persistRules() {
         SharedRuleStore.save(rules, defaults: ruleDefaults)

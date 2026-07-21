@@ -4,6 +4,128 @@ import MessageFilterCore
 import MessageFilterExtensionKit
 import Testing
 
+private final class CompletionValueRecorder: @unchecked Sendable {
+    private let lock = NSLock()
+    private var values: [Int] = []
+
+    func record(_ value: Int) {
+        lock.lock()
+        values.append(value)
+        lock.unlock()
+    }
+
+    func snapshot() -> [Int] {
+        lock.lock()
+        defer { lock.unlock() }
+        return values
+    }
+}
+
+@Test
+func completionOnceGateCompletesExactlyOnceUnderContention() async {
+    let recorder = CompletionValueRecorder()
+    let gate = CompletionOnceGate<Int> { recorder.record($0) }
+
+    let winnerCount = await withTaskGroup(of: Bool.self, returning: Int.self) { group in
+        for value in 0..<100 {
+            group.addTask {
+                gate.complete(value)
+            }
+        }
+        var count = 0
+        for await didComplete in group where didComplete {
+            count += 1
+        }
+        return count
+    }
+
+    #expect(winnerCount == 1)
+    #expect(recorder.snapshot().count == 1)
+}
+
+@Test
+func messageFilterDiagnosticsContainNoMessageContentFields() throws {
+    let event = MessageFilterDiagnosticEvent(
+        artifactIdentity: .classic,
+        latencyBucket: .under150Milliseconds,
+        fallbackReason: .none
+    )
+
+    let json = try #require(String(data: JSONEncoder().encode(event), encoding: .utf8))
+    #expect(!json.contains("sender"))
+    #expect(!json.contains("body"))
+}
+
+@Test
+func messageFilterSessionTrackerMarksOnlyTheFirstQueryCold() async {
+    let tracker = MessageFilterSessionTracker()
+    let coldCount = await withTaskGroup(of: Bool.self, returning: Int.self) { group in
+        for _ in 0..<100 {
+            group.addTask { tracker.beginQuery() }
+        }
+        var count = 0
+        for await isCold in group where isCold {
+            count += 1
+        }
+        return count
+    }
+
+    #expect(coldCount == 1)
+}
+
+@Test
+func messageFilterPerformanceEvidenceAggregatesWithoutMessageContent() throws {
+    let suiteName = "SiftTests.messageFilterEvidence.\(UUID().uuidString)"
+    let defaults = try #require(UserDefaults(suiteName: suiteName))
+    defer { defaults.removePersistentDomain(forName: suiteName) }
+    let store = MessageFilterPerformanceEvidenceStore(defaults: defaults)
+    let requested = ModelArtifactIdentity(
+        variant: .transformer,
+        modelABI: "sift-mmbert-v2",
+        releaseSequence: 9,
+        sha256: String(repeating: "a", count: 64)
+    )
+
+    store.record(MessageFilterDiagnosticEvent(
+        artifactIdentity: .classic,
+        latencyBucket: .under600Milliseconds,
+        fallbackReason: .transformerTimedOut,
+        requestedArtifactIdentity: requested,
+        isColdStart: true,
+        physicalFootprintBytes: 100
+    ))
+    store.record(MessageFilterDiagnosticEvent(
+        artifactIdentity: requested,
+        latencyBucket: .under150Milliseconds,
+        fallbackReason: .none,
+        errorCode: "handler_watchdog",
+        requestedArtifactIdentity: requested,
+        physicalFootprintBytes: 124
+    ))
+
+    let snapshot = store.snapshot()
+    let release = try #require(snapshot.releases.values.first)
+    #expect(snapshot.schemaVersion == 1)
+    #expect(snapshot.releases.count == 1)
+    #expect(release.requestedArtifactIdentity == requested)
+    #expect(release.coldRunCount == 1)
+    #expect(release.warmQueryCount == 1)
+    #expect(release.coldLatencyBuckets[MessageFilterLatencyBucket.under600Milliseconds.rawValue] == 1)
+    #expect(release.warmLatencyBuckets[MessageFilterLatencyBucket.under150Milliseconds.rawValue] == 1)
+    #expect(release.fallbackCounts[MessageFilterFallbackReason.transformerTimedOut.rawValue] == 1)
+    #expect(release.watchdogCount == 1)
+    #expect(release.firstPhysicalFootprintBytes == 100)
+    #expect(release.latestPhysicalFootprintBytes == 124)
+    #expect(release.peakPhysicalFootprintBytes == 124)
+    #expect(release.memoryDriftBytes == 24)
+
+    let json = try #require(String(data: JSONEncoder().encode(snapshot), encoding: .utf8))
+    #expect(!json.contains("sender"))
+    #expect(!json.contains("body"))
+    store.reset()
+    #expect(store.snapshot().releases.isEmpty)
+}
+
 // MARK: - Filter action mapping (核心过滤行为)
 
 private func decision(action: SystemAction, confidence: Double) -> ClassificationDecision {

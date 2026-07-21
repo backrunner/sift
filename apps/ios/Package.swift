@@ -12,7 +12,9 @@ let package = Package(
         .library(name: "MessageFilterCore", targets: ["MessageFilterCore"]),
         .library(name: "SiftAppKit", targets: ["SiftAppKit"]),
         .library(name: "MessageFilterExtensionKit", targets: ["MessageFilterExtensionKit"]),
-        .executable(name: "CoreSmokeTests", targets: ["CoreSmokeTests"])
+        .executable(name: "CoreSmokeTests", targets: ["CoreSmokeTests"]),
+        .executable(name: "ClassicMessageFilterArtifactTests", targets: ["ClassicMessageFilterArtifactTests"]),
+        .executable(name: "MessageFilterArtifactTests", targets: ["MessageFilterArtifactTests"])
     ],
     targets: [
         .target(name: "MessageFilterCore"),
@@ -22,6 +24,16 @@ let package = Package(
             name: "CoreSmokeTests",
             dependencies: ["MessageFilterCore"],
             path: "Tools/CoreSmokeTests"
+        ),
+        .executableTarget(
+            name: "ClassicMessageFilterArtifactTests",
+            dependencies: ["MessageFilterCore"],
+            path: "Tools/ClassicMessageFilterArtifactTests"
+        ),
+        .executableTarget(
+            name: "MessageFilterArtifactTests",
+            dependencies: ["MessageFilterCore"],
+            path: "Tools/MessageFilterArtifactTests"
         ),
         .testTarget(name: "MessageFilterCoreTests", dependencies: ["MessageFilterCore", "MessageFilterExtensionKit"]),
         .testTarget(name: "SiftAppKitTests", dependencies: ["SiftAppKit", "MessageFilterCore"])

@@ -7,6 +7,53 @@ import Testing
 import CryptoKit
 #endif
 
+private final class ClassicInvocationCountingClassifier: MessageClassifier, @unchecked Sendable {
+    private let lock = NSLock()
+    private var invocationCountStorage = 0
+    let decision: ClassificationDecision
+
+    init(decision: ClassificationDecision) {
+        self.decision = decision
+    }
+
+    var invocationCount: Int {
+        lock.withLock { invocationCountStorage }
+    }
+
+    func classify(sender: String?, body: String) -> ClassificationDecision {
+        lock.withLock { invocationCountStorage += 1 }
+        return decision
+    }
+}
+
+@Test
+func cascadingClassifierTreatsModelAbstentionAsTerminal() {
+    let primary = ClassicInvocationCountingClassifier(
+        decision: ModelOutputContract.abstentionDecision(confidence: 0.99)
+    )
+    let fallback = ClassicInvocationCountingClassifier(
+        decision: ClassificationDecision(
+            labelID: "promotion",
+            labelTitle: "Promotion",
+            groupID: "promotion",
+            groupTitle: "Promotion",
+            confidence: 1,
+            systemAction: .promotion,
+            source: .model
+        )
+    )
+
+    let classifier = CascadingClassifier(primary: primary, fallback: fallback)
+    let result = ClassificationPipeline(classifier: classifier)
+        .classify(sender: nil, body: "private conversation", rules: [])
+
+    #expect(result.labelID == ModelOutputContract.abstainLabel)
+    #expect(result.systemAction == .none)
+    #expect(result.source == .fallback)
+    #expect(primary.invocationCount == 1)
+    #expect(fallback.invocationCount == 0)
+}
+
 // MARK: - WordPieceTokenizer
 
 private func makeTokenizer(
@@ -271,6 +318,23 @@ func transformerVariantDisablesLocalPersonalization() {
     #expect(!ModelVariant.transformer.supportsLocalPersonalization)
 }
 
+@Test
+func transformerDeviceSupportUsesA12AsTheMinimumGate() {
+    #expect(!TransformerDeviceSupport.evaluate(hardwareIdentifier: "iPhone10,6").isSupported)
+    #expect(TransformerDeviceSupport.evaluate(hardwareIdentifier: "iPhone11,8").isSupported)
+    #expect(!TransformerDeviceSupport.evaluate(hardwareIdentifier: "iPad7,6").isSupported)
+    #expect(TransformerDeviceSupport.evaluate(hardwareIdentifier: "iPad8,1").isSupported)
+    #expect(!TransformerDeviceSupport.evaluate(hardwareIdentifier: "iPod9,1").isSupported)
+    #expect(!TransformerDeviceSupport.evaluate(hardwareIdentifier: "futureDevice1,1").isSupported)
+}
+
+@Test
+func transformerV3ReservesAnAbstainOutputWithoutChangingTaxonomy() {
+    #expect(TransformerManifestVerifier.supportedModelABIs.contains("sift-mmbert-v3"))
+    #expect(TransformerModelContract.isAbstainLabel("__sift_abstain__"))
+    #expect(SiftTaxonomy.leaf(id: TransformerModelContract.abstainLabel) == nil)
+}
+
 // MARK: - TransformerModelManifest
 
 @Test
@@ -414,6 +478,14 @@ func transformerModelStoreRejectsUnsafeArtifactPaths() {
     #expect(!TransformerModelStore.isSafeRelativePath("/tmp/model.mlpackage"))
 }
 
+@Test
+func transformerResumeDataPathRequiresCanonicalSHA256() {
+    #expect(TransformerModelStore.isSHA256(String(repeating: "a", count: 64)))
+    #expect(!TransformerModelStore.isSHA256(String(repeating: "A", count: 64)))
+    #expect(!TransformerModelStore.isSHA256("../resume"))
+    #expect(TransformerModelStore.downloadResumeDataURL(artifactSHA256: "../resume") == nil)
+}
+
 #if canImport(CryptoKit)
 @Test
 func transformerModelStoreStreamsLargeFileHashes() throws {
@@ -428,6 +500,125 @@ func transformerModelStoreStreamsLargeFileHashes() throws {
         .joined()
 
     #expect(try TransformerModelStore.fileSHA256(at: fileURL) == expected)
+}
+
+@Test
+func transformerChannelManifestRequiresValidEd25519Signature() throws {
+    let privateKey = Curve25519.Signing.PrivateKey()
+    let unsigned = TransformerChannelManifestV2(
+        releaseSequence: 9,
+        releaseID: "mmbert-boundary-v9",
+        releaseManifestURL: "https://example.com/models/releases/mmbert-boundary-v9/manifest.json",
+        releaseManifestSHA256: "manifest-sha",
+        modelABI: "sift-mmbert-v2",
+        minimumAppBuild: 7,
+        maximumAppBuild: 20,
+        minimumOSVersion: "18.0",
+        downloadBytes: 120_000_000,
+        keyID: "release-2026"
+    )
+    let signature = try privateKey.signature(for: unsigned.canonicalPayload()).base64EncodedString()
+    let signed = TransformerChannelManifestV2(
+        releaseSequence: unsigned.releaseSequence,
+        releaseID: unsigned.releaseID,
+        releaseManifestURL: unsigned.releaseManifestURL,
+        releaseManifestSHA256: unsigned.releaseManifestSHA256,
+        modelABI: unsigned.modelABI,
+        minimumAppBuild: unsigned.minimumAppBuild,
+        maximumAppBuild: unsigned.maximumAppBuild,
+        minimumOSVersion: unsigned.minimumOSVersion,
+        downloadBytes: unsigned.downloadBytes,
+        keyID: unsigned.keyID,
+        signature: signature
+    )
+    let verifier = TransformerManifestVerifier(publicKeys: [
+        unsigned.keyID: privateKey.publicKey.rawRepresentation.base64EncodedString()
+    ])
+
+    try verifier.verifySignature(of: signed)
+    #expect(throws: ManifestVerificationError.invalidSignature) {
+        let changed = TransformerChannelManifestV2(
+            releaseSequence: 10,
+            releaseID: signed.releaseID,
+            releaseManifestURL: signed.releaseManifestURL,
+            releaseManifestSHA256: signed.releaseManifestSHA256,
+            modelABI: signed.modelABI,
+            minimumAppBuild: signed.minimumAppBuild,
+            maximumAppBuild: signed.maximumAppBuild,
+            minimumOSVersion: signed.minimumOSVersion,
+            downloadBytes: signed.downloadBytes,
+            keyID: signed.keyID,
+            signature: signature
+        )
+        try verifier.verifySignature(of: changed)
+    }
+}
+
+@Test
+func pythonOpenSSLManifestV2SignaturesVerifyInSwift() throws {
+    let repositoryRoot = URL(fileURLWithPath: #filePath)
+        .deletingLastPathComponent()
+        .deletingLastPathComponent()
+        .deletingLastPathComponent()
+        .deletingLastPathComponent()
+        .deletingLastPathComponent()
+    let fixtureURL = repositoryRoot
+        .appendingPathComponent("tools/transformer-trainer/tests/fixtures/manifest_v2_ed25519.json")
+    let data = try Data(contentsOf: fixtureURL)
+    let fixture = try JSONDecoder().decode(ManifestV2InteropFixture.self, from: data)
+    let verifier = TransformerManifestVerifier(publicKeys: [
+        fixture.channel.keyID: fixture.publicKeyBase64
+    ])
+
+    try verifier.verifySignature(of: fixture.channel)
+    try verifier.verifySignature(of: fixture.release)
+}
+
+private struct ManifestV2InteropFixture: Decodable {
+    let publicKeyBase64: String
+    let channel: TransformerChannelManifestV2
+    let release: TransformerReleaseManifestV2
+}
+
+@Test
+func transformerChannelCompatibilityChecksBuildOSABIAndRollback() {
+    let verifier = TransformerManifestVerifier(publicKeys: [:])
+    let channel = TransformerChannelManifestV2(
+        releaseSequence: 9,
+        releaseID: "mmbert-boundary-v9",
+        releaseManifestURL: "https://example.com/manifest.json",
+        releaseManifestSHA256: "sha",
+        modelABI: "sift-mmbert-v2",
+        minimumAppBuild: 7,
+        maximumAppBuild: 20,
+        minimumOSVersion: "18.1",
+        keyID: "key"
+    )
+
+    #expect(verifier.compatibility(
+        of: channel,
+        appBuild: 7,
+        operatingSystemVersion: OperatingSystemVersion(majorVersion: 18, minorVersion: 1, patchVersion: 0),
+        currentReleaseSequence: 8
+    ) == .compatible)
+    #expect(verifier.compatibility(
+        of: channel,
+        appBuild: 6,
+        operatingSystemVersion: OperatingSystemVersion(majorVersion: 18, minorVersion: 1, patchVersion: 0),
+        currentReleaseSequence: 8
+    ) == .appBuildTooOld)
+    #expect(verifier.compatibility(
+        of: channel,
+        appBuild: 7,
+        operatingSystemVersion: OperatingSystemVersion(majorVersion: 18, minorVersion: 0, patchVersion: 0),
+        currentReleaseSequence: 8
+    ) == .operatingSystemTooOld)
+    #expect(verifier.compatibility(
+        of: channel,
+        appBuild: 7,
+        operatingSystemVersion: OperatingSystemVersion(majorVersion: 18, minorVersion: 1, patchVersion: 0),
+        currentReleaseSequence: 10
+    ) == .releaseRollback)
 }
 #endif
 #endif
