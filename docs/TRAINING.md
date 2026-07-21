@@ -232,7 +232,7 @@ file, supporting `{src}`, `{path}`, `{content_type}`, and `{cache_control}`:
 pnpm upload:transformer-model -- \
   --model-dir build/pipeline/transformer-model \
   --base-url https://sift.alkinum.io/models \
-  --upload-command 'rclone copyto {src} r2:sift-public/models/{path}' \
+  --upload-command 'rclone copyto {src} r2:sift-models/models/{path}' \
   --verify-http
 ```
 

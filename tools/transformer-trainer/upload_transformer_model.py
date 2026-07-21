@@ -43,7 +43,7 @@ Examples:
     --signing-key ~/.config/sift/model-release-ed25519.pem \
     --signing-key-id release-2026 \
     --base-url https://sift.alkinum.io/models \
-    --upload-command 'rclone copyto {src} r2:sift-public/models/{path}'
+    --upload-command 'rclone copyto {src} r2:sift-models/models/{path}'
 """
 
 from __future__ import annotations

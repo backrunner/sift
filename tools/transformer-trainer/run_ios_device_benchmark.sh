@@ -79,7 +79,7 @@ xcrun devicectl device install app \
 xcrun devicectl device copy to \
   --device "$device" \
   --source "$candidate" \
-  --destination "Sift/TransformerModels/.DeviceBenchmarkCandidate" \
+  --destination "Library/Sift/TransformerModels/.DeviceBenchmarkCandidate" \
   --domain-type appGroupDataContainer \
   --domain-identifier group.com.alkinum.sift \
   --remove-existing-content true \
@@ -100,7 +100,7 @@ xcodebuild \
 rm -rf "$output/DeviceEvidence"
 xcrun devicectl device copy from \
   --device "$device" \
-  --source "Sift/TransformerModels/DeviceEvidence" \
+  --source "Library/Sift/TransformerModels/DeviceEvidence" \
   --destination "$output" \
   --domain-type appGroupDataContainer \
   --domain-identifier group.com.alkinum.sift \

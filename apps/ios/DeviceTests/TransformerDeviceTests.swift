@@ -70,8 +70,7 @@ final class TransformerDeviceTests: XCTestCase {
 
     private func prepareInstalledModel() throws -> InstalledTransformerModel {
         let fileManager = FileManager.default
-        let baseDirectory = TransformerModelStore.baseDirectory(fileManager: fileManager)
-        let transferRoot = baseDirectory.appendingPathComponent(Self.candidateDirectoryName, isDirectory: true)
+        let transferRoot = try Self.deviceTransferDirectory(fileManager: fileManager)
 
         if fileManager.fileExists(atPath: transferRoot.path) {
             let sourceDirectory = try Self.resolveCandidateDirectory(
@@ -146,10 +145,27 @@ final class TransformerDeviceTests: XCTestCase {
     }
 
     private static func evidenceDirectory() throws -> URL {
-        let directory = TransformerModelStore.baseDirectory()
+        let directory = try deviceTransferRoot()
             .appendingPathComponent(evidenceDirectoryName, isDirectory: true)
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         return directory
+    }
+
+    private static func deviceTransferDirectory(fileManager: FileManager) throws -> URL {
+        try deviceTransferRoot(fileManager: fileManager)
+            .appendingPathComponent(candidateDirectoryName, isDirectory: true)
+    }
+
+    private static func deviceTransferRoot(fileManager: FileManager = .default) throws -> URL {
+        guard let container = fileManager.containerURL(
+            forSecurityApplicationGroupIdentifier: ModelSelectionStore.appGroupIdentifier
+        ) else {
+            throw DeviceBenchmarkError.missingAppGroupContainer
+        }
+        return container
+            .appendingPathComponent("Library", isDirectory: true)
+            .appendingPathComponent("Sift", isDirectory: true)
+            .appendingPathComponent(TransformerModelStore.directoryName, isDirectory: true)
     }
 
     private static func writeJSON<T: Encodable>(_ value: T, to url: URL) throws {
@@ -174,6 +190,7 @@ final class TransformerDeviceTests: XCTestCase {
 private enum DeviceBenchmarkError: Error {
     case invalidCandidate
     case missingInstalledModel
+    case missingAppGroupContainer
 }
 
 private extension JSONEncoder {
