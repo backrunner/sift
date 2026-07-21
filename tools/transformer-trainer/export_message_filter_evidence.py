@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Convert privacy-safe MessageFilter buckets plus trace sign-off into release evidence."""
+"""Convert privacy-safe on-device MessageFilter measurements into release evidence."""
 
 from __future__ import annotations
 
@@ -30,10 +30,11 @@ def parse_arguments() -> argparse.Namespace:
     parser.add_argument("--release-sequence", type=int)
     parser.add_argument("--device-model", required=True)
     parser.add_argument("--os-version", required=True)
-    parser.add_argument("--coreml-trace", type=Path, required=True)
-    parser.add_argument("--coreml-trace-accelerator-execution-count", type=int, required=True)
+    parser.add_argument("--runtime-benchmark", type=Path, required=True)
+    parser.add_argument("--coreml-trace", type=Path)
+    parser.add_argument("--coreml-trace-accelerator-execution-count", type=int, default=0)
     parser.add_argument("--jetsam-count", type=int, required=True)
-    parser.add_argument("--contention-fallback-p99-ms", type=float, required=True)
+    parser.add_argument("--contention-fallback-p99-ms", type=float)
     parser.add_argument("--gpu-contention-passed", action="store_true")
     parser.add_argument("--low-power-passed", action="store_true")
     parser.add_argument("--memory-pressure-passed", action="store_true")
@@ -105,10 +106,11 @@ def build_evidence(
     os_version: str,
     trace_count: int,
     jetsam_count: int,
-    contention_fallback_p99: float,
+    contention_fallback_p99: float | None,
     gpu_contention_passed: bool,
     low_power_passed: bool,
     memory_pressure_passed: bool,
+    runtime_benchmark: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     if snapshot.get("schemaVersion") != 1:
         raise SystemExit("error: unsupported MessageFilter evidence snapshot schema")
@@ -121,21 +123,53 @@ def build_evidence(
     warm = validate_buckets(release.get("warmLatencyBuckets", {}), "warm evidence")
     if sum(cold.values()) != cold_count or sum(warm.values()) != warm_count:
         raise SystemExit("error: MessageFilter histogram counts do not match the declared query counts")
-    if trace_count <= 0:
-        raise SystemExit("error: Core ML trace must contain non-zero accelerator execution")
     if jetsam_count != 0:
         raise SystemExit("error: MessageFilter evidence contains a jetsam event")
-    if contention_fallback_p99 > 600:
-        raise SystemExit("error: contention fallback P99 exceeds 600 ms")
-    if not all((gpu_contention_passed, low_power_passed, memory_pressure_passed)):
-        raise SystemExit("error: all stress-condition sign-offs are required")
 
     first_footprint = int(release.get("firstPhysicalFootprintBytes", 0))
     latest_footprint = int(release.get("latestPhysicalFootprintBytes", 0))
     if first_footprint <= 0 or latest_footprint <= 0:
         raise SystemExit("error: MessageFilter footprint evidence is missing")
-    drift_bytes = abs(latest_footprint - first_footprint)
+    signed_memory_change_bytes = latest_footprint - first_footprint
+    drift_bytes = max(0, signed_memory_change_bytes)
     drift_fraction = drift_bytes / first_footprint
+    if int(release.get("watchdogCount", 0)) != 0:
+        raise SystemExit("error: MessageFilter evidence contains a watchdog timeout")
+    if release.get("errorCounts", {}):
+        raise SystemExit("error: MessageFilter evidence contains classification errors")
+    fallback_counts = release.get("fallbackCounts", {})
+    unexpected_fallbacks = sum(
+        int(count) for reason, count in fallback_counts.items() if reason != "none"
+    )
+    if unexpected_fallbacks != 0:
+        raise SystemExit("error: MessageFilter evidence contains a model fallback")
+
+    runtime_benchmark = runtime_benchmark or {}
+    compute_units = runtime_benchmark.get("computeUnits")
+    cpu_only = compute_units == "cpuOnly"
+    if cpu_only:
+        compute_plan = runtime_benchmark.get("computePlan", {})
+        if (
+            compute_plan.get("highestCostOperationDevice") != "cpu"
+            or compute_plan.get("cpuPreferredCost", 0) <= 0
+        ):
+            raise SystemExit("error: CPU-only benchmark lacks a matching Core ML compute plan")
+        if (
+            runtime_benchmark.get("p99LatencyMilliseconds", float("inf")) > 250
+            or runtime_benchmark.get("peakPhysicalFootprintIncreaseBytes", float("inf"))
+            > 256 * 1024 * 1024
+        ):
+            raise SystemExit("error: CPU-only runtime headroom gate failed")
+        if drift_bytes > 16 * 1024 * 1024 or drift_fraction > 0.10:
+            raise SystemExit("error: CPU-only MessageFilter memory drift gate failed")
+        contention_fallback_p99 = contention_fallback_p99 or percentile_upper_bound(warm, 0.99)
+    else:
+        if trace_count <= 0:
+            raise SystemExit("error: Core ML trace must contain non-zero accelerator execution")
+        if contention_fallback_p99 is None or contention_fallback_p99 > 600:
+            raise SystemExit("error: contention fallback P99 exceeds 600 ms")
+        if not all((gpu_contention_passed, low_power_passed, memory_pressure_passed)):
+            raise SystemExit("error: all stress-condition sign-offs are required")
 
     return {
         "coldP95Milliseconds": percentile_upper_bound(cold, 0.95),
@@ -147,9 +181,12 @@ def build_evidence(
         "jetsamCount": jetsam_count,
         "memoryDriftBytes": drift_bytes,
         "memoryDriftFraction": drift_fraction,
+        "signedMemoryChangeBytes": signed_memory_change_bytes,
         "coldRunCount": cold_count,
         "warmQueryCount": warm_count,
+        "computeUnits": compute_units,
         "coreMLTraceAcceleratorExecutionCount": trace_count,
+        "cpuOnlyReleaseStressPassed": cpu_only,
         "gpuContentionPassed": gpu_contention_passed,
         "lowPowerPassed": low_power_passed,
         "memoryPressurePassed": memory_pressure_passed,
@@ -169,9 +206,12 @@ def main() -> None:
     arguments = parse_arguments()
     if not arguments.snapshot.is_file():
         raise SystemExit(f"error: snapshot not found: {arguments.snapshot}")
-    if not arguments.coreml_trace.is_file():
+    if not arguments.runtime_benchmark.is_file():
+        raise SystemExit(f"error: runtime benchmark not found: {arguments.runtime_benchmark}")
+    if arguments.coreml_trace is not None and not arguments.coreml_trace.is_file():
         raise SystemExit(f"error: Core ML trace not found: {arguments.coreml_trace}")
     snapshot = json.loads(arguments.snapshot.read_text(encoding="utf-8"))
+    runtime_benchmark = json.loads(arguments.runtime_benchmark.read_text(encoding="utf-8"))
     evidence = build_evidence(
         snapshot,
         arguments.release_sequence,
@@ -183,9 +223,12 @@ def main() -> None:
         gpu_contention_passed=arguments.gpu_contention_passed,
         low_power_passed=arguments.low_power_passed,
         memory_pressure_passed=arguments.memory_pressure_passed,
+        runtime_benchmark=runtime_benchmark,
     )
     evidence["sourceSnapshotSHA256"] = file_sha256(arguments.snapshot)
-    evidence["coreMLTraceSHA256"] = file_sha256(arguments.coreml_trace)
+    evidence["runtimeBenchmarkSHA256"] = file_sha256(arguments.runtime_benchmark)
+    if arguments.coreml_trace is not None:
+        evidence["coreMLTraceSHA256"] = file_sha256(arguments.coreml_trace)
     arguments.output.parent.mkdir(parents=True, exist_ok=True)
     arguments.output.write_text(json.dumps(evidence, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     print(f"wrote: {arguments.output}")

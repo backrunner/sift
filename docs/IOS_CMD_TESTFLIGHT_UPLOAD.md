@@ -149,8 +149,8 @@ account credentials.
 4. Fails before export unless both the app and message-filter extension declare
    `UIDeviceFamily = [1]`. Sift is distributed as an iPhone-only app, so App
    Store Connect must not require native iPad screenshots.
-5. Fails before export if the app archive contains any
-   `SiftTransformerClassifier*` artifact. Premium Transformer files must be
+5. Fails before export if the app archive contains any `SiftSignalModel*` or
+   legacy `SiftTransformerClassifier*` artifact. Premium model files must be
    downloaded on demand after entitlement unlock and user selection.
 6. Exports and uploads with:
 

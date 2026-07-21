@@ -80,7 +80,7 @@ func messageFilterRulesBypassTransformerLoading() async {
     )
     let identity = ModelArtifactIdentity(
         variant: .transformer,
-        modelABI: "sift-mmbert-v2",
+        modelABI: "sift-signal-v1",
         releaseSequence: 1,
         sha256: "release-1"
     )
@@ -110,7 +110,7 @@ func allowRuleCannotBeOverriddenByCategoryMapping() async {
     )
     let identity = ModelArtifactIdentity(
         variant: .transformer,
-        modelABI: "sift-mmbert-v2",
+        modelABI: "sift-signal-v1",
         releaseSequence: 1,
         sha256: "release-1"
     )
@@ -146,13 +146,13 @@ func messageFilterReloadsWhenTransformerArtifactIdentityChanges() async {
     )
     let first = ModelArtifactIdentity(
         variant: .transformer,
-        modelABI: "sift-mmbert-v2",
+        modelABI: "sift-signal-v1",
         releaseSequence: 1,
         sha256: "release-1"
     )
     let second = ModelArtifactIdentity(
         variant: .transformer,
-        modelABI: "sift-mmbert-v2",
+        modelABI: "sift-signal-v1",
         releaseSequence: 2,
         sha256: "release-2"
     )
@@ -182,7 +182,7 @@ func messageFilterFallsBackToClassicWhenTransformerExceedsBudget() async {
     )
     let identity = ModelArtifactIdentity(
         variant: .transformer,
-        modelABI: "sift-mmbert-v2",
+        modelABI: "sift-signal-v1",
         releaseSequence: 1,
         sha256: "release-1"
     )
@@ -214,7 +214,7 @@ func unsupportedDeviceNeverLoadsTransformerInMessageFilter() async {
     )
     let identity = ModelArtifactIdentity(
         variant: .transformer,
-        modelABI: "sift-mmbert-v2",
+        modelABI: "sift-signal-v1",
         releaseSequence: 1,
         sha256: "release-1"
     )
@@ -239,7 +239,7 @@ func concurrentColdQueriesCoalesceOneTransformerLoad() async {
     )
     let identity = ModelArtifactIdentity(
         variant: .transformer,
-        modelABI: "sift-mmbert-v2",
+        modelABI: "sift-signal-v1",
         releaseSequence: 1,
         sha256: "release-1"
     )
@@ -266,7 +266,7 @@ func filterConfigurationSnapshotIsOneAtomicDefaultsValue() throws {
     defer { defaults.removePersistentDomain(forName: suiteName) }
     let identity = ModelArtifactIdentity(
         variant: .transformer,
-        modelABI: "sift-mmbert-v2",
+        modelABI: "sift-signal-v1",
         releaseSequence: 9,
         sha256: "sha"
     )

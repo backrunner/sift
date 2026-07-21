@@ -93,7 +93,7 @@
       </div>
       <div>
         <dt>按需下载</dt>
-        <dd>购买或恢复后，再下载 Transformer 多语言模型，不把模型大文件塞进基础安装包。</dd>
+        <dd>购买或恢复后，再下载 Sift Signal 多语言模型，不把模型大文件塞进基础安装包。</dd>
       </div>
     </dl>
   </section>

@@ -19,7 +19,7 @@ We grant you a personal, non-exclusive, non-transferable, revocable license to u
 
 ## 3. Premium (in-app purchase)
 
-- **Premium** is a one-time, non-consumable in-app purchase that permanently unlocks the Transformer multilingual model for the Apple ID used for the purchase.
+- **Premium** is a one-time, non-consumable in-app purchase that permanently unlocks the Sift Signal multilingual model for the Apple ID used for the purchase.
 - Prices are set and displayed by the App Store for your storefront and may change, including temporary discounts or free promotions. The price shown at checkout is the price you pay.
 - Purchases can be restored on any device signed into the same Apple ID through Settings → Restore Purchases.
 - Billing, receipts, and **refunds are handled exclusively by Apple** under App Store policies; we cannot issue refunds directly.

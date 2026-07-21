@@ -16,7 +16,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from model_contract import ABSTAIN_LABEL, MODEL_ABI_V3, model_labels
+from model_contract import ABSTAIN_LABEL, MODEL_ABI_V1, model_labels
 
 
 def parse_arguments() -> argparse.Namespace:
@@ -31,9 +31,9 @@ def parse_arguments() -> argparse.Namespace:
     parser.add_argument("--taxonomy", type=Path, required=True)
     parser.add_argument("--profiles", type=Path, default=Path(__file__).with_name("quantization-profiles.json"))
     parser.add_argument("--out", type=Path, required=True)
-    parser.add_argument("--model-name", default="SiftTransformerClassifier")
+    parser.add_argument("--model-name", default="SiftSignalModel")
     parser.add_argument("--version", required=True)
-    parser.add_argument("--model-abi", default=MODEL_ABI_V3)
+    parser.add_argument("--model-abi", default=MODEL_ABI_V1)
     parser.add_argument("--release-sequence", type=int, required=True)
     parser.add_argument("--minimum-app-build", type=int, required=True)
     parser.add_argument("--maximum-app-build", type=int, required=True)
@@ -96,6 +96,10 @@ def utc_timestamp() -> str:
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
 
 
+def tokenizer_artifact_name(model_name: str) -> str:
+    return f"{model_name}.tokenizer.siftbpe"
+
+
 def run_message_filter_artifact_suite(
     candidate_dir: Path,
     model_path: Path,
@@ -128,6 +132,10 @@ def run_message_filter_artifact_suite(
         text=True,
     )
     if result.returncode != 0:
+        if output.is_file():
+            report = json.loads(output.read_text(encoding="utf-8"))
+            report["suiteFailure"] = result.stderr.strip() or f"exit {result.returncode}"
+            return report
         raise SystemExit(f"error: MessageFilter artifact suite failed:\n{result.stderr.strip()}")
     return json.loads(output.read_text(encoding="utf-8"))
 
@@ -564,6 +572,7 @@ def main() -> None:
     all_calibration_rows = read_ndjson(arguments.calibration_input)
     calibration_source_sha256 = file_sha256(arguments.calibration_input)
     tokenizer_sha256 = file_sha256(arguments.tokenizer_artifact)
+    published_tokenizer_name = tokenizer_artifact_name(arguments.model_name)
     fixed_rows = read_ndjson(arguments.fixed_holdout)
     promotion_rows = read_ndjson(arguments.promotion_holdout)
     conversation_rows = read_ndjson(arguments.conversation_holdout)
@@ -622,7 +631,7 @@ def main() -> None:
         }
         candidate_dir = arguments.out / "candidates" / profile["id"]
         model_path = candidate_dir / f"{arguments.model_name}.mlpackage"
-        tokenizer_path = candidate_dir / arguments.tokenizer_artifact.name
+        tokenizer_path = candidate_dir / published_tokenizer_name
         can_reuse = arguments.reuse_existing_candidates and reusable_candidate(
             candidate_dir, model_path, tokenizer_path, expected_build_identity
         )
@@ -730,7 +739,8 @@ def main() -> None:
                 "deviceMetrics": {
                     "accelerationVerified": False,
                     "peakPhysicalFootprintBytes": 0,
-                    "a12P95LatencyMilliseconds": 0,
+                    "peakPhysicalFootprintIncreaseBytes": 0,
+                    "p95LatencyMilliseconds": 0,
                 },
             }
             (reports_dir / f"{profile['id']}.report.json").write_text(
@@ -763,7 +773,7 @@ def main() -> None:
             for predicted, baseline in zip(conversation["predictions"], baseline_predictions.get("conversation", conversation["predictions"]))
         )
         model_path = candidate_dir / f"{arguments.model_name}.mlpackage"
-        tokenizer_path = candidate_dir / arguments.tokenizer_artifact.name
+        tokenizer_path = candidate_dir / published_tokenizer_name
         artifact_sha = directory_sha256(model_path)
         manifest = {
             "schemaVersion": 2,
@@ -772,7 +782,11 @@ def main() -> None:
             "minimumAppBuild": arguments.minimum_app_build,
             "maximumAppBuild": arguments.maximum_app_build,
             "minimumOSVersion": "18.0",
-            "runtimeProfile": {"computeUnits": "all", "modelType": "mlProgram", "transformerBudgetMilliseconds": 500},
+            "runtimeProfile": {
+                "computeUnits": "cpuOnly",
+                "modelType": "mlProgram",
+                "inferenceBudgetMilliseconds": 500,
+            },
             "quantizationProfile": profile_manifest,
             "validationMetrics": {
                 "fixedAccuracy": fixed["accuracy"],
@@ -832,7 +846,8 @@ def main() -> None:
             "deviceMetrics": {
                 "accelerationVerified": False,
                 "peakPhysicalFootprintBytes": 0,
-                "a12P95LatencyMilliseconds": 0,
+                "peakPhysicalFootprintIncreaseBytes": 0,
+                "p95LatencyMilliseconds": 0,
             },
         }
         (reports_dir / f"{profile['id']}.report.json").write_text(

@@ -44,17 +44,23 @@ private struct MockPremiumBackend: PremiumPurchasing {
 private actor TransformerDownloadRecorder {
     private(set) var prepareCallCount = 0
     private(set) var downloadCallCount = 0
+    private(set) var downloadModes: [TransformerModelDownloadMode] = []
 
     func recordPrepare() {
         prepareCallCount += 1
     }
 
-    func recordDownload() {
+    func recordDownload(mode: TransformerModelDownloadMode) {
         downloadCallCount += 1
+        downloadModes.append(mode)
     }
 
     func counts() -> (prepare: Int, download: Int) {
         (prepareCallCount, downloadCallCount)
+    }
+
+    func modes() -> [TransformerModelDownloadMode] {
+        downloadModes
     }
 }
 
@@ -80,10 +86,48 @@ private struct MockTransformerDownloader: TransformerModelDownloading {
         progress: @Sendable @escaping (TransformerModelDownloadProgress) -> Void,
         phase: @Sendable @escaping (TransformerModelDownloadWorkPhase) -> Void
     ) async throws {
-        await recorder.recordDownload()
+        await recorder.recordDownload(mode: plan.mode)
         phase(.downloading)
         progress(TransformerModelDownloadProgress(receivedBytes: plan.displayByteCount ?? 1, totalBytes: plan.displayByteCount))
         phase(.installing)
+    }
+}
+
+private actor SuspendedTransformerDownloadGate {
+    private var callCount = 0
+    private var continuations: [Int: CheckedContinuation<Void, Never>] = [:]
+
+    func suspend() async {
+        callCount += 1
+        let call = callCount
+        await withCheckedContinuation { continuation in
+            continuations[call] = continuation
+        }
+    }
+
+    func release(_ call: Int) {
+        continuations.removeValue(forKey: call)?.resume()
+    }
+
+    func count() -> Int {
+        callCount
+    }
+}
+
+private struct SuspendedTransformerDownloader: TransformerModelDownloading {
+    let plan: TransformerModelDownloadPlan
+    let gate: SuspendedTransformerDownloadGate
+
+    func prepareDownload() async throws -> TransformerModelDownloadPlan {
+        plan
+    }
+
+    func download(
+        _ plan: TransformerModelDownloadPlan,
+        progress: @Sendable @escaping (TransformerModelDownloadProgress) -> Void,
+        phase: @Sendable @escaping (TransformerModelDownloadWorkPhase) -> Void
+    ) async throws {
+        await gate.suspend()
     }
 }
 
@@ -92,6 +136,24 @@ private struct MockTransformerUpdateChecker: TransformerModelUpdateChecking {
 
     func checkForUpdate(currentIdentity: ModelArtifactIdentity?) async -> TransformerUpdateState {
         state
+    }
+}
+
+private actor NetworkConditionRecorder {
+    private(set) var callCount = 0
+
+    func record() {
+        callCount += 1
+    }
+}
+
+private struct MockNetworkConditionChecker: TransformerNetworkConditionChecking {
+    let condition: TransformerNetworkCondition
+    let recorder: NetworkConditionRecorder
+
+    func currentCondition() async -> TransformerNetworkCondition {
+        await recorder.record()
+        return condition
     }
 }
 
@@ -176,7 +238,7 @@ private func mockTransformerDownloadPlan(
     let manifest = TransformerModelManifest(
         schemaVersion: 2,
         releaseSequence: 1,
-        modelABI: "sift-mmbert-v2",
+        modelABI: "sift-signal-v1",
         minimumAppBuild: 1,
         maximumAppBuild: 100,
         minimumOSVersion: "18.0",
@@ -203,19 +265,19 @@ private func mockTransformerDownloadPlan(
         maxSequenceLength: 8,
         doLowerCase: false,
         tokenizerKind: "bpe",
-        tokenizerArtifact: "SiftTransformerClassifier.tokenizer.siftbpe",
-        modelArtifact: "SiftTransformerClassifier.mlpackage",
+        tokenizerArtifact: "SiftSignalModel.tokenizer.siftbpe",
+        modelArtifact: "SiftSignalModel.mlpackage",
         sha256: String(repeating: "b", count: 64),
         taxonomyHash: "taxonomy-sha256",
         tokenizerSHA256: String(repeating: "d", count: 64),
         remoteArtifacts: [
             TransformerRemoteArtifact(
-                path: "SiftTransformerClassifier.tokenizer.siftbpe",
+                path: "SiftSignalModel.tokenizer.siftbpe",
                 sha256: String(repeating: "d", count: 64),
                 byteCount: 1024
             ),
             TransformerRemoteArtifact(
-                path: "SiftTransformerClassifier.mlpackage/model.mlmodel",
+                path: "SiftSignalModel.mlpackage/model.mlmodel",
                 sha256: String(repeating: "e", count: 64),
                 byteCount: 2048
             )
@@ -224,17 +286,17 @@ private func mockTransformerDownloadPlan(
     )
     return TransformerModelDownloadPlan(
         manifest: manifest,
-        manifestURL: URL(string: "https://example.com/SiftTransformerClassifier.manifest.json")!,
+        manifestURL: URL(string: "https://example.com/SiftSignalModel.manifest.json")!,
         artifacts: [
             TransformerModelDownloadArtifact(
-                remoteURL: URL(string: "https://example.com/SiftTransformerClassifier.tokenizer.siftbpe")!,
-                relativePath: "SiftTransformerClassifier.tokenizer.siftbpe",
+                remoteURL: URL(string: "https://example.com/SiftSignalModel.tokenizer.siftbpe")!,
+                relativePath: "SiftSignalModel.tokenizer.siftbpe",
                 sha256: String(repeating: "d", count: 64),
                 byteCount: 1024
             ),
             TransformerModelDownloadArtifact(
-                remoteURL: URL(string: "https://example.com/SiftTransformerClassifier.mlpackage/model.mlmodel")!,
-                relativePath: "SiftTransformerClassifier.mlpackage/model.mlmodel",
+                remoteURL: URL(string: "https://example.com/SiftSignalModel.mlpackage/model.mlmodel")!,
+                relativePath: "SiftSignalModel.mlpackage/model.mlmodel",
                 sha256: String(repeating: "e", count: 64),
                 byteCount: 2048
             )
@@ -285,7 +347,7 @@ func unsupportedDeviceBlocksTransformerBeforePurchaseOrDownload() async throws {
 
     #expect(!model.isShowingPaywall)
     #expect(model.selectedModelVariant == .classic)
-    #expect(model.toastCenter.toast?.message == String(localized: "此设备不支持 Transformer 高级模型"))
+    #expect(model.toastCenter.toast?.message == String(localized: "此设备不支持 Sift Signal 高级模型"))
     let counts = await recorder.counts()
     #expect(counts.prepare == 0)
     #expect(counts.download == 0)
@@ -322,10 +384,10 @@ func transformerUpdateCheckIsMetadataOnlyAndSurfacesCompatibleRelease() async th
     defer { defaults.removePersistentDomain(forName: suiteName) }
     let channel = TransformerChannelManifestV2(
         releaseSequence: 2,
-        releaseID: "mmbert-boundary-v9",
+        releaseID: "signal-v1",
         releaseManifestURL: "https://example.com/release.json",
         releaseManifestSHA256: "release-sha",
-        modelABI: "sift-mmbert-v2",
+        modelABI: "sift-signal-v1",
         minimumAppBuild: 1,
         maximumAppBuild: 100,
         minimumOSVersion: "18.0",
@@ -350,8 +412,232 @@ func transformerUpdateCheckIsMetadataOnlyAndSurfacesCompatibleRelease() async th
     }
 
     #expect(model.hasCompatibleTransformerUpdate)
-    #expect(model.transformerUpdateReleaseID == "mmbert-boundary-v9")
+    #expect(model.transformerUpdateReleaseID == "signal-v1")
     #expect(model.transformerUpdateDownloadSizeText != nil)
+}
+
+@MainActor
+@Test
+func automaticTransformerUpdateDoesNotDownloadWithoutWiFi() async throws {
+    let suiteName = "SiftTests.modelUpdate.noWiFi.\(UUID().uuidString)"
+    let defaults = try #require(UserDefaults(suiteName: suiteName))
+    defer { defaults.removePersistentDomain(forName: suiteName) }
+    ModelSelectionStore.save(.transformer, defaults: defaults)
+
+    let downloadRecorder = TransformerDownloadRecorder()
+    let networkRecorder = NetworkConditionRecorder()
+    let channel = TransformerChannelManifestV2(
+        releaseSequence: 2,
+        releaseID: "signal-v2",
+        releaseManifestURL: "https://example.com/release.json",
+        releaseManifestSHA256: String(repeating: "a", count: 64),
+        modelABI: "sift-signal-v1",
+        minimumAppBuild: 1,
+        maximumAppBuild: 100,
+        minimumOSVersion: "18.0",
+        downloadBytes: 100_000_000,
+        keyID: "test"
+    )
+    let model = SiftAppModel(
+        premiumBackend: MockPremiumBackend(entitled: true, outcome: .cancelled),
+        transformerAvailabilityOverride: true,
+        transformerDownloadedOverride: true,
+        transformerDownloader: MockTransformerDownloader(
+            plan: mockTransformerDownloadPlan(),
+            recorder: downloadRecorder
+        ),
+        transformerUpdateChecker: MockTransformerUpdateChecker(state: .updateAvailable(channel)),
+        transformerNetworkConditionChecker: MockNetworkConditionChecker(
+            condition: TransformerNetworkCondition(
+                isConnected: true,
+                usesWiFi: false,
+                isExpensive: true
+            ),
+            recorder: networkRecorder
+        ),
+        modelClassifierLoader: MockSiftModelClassifierLoader(),
+        modelSelectionDefaults: defaults,
+        appDefaults: defaults
+    )
+
+    try await waitForPremiumRefresh(model)
+    model.applicationDidBecomeActive()
+    try await waitForNetworkConditionCheck(networkRecorder, count: 1)
+
+    let counts = await downloadRecorder.counts()
+    #expect(counts.prepare == 0)
+    #expect(counts.download == 0)
+    #expect(model.selectedModelVariant == .transformer)
+    #expect(model.transformerDownloadPhase == .ready)
+}
+
+@MainActor
+@Test
+func automaticTransformerUpdateUsesSilentBackgroundDownloadOnWiFi() async throws {
+    let suiteName = "SiftTests.modelUpdate.wifi.\(UUID().uuidString)"
+    let defaults = try #require(UserDefaults(suiteName: suiteName))
+    defer { defaults.removePersistentDomain(forName: suiteName) }
+    ModelSelectionStore.save(.transformer, defaults: defaults)
+
+    let downloadRecorder = TransformerDownloadRecorder()
+    let networkRecorder = NetworkConditionRecorder()
+    let channel = TransformerChannelManifestV2(
+        releaseSequence: 2,
+        releaseID: "signal-v2",
+        releaseManifestURL: "https://example.com/release.json",
+        releaseManifestSHA256: String(repeating: "a", count: 64),
+        modelABI: "sift-signal-v1",
+        minimumAppBuild: 1,
+        maximumAppBuild: 100,
+        minimumOSVersion: "18.0",
+        downloadBytes: 100_000_000,
+        keyID: "test"
+    )
+    let plan = mockTransformerDownloadPlan(
+        networkCondition: TransformerNetworkCondition(isConnected: true, usesWiFi: true)
+    )
+    let model = SiftAppModel(
+        premiumBackend: MockPremiumBackend(entitled: true, outcome: .cancelled),
+        transformerAvailabilityOverride: true,
+        transformerDownloadedOverride: true,
+        transformerDownloader: MockTransformerDownloader(plan: plan, recorder: downloadRecorder),
+        transformerUpdateChecker: MockTransformerUpdateChecker(state: .updateAvailable(channel)),
+        transformerNetworkConditionChecker: MockNetworkConditionChecker(
+            condition: TransformerNetworkCondition(isConnected: true, usesWiFi: true),
+            recorder: networkRecorder
+        ),
+        modelClassifierLoader: MockSiftModelClassifierLoader(),
+        modelSelectionDefaults: defaults,
+        appDefaults: defaults
+    )
+
+    try await waitForPremiumRefresh(model)
+    model.applicationDidBecomeActive()
+    try await waitForTransformerDownloadCall(downloadRecorder, count: 1)
+
+    #expect(await downloadRecorder.modes() == [.automatic])
+    #expect(model.selectedModelVariant == .transformer)
+    #expect(model.isShowingMeteredTransformerDownloadConfirmation == false)
+    #expect(model.transformerDownloadProgress == nil)
+}
+
+@MainActor
+@Test
+func pendingBackgroundDownloadReconnectBypassesRecentUpdateCheck() async throws {
+    let suiteName = "SiftTests.modelUpdate.backgroundReconnect.\(UUID().uuidString)"
+    let defaults = try #require(UserDefaults(suiteName: suiteName))
+    defer { defaults.removePersistentDomain(forName: suiteName) }
+    defaults.set(Date(), forKey: "Sift.transformerUpdateLastCheck.v1")
+
+    let downloadRecorder = TransformerDownloadRecorder()
+    let plan = mockTransformerDownloadPlan(
+        networkCondition: TransformerNetworkCondition(isConnected: true, usesWiFi: true)
+    )
+    let channel = TransformerChannelManifestV2(
+        releaseSequence: 2,
+        releaseID: "signal-v2",
+        releaseManifestURL: "https://example.com/release.json",
+        releaseManifestSHA256: String(repeating: "a", count: 64),
+        modelABI: "sift-signal-v1",
+        minimumAppBuild: 1,
+        maximumAppBuild: 100,
+        minimumOSVersion: "18.0",
+        downloadBytes: 100_000_000,
+        keyID: "test"
+    )
+    let model = SiftAppModel(
+        premiumBackend: MockPremiumBackend(entitled: true, outcome: .cancelled),
+        transformerAvailabilityOverride: true,
+        transformerDownloadedOverride: true,
+        transformerDownloader: MockTransformerDownloader(plan: plan, recorder: downloadRecorder),
+        transformerUpdateChecker: MockTransformerUpdateChecker(state: .updateAvailable(channel)),
+        transformerNetworkConditionChecker: MockNetworkConditionChecker(
+            condition: TransformerNetworkCondition(isConnected: true, usesWiFi: true),
+            recorder: NetworkConditionRecorder()
+        ),
+        modelClassifierLoader: MockSiftModelClassifierLoader(),
+        modelSelectionDefaults: defaults,
+        appDefaults: defaults
+    )
+
+    try await waitForPremiumRefresh(model)
+    model.resumeTransformerBackgroundDownload()
+    model.selectModelVariant(.transformer)
+    try await waitForTransformerDownloadCall(downloadRecorder, count: 1)
+
+    #expect(await downloadRecorder.modes() == [.automatic])
+    #expect(model.selectedModelVariant == .transformer)
+}
+
+@MainActor
+@Test
+func cancelledAutomaticTransformerUpdateCannotClearItsReplacement() async throws {
+    let suiteName = "SiftTests.modelUpdate.replacement.\(UUID().uuidString)"
+    let defaults = try #require(UserDefaults(suiteName: suiteName))
+    defer { defaults.removePersistentDomain(forName: suiteName) }
+    ModelSelectionStore.save(.transformer, defaults: defaults)
+
+    let gate = SuspendedTransformerDownloadGate()
+    let channel = TransformerChannelManifestV2(
+        releaseSequence: 1,
+        releaseID: "signal-v1",
+        releaseManifestURL: "https://example.com/release.json",
+        releaseManifestSHA256: String(repeating: "a", count: 64),
+        modelABI: "sift-signal-v1",
+        minimumAppBuild: 1,
+        maximumAppBuild: 100,
+        minimumOSVersion: "18.0",
+        downloadBytes: 100_000_000,
+        keyID: "test"
+    )
+    let model = SiftAppModel(
+        premiumBackend: MockPremiumBackend(entitled: true, outcome: .cancelled),
+        transformerAvailabilityOverride: true,
+        transformerDownloadedOverride: true,
+        transformerDownloader: SuspendedTransformerDownloader(
+            plan: mockTransformerDownloadPlan(
+                networkCondition: TransformerNetworkCondition(isConnected: true, usesWiFi: true)
+            ),
+            gate: gate
+        ),
+        transformerUpdateChecker: MockTransformerUpdateChecker(state: .updateAvailable(channel)),
+        transformerNetworkConditionChecker: MockNetworkConditionChecker(
+            condition: TransformerNetworkCondition(isConnected: true, usesWiFi: true),
+            recorder: NetworkConditionRecorder()
+        ),
+        modelClassifierLoader: MockSiftModelClassifierLoader(),
+        modelSelectionDefaults: defaults,
+        appDefaults: defaults
+    )
+
+    try await waitFor {
+        model.premium.isEntitlementResolved
+            && !model.isSwitchingModelVariant
+            && model.selectedModelVariant == .transformer
+    }
+    model.applicationDidBecomeActive()
+    try await waitForSuspendedTransformerDownload(gate, count: 1)
+
+    model.selectModelVariant(.classic)
+    try await waitFor {
+        !model.isSwitchingModelVariant && model.selectedModelVariant == .classic
+    }
+    defaults.removeObject(forKey: "Sift.transformerUpdateLastCheck.v1")
+    model.selectModelVariant(.transformer)
+    try await waitFor {
+        !model.isSwitchingModelVariant && model.selectedModelVariant == .transformer
+    }
+    try await waitForSuspendedTransformerDownload(gate, count: 2)
+
+    await gate.release(1)
+    try await Task.sleep(for: .milliseconds(50))
+    defaults.removeObject(forKey: "Sift.transformerUpdateLastCheck.v1")
+    model.applicationDidBecomeActive()
+    try await Task.sleep(for: .milliseconds(50))
+
+    #expect(await gate.count() == 2)
+    #expect(model.selectedModelVariant == .transformer)
+    await gate.release(2)
 }
 
 @MainActor
@@ -421,6 +707,20 @@ func transformerModelLoadingReturnsControlToMainActorImmediately() async throws 
 func transformerDownloadAcceptsCurrentCompactManifest() throws {
     let manifest = mockTransformerDownloadPlan().manifest
     try TransformerModelDownloadClient.validateManifestForDownload(manifest)
+}
+
+@Test
+func transformerReleaseSequenceRestartsOnlyAcrossModelABIMigration() {
+    #expect(TransformerModelDownloadClient.effectiveCurrentReleaseSequence(
+        currentModelABI: "sift-mmbert-v3",
+        currentReleaseSequence: 11,
+        channelABI: "sift-signal-v1"
+    ) == 0)
+    #expect(TransformerModelDownloadClient.effectiveCurrentReleaseSequence(
+        currentModelABI: "sift-signal-v1",
+        currentReleaseSequence: 2,
+        channelABI: "sift-signal-v1"
+    ) == 2)
 }
 
 @Test
@@ -674,6 +974,19 @@ private func waitForTransformerDownloadCall(
     Issue.record("Timed out waiting for transformer download call")
 }
 
+private func waitForSuspendedTransformerDownload(
+    _ gate: SuspendedTransformerDownloadGate,
+    count: Int
+) async throws {
+    for _ in 0..<100 {
+        if await gate.count() >= count {
+            return
+        }
+        try await Task.sleep(nanoseconds: 10_000_000)
+    }
+    Issue.record("Timed out waiting for suspended transformer download")
+}
+
 private func waitForTransformerRemovalCall(
     _ recorder: TransformerRemovalRecorder,
     count: Int
@@ -685,6 +998,19 @@ private func waitForTransformerRemovalCall(
         try await Task.sleep(nanoseconds: 10_000_000)
     }
     Issue.record("Timed out waiting for transformer removal call")
+}
+
+private func waitForNetworkConditionCheck(
+    _ recorder: NetworkConditionRecorder,
+    count: Int
+) async throws {
+    for _ in 0..<100 {
+        if await recorder.callCount >= count {
+            return
+        }
+        try await Task.sleep(nanoseconds: 10_000_000)
+    }
+    Issue.record("Timed out waiting for network condition check")
 }
 
 // MARK: - Submission history paging

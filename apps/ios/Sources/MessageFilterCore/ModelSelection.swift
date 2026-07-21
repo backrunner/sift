@@ -18,7 +18,7 @@ public enum ModelVariant: String, CaseIterable, Codable, Sendable, Identifiable 
         case .classic:
             return String(localized: "经典模型")
         case .transformer:
-            return "Transformer"
+            return String(localized: "Sift Signal")
         }
     }
 

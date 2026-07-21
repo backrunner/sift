@@ -279,7 +279,7 @@ struct PremiumPaywallView: View {
     @ViewBuilder
     private var purchaseButton: some View {
         if !model.isTransformerDeviceSupported {
-            Label(String(localized: "此设备不支持 Transformer 高级模型"), systemImage: "exclamationmark.triangle.fill")
+            Label(String(localized: "此设备不支持 Sift Signal 高级模型"), systemImage: "exclamationmark.triangle.fill")
                 .font(.callout.weight(.semibold))
                 .foregroundStyle(Color.siftAmber)
                 .frame(maxWidth: .infinity)
@@ -427,7 +427,7 @@ struct SettingsView: View {
             Text(String(localized: "将从云端删除你匿名提交的全部样本，此操作不可撤销，不影响本地功能。"))
         }
         .alert(
-            String(localized: "清理 Transformer 存储？"),
+            String(localized: "清理 Sift Signal 存储？"),
             isPresented: $isConfirmingTransformerCleanup
         ) {
             Button(String(localized: "清理存储"), role: .destructive) {
@@ -490,11 +490,11 @@ struct SettingsView: View {
 
     private var premiumSettingsSubtitle: String {
         guard model.isTransformerDeviceSupported else {
-            return String(localized: "高级模型需要 A12 或更新芯片")
+            return String(localized: "此设备不支持 Sift Signal 高级模型")
         }
         return model.premium.isUnlocked
-            ? String(localized: "Transformer 多语言模型永久可用")
-            : String(localized: "解锁 Transformer 多语言模型")
+            ? String(localized: "Sift Signal 多语言模型永久可用")
+            : String(localized: "解锁 Sift Signal 多语言模型")
     }
 
     private var premiumSettingsIcon: String {
@@ -516,7 +516,7 @@ struct SettingsView: View {
             SectionHeader(title: String(localized: "存储管理"), icon: "internaldrive.fill")
 
             SettingsRowContent(
-                title: String(localized: "Transformer 模型"),
+                title: String(localized: "Sift Signal 模型"),
                 subtitle: transformerStorageSubtitle,
                 icon: "brain.filled.head.profile"
             ) {
@@ -579,9 +579,9 @@ struct SettingsView: View {
 
     private var transformerCleanupConfirmationMessage: String {
         if model.selectedModelVariant == .transformer {
-            return String(localized: "清理后会切换回经典模型，并删除已下载的 Transformer 模型文件。再次使用时需要重新下载。")
+            return String(localized: "清理后会切换回经典模型，并删除已下载的 Sift Signal 模型文件。再次使用时需要重新下载。")
         }
-        return String(localized: "将删除已下载的 Transformer 模型文件。再次使用时需要重新下载。")
+        return String(localized: "将删除已下载的 Sift Signal 模型文件。再次使用时需要重新下载。")
     }
 
     private var dataSection: some View {

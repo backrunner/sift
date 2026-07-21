@@ -15,6 +15,8 @@ private struct Arguments {
     let installsDynamicRelease: Bool
     let runsReadableCases: Bool
     let inspectsComputePlan: Bool
+    let benchmarkOnly: Bool
+    let benchmarkComputeUnits: String?
 
     init(_ raw: [String]) throws {
         var values: [String: String] = [:]
@@ -25,7 +27,7 @@ private struct Arguments {
             guard argument.hasPrefix("--") else {
                 throw ArtifactSuiteError.invalidArguments
             }
-            if ["--install-dynamic", "--readable-cases", "--inspect-compute-plan"].contains(argument) {
+            if ["--install-dynamic", "--readable-cases", "--inspect-compute-plan", "--benchmark-only"].contains(argument) {
                 flags.insert(argument)
                 index += 1
             } else {
@@ -58,6 +60,15 @@ private struct Arguments {
         self.installsDynamicRelease = flags.contains("--install-dynamic")
         self.runsReadableCases = flags.contains("--readable-cases")
         self.inspectsComputePlan = flags.contains("--inspect-compute-plan")
+        self.benchmarkOnly = flags.contains("--benchmark-only")
+        let benchmarkComputeUnits = values["--benchmark-compute-units"]
+        guard
+            benchmarkComputeUnits == nil
+                || TransformerRuntimeProfile.supportedComputeUnits.contains(benchmarkComputeUnits!)
+        else {
+            throw ArtifactSuiteError.invalidArguments
+        }
+        self.benchmarkComputeUnits = benchmarkComputeUnits
     }
 }
 
@@ -628,6 +639,31 @@ private func run() async throws {
     let manifest = try JSONDecoder().decode(TransformerModelManifest.self, from: manifestData)
     guard !manifest.labels.isEmpty else {
         throw ArtifactSuiteError.invalidManifest
+    }
+    if arguments.benchmarkOnly {
+        guard let output = arguments.runtimeBenchmarkOutput else {
+            throw ArtifactSuiteError.invalidArguments
+        }
+        guard arguments.model.pathExtension == "mlmodelc" else {
+            throw ArtifactSuiteError.invalidArguments
+        }
+        let tokenizer = try BPETokenizer(
+            tokenizerURL: arguments.tokenizer,
+            configuration: .init(maxSequenceLength: manifest.maxSequenceLength)
+        )
+        let benchmark = try await TransformerRuntimeBenchmark.run(
+            modelURL: arguments.model,
+            tokenizer: tokenizer,
+            labels: manifest.labels,
+            requests: readableCases().map { MessageFilterRequest(sender: $0.sender, body: $0.body) },
+            artifactIdentity: manifest.artifactIdentity,
+            computeUnits: arguments.benchmarkComputeUnits ?? manifest.runtimeProfile.computeUnits,
+            baselinePhysicalFootprintBytes: TransformerRuntimeBenchmark.currentPhysicalFootprintBytes(),
+            warmupIterations: 20,
+            measuredIterations: 1_000
+        )
+        try JSONEncoder.pretty.encode(benchmark).write(to: output, options: .atomic)
+        return
     }
     let runtime = try await makeRuntimeContext(
         arguments: arguments,

@@ -1,30 +1,30 @@
 {
-  "publicKeyBase64": "SHZ5XfohTbBbH00q/5/0Fn6aNr5AaGF9Rj161zrvqGo=",
+  "publicKeyBase64": "ZMv68SQXhm7CQqi+EfHtUtFBjOKbmO2QEfevmyAOKSE=",
   "channel": {
     "schemaVersion": 2,
     "releaseSequence": 42,
-    "releaseID": "mmbert-interop-v42",
-    "releaseManifestURL": "https://sift.example/models/releases/mmbert-interop-v42/manifest.json",
+    "releaseID": "signal-interop-v42",
+    "releaseManifestURL": "https://sift.example/models/releases/signal-interop-v42/manifest.json",
     "releaseManifestSHA256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-    "modelABI": "sift-mmbert-v2",
+    "modelABI": "sift-signal-v1",
     "minimumAppBuild": 7,
     "maximumAppBuild": 99,
     "minimumOSVersion": "18.0",
     "downloadBytes": 30,
     "keyID": "interop-test-2026",
-    "signature": "a3Yur/WMzzwzikgce497hawmAACCV4j94DcdA5DFcSr6+LvmtzJ7FWC9NEzCGlRqsMWgyXYNp1HvOGCqxdZUBA=="
+    "signature": "c42B/8iFJIXbr7X2DFQZ99uYLt+0dLoMJhMmwjro5laZPVSCb57TXDUPeOt2EcCNjT77/9EkXF1boc2o7boSAw=="
   },
   "release": {
     "schemaVersion": 2,
     "releaseSequence": 42,
-    "modelABI": "sift-mmbert-v2",
+    "modelABI": "sift-signal-v1",
     "minimumAppBuild": 7,
     "maximumAppBuild": 99,
     "minimumOSVersion": "18.0",
     "runtimeProfile": {
       "computeUnits": "all",
       "modelType": "mlProgram",
-      "transformerBudgetMilliseconds": 500
+      "inferenceBudgetMilliseconds": 500
     },
     "quantizationProfile": {
       "identifier": "w4a16-block16-qat",
@@ -44,25 +44,25 @@
         "ja": 0.985
       }
     },
-    "version": "mmbert-interop-v42",
+    "version": "signal-interop-v42",
     "trainedAt": "2026-07-18T00:00:00.000Z",
     "algorithm": "supervised-sequence-classification",
-    "backbone": "测试/mmBERT-small",
+    "backbone": "private-checkpoint",
     "languages": ["zh", "en", "ja"],
     "labels": ["verification", "promotion", "spam"],
     "maxSequenceLength": 96,
     "doLowerCase": false,
     "tokenizerKind": "bpe",
     "tokenizerArtifact": "tokenizer.siftbpe",
-    "modelArtifact": "SiftTransformerClassifier.mlpackage",
+    "modelArtifact": "SiftSignalModel.mlpackage",
     "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
     "taxonomyHash": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
     "tokenizerSHA256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
     "keyID": "interop-test-2026",
-    "remoteBaseURL": "https://sift.example/models/releases/mmbert-interop-v42",
+    "remoteBaseURL": "https://sift.example/models/releases/signal-interop-v42",
     "remoteArtifacts": [
       {
-        "path": "SiftTransformerClassifier.mlpackage/Data/model.mlmodel",
+        "path": "SiftSignalModel.mlpackage/Data/model.mlmodel",
         "sha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
         "byteCount": 10
       },
@@ -73,6 +73,6 @@
       }
     ],
     "downloadBytes": 30,
-    "signature": "fLLKbhDl1Zyr93F3l8ULiPhIhphn7JjnrCOlX3xgx0X0Nq/atcUKFu7zG6uNHMiCB6ElqW/y770zXLSk186OCA=="
+    "signature": "zKabIQvXyUg7NYp5eEB+f3e/iuC3i7+a/0Y3eFXIijgr2Txm6GsRKBzEE1teJsD6zZHn3vqQIpw0E+SO/LQKCQ=="
   }
 }

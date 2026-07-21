@@ -43,18 +43,18 @@
 	<string>iCloud.com.alkinum.sift</string>
 	<key>SiftPremiumProductIdentifier</key>
 	<string>com.alkinum.sift.premium</string>
-	<key>SiftTransformerModelEstimatedBytes</key>
-	<integer>105678501</integer>
-	<key>SiftTransformerModelChannelURL</key>
-	<string>$(SIFT_TRANSFORMER_MODEL_CHANNEL_URL)</string>
-	<key>SiftTransformerModelPublicKeys</key>
+	<key>SiftSignalModelEstimatedBytes</key>
+	<integer>159107309</integer>
+	<key>SiftSignalModelChannelURL</key>
+	<string>$(SIFT_SIGNAL_MODEL_CHANNEL_URL)</string>
+	<key>SiftSignalModelPublicKeys</key>
 	<dict>
 		<!-- Release builds inject the Ed25519 key through the signing configuration. -->
 	</dict>
-	<key>SiftTransformerModelPublicKeyID</key>
-	<string>$(SIFT_TRANSFORMER_MODEL_PUBLIC_KEY_ID)</string>
-	<key>SiftTransformerModelPublicKey</key>
-	<string>$(SIFT_TRANSFORMER_MODEL_PUBLIC_KEY)</string>
+	<key>SiftSignalModelPublicKeyID</key>
+	<string>$(SIFT_SIGNAL_MODEL_PUBLIC_KEY_ID)</string>
+	<key>SiftSignalModelPublicKey</key>
+	<string>$(SIFT_SIGNAL_MODEL_PUBLIC_KEY)</string>
 	<key>SiftPrivacyPolicyURL</key>
 	<string>https://sift.alkinum.io/privacy</string>
 	<key>SiftTermsOfServiceURL</key>

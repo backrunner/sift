@@ -7,9 +7,9 @@ ModernBERT multilingual encoder with a Gemma-style metaspace BPE tokenizer.
 
 Artifacts:
 
-  SiftTransformerClassifier.mlpackage       Core ML classifier
-  SiftTransformerClassifier.tokenizer.siftbpe  memory-mapped BPE tokenizer
-  SiftTransformerClassifier.manifest.json   iOS loader metadata
+  SiftSignalModel.mlpackage                 Core ML classifier
+  SiftSignalModel.tokenizer.siftbpe         memory-mapped BPE tokenizer
+  SiftSignalModel.manifest.json             iOS loader metadata
 
 The Core ML model takes `input_ids` / `attention_mask` int32 tensors of shape
 `[1, max_length]` and emits a Core ML classifier label plus probabilities.
@@ -33,7 +33,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from compact_tokenizer import write_compact_bpe_tokenizer
-from model_contract import MODEL_ABI_V3, model_labels
+from model_contract import MODEL_ABI_V1, model_labels
 
 os.environ.setdefault("PYTORCH_ENABLE_MPS_FALLBACK", "1")
 
@@ -87,8 +87,8 @@ def parse_arguments() -> Arguments:
     parser.add_argument("--input", type=Path, required=True, help="text/label NDJSON corpus")
     parser.add_argument("--out", type=Path, default=None, help="output directory (default build/transformer-model)")
     parser.add_argument("--backbone", default=DEFAULT_BACKBONE, help="mmBERT/ModernBERT sequence-classification backbone")
-    parser.add_argument("--model-name", default="SiftTransformerClassifier")
-    parser.add_argument("--version", default="mmbert-0.1")
+    parser.add_argument("--model-name", default="SiftSignalModel")
+    parser.add_argument("--version", default="signal-v1")
     parser.add_argument(
         "--languages",
         default="zh,en,es,pt,fr,de,ru,ja,ko,id,vi,th",
@@ -112,7 +112,7 @@ def parse_arguments() -> Arguments:
     parser.add_argument("--quantize", choices=["fp16", "int8"], default="int8")
     parser.add_argument("--quantization-profile", default=None, help="v2 profile id recorded in the release manifest")
     parser.add_argument("--release-sequence", type=int, default=0)
-    parser.add_argument("--model-abi", default=MODEL_ABI_V3)
+    parser.add_argument("--model-abi", default=MODEL_ABI_V1)
     parser.add_argument("--minimum-app-build", type=int, default=1)
     parser.add_argument("--maximum-app-build", type=int, default=2_147_483_647)
     parser.add_argument("--device", choices=["auto", "cpu", "cuda", "mps"], default="auto")
@@ -791,9 +791,9 @@ def main() -> None:
         "maximumAppBuild": arguments.maximum_app_build,
         "minimumOSVersion": "18.0",
         "runtimeProfile": {
-            "computeUnits": "all",
+            "computeUnits": "cpuOnly",
             "modelType": "mlProgram",
-            "transformerBudgetMilliseconds": 500,
+            "inferenceBudgetMilliseconds": 500,
         },
         "quantizationProfile": {
             "identifier": arguments.quantization_profile,

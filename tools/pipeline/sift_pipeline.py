@@ -110,8 +110,8 @@ def parse_arguments() -> argparse.Namespace:
         help="Create ML classic algorithm; maxent is the current validated default",
     )
     training.add_argument("--split-seed-classic", type=int, default=42, help="classic model holdout split seed")
-    training.add_argument("--version-transformer", default="mmbert-0.1")
-    training.add_argument("--model-abi", default="sift-mmbert-v3")
+    training.add_argument("--version-transformer", default="signal-v1")
+    training.add_argument("--model-abi", default="sift-signal-v1")
     training.add_argument("--backbone", default="jhu-clsp/mmBERT-small", help="transformer backbone")
     training.add_argument("--device", choices=["auto", "cpu", "cuda", "mps"], default="auto")
     training.add_argument("--quantize", choices=["fp16", "int8"], default="int8")
@@ -127,7 +127,18 @@ def parse_arguments() -> argparse.Namespace:
         metavar="PROFILE_ID=MLPACKAGE",
         help="QAT FP16 export for a W4 fallback profile; repeat for multiple profiles",
     )
-    training.add_argument("--truncate-layers", type=int, default=0)
+    training.add_argument(
+        "--truncate-layers",
+        type=int,
+        default=0,
+        help="encoder layers kept for experiments; 0 preserves the full model",
+    )
+    training.add_argument(
+        "--max-sequence-length",
+        type=int,
+        default=96,
+        help="fixed token length exported to Core ML",
+    )
     training.add_argument("--resume-from", type=Path, default=None, help="mmBERT checkpoint dir (e.g. build/pipeline/transformer-model/checkpoint)")
     training.add_argument("--learning-rate", type=float, default=None, help="supervised fine-tuning LR; finetune defaults to 1e-5")
     training.add_argument("--num-epochs", type=int, default=3)
@@ -372,6 +383,7 @@ def stage_train_transformer(arguments: argparse.Namespace, finetune: bool = Fals
         "--num-epochs", str(arguments.num_epochs),
         "--batch-size", str(arguments.batch_size),
         "--warmup-ratio", str(arguments.warmup_ratio),
+        "--max-length", str(arguments.max_sequence_length),
         "--test-input", str(PROMOTION_TEST_SET),
     ]
     if arguments.truncate_layers > 0:
@@ -386,13 +398,13 @@ def stage_train_transformer(arguments: argparse.Namespace, finetune: bool = Fals
 
 def stage_quantize_transformer(arguments: argparse.Namespace) -> None:
     require_tool("uv", "Install uv (https://docs.astral.sh/uv).")
-    if not TRAIN_SET.exists() or not (TRANSFORMER_OUT / "SiftTransformerClassifier.mlpackage").exists():
+    if not TRAIN_SET.exists() or not (TRANSFORMER_OUT / "SiftSignalModel.mlpackage").exists():
         raise SystemExit("error: run train-transformer before quantize-transformer")
     command = [
         "uv", "run", "quantize_candidates.py",
-        "--fp16-model", str(TRANSFORMER_OUT / "SiftTransformerClassifier.mlpackage"),
+        "--fp16-model", str(TRANSFORMER_OUT / "SiftSignalModel.mlpackage"),
         "--checkpoint", str(TRANSFORMER_OUT / "checkpoint"),
-        "--tokenizer-artifact", str(TRANSFORMER_OUT / "SiftTransformerClassifier.tokenizer.siftbpe"),
+        "--tokenizer-artifact", str(TRANSFORMER_OUT / "SiftSignalModel.tokenizer.siftbpe"),
         "--calibration-input", str(TRAIN_SET),
         "--fixed-holdout", str(CLASSIFICATION_TEST_SET),
         "--promotion-holdout", str(PROMOTION_TEST_SET),
@@ -406,6 +418,7 @@ def stage_quantize_transformer(arguments: argparse.Namespace) -> None:
         "--minimum-app-build", str(arguments.minimum_app_build),
         "--maximum-app-build", str(arguments.maximum_app_build),
         "--calibration-limit", str(arguments.calibration_limit),
+        "--max-length", str(arguments.max_sequence_length),
     ]
     for qat_model in arguments.qat_model:
         command.extend(["--qat-model", qat_model])

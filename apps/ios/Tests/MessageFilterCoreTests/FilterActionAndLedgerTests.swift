@@ -81,7 +81,7 @@ func messageFilterPerformanceEvidenceAggregatesWithoutMessageContent() throws {
     let store = MessageFilterPerformanceEvidenceStore(defaults: defaults)
     let requested = ModelArtifactIdentity(
         variant: .transformer,
-        modelABI: "sift-mmbert-v2",
+        modelABI: "sift-signal-v1",
         releaseSequence: 9,
         sha256: String(repeating: "a", count: 64)
     )

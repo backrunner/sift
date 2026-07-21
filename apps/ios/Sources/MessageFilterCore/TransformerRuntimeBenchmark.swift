@@ -14,9 +14,12 @@ public struct TransformerComputePlanReport: Codable, Hashable, Sendable {
 }
 
 public enum TransformerComputePlanInspector {
-    public static func inspect(modelURL: URL) async throws -> TransformerComputePlanReport {
+    public static func inspect(
+        modelURL: URL,
+        computeUnits: String = "all"
+    ) async throws -> TransformerComputePlanReport {
         let configuration = MLModelConfiguration()
-        configuration.computeUnits = .all
+        configuration.computeUnits = try resolvedComputeUnits(computeUnits)
         let plan = try await MLComputePlan.load(contentsOf: modelURL, configuration: configuration)
         guard case let .program(program) = plan.modelStructure else {
             return TransformerComputePlanReport(
@@ -84,12 +87,23 @@ public enum TransformerComputePlanInspector {
         @unknown default: return "unknown"
         }
     }
+
+    private static func resolvedComputeUnits(_ identifier: String) throws -> MLComputeUnits {
+        switch identifier {
+        case "all": return .all
+        case "cpuOnly": return .cpuOnly
+        case "cpuAndGPU": return .cpuAndGPU
+        case "cpuAndNeuralEngine": return .cpuAndNeuralEngine
+        default: throw CocoaError(.featureUnsupported)
+        }
+    }
 }
 
 public struct TransformerRuntimeBenchmarkReport: Codable, Hashable, Sendable {
     public let artifactIdentity: ModelArtifactIdentity?
     public let deviceModel: String
     public let osVersion: String
+    public let computeUnits: String
     public let warmupIterations: Int
     public let measuredIterations: Int
     public let coldLoadMilliseconds: Double
@@ -97,9 +111,19 @@ public struct TransformerRuntimeBenchmarkReport: Codable, Hashable, Sendable {
     public let p95LatencyMilliseconds: Double
     public let p99LatencyMilliseconds: Double
     public let baselinePhysicalFootprintBytes: UInt64
+    public let postLoadPhysicalFootprintBytes: UInt64
     public let postWarmupPhysicalFootprintBytes: UInt64
+    public let firstExecutionPeakPhysicalFootprintBytes: UInt64
+    public let averagePhysicalFootprintBytes: UInt64
+    public let steadyStatePeakPhysicalFootprintBytes: UInt64
     public let peakPhysicalFootprintBytes: UInt64
     public let finalPhysicalFootprintBytes: UInt64
+    public let postLoadPhysicalFootprintIncreaseBytes: UInt64
+    public let firstExecutionPeakPhysicalFootprintIncreaseBytes: UInt64
+    public let averagePhysicalFootprintIncreaseBytes: UInt64
+    public let steadyStatePeakPhysicalFootprintIncreaseBytes: UInt64
+    public let peakPhysicalFootprintIncreaseBytes: UInt64
+    public let finalPhysicalFootprintIncreaseBytes: UInt64
     public let physicalFootprintDriftBytes: Int64
     public let postComputePlanPhysicalFootprintBytes: UInt64
     public let computePlan: TransformerComputePlanReport
@@ -112,6 +136,8 @@ public enum TransformerRuntimeBenchmark {
         labels: [String],
         requests: [MessageFilterRequest],
         artifactIdentity: ModelArtifactIdentity? = nil,
+        computeUnits: String = "all",
+        baselinePhysicalFootprintBytes: UInt64? = nil,
         warmupIterations: Int = 10,
         measuredIterations: Int = 100
     ) async throws -> TransformerRuntimeBenchmarkReport {
@@ -119,26 +145,35 @@ public enum TransformerRuntimeBenchmark {
         precondition(warmupIterations >= 0 && measuredIterations > 0)
 
         let clock = ContinuousClock()
-        let baselineFootprint = currentPhysicalFootprintBytes()
+        let baselineFootprint = baselinePhysicalFootprintBytes ?? currentPhysicalFootprintBytes()
         let loadStart = clock.now
         let classifier = try TransformerTextClassifier(
             modelURL: modelURL,
             tokenizer: tokenizer,
-            labels: labels
+            labels: labels,
+            computeUnits: computeUnits
         )
         let coldLoadMilliseconds = milliseconds(loadStart.duration(to: clock.now))
+        let postLoadFootprint = currentPhysicalFootprintBytes()
+        var firstExecutionPeakFootprint = postLoadFootprint
 
         for index in 0..<warmupIterations {
             let request = requests[index % requests.count]
             autoreleasepool {
                 _ = classifier.classify(sender: request.sender, body: request.body)
             }
+            firstExecutionPeakFootprint = max(
+                firstExecutionPeakFootprint,
+                currentPhysicalFootprintBytes()
+            )
         }
 
         let postWarmupFootprint = currentPhysicalFootprintBytes()
+        firstExecutionPeakFootprint = max(firstExecutionPeakFootprint, postWarmupFootprint)
         var durations: [Double] = []
         durations.reserveCapacity(measuredIterations)
-        var peakFootprint = postWarmupFootprint
+        var steadyStatePeakFootprint = postWarmupFootprint
+        var footprintSampleTotal: UInt64 = 0
         for index in 0..<measuredIterations {
             let request = requests[index % requests.count]
             let start = clock.now
@@ -146,21 +181,29 @@ public enum TransformerRuntimeBenchmark {
                 _ = classifier.classify(sender: request.sender, body: request.body)
             }
             durations.append(milliseconds(start.duration(to: clock.now)))
-            peakFootprint = max(peakFootprint, currentPhysicalFootprintBytes())
+            let footprint = currentPhysicalFootprintBytes()
+            footprintSampleTotal += footprint
+            steadyStatePeakFootprint = max(steadyStatePeakFootprint, footprint)
         }
         durations.sort()
         let finalInferenceFootprint = currentPhysicalFootprintBytes()
-        peakFootprint = max(peakFootprint, finalInferenceFootprint)
+        steadyStatePeakFootprint = max(steadyStatePeakFootprint, finalInferenceFootprint)
+        let peakFootprint = max(firstExecutionPeakFootprint, steadyStatePeakFootprint)
+        let averageFootprint = footprintSampleTotal / UInt64(measuredIterations)
 
         // MLComputePlan inspection is release evidence, not part of the extension's
         // inference path. Keep its allocations out of inference peak and drift.
-        let computePlan = try await TransformerComputePlanInspector.inspect(modelURL: modelURL)
+        let computePlan = try await TransformerComputePlanInspector.inspect(
+            modelURL: modelURL,
+            computeUnits: computeUnits
+        )
         let postComputePlanFootprint = currentPhysicalFootprintBytes()
 
         return TransformerRuntimeBenchmarkReport(
             artifactIdentity: artifactIdentity,
             deviceModel: hardwareIdentifier(),
             osVersion: ProcessInfo.processInfo.operatingSystemVersionString,
+            computeUnits: computeUnits,
             warmupIterations: warmupIterations,
             measuredIterations: measuredIterations,
             coldLoadMilliseconds: coldLoadMilliseconds,
@@ -168,9 +211,25 @@ public enum TransformerRuntimeBenchmark {
             p95LatencyMilliseconds: percentile(0.95, values: durations),
             p99LatencyMilliseconds: percentile(0.99, values: durations),
             baselinePhysicalFootprintBytes: baselineFootprint,
+            postLoadPhysicalFootprintBytes: postLoadFootprint,
             postWarmupPhysicalFootprintBytes: postWarmupFootprint,
+            firstExecutionPeakPhysicalFootprintBytes: firstExecutionPeakFootprint,
+            averagePhysicalFootprintBytes: averageFootprint,
+            steadyStatePeakPhysicalFootprintBytes: steadyStatePeakFootprint,
             peakPhysicalFootprintBytes: peakFootprint,
             finalPhysicalFootprintBytes: finalInferenceFootprint,
+            postLoadPhysicalFootprintIncreaseBytes: positiveDifference(postLoadFootprint, baselineFootprint),
+            firstExecutionPeakPhysicalFootprintIncreaseBytes: positiveDifference(
+                firstExecutionPeakFootprint,
+                baselineFootprint
+            ),
+            averagePhysicalFootprintIncreaseBytes: positiveDifference(averageFootprint, baselineFootprint),
+            steadyStatePeakPhysicalFootprintIncreaseBytes: positiveDifference(
+                steadyStatePeakFootprint,
+                baselineFootprint
+            ),
+            peakPhysicalFootprintIncreaseBytes: positiveDifference(peakFootprint, baselineFootprint),
+            finalPhysicalFootprintIncreaseBytes: positiveDifference(finalInferenceFootprint, baselineFootprint),
             physicalFootprintDriftBytes: signedDifference(finalInferenceFootprint, postWarmupFootprint),
             postComputePlanPhysicalFootprintBytes: postComputePlanFootprint,
             computePlan: computePlan
@@ -188,7 +247,7 @@ public enum TransformerRuntimeBenchmark {
             + Double(components.attoseconds) / 1_000_000_000_000_000
     }
 
-    private static func currentPhysicalFootprintBytes() -> UInt64 {
+    public static func currentPhysicalFootprintBytes() -> UInt64 {
         #if canImport(Darwin)
         var info = task_vm_info_data_t()
         var count = mach_msg_type_number_t(MemoryLayout<task_vm_info_data_t>.size / MemoryLayout<integer_t>.size)
@@ -208,6 +267,10 @@ public enum TransformerRuntimeBenchmark {
             return Int64(min(lhs - rhs, UInt64(Int64.max)))
         }
         return -Int64(min(rhs - lhs, UInt64(Int64.max)))
+    }
+
+    private static func positiveDifference(_ lhs: UInt64, _ rhs: UInt64) -> UInt64 {
+        lhs > rhs ? lhs - rhs : 0
     }
 
     private static func hardwareIdentifier() -> String {

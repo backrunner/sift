@@ -154,7 +154,7 @@ run_xcodebuild xcodebuild archive \
 
 archive_app="$ARCHIVE_PATH/Products/Applications/SiftApp.app"
 [[ -d "$archive_app" ]] || fail "archived app not found at $archive_app"
-bundled_transformer="$(find "$archive_app" -name 'SiftTransformerClassifier*' -print -quit)"
+bundled_transformer="$(find "$archive_app" \( -name 'SiftSignalModel*' -o -name 'SiftTransformerClassifier*' \) -print -quit)"
 if [[ -n "$bundled_transformer" ]]; then
   fail "Premium Transformer must be downloaded on demand, but the archive contains $bundled_transformer"
 fi

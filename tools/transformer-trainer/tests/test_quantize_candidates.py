@@ -17,11 +17,18 @@ from quantize_candidates import (
     run_message_filter_artifact_suite,
     select_calibration_rows,
     taxonomy_actions,
+    tokenizer_artifact_name,
     utc_timestamp,
 )
 
 
 class QuantizeCandidateTests(unittest.TestCase):
+    def test_published_tokenizer_uses_public_model_name(self) -> None:
+        self.assertEqual(
+            tokenizer_artifact_name("SiftSignalModel"),
+            "SiftSignalModel.tokenizer.siftbpe",
+        )
+
     def test_utc_timestamp_is_nonempty_rfc3339(self) -> None:
         value = utc_timestamp()
 
@@ -163,6 +170,34 @@ class QuantizeCandidateTests(unittest.TestCase):
         command = run.call_args.args[0]
         self.assertIn("--readable-cases", command)
         self.assertIn("--conversation", command)
+
+    def test_message_filter_artifact_suite_keeps_quality_failure_report(self) -> None:
+        result = subprocess.CompletedProcess(
+            args=[],
+            returncode=1,
+            stdout="",
+            stderr="MessageFilterArtifactTests failed: readableCaseGateFailed",
+        )
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            candidate = Path(temporary_directory)
+            output = candidate / "message-filter-actions.json"
+            output.write_text(json.dumps({"readableCases": [{"passed": False}]}), encoding="utf-8")
+            with (
+                patch("quantize_candidates.shutil.which", return_value="/usr/bin/swift"),
+                patch("quantize_candidates.subprocess.run", return_value=result),
+            ):
+                report = run_message_filter_artifact_suite(
+                    candidate,
+                    candidate / "model.mlpackage",
+                    candidate / "tokenizer.siftbpe",
+                    candidate / "manifest.json",
+                    candidate / "fixed.ndjson",
+                    candidate / "promotion.ndjson",
+                    candidate / "conversation.ndjson",
+                )
+
+        self.assertFalse(report["readableCases"][0]["passed"])
+        self.assertIn("readableCaseGateFailed", report["suiteFailure"])
 
     def test_checkpoint_labels_follow_numeric_id_order(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:

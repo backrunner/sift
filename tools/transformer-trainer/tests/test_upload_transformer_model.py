@@ -41,7 +41,12 @@ class UploadTransformerModelTests(unittest.TestCase):
                 "rulesOverrideRate": 1.0,
             },
             "deviceMetrics": {
+                "runtimeExecutionVerified": True,
                 "accelerationVerified": True,
+                "peakPhysicalFootprintIncreaseBytes": 128 * 1024 * 1024,
+                "averagePhysicalFootprintIncreaseBytes": 96 * 1024 * 1024,
+                "p95LatencyMilliseconds": 50,
+                "p99LatencyMilliseconds": 80,
                 "extensionColdP95Milliseconds": 700,
                 "extensionColdP99Milliseconds": 850,
                 "extensionColdMaximumMilliseconds": 950,
@@ -52,21 +57,6 @@ class UploadTransformerModelTests(unittest.TestCase):
                 "memoryDriftBytes": 8 * 1024 * 1024,
                 "memoryDriftFraction": 0.05,
                 "stressConditionsPassed": True,
-                "currentDevice": {
-                    "accelerationVerified": True,
-                    "p95LatencyMilliseconds": 50,
-                    "p99LatencyMilliseconds": 80,
-                    "extensionColdP95Milliseconds": 500,
-                    "extensionColdP99Milliseconds": 700,
-                    "extensionColdMaximumMilliseconds": 800,
-                    "extensionWarmP95Milliseconds": 100,
-                    "extensionWarmP99Milliseconds": 160,
-                    "contentionFallbackP99Milliseconds": 500,
-                    "jetsamCount": 0,
-                    "memoryDriftBytes": 4 * 1024 * 1024,
-                    "memoryDriftFraction": 0.03,
-                    "stressConditionsPassed": True,
-                },
             },
         }
 
@@ -93,18 +83,18 @@ class UploadTransformerModelTests(unittest.TestCase):
     def test_rejects_tokenizer_missing_from_remote_artifacts(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            package = root / "SiftTransformerClassifier.mlpackage"
+            package = root / "SiftSignalModel.mlpackage"
             package.mkdir()
             (package / "model.mlmodel").write_bytes(b"model")
-            (root / "SiftTransformerClassifier.tokenizer.siftbpe").write_bytes(b"compact")
-            (root / "SiftTransformerClassifier.tokenizer.json").write_bytes(b"legacy")
+            (root / "SiftSignalModel.tokenizer.siftbpe").write_bytes(b"compact")
+            (root / "SiftSignalModel.tokenizer.json").write_bytes(b"legacy")
 
             manifest = {
                 "modelArtifact": package.name,
                 "tokenizerKind": "bpe",
-                "tokenizerArtifact": "SiftTransformerClassifier.tokenizer.siftbpe",
+                "tokenizerArtifact": "SiftSignalModel.tokenizer.siftbpe",
                 "remoteArtifacts": [{
-                    "path": "SiftTransformerClassifier.tokenizer.json",
+                    "path": "SiftSignalModel.tokenizer.json",
                 }],
             }
 
@@ -112,7 +102,7 @@ class UploadTransformerModelTests(unittest.TestCase):
                 normalize_manifest(
                     manifest,
                     root,
-                    "SiftTransformerClassifier",
+                    "SiftSignalModel",
                     "https://example.com/models",
                 )
 
@@ -120,15 +110,15 @@ class UploadTransformerModelTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             manifest = {
-                "modelArtifact": "SiftTransformerClassifier.mlpackage",
-                "vocabularyArtifact": "SiftTransformerClassifier.vocab.txt",
+                "modelArtifact": "SiftSignalModel.mlpackage",
+                "vocabularyArtifact": "SiftSignalModel.vocab.txt",
             }
 
             with self.assertRaisesRegex(SystemExit, "tokenizerArtifact"):
                 normalize_manifest(
                     manifest,
                     root,
-                    "SiftTransformerClassifier",
+                    "SiftSignalModel",
                     "https://example.com/models",
                 )
 

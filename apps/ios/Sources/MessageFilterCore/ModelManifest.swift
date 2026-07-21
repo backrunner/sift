@@ -103,7 +103,7 @@ public enum TransformerManifestCompatibility: Hashable, Sendable {
 
 public struct TransformerManifestVerifier: Sendable {
     public static let supportedSchemaVersion = 2
-    public static let supportedModelABIs: Set<String> = ["sift-mmbert-v2", "sift-mmbert-v3"]
+    public static let supportedModelABIs: Set<String> = ["sift-signal-v1"]
 
     private let publicKeys: [String: String]
 
@@ -160,8 +160,8 @@ public struct TransformerManifestVerifier: Sendable {
             manifest.minimumAppBuild == channel.minimumAppBuild,
             manifest.maximumAppBuild == channel.maximumAppBuild,
             manifest.minimumOSVersion == channel.minimumOSVersion,
-            manifest.runtimeProfile.computeUnits == "all",
-            manifest.runtimeProfile.transformerBudgetMilliseconds <= 500,
+            TransformerRuntimeProfile.supportedComputeUnits.contains(manifest.runtimeProfile.computeUnits),
+            manifest.runtimeProfile.inferenceBudgetMilliseconds <= 500,
             [4, 8].contains(manifest.quantizationProfile.weightBits),
             manifest.quantizationProfile.activationBits == 8 || manifest.quantizationProfile.activationBits == 16
         else {

@@ -22,18 +22,52 @@ public struct TransformerRemoteArtifact: Codable, Hashable, Sendable {
 }
 
 public struct TransformerRuntimeProfile: Codable, Hashable, Sendable {
+    public static let supportedComputeUnits: Set<String> = [
+        "all",
+        "cpuOnly",
+        "cpuAndGPU",
+        "cpuAndNeuralEngine",
+    ]
+
     public let computeUnits: String
     public let modelType: String
-    public let transformerBudgetMilliseconds: Int
+    public let inferenceBudgetMilliseconds: Int
 
     public init(
-        computeUnits: String = "all",
+        computeUnits: String = "cpuOnly",
         modelType: String = "mlProgram",
-        transformerBudgetMilliseconds: Int = 500
+        inferenceBudgetMilliseconds: Int = 500
     ) {
         self.computeUnits = computeUnits
         self.modelType = modelType
-        self.transformerBudgetMilliseconds = transformerBudgetMilliseconds
+        self.inferenceBudgetMilliseconds = inferenceBudgetMilliseconds
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case computeUnits
+        case modelType
+        case inferenceBudgetMilliseconds
+        case transformerBudgetMilliseconds
+    }
+
+    public init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.computeUnits = try container.decodeIfPresent(String.self, forKey: .computeUnits) ?? "all"
+        self.modelType = try container.decodeIfPresent(String.self, forKey: .modelType) ?? "mlProgram"
+        self.inferenceBudgetMilliseconds = try container.decodeIfPresent(
+            Int.self,
+            forKey: .inferenceBudgetMilliseconds
+        ) ?? container.decodeIfPresent(
+            Int.self,
+            forKey: .transformerBudgetMilliseconds
+        ) ?? 500
+    }
+
+    public func encode(to encoder: any Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(computeUnits, forKey: .computeUnits)
+        try container.encode(modelType, forKey: .modelType)
+        try container.encode(inferenceBudgetMilliseconds, forKey: .inferenceBudgetMilliseconds)
     }
 }
 
@@ -351,13 +385,38 @@ public enum TransformerUpdateState: Hashable, Sendable {
 }
 
 public enum TransformerClassifierLoader {
-    public static let defaultResourceName = "SiftTransformerClassifier"
+    public static let defaultResourceName = "SiftSignalModel"
+    public static let legacyResourceNames = ["SiftTransformerClassifier"]
+
+    public static var compatibleResourceNames: [String] {
+        [defaultResourceName] + legacyResourceNames
+    }
+
+    public static func installedModel(
+        resourceName: String = defaultResourceName,
+        fileManager: FileManager = .default,
+        validateChecksums: Bool = true
+    ) -> InstalledTransformerModel? {
+        let resourceNames = resourceName == defaultResourceName
+            ? compatibleResourceNames
+            : [resourceName]
+        for candidateResourceName in resourceNames {
+            if let installed = TransformerModelStore.installedModel(
+                resourceName: candidateResourceName,
+                fileManager: fileManager,
+                validateChecksums: validateChecksums
+            ) {
+                return installed
+            }
+        }
+        return nil
+    }
 
     public static func manifest(
         resourceName: String = defaultResourceName,
         fileManager: FileManager = .default
     ) -> TransformerModelManifest? {
-        TransformerModelStore.installedModel(
+        installedModel(
             resourceName: resourceName,
             fileManager: fileManager,
             validateChecksums: false
@@ -384,8 +443,9 @@ public enum TransformerClassifierLoader {
     ) -> (any MessageClassifier)? {
         #if canImport(CoreML)
         guard
-            let installed = TransformerModelStore.installedModel(
+            let installed = installedModel(
                 resourceName: resourceName,
+                fileManager: .default,
                 validateChecksums: false
             ),
             installed.manifest.tokenizerKind == "bpe",
@@ -401,7 +461,7 @@ public enum TransformerClassifierLoader {
                 compiledURL = installed.modelURL
             } else {
                 let cachedURL = TransformerModelStore.compiledModelURL(
-                    resourceName: resourceName,
+                    resourceName: installedResourceName(for: installed, fallback: resourceName),
                     in: installed.directoryURL
                 )
                 guard FileManager.default.fileExists(atPath: cachedURL.path) else {
@@ -413,7 +473,8 @@ public enum TransformerClassifierLoader {
                 modelURL: compiledURL,
                 tokenizer: tokenizer,
                 labels: installed.manifest.labels,
-                confidenceThreshold: confidenceThreshold
+                confidenceThreshold: confidenceThreshold,
+                computeUnits: installed.manifest.runtimeProfile.computeUnits
             )
         } catch {
             return nil
@@ -427,7 +488,7 @@ public enum TransformerClassifierLoader {
         resourceName: String = defaultResourceName,
         fileManager: FileManager = .default
     ) -> Bool {
-        TransformerModelStore.installedModel(
+        installedModel(
             resourceName: resourceName,
             fileManager: fileManager,
             validateChecksums: false
@@ -438,7 +499,7 @@ public enum TransformerClassifierLoader {
         resourceName: String = defaultResourceName,
         fileManager: FileManager = .default
     ) -> Bool {
-        guard let installed = TransformerModelStore.installedModel(
+        guard let installed = installedModel(
             resourceName: resourceName,
             fileManager: fileManager,
             validateChecksums: false
@@ -456,8 +517,9 @@ public enum TransformerClassifierLoader {
         if installed.modelURL.pathExtension == "mlmodelc" {
             return true
         }
+        let resolvedResourceName = installedResourceName(for: installed, fallback: resourceName)
         return fileManager.fileExists(atPath: TransformerModelStore.compiledModelURL(
-            resourceName: resourceName,
+            resourceName: resolvedResourceName,
             in: installed.directoryURL,
             fileManager: fileManager
         ).path)
@@ -466,7 +528,8 @@ public enum TransformerClassifierLoader {
     public static func prepareDownloadedModel(
         in directory: URL,
         resourceName: String = defaultResourceName,
-        fileManager: FileManager = .default
+        fileManager: FileManager = .default,
+        validatesRuntime: Bool = true
     ) throws {
         #if canImport(CoreML)
         guard
@@ -482,7 +545,9 @@ public enum TransformerClassifierLoader {
             throw CocoaError(.fileReadCorruptFile)
         }
         guard installed.modelURL.pathExtension != "mlmodelc" else {
-            try smokeTestDownloadedModel(installed: installed, modelURL: installed.modelURL)
+            if validatesRuntime {
+                try smokeTestDownloadedModel(installed: installed, modelURL: installed.modelURL)
+            }
             return
         }
 
@@ -501,7 +566,9 @@ public enum TransformerClassifierLoader {
             }
         }
 
-        try smokeTestDownloadedModel(installed: installed, modelURL: targetURL)
+        if validatesRuntime {
+            try smokeTestDownloadedModel(installed: installed, modelURL: targetURL)
+        }
         #endif
     }
 
@@ -521,7 +588,8 @@ public enum TransformerClassifierLoader {
             modelURL: modelURL,
             tokenizer: tokenizer,
             labels: installed.manifest.labels,
-            confidenceThreshold: 0
+            confidenceThreshold: 0,
+            computeUnits: installed.manifest.runtimeProfile.computeUnits
         )
         let smokeBodies = [
             "您的验证码是 482913，请勿泄露。",
@@ -552,6 +620,15 @@ public enum TransformerClassifierLoader {
             configuration: BPETokenizer.Configuration(maxSequenceLength: manifest.maxSequenceLength)
         )
     }
+
+    private static func installedResourceName(
+        for installed: InstalledTransformerModel,
+        fallback: String
+    ) -> String {
+        compatibleResourceNames.first(where: {
+            installed.manifestURL.lastPathComponent == "\($0).manifest.json"
+        }) ?? fallback
+    }
 }
 
 #if canImport(CoreML)
@@ -581,13 +658,14 @@ public final class TransformerTextClassifier: MessageClassifier, @unchecked Send
         modelURL: URL,
         tokenizer: any TextTokenizing,
         labels: [String],
-        confidenceThreshold: Double = 0.5
+        confidenceThreshold: Double = 0.5,
+        computeUnits: String = "all"
     ) throws {
         let configuration = MLModelConfiguration()
-        // Low-bit ML Programs currently produce incorrect predictions when
-        // GPU fallback is excluded. Core ML still chooses the cheapest
-        // supported accelerator for each operation under `.all`.
-        configuration.computeUnits = .all
+        guard let resolvedComputeUnits = Self.computeUnits(named: computeUnits) else {
+            throw CocoaError(.featureUnsupported)
+        }
+        configuration.computeUnits = resolvedComputeUnits
         self.model = try MLModel(contentsOf: modelURL, configuration: configuration)
         self.tokenizer = tokenizer
         self.labels = labels
@@ -596,6 +674,16 @@ public final class TransformerTextClassifier: MessageClassifier, @unchecked Send
         let inputs = model.modelDescription.inputDescriptionsByName
         self.inputIDsName = inputs.keys.first { $0.lowercased().contains("input") } ?? "input_ids"
         self.attentionMaskName = inputs.keys.first { $0.lowercased().contains("mask") }
+    }
+
+    private static func computeUnits(named identifier: String) -> MLComputeUnits? {
+        switch identifier {
+        case "all": return .all
+        case "cpuOnly": return .cpuOnly
+        case "cpuAndGPU": return .cpuAndGPU
+        case "cpuAndNeuralEngine": return .cpuAndNeuralEngine
+        default: return nil
+        }
     }
 
     public func classify(sender: String?, body: String) -> ClassificationDecision {

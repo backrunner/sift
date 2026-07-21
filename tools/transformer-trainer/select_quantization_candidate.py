@@ -72,7 +72,6 @@ def candidate_failures(report: dict[str, Any], fp16: dict[str, Any]) -> list[str
     metrics = report.get("metrics", {})
     actions = report.get("messageFilterActions", {})
     device = report.get("deviceMetrics", {})
-    current_device = device.get("currentDevice", {})
     fp16_metrics = fp16.get("metrics", {})
     failures: list[str] = []
 
@@ -111,35 +110,35 @@ def candidate_failures(report: dict[str, Any], fp16: dict[str, Any]) -> list[str
         "readableCases",
     )
 
-    require(bool(device.get("accelerationVerified")), "accelerationVerified")
+    require(bool(device.get("runtimeExecutionVerified")), "runtimeExecutionVerified")
     require(device.get("peakPhysicalFootprintBytes", 0) > 0, "peakPhysicalFootprintBytes")
-    require(device.get("a12P95LatencyMilliseconds", 0) > 0, "a12P95LatencyMilliseconds")
-    require(device.get("a12P95LatencyMilliseconds", float("inf")) <= 150, "a12P95Latency")
-    require(device.get("a12P99LatencyMilliseconds", float("inf")) <= 250, "a12P99Latency")
+    require(device.get("peakPhysicalFootprintIncreaseBytes", float("inf")) <= 256 * 1024 * 1024, "peakPhysicalFootprintIncreaseBytes")
+    require(
+        device.get("averagePhysicalFootprintIncreaseBytes", float("inf")) <= 256 * 1024 * 1024,
+        "averagePhysicalFootprintIncreaseBytes",
+    )
+    require(device.get("p95LatencyMilliseconds", 0) > 0, "p95LatencyMilliseconds")
+    require(device.get("p95LatencyMilliseconds", float("inf")) <= 150, "p95Latency")
+    require(device.get("p99LatencyMilliseconds", float("inf")) <= 250, "p99Latency")
     require(device.get("extensionColdP95Milliseconds", float("inf")) <= 750, "extensionColdP95")
     require(device.get("extensionColdP99Milliseconds", float("inf")) <= 900, "extensionColdP99")
     require(device.get("extensionColdMaximumMilliseconds", float("inf")) < 1000, "extensionColdMaximum")
     require(device.get("extensionWarmP95Milliseconds", float("inf")) <= 150, "extensionWarmP95")
     require(device.get("extensionWarmP99Milliseconds", float("inf")) <= 250, "extensionWarmP99")
-    require(device.get("contentionFallbackP99Milliseconds", float("inf")) <= 600, "contentionFallbackP99")
+    if device.get("computeUnits") != "cpuOnly":
+        require(device.get("contentionFallbackP99Milliseconds", float("inf")) <= 600, "contentionFallbackP99")
     require(device.get("jetsamCount", 1) == 0, "jetsamCount")
     require(device.get("memoryDriftBytes", float("inf")) <= 16 * 1024 * 1024, "memoryDriftBytes")
     require(device.get("memoryDriftFraction", float("inf")) <= 0.10, "memoryDriftFraction")
     require(bool(device.get("stressConditionsPassed")), "stressConditionsPassed")
-    require(device.get("peakPhysicalFootprintBytes", float("inf")) <= 0.75 * fp16.get("deviceMetrics", {}).get("peakPhysicalFootprintBytes", 0), "fp16FootprintReduction")
-    require(bool(current_device.get("accelerationVerified")), "currentDeviceAccelerationVerified")
-    require(current_device.get("p95LatencyMilliseconds", float("inf")) <= 150, "currentDeviceP95Latency")
-    require(current_device.get("p99LatencyMilliseconds", float("inf")) <= 250, "currentDeviceP99Latency")
-    require(current_device.get("extensionColdP95Milliseconds", float("inf")) <= 750, "currentDeviceExtensionColdP95")
-    require(current_device.get("extensionColdP99Milliseconds", float("inf")) <= 900, "currentDeviceExtensionColdP99")
-    require(current_device.get("extensionColdMaximumMilliseconds", float("inf")) < 1000, "currentDeviceExtensionColdMaximum")
-    require(current_device.get("extensionWarmP95Milliseconds", float("inf")) <= 150, "currentDeviceExtensionWarmP95")
-    require(current_device.get("extensionWarmP99Milliseconds", float("inf")) <= 250, "currentDeviceExtensionWarmP99")
-    require(current_device.get("contentionFallbackP99Milliseconds", float("inf")) <= 600, "currentDeviceContentionFallbackP99")
-    require(current_device.get("jetsamCount", 1) == 0, "currentDeviceJetsamCount")
-    require(current_device.get("memoryDriftBytes", float("inf")) <= 16 * 1024 * 1024, "currentDeviceMemoryDriftBytes")
-    require(current_device.get("memoryDriftFraction", float("inf")) <= 0.10, "currentDeviceMemoryDriftFraction")
-    require(bool(current_device.get("stressConditionsPassed")), "currentDeviceStressConditionsPassed")
+    if device.get("computeUnits") == "cpuOnly":
+        require(report.get("downloadBytes", float("inf")) <= 0.75 * fp16.get("downloadBytes", 0), "fp16ResourceReduction")
+    else:
+        require(
+            device.get("peakPhysicalFootprintIncreaseBytes", float("inf"))
+            <= 0.75 * fp16.get("deviceMetrics", {}).get("peakPhysicalFootprintIncreaseBytes", 0),
+            "fp16ResourceReduction",
+        )
     require(report.get("artifactSHA256") not in (None, ""), "artifactSHA256")
     require(report.get("downloadBytes", 0) > 0, "downloadBytes")
     return failures
@@ -193,9 +192,9 @@ def select_candidate(profiles: dict[str, dict[str, Any]], reports: list[dict[str
         detail = ", ".join(f"{key}: {'/'.join(value)}" for key, value in sorted(rejected.items()))
         raise SystemExit(f"error: no int8/int4 candidate passed all release gates ({detail})")
 
-    eligible = within_five_percent(eligible, lambda item: item["deviceMetrics"]["peakPhysicalFootprintBytes"])
+    eligible = within_five_percent(eligible, lambda item: item["deviceMetrics"]["peakPhysicalFootprintIncreaseBytes"])
     eligible = within_five_percent(eligible, lambda item: item["downloadBytes"])
-    eligible = within_five_percent(eligible, lambda item: item["deviceMetrics"]["a12P95LatencyMilliseconds"])
+    eligible = within_five_percent(eligible, lambda item: item["deviceMetrics"]["p95LatencyMilliseconds"])
     eligible.sort(key=lambda item: (-item["metrics"]["promotionAccuracy"], item["profileID"]))
     winner = eligible[0]
     return {

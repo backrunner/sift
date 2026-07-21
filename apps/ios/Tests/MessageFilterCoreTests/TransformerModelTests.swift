@@ -248,6 +248,19 @@ private func compactTokenizerData(
     return data
 }
 
+private final class TemporaryContainerFileManager: FileManager, @unchecked Sendable {
+    private let rootURL: URL
+
+    init(rootURL: URL) {
+        self.rootURL = rootURL
+        super.init()
+    }
+
+    override func containerURL(forSecurityApplicationGroupIdentifier _: String) -> URL? {
+        rootURL
+    }
+}
+
 private func compactPairKey(_ first: UInt32, _ second: UInt32) -> UInt64 {
     UInt64(first) << 32 | UInt64(second)
 }
@@ -330,7 +343,7 @@ func transformerDeviceSupportUsesA12AsTheMinimumGate() {
 
 @Test
 func transformerV3ReservesAnAbstainOutputWithoutChangingTaxonomy() {
-    #expect(TransformerManifestVerifier.supportedModelABIs.contains("sift-mmbert-v3"))
+    #expect(TransformerManifestVerifier.supportedModelABIs.contains("sift-signal-v1"))
     #expect(TransformerModelContract.isAbstainLabel("__sift_abstain__"))
     #expect(SiftTaxonomy.leaf(id: TransformerModelContract.abstainLabel) == nil)
 }
@@ -373,18 +386,18 @@ func transformerManifestDecodesMmbertTrainerOutput() throws {
       "maxSequenceLength": 96,
       "doLowerCase": false,
       "tokenizerKind": "bpe",
-      "tokenizerArtifact": "SiftTransformerClassifier.tokenizer.siftbpe",
-      "modelArtifact": "SiftTransformerClassifier.mlpackage",
+      "tokenizerArtifact": "SiftSignalModel.tokenizer.siftbpe",
+      "modelArtifact": "SiftSignalModel.mlpackage",
       "sha256": "abc",
       "taxonomyHash": "def",
       "remoteArtifacts": [
         {
-          "path": "SiftTransformerClassifier.tokenizer.siftbpe",
+          "path": "SiftSignalModel.tokenizer.siftbpe",
           "sha256": "ghi",
           "byteCount": 123
         },
         {
-          "path": "SiftTransformerClassifier.mlpackage/Data/model.mlmodel",
+          "path": "SiftSignalModel.mlpackage/Data/model.mlmodel",
           "sha256": "jkl",
           "byteCount": 456
         }
@@ -395,9 +408,29 @@ func transformerManifestDecodesMmbertTrainerOutput() throws {
     let manifest = try JSONDecoder().decode(TransformerModelManifest.self, from: Data(json.utf8))
     #expect(manifest.version == "mmbert-0.1")
     #expect(manifest.tokenizerKind == "bpe")
-    #expect(manifest.tokenizerArtifact == "SiftTransformerClassifier.tokenizer.siftbpe")
+    #expect(manifest.tokenizerArtifact == "SiftSignalModel.tokenizer.siftbpe")
     #expect(manifest.remoteArtifacts.count == 2)
     #expect(manifest.downloadBytes == 579)
+}
+
+@Test
+func transformerRuntimeProfileDecodesLegacyBudgetField() throws {
+    let json = """
+    {
+      "computeUnits": "all",
+      "modelType": "mlProgram",
+      "transformerBudgetMilliseconds": 375
+    }
+    """
+
+    let profile = try JSONDecoder().decode(TransformerRuntimeProfile.self, from: Data(json.utf8))
+    #expect(profile.computeUnits == "all")
+    #expect(profile.inferenceBudgetMilliseconds == 375)
+
+    let encoded = try JSONEncoder().encode(profile)
+    let object = try #require(JSONSerialization.jsonObject(with: encoded) as? [String: Any])
+    #expect(object["inferenceBudgetMilliseconds"] as? Int == 375)
+    #expect(object["transformerBudgetMilliseconds"] == nil)
 }
 
 @Test
@@ -407,14 +440,14 @@ func transformerModelStoreValidatesInstalledDirectory() throws {
     defer { try? FileManager.default.removeItem(at: directory) }
     try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
 
-    let tokenizerURL = directory.appendingPathComponent("SiftTransformerClassifier.tokenizer.siftbpe")
+    let tokenizerURL = directory.appendingPathComponent("SiftSignalModel.tokenizer.siftbpe")
     let tokenizerData = compactTokenizerData(
         tokens: ["<pad>", "<eos>", "<bos>", "<unk>", "▁", "h", "i", "▁h", "▁hi"],
         merges: [(4, 5, 7), (7, 6, 8)]
     )
     try tokenizerData.write(to: tokenizerURL)
 
-    let modelURL = directory.appendingPathComponent("SiftTransformerClassifier.mlmodel")
+    let modelURL = directory.appendingPathComponent("SiftSignalModel.mlmodel")
     try Data("fake-model".utf8).write(to: modelURL)
 
     let manifest = TransformerModelManifest(
@@ -455,6 +488,95 @@ func transformerModelStoreValidatesInstalledDirectory() throws {
 }
 
 @Test
+func transformerLoaderFindsLegacyInstalledResource() throws {
+    let root = FileManager.default.temporaryDirectory
+        .appendingPathComponent("sift-transformer-legacy-\(UUID().uuidString)", isDirectory: true)
+    defer { try? FileManager.default.removeItem(at: root) }
+    let fileManager = TemporaryContainerFileManager(rootURL: root)
+    let resourceName = try #require(TransformerClassifierLoader.legacyResourceNames.first)
+    let directory = TransformerModelStore.modelDirectory(
+        resourceName: resourceName,
+        fileManager: fileManager
+    )
+    try fileManager.createDirectory(at: directory, withIntermediateDirectories: true)
+
+    let tokenizerURL = directory.appendingPathComponent("\(resourceName).tokenizer.siftbpe")
+    let tokenizerData = compactTokenizerData(
+        tokens: ["<pad>", "<eos>", "<bos>", "<unk>", "▁", "h", "i", "▁h", "▁hi"],
+        merges: [(4, 5, 7), (7, 6, 8)]
+    )
+    try tokenizerData.write(to: tokenizerURL)
+    let modelURL = directory.appendingPathComponent("\(resourceName).mlmodel")
+    let modelData = Data("legacy-model".utf8)
+    try modelData.write(to: modelURL)
+
+    let manifest = TransformerModelManifest(
+        version: "mmbert-boundary-v8",
+        trainedAt: "2026-07-11T08:00:00.000Z",
+        algorithm: "supervised-sequence-classification",
+        backbone: "jhu-clsp/mmBERT-small",
+        languages: ["zh", "en", "ja"],
+        labels: ["spam", "promotion"],
+        maxSequenceLength: 8,
+        doLowerCase: false,
+        tokenizerKind: "bpe",
+        tokenizerArtifact: tokenizerURL.lastPathComponent,
+        modelArtifact: modelURL.lastPathComponent,
+        sha256: try TransformerModelStore.fileSHA256(at: modelURL),
+        taxonomyHash: "taxonomy-hash",
+        remoteArtifacts: [
+            TransformerRemoteArtifact(
+                path: tokenizerURL.lastPathComponent,
+                sha256: try TransformerModelStore.fileSHA256(at: tokenizerURL),
+                byteCount: Int64(tokenizerData.count)
+            ),
+            TransformerRemoteArtifact(
+                path: modelURL.lastPathComponent,
+                sha256: try TransformerModelStore.fileSHA256(at: modelURL),
+                byteCount: Int64(modelData.count)
+            ),
+        ],
+        downloadBytes: Int64(tokenizerData.count + modelData.count)
+    )
+    try JSONEncoder().encode(manifest).write(
+        to: TransformerModelStore.manifestURL(
+            resourceName: resourceName,
+            in: directory,
+            fileManager: fileManager
+        )
+    )
+
+    let installed = try #require(TransformerClassifierLoader.installedModel(
+        fileManager: fileManager,
+        validateChecksums: true
+    ))
+    #expect(installed.manifest.version == "mmbert-boundary-v8")
+    #expect(installed.directoryURL == directory)
+    #expect(installed.manifestURL.lastPathComponent == "\(resourceName).manifest.json")
+}
+
+@Test
+func transformerActivationRemovesReplacedModelBackup() throws {
+    let root = FileManager.default.temporaryDirectory
+        .appendingPathComponent("sift-transformer-activation-\(UUID().uuidString)", isDirectory: true)
+    defer { try? FileManager.default.removeItem(at: root) }
+    let fileManager = TemporaryContainerFileManager(rootURL: root)
+    let active = TransformerModelStore.modelDirectory(fileManager: fileManager)
+    let staged = TransformerModelStore.stagingDirectory(fileManager: fileManager)
+    let backup = TransformerModelStore.previousModelDirectory(fileManager: fileManager)
+    try fileManager.createDirectory(at: active, withIntermediateDirectories: true)
+    try fileManager.createDirectory(at: staged, withIntermediateDirectories: true)
+    try Data("old".utf8).write(to: active.appendingPathComponent("generation"))
+    try Data("new".utf8).write(to: staged.appendingPathComponent("generation"))
+
+    try TransformerModelStore.activate(stagedDirectory: staged, fileManager: fileManager)
+
+    #expect(try Data(contentsOf: active.appendingPathComponent("generation")) == Data("new".utf8))
+    #expect(!fileManager.fileExists(atPath: staged.path))
+    #expect(!fileManager.fileExists(atPath: backup.path))
+}
+
+@Test
 func transformerModelStoreCountsInstalledFileBytes() throws {
     let directory = FileManager.default.temporaryDirectory
         .appendingPathComponent("sift-transformer-size-\(UUID().uuidString)", isDirectory: true)
@@ -473,7 +595,7 @@ func transformerModelStoreCountsInstalledFileBytes() throws {
 
 @Test
 func transformerModelStoreRejectsUnsafeArtifactPaths() {
-    #expect(TransformerModelStore.isSafeRelativePath("SiftTransformerClassifier.mlpackage/Data/model.mlmodel"))
+    #expect(TransformerModelStore.isSafeRelativePath("SiftSignalModel.mlpackage/Data/model.mlmodel"))
     #expect(!TransformerModelStore.isSafeRelativePath("../model.mlpackage"))
     #expect(!TransformerModelStore.isSafeRelativePath("/tmp/model.mlpackage"))
 }
@@ -507,10 +629,10 @@ func transformerChannelManifestRequiresValidEd25519Signature() throws {
     let privateKey = Curve25519.Signing.PrivateKey()
     let unsigned = TransformerChannelManifestV2(
         releaseSequence: 9,
-        releaseID: "mmbert-boundary-v9",
-        releaseManifestURL: "https://example.com/models/releases/mmbert-boundary-v9/manifest.json",
+        releaseID: "signal-v1",
+        releaseManifestURL: "https://example.com/models/releases/signal-v1/manifest.json",
         releaseManifestSHA256: "manifest-sha",
-        modelABI: "sift-mmbert-v2",
+        modelABI: "sift-signal-v1",
         minimumAppBuild: 7,
         maximumAppBuild: 20,
         minimumOSVersion: "18.0",
@@ -585,10 +707,10 @@ func transformerChannelCompatibilityChecksBuildOSABIAndRollback() {
     let verifier = TransformerManifestVerifier(publicKeys: [:])
     let channel = TransformerChannelManifestV2(
         releaseSequence: 9,
-        releaseID: "mmbert-boundary-v9",
+        releaseID: "signal-v1",
         releaseManifestURL: "https://example.com/manifest.json",
         releaseManifestSHA256: "sha",
-        modelABI: "sift-mmbert-v2",
+        modelABI: "sift-signal-v1",
         minimumAppBuild: 7,
         maximumAppBuild: 20,
         minimumOSVersion: "18.1",
@@ -620,5 +742,6 @@ func transformerChannelCompatibilityChecksBuildOSABIAndRollback() {
         currentReleaseSequence: 10
     ) == .releaseRollback)
 }
+
 #endif
 #endif

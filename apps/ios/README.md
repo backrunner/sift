@@ -38,19 +38,18 @@ the `group.com.alkinum.sift` app group):
 - **Classic model** — the Create ML text classifier above plus the on-device
   personalization adapter. Supports local fine-tuning from the local-only
   sample queue.
-- **Transformer** — a frozen multilingual mmBERT model exported by
+- **Sift Signal** — a frozen multilingual model exported by
   `tools/transformer-trainer` and uploaded to the public model CDN. It is
   downloaded into the shared App Group only after a Premium user explicitly
-  switches to the Transformer variant. It is **not** fine-tunable on device;
+  switches to Sift Signal. Its current implementation uses mmBERT internally.
+  It is **not** fine-tunable on device;
   while selected, the app hides local fine-tuning UI and only offers anonymous
   CloudKit contribution.
 
-The Premium Transformer requires an A12-class Neural Engine or newer
-(`iPhone11,*` / `iPad8,*` minimum). Older iPhones and iPads, iPods, simulators,
-and unknown hardware identifiers stay on Classic. The app disables the Premium
-settings row, blocks purchase/download/model switching with localized feedback,
-and the message-filter engine independently refuses to load the Transformer so
-a restored App Group selection cannot bypass the device gate.
+The iOS runtime keeps an independent physical-device compatibility gate and
+falls back to Classic on unsupported hardware or the Simulator. Release
+performance evidence comes from the physical iPhone available for that release;
+do not invent a separate A12 benchmark when no A12 device is available.
 
 For local Simulator or device testing, set the Debug scheme environment
 variable `SIFT_DEBUG_PREMIUM_UNLOCKED=1`. This selects an unlocked in-process
@@ -61,15 +60,15 @@ model channel and immutable release manifest:
 
 ```bash
 xcodebuild ... \
-  SIFT_TRANSFORMER_MODEL_PUBLIC_KEY_ID=release-2026 \
-  SIFT_TRANSFORMER_MODEL_PUBLIC_KEY='<raw-public-key-base64>'
+  SIFT_SIGNAL_MODEL_PUBLIC_KEY_ID=release-2026 \
+  SIFT_SIGNAL_MODEL_PUBLIC_KEY='<raw-public-key-base64>'
 ```
 
 The private key remains only on the publisher. An empty public-key build keeps
 the installed model but disables update discovery and download.
 
 The message-filter extension reads one atomic shared configuration snapshot on
-every query. It refreshes the Transformer runtime when the artifact identity
+every query. It refreshes the Sift Signal runtime when the artifact identity
 changes, while rules and category mappings take effect immediately even if iOS
 keeps the extension process alive. On device this requires the
 `group.com.alkinum.sift` App Group to be provisioned for both targets.

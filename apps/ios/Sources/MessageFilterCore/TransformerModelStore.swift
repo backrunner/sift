@@ -53,7 +53,7 @@ public enum TransformerModelStore {
         fileManager: FileManager = .default
     ) -> URL {
         baseDirectory(fileManager: fileManager)
-            .appendingPathComponent(".\(resourceName).staging-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent(".\(resourceName).staging", isDirectory: true)
     }
 
     public static func previousModelDirectory(
@@ -180,6 +180,9 @@ public enum TransformerModelStore {
                 try? fileManager.moveItem(at: backup, to: activeDirectory)
             }
             throw error
+        }
+        if fileManager.fileExists(atPath: backup.path) {
+            try? fileManager.removeItem(at: backup)
         }
     }
 

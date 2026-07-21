@@ -106,8 +106,14 @@ xcrun devicectl device copy from \
   --domain-identifier group.com.alkinum.sift \
   --timeout 300
 
-runtime_report="$output/DeviceEvidence/runtime-benchmark.json"
-filter_snapshot="$output/DeviceEvidence/message-filter-snapshot.json"
+evidence_output="$output/DeviceEvidence"
+if [[ ! -d "$evidence_output" ]]; then
+  # Current devicectl copies the requested directory contents directly into
+  # --destination, while older versions preserved the final directory name.
+  evidence_output="$output"
+fi
+runtime_report="$evidence_output/runtime-benchmark.json"
+filter_snapshot="$evidence_output/message-filter-snapshot.json"
 [[ -f "$runtime_report" ]] || { echo "error: runtime report was not exported" >&2; exit 1; }
 [[ -f "$filter_snapshot" ]] || { echo "error: MessageFilter snapshot was not exported" >&2; exit 1; }
 

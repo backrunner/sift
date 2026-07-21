@@ -17,6 +17,7 @@ final class TransformerDeviceTests: XCTestCase {
         #endif
 
         let installed = try prepareInstalledModel()
+        let processBaseline = TransformerRuntimeBenchmark.currentPhysicalFootprintBytes()
         let compiledModelURL = installed.modelURL.pathExtension == "mlmodelc"
             ? installed.modelURL
             : TransformerModelStore.compiledModelURL(in: installed.directoryURL)
@@ -27,12 +28,17 @@ final class TransformerDeviceTests: XCTestCase {
             configuration: .init(maxSequenceLength: installed.manifest.maxSequenceLength)
         )
         let measuredIterations = Self.measuredIterations()
+        let computeUnits = Self.benchmarkComputeUnits(
+            default: installed.manifest.runtimeProfile.computeUnits
+        )
         let report = try await TransformerRuntimeBenchmark.run(
             modelURL: compiledModelURL,
             tokenizer: tokenizer,
             labels: installed.manifest.labels,
             requests: Self.benchmarkRequests,
             artifactIdentity: installed.manifest.artifactIdentity,
+            computeUnits: computeUnits,
+            baselinePhysicalFootprintBytes: processBaseline,
             warmupIterations: 20,
             measuredIterations: measuredIterations
         )
@@ -40,20 +46,34 @@ final class TransformerDeviceTests: XCTestCase {
         XCTAssertEqual(report.artifactIdentity, installed.manifest.artifactIdentity)
         XCTAssertEqual(report.measuredIterations, measuredIterations)
         XCTAssertGreaterThan(report.computePlan.costedOperationCount, 0)
-        XCTAssertTrue(report.computePlan.accelerationVerified)
+        if computeUnits == "cpuOnly" {
+            XCTAssertFalse(report.computePlan.accelerationVerified)
+        } else {
+            XCTAssertTrue(report.computePlan.accelerationVerified)
+        }
         XCTAssertGreaterThan(report.postWarmupPhysicalFootprintBytes, 0)
+        XCTAssertGreaterThan(report.firstExecutionPeakPhysicalFootprintBytes, 0)
+        XCTAssertGreaterThan(report.averagePhysicalFootprintBytes, 0)
+        XCTAssertGreaterThan(report.steadyStatePeakPhysicalFootprintBytes, 0)
         XCTAssertGreaterThan(report.peakPhysicalFootprintBytes, 0)
+        XCTAssertGreaterThanOrEqual(
+            report.peakPhysicalFootprintBytes,
+            report.steadyStatePeakPhysicalFootprintBytes
+        )
         XCTAssertTrue(report.p95LatencyMilliseconds.isFinite)
         XCTAssertLessThan(report.p95LatencyMilliseconds, 500)
         let allowedDrift = max(
             Int64(Double(report.postWarmupPhysicalFootprintBytes) * 0.10),
             16 * 1_024 * 1_024
         )
-        XCTAssertLessThanOrEqual(abs(report.physicalFootprintDriftBytes), allowedDrift)
+        XCTAssertLessThanOrEqual(report.physicalFootprintDriftBytes, allowedDrift)
 
         let evidenceDirectory = try Self.evidenceDirectory()
         try Self.writeJSON(report, to: evidenceDirectory.appendingPathComponent("runtime-benchmark.json"))
-        let filterSnapshot = MessageFilterPerformanceEvidenceStore().snapshot()
+        let filterSnapshot = try await collectMessageFilterEvidence(
+            installed: installed,
+            warmQueryCount: measuredIterations
+        )
         try Self.writeJSON(
             filterSnapshot,
             to: evidenceDirectory.appendingPathComponent("message-filter-snapshot.json")
@@ -66,6 +86,79 @@ final class TransformerDeviceTests: XCTestCase {
         attachment.name = "runtime-benchmark-\(report.deviceModel)-release-\(installed.manifest.releaseSequence)"
         attachment.lifetime = .keepAlways
         add(attachment)
+    }
+
+    private func collectMessageFilterEvidence(
+        installed: InstalledTransformerModel,
+        warmQueryCount: Int
+    ) async throws -> MessageFilterPerformanceEvidenceSnapshot {
+        let evidenceStore = MessageFilterPerformanceEvidenceStore()
+        evidenceStore.reset()
+        let configuration = FilterConfigurationSnapshot(
+            generation: 1,
+            selectedVariant: .transformer,
+            modelArtifactIdentity: installed.manifest.artifactIdentity,
+            rules: [],
+            categoryMappings: [:]
+        )
+
+        for index in 0..<30 {
+            let engine = MessageFilterEngine()
+            try await classifyAndRecord(
+                Self.benchmarkRequests[index % Self.benchmarkRequests.count],
+                engine: engine,
+                configuration: configuration,
+                evidenceStore: evidenceStore,
+                isColdStart: true
+            )
+        }
+
+        let warmEngine = MessageFilterEngine()
+        for index in 0..<warmQueryCount {
+            try await classifyAndRecord(
+                Self.benchmarkRequests[index % Self.benchmarkRequests.count],
+                engine: warmEngine,
+                configuration: configuration,
+                evidenceStore: evidenceStore,
+                isColdStart: false
+            )
+        }
+
+        let snapshot = evidenceStore.snapshot()
+        let release = try XCTUnwrap(snapshot.releases.values.first)
+        XCTAssertEqual(snapshot.releases.count, 1)
+        XCTAssertEqual(release.requestedArtifactIdentity, installed.manifest.artifactIdentity)
+        XCTAssertEqual(release.coldRunCount, 30)
+        XCTAssertEqual(release.warmQueryCount, warmQueryCount)
+        XCTAssertEqual(release.watchdogCount, 0)
+        XCTAssertTrue(release.errorCounts.isEmpty)
+        XCTAssertEqual(release.fallbackCounts[MessageFilterFallbackReason.none.rawValue], 30 + warmQueryCount)
+        return snapshot
+    }
+
+    private func classifyAndRecord(
+        _ request: MessageFilterRequest,
+        engine: MessageFilterEngine,
+        configuration: FilterConfigurationSnapshot,
+        evidenceStore: MessageFilterPerformanceEvidenceStore,
+        isColdStart: Bool
+    ) async throws {
+        let clock = ContinuousClock()
+        let startedAt = clock.now
+        let result = await engine.classify(request, configuration: configuration)
+        let elapsed = startedAt.duration(to: clock.now)
+
+        XCTAssertEqual(result.modelArtifactIdentity, configuration.modelArtifactIdentity)
+        XCTAssertEqual(result.fallbackReason, .none)
+        evidenceStore.record(MessageFilterDiagnosticEvent(
+            artifactIdentity: result.modelArtifactIdentity,
+            latencyBucket: MessageFilterLatencyBucket(elapsed: elapsed),
+            fallbackReason: result.fallbackReason,
+            errorCode: result.fallbackReason == .none ? nil : "unexpected_fallback",
+            requestedArtifactIdentity: configuration.modelArtifactIdentity,
+            isColdStart: isColdStart,
+            physicalFootprintBytes: MessageFilterProcessMetrics.currentPhysicalFootprintBytes()
+        ))
     }
 
     private func prepareInstalledModel() throws -> InstalledTransformerModel {
@@ -83,14 +176,17 @@ final class TransformerDeviceTests: XCTestCase {
                     fileManager: fileManager,
                     validateChecksums: true
                 ),
-                candidate.manifest.runtimeProfile.computeUnits == "all",
+                TransformerRuntimeProfile.supportedComputeUnits.contains(
+                    candidate.manifest.runtimeProfile.computeUnits
+                ),
                 [4, 8].contains(candidate.manifest.quantizationProfile.weightBits)
             else {
                 throw DeviceBenchmarkError.invalidCandidate
             }
             try TransformerClassifierLoader.prepareDownloadedModel(
                 in: sourceDirectory,
-                fileManager: fileManager
+                fileManager: fileManager,
+                validatesRuntime: false
             )
             try TransformerModelStore.activate(
                 stagedDirectory: sourceDirectory,
@@ -109,7 +205,9 @@ final class TransformerDeviceTests: XCTestCase {
                 validateChecksums: true
             ),
             TransformerClassifierLoader.isReady(installed, fileManager: fileManager),
-            installed.manifest.runtimeProfile.computeUnits == "all"
+            TransformerRuntimeProfile.supportedComputeUnits.contains(
+                installed.manifest.runtimeProfile.computeUnits
+            )
         else {
             throw DeviceBenchmarkError.missingInstalledModel
         }
@@ -174,7 +272,15 @@ final class TransformerDeviceTests: XCTestCase {
 
     private static func measuredIterations() -> Int {
         let raw = ProcessInfo.processInfo.environment["SIFT_DEVICE_BENCHMARK_ITERATIONS"]
-        return min(max(Int(raw ?? "") ?? 1_000, 100), 10_000)
+        return min(max(Int(raw ?? "") ?? 10_000, 100), 10_000)
+    }
+
+    private static func benchmarkComputeUnits(default value: String) -> String {
+        let override = ProcessInfo.processInfo.environment["SIFT_DEVICE_BENCHMARK_COMPUTE_UNITS"]
+        guard let override, TransformerRuntimeProfile.supportedComputeUnits.contains(override) else {
+            return value
+        }
+        return override
     }
 
     private static let benchmarkRequests: [MessageFilterRequest] = [

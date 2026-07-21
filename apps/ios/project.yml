@@ -8,7 +8,7 @@ settings:
   SWIFT_VERSION: "6.0"
   GENERATE_INFOPLIST_FILE: YES
   MARKETING_VERSION: "1.0"
-  CURRENT_PROJECT_VERSION: "8"
+  CURRENT_PROJECT_VERSION: "9"
   SUPPORTED_PLATFORMS: "iphoneos iphonesimulator"
   TARGETED_DEVICE_FAMILY: "1"
   SUPPORTS_MACCATALYST: NO
@@ -95,9 +95,9 @@ targets:
       GENERATE_INFOPLIST_FILE: NO
       INFOPLIST_FILE: SiftApp/Info.plist
       ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
-      SIFT_TRANSFORMER_MODEL_CHANNEL_URL: https://sift.alkinum.io/models/channels/v2/SiftTransformerClassifier.channel.json
-      SIFT_TRANSFORMER_MODEL_PUBLIC_KEY_ID: release-2026
-      SIFT_TRANSFORMER_MODEL_PUBLIC_KEY: "EWT4wUWJG73N72DqkoNZ8MoDZYlYWPN7YrkL6QgjQKY="
+      SIFT_SIGNAL_MODEL_CHANNEL_URL: https://sift.alkinum.io/models/channels/v2/SiftSignalModel.channel.json
+      SIFT_SIGNAL_MODEL_PUBLIC_KEY_ID: release-2026
+      SIFT_SIGNAL_MODEL_PUBLIC_KEY: "EWT4wUWJG73N72DqkoNZ8MoDZYlYWPN7YrkL6QgjQKY="
   MessageFilterExtension:
     type: app-extension
     platform: iOS
@@ -156,5 +156,7 @@ schemes:
           - test
     test:
       config: Release
+      environmentVariables:
+        SIFT_DEVICE_BENCHMARK_HOST: "1"
       targets:
         - TransformerDeviceTests

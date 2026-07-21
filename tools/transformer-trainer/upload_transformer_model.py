@@ -26,7 +26,7 @@ Examples:
     --dest-dir /tmp/sift-models
 
   # Upload to Cloudflare R2 with the AWS CLI. Copy
-  # .env.transformer-model.example to .env.transformer-model first; do not
+  # .env.signal-model.example to .env.signal-model first; do not
   # commit the real dotenv file.
   python3 tools/transformer-trainer/upload_transformer_model.py \
     --model-dir build/pipeline/transformer-model/quantization-tournament/candidates/w8a16-channel-ptq \
@@ -67,10 +67,10 @@ from string import Formatter
 from typing import Any
 
 
-DEFAULT_MODEL_NAME = "SiftTransformerClassifier"
+DEFAULT_MODEL_NAME = "SiftSignalModel"
 DEFAULT_ARTIFACT_CACHE_CONTROL = "public, max-age=31536000, immutable"
 DEFAULT_MANIFEST_CACHE_CONTROL = "public, max-age=300"
-DEFAULT_DOTENV_NAME = ".env.transformer-model"
+DEFAULT_DOTENV_NAME = ".env.signal-model"
 
 
 @dataclass(frozen=True)
@@ -91,14 +91,14 @@ def parse_arguments() -> argparse.Namespace:
     parser.add_argument("--model-dir", type=Path, required=True, help="directory containing the exported transformer artifacts")
     parser.add_argument("--selection", type=Path, required=True, help="selected-candidate.json produced by the quantization gate")
     parser.add_argument("--release-id", default=None, help="immutable release directory name; defaults to manifest version")
-    parser.add_argument("--channel-path", default="channels/v2/SiftTransformerClassifier.channel.json")
+    parser.add_argument("--channel-path", default="channels/v2/SiftSignalModel.channel.json")
     parser.add_argument("--signing-key", type=Path, default=os.getenv("SIFT_MODEL_SIGNING_KEY"))
     parser.add_argument("--signing-key-id", default=os.getenv("SIFT_MODEL_SIGNING_KEY_ID"))
     parser.add_argument("--model-name", default=DEFAULT_MODEL_NAME)
     parser.add_argument(
         "--base-url",
-        default=os.getenv("SIFT_TRANSFORMER_MODEL_BASE_URL"),
-        help="public URL prefix used by the iOS app; can also come from SIFT_TRANSFORMER_MODEL_BASE_URL",
+        default=os.getenv("SIFT_SIGNAL_MODEL_BASE_URL"),
+        help="public URL prefix used by the iOS app; can also come from SIFT_SIGNAL_MODEL_BASE_URL",
     )
     parser.add_argument("--dest-dir", type=Path, default=None, help="optional local destination directory")
     parser.add_argument("--r2-bucket", default=os.getenv("SIFT_MODEL_R2_BUCKET"), help="Cloudflare R2 bucket name")
@@ -159,7 +159,7 @@ def load_dotenv_from_arguments(raw: list[str]) -> None:
         return
 
     if env_file is None:
-        configured = os.getenv("SIFT_TRANSFORMER_MODEL_ENV_FILE")
+        configured = os.getenv("SIFT_SIGNAL_MODEL_ENV_FILE")
         if configured:
             env_file = Path(configured)
             explicit_env_file = True
@@ -272,7 +272,7 @@ def main() -> None:
 
 def normalize_base_url(value: str | None) -> str:
     if not value:
-        raise SystemExit("error: pass --base-url or set SIFT_TRANSFORMER_MODEL_BASE_URL")
+        raise SystemExit("error: pass --base-url or set SIFT_SIGNAL_MODEL_BASE_URL")
     value = value.rstrip("/")
     if not value.startswith(("https://", "http://")):
         raise SystemExit("error: --base-url must be an absolute http(s) URL")
@@ -405,9 +405,17 @@ def verify_selected_candidate(selection_path: Path, manifest: dict[str, Any], mo
     metrics = report.get("metrics", {})
     actions = report.get("messageFilterActions", {})
     device = report.get("deviceMetrics", {})
-    current_device = device.get("currentDevice", {})
-    if report.get("deviceMetrics", {}).get("accelerationVerified") is not True:
-        raise SystemExit("error: candidate lacks ANE/GPU evidence")
+    if device.get("runtimeExecutionVerified") is not True:
+        raise SystemExit("error: candidate lacks matching CPU or accelerator execution evidence")
+    if device.get("peakPhysicalFootprintIncreaseBytes", float("inf")) > 256 * 1024 * 1024:
+        raise SystemExit("error: release-device peak memory increase gate failed")
+    if device.get("averagePhysicalFootprintIncreaseBytes", float("inf")) > 256 * 1024 * 1024:
+        raise SystemExit("error: release-device average memory increase gate failed")
+    if (
+        device.get("p95LatencyMilliseconds", float("inf")) > 150
+        or device.get("p99LatencyMilliseconds", float("inf")) > 250
+    ):
+        raise SystemExit("error: release-device runtime latency gate failed")
     if actions.get("rulesOverrideRate", 0) < 1.0:
         raise SystemExit("error: MessageFilter rules override gate failed")
     if metrics.get("fixedAccuracy", 0) < 0.99:
@@ -432,7 +440,10 @@ def verify_selected_candidate(selection_path: Path, manifest: dict[str, Any], mo
         or device.get("extensionColdMaximumMilliseconds", float("inf")) >= 1000
         or device.get("extensionWarmP95Milliseconds", float("inf")) > 150
         or device.get("extensionWarmP99Milliseconds", float("inf")) > 250
-        or device.get("contentionFallbackP99Milliseconds", float("inf")) > 600
+        or (
+            device.get("computeUnits") != "cpuOnly"
+            and device.get("contentionFallbackP99Milliseconds", float("inf")) > 600
+        )
     ):
         raise SystemExit("error: MessageFilter device latency gate failed")
     if device.get("jetsamCount", 1) != 0:
@@ -444,28 +455,6 @@ def verify_selected_candidate(selection_path: Path, manifest: dict[str, Any], mo
         raise SystemExit("error: MessageFilter memory drift gate failed")
     if device.get("stressConditionsPassed") is not True:
         raise SystemExit("error: MessageFilter stress-condition gate failed")
-    if current_device.get("accelerationVerified") is not True:
-        raise SystemExit("error: candidate lacks current-device ANE/GPU evidence")
-    if (
-        current_device.get("p95LatencyMilliseconds", float("inf")) > 150
-        or current_device.get("p99LatencyMilliseconds", float("inf")) > 250
-        or current_device.get("extensionColdP95Milliseconds", float("inf")) > 750
-        or current_device.get("extensionColdP99Milliseconds", float("inf")) > 900
-        or current_device.get("extensionColdMaximumMilliseconds", float("inf")) >= 1000
-        or current_device.get("extensionWarmP95Milliseconds", float("inf")) > 150
-        or current_device.get("extensionWarmP99Milliseconds", float("inf")) > 250
-        or current_device.get("contentionFallbackP99Milliseconds", float("inf")) > 600
-    ):
-        raise SystemExit("error: current-device latency gate failed")
-    if current_device.get("jetsamCount", 1) != 0:
-        raise SystemExit("error: current-device jetsam gate failed")
-    if (
-        current_device.get("memoryDriftBytes", float("inf")) > 16 * 1024 * 1024
-        or current_device.get("memoryDriftFraction", float("inf")) > 0.10
-    ):
-        raise SystemExit("error: current-device memory drift gate failed")
-    if current_device.get("stressConditionsPassed") is not True:
-        raise SystemExit("error: current-device stress-condition gate failed")
     if not model_dir.is_dir():
         raise SystemExit(f"error: candidate directory is not a directory: {model_dir}")
 

@@ -146,7 +146,7 @@ After upload, wait for App Store Connect processing to finish. Then:
    complete screenshots, privacy, pricing, availability, review notes, and
    release options.
 
-Premium Transformer testing through TestFlight also requires the App Store
+Premium Sift Signal testing through TestFlight also requires the App Store
 Connect in-app purchase `com.alkinum.sift.premium`. Without it, StoreKit cannot
 load a live price and the app will show the price-unavailable fallback.
 
@@ -155,9 +155,9 @@ load a live price and the app will show the price-unavailable fallback.
 1. Install the processed TestFlight build on a physical iPhone.
 2. Open Sift and confirm the dashboard loads.
 3. Submit a local test SMS sample and verify classification appears.
-4. Open the model picker and choose Transformer.
+4. Open the model picker and choose Sift Signal.
 5. Complete Premium purchase with a sandbox/TestFlight account.
-6. Choose Transformer again and confirm the model download starts from
-   `SiftTransformerModelManifestURL`.
+6. Choose Sift Signal again and confirm the model download starts from
+   `SiftSignalModelChannelURL`.
 7. Enable Sift in Settings > Messages > Unknown & Spam when the message filter
    entitlement is active, then confirm filtering behavior on device.

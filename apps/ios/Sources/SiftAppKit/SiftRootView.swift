@@ -302,7 +302,7 @@ private struct ModelPickerView: View {
                     Image(systemName: "info.circle")
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(Color.siftHalo)
-                    Text(String(localized: "经典模型可通过本地样本在设备上微调；Transformer 模型面向多语言场景离线训练，不支持设备端微调，切换后本地微调入口将隐藏。"))
+                    Text(String(localized: "经典模型可通过本地样本在设备上微调；Sift Signal 模型面向多语言场景离线训练，不支持设备端微调，切换后本地微调入口将隐藏。"))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -445,7 +445,7 @@ private struct ModelVariantCard: View {
         if isBlockedByDevice {
             downloadLine(
                 icon: "exclamationmark.triangle.fill",
-                text: String(localized: "此设备不支持 Transformer 高级模型"),
+                text: String(localized: "此设备不支持 Sift Signal 高级模型"),
                 tint: Color.siftAmber,
                 progress: nil
             )
@@ -578,7 +578,7 @@ private struct TransformerModelDetailView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
                 VStack(alignment: .leading, spacing: 8) {
-                    Label("Transformer", systemImage: ModelVariant.transformer.symbol)
+                    Label(String(localized: "Sift Signal"), systemImage: ModelVariant.transformer.symbol)
                         .font(.title3.weight(.semibold))
                     Text(String(localized: "多语言 · 不支持本地微调"))
                         .font(.callout)
@@ -952,7 +952,7 @@ private struct TransformerSubmissionNotice: View {
                 .foregroundStyle(Color.siftHalo)
                 .frame(width: 18)
             VStack(alignment: .leading, spacing: 3) {
-                Text(String(localized: "Transformer 模型不支持本地微调"))
+                Text(String(localized: "Sift Signal 模型不支持本地微调"))
                     .font(.footnote.weight(.bold))
                     .foregroundStyle(.primary)
                 Text(String(localized: "样本可继续通过 iCloud 匿名共享，用于云端训练下一版模型；切回经典模型可恢复本地微调。"))

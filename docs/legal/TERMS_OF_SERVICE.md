@@ -33,7 +33,7 @@ hosted features, not the source repository.
 ## 3. Premium (in-app purchase)
 
 - **Premium** is a one-time, non-consumable in-app purchase that
-  permanently unlocks the Transformer multilingual model on the Apple ID
+  permanently unlocks the Sift Signal multilingual model on the Apple ID
   used for the purchase.
 - Prices are set and displayed by the App Store for your storefront and may
   change, including temporary discounts or free promotions; the price shown

@@ -1,6 +1,12 @@
 {
   "sourceLanguage" : "zh-Hans",
   "strings" : {
+    "Sift Signal" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Sift Signal" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "Sift Signal" } }
+      }
+    },
     "未分类" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Unclassified" } },
@@ -37,22 +43,16 @@
         "ja" : { "stringUnit" : { "state" : "translated", "value" : "このモデルは現在のデバイスに対応していません" } }
       }
     },
-    "此设备不支持 Transformer 高级模型" : {
+    "此设备不支持 Sift Signal 高级模型" : {
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "This device does not support the Premium Transformer model" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "このデバイスはプレミアムTransformerモデルに対応していません" } }
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "This device does not support the Premium Sift Signal model" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "このデバイスはプレミアムSift Signalモデルに対応していません" } }
       }
     },
     "设备不支持" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Device Not Supported" } },
         "ja" : { "stringUnit" : { "state" : "translated", "value" : "デバイス非対応" } }
-      }
-    },
-    "高级模型需要 A12 或更新芯片" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "The premium model requires an A12 chip or newer" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "プレミアムモデルにはA12以降のチップが必要です" } }
       }
     },
     "暂时无法检查更新" : {
@@ -153,50 +153,50 @@
         }
       }
     },
-    "Transformer 模型" : {
+    "Sift Signal 模型" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Transformer Model"
+            "value" : "Sift Signal Model"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Transformerモデル"
+            "value" : "Sift Signalモデル"
           }
         }
       }
     },
-    "Transformer 模型已清理" : {
+    "Sift Signal 模型已清理" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Transformer model removed"
+            "value" : "Sift Signal model removed"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Transformerモデルを削除しました"
+            "value" : "Sift Signalモデルを削除しました"
           }
         }
       }
     },
-    "将删除已下载的 Transformer 模型文件。再次使用时需要重新下载。" : {
+    "将删除已下载的 Sift Signal 模型文件。再次使用时需要重新下载。" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "The downloaded Transformer model files will be removed. You will need to download them again to use Transformer."
+            "value" : "The downloaded Sift Signal model files will be removed. You will need to download them again to use Sift Signal."
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "ダウンロード済みのTransformerモデルファイルを削除します。再度使用するには、もう一度ダウンロードする必要があります。"
+            "value" : "ダウンロード済みのSift Signalモデルファイルを削除します。再度使用するには、もう一度ダウンロードする必要があります。"
           }
         }
       }
@@ -249,50 +249,50 @@
         }
       }
     },
-    "清理 Transformer 存储？" : {
+    "清理 Sift Signal 存储？" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Clear Transformer Storage?"
+            "value" : "Clear Sift Signal Storage?"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Transformerのストレージを消去しますか？"
+            "value" : "Sift Signalのストレージを消去しますか？"
           }
         }
       }
     },
-    "清理 Transformer 模型失败：%@" : {
+    "清理 Sift Signal 模型失败：%@" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Failed to remove the Transformer model: %@"
+            "value" : "Failed to remove the Sift Signal model: %@"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Transformerモデルの削除に失敗しました：%@"
+            "value" : "Sift Signalモデルの削除に失敗しました：%@"
           }
         }
       }
     },
-    "清理后会切换回经典模型，并删除已下载的 Transformer 模型文件。再次使用时需要重新下载。" : {
+    "清理后会切换回经典模型，并删除已下载的 Sift Signal 模型文件。再次使用时需要重新下载。" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Sift will switch back to the Classic model, then remove the downloaded Transformer model files. You will need to download them again to use Transformer."
+            "value" : "Sift will switch back to the Classic model, then remove the downloaded Sift Signal model files. You will need to download them again to use Sift Signal."
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "クラシックモデルに切り替えてから、ダウンロード済みのTransformerモデルファイルを削除します。再度使用するには、もう一度ダウンロードする必要があります。"
+            "value" : "クラシックモデルに切り替えてから、ダウンロード済みのSift Signalモデルファイルを削除します。再度使用するには、もう一度ダウンロードする必要があります。"
           }
         }
       }
@@ -825,50 +825,50 @@
         }
       }
     },
-    "Transformer 多语言模型永久可用" : {
+    "Sift Signal 多语言模型永久可用" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Transformer multilingual model unlocked forever"
+            "value" : "Sift Signal multilingual model unlocked forever"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Transformer 多言語モデルを永久にご利用いただけます"
+            "value" : "Sift Signal 多言語モデルを永久にご利用いただけます"
           }
         }
       }
     },
-    "Transformer 模型不支持本地微调" : {
+    "Sift Signal 模型不支持本地微调" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "The Transformer model doesn't support on-device fine-tuning"
+            "value" : "The Sift Signal model doesn't support on-device fine-tuning"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "TransformerモデルはデバイスでのFine-tuningに対応していません"
+            "value" : "Sift SignalモデルはデバイスでのFine-tuningに対応していません"
           }
         }
       }
     },
-    "Transformer 模型未包含在当前构建中" : {
+    "Sift Signal 模型未包含在当前构建中" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "The Transformer model isn't included in this build"
+            "value" : "The Sift Signal model isn't included in this build"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "このビルドにはTransformerモデルが含まれていません"
+            "value" : "このビルドにはSift Signalモデルが含まれていません"
           }
         }
       }
@@ -3129,18 +3129,18 @@
         }
       }
     },
-    "经典模型可通过本地样本在设备上微调；Transformer 模型面向多语言场景离线训练，不支持设备端微调，切换后本地微调入口将隐藏。" : {
+    "经典模型可通过本地样本在设备上微调；Sift Signal 模型面向多语言场景离线训练，不支持设备端微调，切换后本地微调入口将隐藏。" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "The Classic model fine-tunes on-device with local samples; the Transformer model is trained offline for multilingual use and can't be fine-tuned on device — switching hides local fine-tuning."
+            "value" : "The Classic model fine-tunes on-device with local samples; the Sift Signal model is trained offline for multilingual use and can't be fine-tuned on device — switching hides local fine-tuning."
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "クラシックモデルはローカルサンプルで端末上のFine-tuningが可能です。Transformerモデルは多言語向けにオフライン学習されており端末Fine-tuning非対応のため、切り替えるとFine-tuning入口は非表示になります。"
+            "value" : "クラシックモデルはローカルサンプルで端末上のFine-tuningが可能です。Sift Signalモデルは多言語向けにオフライン学習されており端末Fine-tuning非対応のため、切り替えるとFine-tuning入口は非表示になります。"
           }
         }
       }
@@ -3385,18 +3385,18 @@
         }
       }
     },
-    "解锁 Transformer 多语言模型" : {
+    "解锁 Sift Signal 多语言模型" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Unlock the Transformer multilingual model"
+            "value" : "Unlock the Sift Signal multilingual model"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Transformer多言語モデルをアンロック"
+            "value" : "Sift Signal多言語モデルをアンロック"
           }
         }
       }

@@ -15,7 +15,7 @@ SPEC.loader.exec_module(MODULE)
 def snapshot(*, at_least_one_second: int = 0) -> dict:
     identity = {
         "variant": "transformer",
-        "modelABI": "sift-mmbert-v2",
+        "modelABI": "sift-signal-v1",
         "releaseSequence": 9,
         "sha256": "a" * 64,
     }
@@ -90,6 +90,54 @@ class ExportMessageFilterEvidenceTests(unittest.TestCase):
                 low_power_passed=True,
                 memory_pressure_passed=True,
             )
+
+    def test_cpu_only_uses_device_runtime_evidence_without_accelerator_trace(self) -> None:
+        evidence = MODULE.build_evidence(
+            snapshot(),
+            9,
+            device_model="iPhone18,3",
+            os_version="27.0",
+            trace_count=0,
+            jetsam_count=0,
+            contention_fallback_p99=None,
+            gpu_contention_passed=False,
+            low_power_passed=False,
+            memory_pressure_passed=False,
+            runtime_benchmark={
+                "computeUnits": "cpuOnly",
+                "p99LatencyMilliseconds": 12,
+                "peakPhysicalFootprintIncreaseBytes": 1_000_000,
+                "computePlan": {
+                    "highestCostOperationDevice": "cpu",
+                    "cpuPreferredCost": 0.9,
+                },
+            },
+        )
+
+        self.assertEqual(evidence["computeUnits"], "cpuOnly")
+        self.assertTrue(evidence["cpuOnlyReleaseStressPassed"])
+        self.assertEqual(evidence["coreMLTraceAcceleratorExecutionCount"], 0)
+
+    def test_memory_reclamation_is_not_counted_as_positive_drift(self) -> None:
+        payload = snapshot()
+        release = next(iter(payload["releases"].values()))
+        release["latestPhysicalFootprintBytes"] = 90_000_000
+        evidence = MODULE.build_evidence(
+            payload,
+            9,
+            device_model="iPhone18,3",
+            os_version="27.0",
+            trace_count=1,
+            jetsam_count=0,
+            contention_fallback_p99=590,
+            gpu_contention_passed=True,
+            low_power_passed=True,
+            memory_pressure_passed=True,
+        )
+
+        self.assertEqual(evidence["memoryDriftBytes"], 0)
+        self.assertEqual(evidence["memoryDriftFraction"], 0)
+        self.assertEqual(evidence["signedMemoryChangeBytes"], -10_000_000)
 
 
 if __name__ == "__main__":

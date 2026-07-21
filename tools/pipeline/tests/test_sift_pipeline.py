@@ -3,6 +3,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
@@ -10,6 +11,13 @@ import sift_pipeline as pipeline  # noqa: E402
 
 
 class HoldoutIsolationTests(unittest.TestCase):
+    def test_transformer_defaults_preserve_full_release_model(self) -> None:
+        with patch.object(sys, "argv", ["sift_pipeline.py", "train-transformer"]):
+            arguments = pipeline.parse_arguments()
+
+        self.assertEqual(arguments.truncate_layers, 0)
+        self.assertEqual(arguments.max_sequence_length, 96)
+
     def test_training_guard_rejects_exact_and_digit_normalized_collisions(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

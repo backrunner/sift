@@ -73,12 +73,12 @@ The product is not launched yet; backward compatibility is not required.
     micro F1 >= 0.90 and clean-sentence FPR <= 0.02 on both the synthetic eval
     and `tools/pii-trainer/Evaluation/clean-negatives.ndjson`.
 
-## Current Model Baselines (2026-07-11)
+## Current Model Baselines (2026-07-22)
 
 | Variant | Version | Fixed 474 | Promotion 150 | Notes |
 | --- | --- | ---: | ---: | --- |
 | Classic | `maxent-boundary-v9` | 98.95% | 96.00% | 347.3 KB; Conversation 30/30 abstain |
-| Premium | `mmbert-boundary-v8` | 99.58% | 98.00% | int8 Core ML; 176,372,925 download bytes |
+| Premium | `signal-v1` | 99.37% | 100.00% | v11 lineage; 22-layer W8A16 Core ML, CPU-only; 159,107,309 download bytes |
 | PII | `pii-boundary-v5` | n/a | n/a | F1 99.37%; clean FPR 0/498 and 0/45 |
 
 The shared leak-free Premium candidate contains 13,419 rows with complete zh/en/ja

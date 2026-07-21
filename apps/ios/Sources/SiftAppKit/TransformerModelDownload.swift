@@ -6,10 +6,19 @@ import Network
 #endif
 
 public struct TransformerNetworkCondition: Hashable, Sendable {
+    public let isConnected: Bool
+    public let usesWiFi: Bool
     public let isExpensive: Bool
     public let isConstrained: Bool
 
-    public init(isExpensive: Bool = false, isConstrained: Bool = false) {
+    public init(
+        isConnected: Bool = true,
+        usesWiFi: Bool = true,
+        isExpensive: Bool = false,
+        isConstrained: Bool = false
+    ) {
+        self.isConnected = isConnected
+        self.usesWiFi = usesWiFi
         self.isExpensive = isExpensive
         self.isConstrained = isConstrained
     }
@@ -17,6 +26,15 @@ public struct TransformerNetworkCondition: Hashable, Sendable {
     public var requiresTrafficConfirmation: Bool {
         isExpensive || isConstrained
     }
+
+    public var allowsAutomaticModelUpdate: Bool {
+        isConnected && usesWiFi && !isExpensive && !isConstrained
+    }
+}
+
+public enum TransformerModelDownloadMode: Hashable, Sendable {
+    case interactive
+    case automatic
 }
 
 public struct TransformerModelDownloadArtifact: Hashable, Sendable {
@@ -40,6 +58,8 @@ public struct TransformerModelDownloadPlan: Hashable, Sendable {
     public let exactByteCount: Int64?
     public let estimatedByteCount: Int64?
     public let networkCondition: TransformerNetworkCondition
+    public let mode: TransformerModelDownloadMode
+    public let allowsMeteredNetwork: Bool
 
     public init(
         manifest: TransformerModelManifest,
@@ -47,7 +67,9 @@ public struct TransformerModelDownloadPlan: Hashable, Sendable {
         artifacts: [TransformerModelDownloadArtifact],
         exactByteCount: Int64?,
         estimatedByteCount: Int64?,
-        networkCondition: TransformerNetworkCondition
+        networkCondition: TransformerNetworkCondition,
+        mode: TransformerModelDownloadMode = .interactive,
+        allowsMeteredNetwork: Bool = false
     ) {
         self.manifest = manifest
         self.manifestURL = manifestURL
@@ -55,10 +77,38 @@ public struct TransformerModelDownloadPlan: Hashable, Sendable {
         self.exactByteCount = exactByteCount
         self.estimatedByteCount = estimatedByteCount
         self.networkCondition = networkCondition
+        self.mode = mode
+        self.allowsMeteredNetwork = allowsMeteredNetwork
     }
 
     public var displayByteCount: Int64? {
         exactByteCount ?? estimatedByteCount
+    }
+
+    public func forAutomaticUpdate() -> Self {
+        Self(
+            manifest: manifest,
+            manifestURL: manifestURL,
+            artifacts: artifacts,
+            exactByteCount: exactByteCount,
+            estimatedByteCount: estimatedByteCount,
+            networkCondition: networkCondition,
+            mode: .automatic,
+            allowsMeteredNetwork: false
+        )
+    }
+
+    public func allowingMeteredNetwork() -> Self {
+        Self(
+            manifest: manifest,
+            manifestURL: manifestURL,
+            artifacts: artifacts,
+            exactByteCount: exactByteCount,
+            estimatedByteCount: estimatedByteCount,
+            networkCondition: networkCondition,
+            mode: mode,
+            allowsMeteredNetwork: true
+        )
     }
 }
 
@@ -160,7 +210,9 @@ public struct TransformerModelStoreRemover: TransformerModelRemoving {
 
     @concurrent
     public func removeInstalledModel() async throws {
-        try TransformerModelStore.remove()
+        for resourceName in TransformerClassifierLoader.compatibleResourceNames {
+            try TransformerModelStore.remove(resourceName: resourceName)
+        }
     }
 }
 
@@ -176,6 +228,8 @@ public struct PathNetworkConditionChecker: TransformerNetworkConditionChecking {
             monitor.pathUpdateHandler = { path in
                 box.resume(
                     TransformerNetworkCondition(
+                        isConnected: path.status == .satisfied,
+                        usesWiFi: path.usesInterfaceType(.wifi),
                         isExpensive: path.isExpensive,
                         isConstrained: path.isConstrained
                     )
@@ -183,11 +237,11 @@ public struct PathNetworkConditionChecker: TransformerNetworkConditionChecking {
             }
             monitor.start(queue: queue)
             queue.asyncAfter(deadline: .now() + 1.0) {
-                box.resume(TransformerNetworkCondition())
+                box.resume(TransformerNetworkCondition(isConnected: false, usesWiFi: false))
             }
         }
         #else
-        TransformerNetworkCondition()
+        TransformerNetworkCondition(isConnected: true, usesWiFi: true)
         #endif
     }
 }
@@ -229,6 +283,7 @@ public final class TransformerModelDownloadClient: TransformerModelDownloading, 
     private let session: URLSession
     private let networkConditionChecker: any TransformerNetworkConditionChecking
     private let fileManager: FileManager
+    private let backgroundSessionIdentifierPrefix: String?
     private let stateLock = NSLock()
     private var channelETag: String?
     private var cachedChannel: TransformerChannelManifestV2?
@@ -239,7 +294,8 @@ public final class TransformerModelDownloadClient: TransformerModelDownloading, 
         resourceName: String = TransformerClassifierLoader.defaultResourceName,
         session: URLSession = .shared,
         networkConditionChecker: any TransformerNetworkConditionChecking = PathNetworkConditionChecker(),
-        fileManager: FileManager = .default
+        fileManager: FileManager = .default,
+        backgroundSessionIdentifierPrefix: String? = nil
     ) {
         self.manifestURL = manifestURL
         self.channelURL = nil
@@ -251,6 +307,7 @@ public final class TransformerModelDownloadClient: TransformerModelDownloading, 
         self.session = session
         self.networkConditionChecker = networkConditionChecker
         self.fileManager = fileManager
+        self.backgroundSessionIdentifierPrefix = backgroundSessionIdentifierPrefix
     }
 
     public init(
@@ -262,7 +319,8 @@ public final class TransformerModelDownloadClient: TransformerModelDownloading, 
         resourceName: String = TransformerClassifierLoader.defaultResourceName,
         session: URLSession = .shared,
         networkConditionChecker: any TransformerNetworkConditionChecking = PathNetworkConditionChecker(),
-        fileManager: FileManager = .default
+        fileManager: FileManager = .default,
+        backgroundSessionIdentifierPrefix: String? = nil
     ) {
         self.manifestURL = channelURL
         self.channelURL = channelURL
@@ -274,10 +332,11 @@ public final class TransformerModelDownloadClient: TransformerModelDownloading, 
         self.session = session
         self.networkConditionChecker = networkConditionChecker
         self.fileManager = fileManager
+        self.backgroundSessionIdentifierPrefix = backgroundSessionIdentifierPrefix
     }
 
     public static func configured(bundle: Bundle = .main) -> TransformerModelDownloadClient? {
-        let keys = ["SiftTransformerModelChannelURL", "SIFT_TRANSFORMER_MODEL_CHANNEL_URL"]
+        let keys = ["SiftSignalModelChannelURL", "SIFT_SIGNAL_MODEL_CHANNEL_URL"]
         let channelURL = keys.compactMap { key -> URL? in
             guard
                 let value = bundle.object(forInfoDictionaryKey: key) as? String,
@@ -289,9 +348,9 @@ public final class TransformerModelDownloadClient: TransformerModelDownloading, 
             return url
         }.first
 
-        let keyID = bundle.object(forInfoDictionaryKey: "SiftTransformerModelPublicKeyID") as? String ?? "release-2026"
-        let configuredKey = bundle.object(forInfoDictionaryKey: "SiftTransformerModelPublicKey") as? String
-        let dictionaryKeys = bundle.object(forInfoDictionaryKey: "SiftTransformerModelPublicKeys") as? [String: String] ?? [:]
+        let keyID = bundle.object(forInfoDictionaryKey: "SiftSignalModelPublicKeyID") as? String ?? "release-2026"
+        let configuredKey = bundle.object(forInfoDictionaryKey: "SiftSignalModelPublicKey") as? String
+        let dictionaryKeys = bundle.object(forInfoDictionaryKey: "SiftSignalModelPublicKeys") as? [String: String] ?? [:]
         var publicKeys = dictionaryKeys
         if let configuredKey, !configuredKey.isEmpty {
             publicKeys[keyID] = configuredKey
@@ -300,13 +359,14 @@ public final class TransformerModelDownloadClient: TransformerModelDownloading, 
             return nil
         }
 
-        let estimatedBytes = (bundle.object(forInfoDictionaryKey: "SiftTransformerModelEstimatedBytes") as? NSNumber)?.int64Value
+        let estimatedBytes = (bundle.object(forInfoDictionaryKey: "SiftSignalModelEstimatedBytes") as? NSNumber)?.int64Value
         let appBuild = Int(bundle.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "") ?? 0
         return TransformerModelDownloadClient(
             channelURL: channelURL,
             publicKeys: publicKeys,
             appBuild: appBuild,
-            estimatedByteCount: estimatedBytes
+            estimatedByteCount: estimatedBytes,
+            backgroundSessionIdentifierPrefix: "io.alkinum.sift.signal-download"
         )
     }
 
@@ -316,7 +376,12 @@ public final class TransformerModelDownloadClient: TransformerModelDownloading, 
         let manifest: TransformerModelManifest
         if let channelURL, let manifestVerifier {
             let channel = try await fetchChannel(at: channelURL, verifier: manifestVerifier)
-            let currentSequence = TransformerClassifierLoader.manifest()?.releaseSequence ?? 0
+            let installedManifest = TransformerClassifierLoader.manifest()
+            let currentSequence = Self.effectiveCurrentReleaseSequence(
+                currentModelABI: installedManifest?.modelABI,
+                currentReleaseSequence: installedManifest?.releaseSequence ?? 0,
+                channelABI: channel.modelABI
+            )
             guard manifestVerifier.compatibility(
                 of: channel,
                 appBuild: appBuild,
@@ -367,9 +432,11 @@ public final class TransformerModelDownloadClient: TransformerModelDownloading, 
         }
         do {
             let channel = try await fetchChannel(at: channelURL, verifier: manifestVerifier)
-            let currentSequence = currentIdentity?.variant == .transformer
-                ? currentIdentity?.releaseSequence ?? 0
-                : 0
+            let currentSequence = Self.effectiveCurrentReleaseSequence(
+                currentModelABI: currentIdentity?.variant == .transformer ? currentIdentity?.modelABI : nil,
+                currentReleaseSequence: currentIdentity?.releaseSequence ?? 0,
+                channelABI: channel.modelABI
+            )
             let compatibility = manifestVerifier.compatibility(
                 of: channel,
                 appBuild: appBuild,
@@ -394,7 +461,7 @@ public final class TransformerModelDownloadClient: TransformerModelDownloading, 
         guard
             manifest.schemaVersion == TransformerManifestVerifier.supportedSchemaVersion,
             TransformerManifestVerifier.supportedModelABIs.contains(manifest.modelABI),
-            manifest.runtimeProfile.computeUnits == "all",
+            TransformerRuntimeProfile.supportedComputeUnits.contains(manifest.runtimeProfile.computeUnits),
             [4, 8].contains(manifest.quantizationProfile.weightBits),
             manifest.tokenizerKind == "bpe",
             manifest.tokenizerArtifact.hasSuffix(".siftbpe"),
@@ -433,6 +500,14 @@ public final class TransformerModelDownloadClient: TransformerModelDownloading, 
         }
     }
 
+    static func effectiveCurrentReleaseSequence(
+        currentModelABI: String?,
+        currentReleaseSequence: Int,
+        channelABI: String
+    ) -> Int {
+        currentModelABI == channelABI ? currentReleaseSequence : 0
+    }
+
     @concurrent
     public func download(
         _ plan: TransformerModelDownloadPlan,
@@ -441,10 +516,7 @@ public final class TransformerModelDownloadClient: TransformerModelDownloading, 
     ) async throws {
         phase(.downloading)
         let staging = TransformerModelStore.stagingDirectory(resourceName: resourceName, fileManager: fileManager)
-        if fileManager.fileExists(atPath: staging.path) {
-            try fileManager.removeItem(at: staging)
-        }
-        try fileManager.createDirectory(at: staging, withIntermediateDirectories: true)
+        try prepareStagingDirectory(staging, for: plan.manifest)
 
         do {
             let manifestData = try JSONEncoder().encode(plan.manifest)
@@ -459,8 +531,23 @@ public final class TransformerModelDownloadClient: TransformerModelDownloading, 
                 let targetURL = staging.appendingPathComponent(artifact.relativePath, isDirectory: false)
                 try fileManager.createDirectory(at: targetURL.deletingLastPathComponent(), withIntermediateDirectories: true)
 
+                if
+                    fileManager.fileExists(atPath: targetURL.path),
+                    try TransformerModelStore.fileSHA256(at: targetURL) == artifact.sha256
+                {
+                    completedBytes += artifact.byteCount
+                    progress(TransformerModelDownloadProgress(
+                        receivedBytes: completedBytes,
+                        totalBytes: plan.displayByteCount
+                    ))
+                    continue
+                }
+                if fileManager.fileExists(atPath: targetURL.path) {
+                    try fileManager.removeItem(at: targetURL)
+                }
+
                 let baseCompletedBytes = completedBytes
-                let received = try await downloadArtifact(artifact, to: targetURL) { partial in
+                let received = try await downloadArtifact(artifact, to: targetURL, plan: plan) { partial in
                     progress(TransformerModelDownloadProgress(
                         receivedBytes: baseCompletedBytes + partial,
                         totalBytes: plan.displayByteCount
@@ -471,6 +558,7 @@ public final class TransformerModelDownloadClient: TransformerModelDownloading, 
                 progress(TransformerModelDownloadProgress(receivedBytes: completedBytes, totalBytes: plan.displayByteCount))
 
                 if try TransformerModelStore.fileSHA256(at: targetURL) != artifact.sha256 {
+                    try? fileManager.removeItem(at: targetURL)
                     throw TransformerModelDownloadError.checksumMismatch(artifact.relativePath)
                 }
             }
@@ -506,6 +594,14 @@ public final class TransformerModelDownloadClient: TransformerModelDownloading, 
             )
             try Task.checkCancellation()
             try TransformerModelStore.activate(stagedDirectory: staging, resourceName: resourceName, fileManager: fileManager)
+            if resourceName == TransformerClassifierLoader.defaultResourceName {
+                for legacyResourceName in TransformerClassifierLoader.legacyResourceNames {
+                    try? TransformerModelStore.remove(
+                        resourceName: legacyResourceName,
+                        fileManager: fileManager
+                    )
+                }
+            }
             FilterConfigurationSnapshotStore.refreshModelArtifactIdentity()
             let resumeDirectory = TransformerModelStore.downloadResumeDataDirectory(
                 resourceName: resourceName,
@@ -515,9 +611,30 @@ public final class TransformerModelDownloadClient: TransformerModelDownloading, 
                 try? fileManager.removeItem(at: resumeDirectory)
             }
         } catch {
-            try? fileManager.removeItem(at: staging)
+            // Keep valid completed artifacts and URLSession resume data. A
+            // later attempt revalidates every file before it can be activated.
             throw error
         }
+    }
+
+    private func prepareStagingDirectory(
+        _ staging: URL,
+        for manifest: TransformerModelManifest
+    ) throws {
+        if fileManager.fileExists(atPath: staging.path) {
+            let existingManifestURL = TransformerModelStore.manifestURL(
+                resourceName: resourceName,
+                in: staging,
+                fileManager: fileManager
+            )
+            let existingManifest = (try? Data(contentsOf: existingManifestURL)).flatMap {
+                try? JSONDecoder().decode(TransformerModelManifest.self, from: $0)
+            }
+            if existingManifest?.artifactIdentity != manifest.artifactIdentity {
+                try fileManager.removeItem(at: staging)
+            }
+        }
+        try fileManager.createDirectory(at: staging, withIntermediateDirectories: true)
     }
 
     private func fetchManifest(at url: URL) async throws -> TransformerModelManifest {
@@ -614,6 +731,7 @@ public final class TransformerModelDownloadClient: TransformerModelDownloading, 
     private func downloadArtifact(
         _ artifact: TransformerModelDownloadArtifact,
         to targetURL: URL,
+        plan: TransformerModelDownloadPlan,
         progress: @Sendable @escaping (Int64) -> Void
     ) async throws -> Int64 {
         guard let resumeDataURL = TransformerModelStore.downloadResumeDataURL(
@@ -627,7 +745,13 @@ public final class TransformerModelDownloadClient: TransformerModelDownloading, 
             targetURL: targetURL,
             resumeDataURL: resumeDataURL,
             fileManager: fileManager,
-            progress: progress
+            progress: progress,
+            backgroundSessionIdentifier: backgroundSessionIdentifierPrefix.map {
+                let policy = plan.allowsMeteredNetwork ? "metered" : "wifi"
+                return "\($0).\(policy).\(artifact.sha256.prefix(24))"
+            },
+            allowsMeteredNetwork: plan.allowsMeteredNetwork,
+            isDiscretionary: plan.mode == .automatic
         )
         let receivedBytes = try await operation.run(using: session, url: artifact.remoteURL)
         try Task.checkCancellation()
@@ -662,6 +786,9 @@ private final class TransformerArtifactDownloadOperation: NSObject, URLSessionDo
     private let resumeDataURL: URL
     private let fileManager: FileManager
     private let progress: @Sendable (Int64) -> Void
+    private let backgroundSessionIdentifier: String?
+    private let allowsMeteredNetwork: Bool
+    private let isDiscretionary: Bool
     private let lock = NSLock()
 
     private var continuation: CheckedContinuation<Int64, Error>?
@@ -677,12 +804,18 @@ private final class TransformerArtifactDownloadOperation: NSObject, URLSessionDo
         targetURL: URL,
         resumeDataURL: URL,
         fileManager: FileManager,
-        progress: @Sendable @escaping (Int64) -> Void
+        progress: @Sendable @escaping (Int64) -> Void,
+        backgroundSessionIdentifier: String?,
+        allowsMeteredNetwork: Bool,
+        isDiscretionary: Bool
     ) {
         self.targetURL = targetURL
         self.resumeDataURL = resumeDataURL
         self.fileManager = fileManager
         self.progress = progress
+        self.backgroundSessionIdentifier = backgroundSessionIdentifier
+        self.allowsMeteredNetwork = allowsMeteredNetwork
+        self.isDiscretionary = isDiscretionary
     }
 
     var response: URLResponse? {
@@ -699,32 +832,51 @@ private final class TransformerArtifactDownloadOperation: NSObject, URLSessionDo
                 let wasCancelled = cancellationRequested
                 lock.unlock()
 
+                let configuration: URLSessionConfiguration
+                if let backgroundSessionIdentifier {
+                    configuration = URLSessionConfiguration.background(
+                        withIdentifier: backgroundSessionIdentifier
+                    )
+                    configuration.sessionSendsLaunchEvents = true
+                    configuration.waitsForConnectivity = true
+                    configuration.isDiscretionary = isDiscretionary
+                    configuration.allowsCellularAccess = allowsMeteredNetwork
+                    configuration.allowsExpensiveNetworkAccess = allowsMeteredNetwork
+                    configuration.allowsConstrainedNetworkAccess = allowsMeteredNetwork
+                } else {
+                    configuration = baseSession.configuration
+                }
                 let session = URLSession(
-                    configuration: baseSession.configuration,
+                    configuration: configuration,
                     delegate: self,
                     delegateQueue: nil
                 )
-                let task: URLSessionDownloadTask
-                if let resumeData = try? Data(contentsOf: resumeDataURL), !resumeData.isEmpty {
-                    task = session.downloadTask(withResumeData: resumeData)
-                } else {
-                    task = session.downloadTask(with: url)
-                }
+                session.getAllTasks { [self] tasks in
+                    let task = tasks.compactMap { $0 as? URLSessionDownloadTask }.first
+                        ?? makeDownloadTask(session: session, url: url)
 
-                lock.lock()
-                self.session = session
-                self.task = task
-                let shouldCancel = cancellationRequested || wasCancelled
-                lock.unlock()
+                    lock.lock()
+                    self.session = session
+                    self.task = task
+                    let shouldCancel = cancellationRequested || wasCancelled
+                    lock.unlock()
 
-                task.resume()
-                if shouldCancel {
-                    task.cancel()
+                    task.resume()
+                    if shouldCancel {
+                        task.cancel()
+                    }
                 }
             }
         }, onCancel: {
             cancel()
         })
+    }
+
+    private func makeDownloadTask(session: URLSession, url: URL) -> URLSessionDownloadTask {
+        if let resumeData = try? Data(contentsOf: resumeDataURL), !resumeData.isEmpty {
+            return session.downloadTask(withResumeData: resumeData)
+        }
+        return session.downloadTask(with: url)
     }
 
     private func cancel() {
@@ -758,6 +910,13 @@ private final class TransformerArtifactDownloadOperation: NSObject, URLSessionDo
         if shouldEmit {
             progress(totalBytesWritten)
         }
+    }
+
+    func urlSessionDidFinishEvents(forBackgroundURLSession session: URLSession) {
+        guard let identifier = session.configuration.identifier else {
+            return
+        }
+        TransformerBackgroundSessionEvents.finish(identifier: identifier)
     }
 
     func urlSession(
@@ -836,6 +995,71 @@ private final class TransformerArtifactDownloadOperation: NSObject, URLSessionDo
             // Resume data is an optimization. A failed write falls back to a
             // clean download without weakening artifact checksum validation.
         }
+    }
+}
+
+public enum TransformerBackgroundSessionEvents {
+    private static let storage = TransformerBackgroundSessionEventStorage()
+
+    public static func registerReconnectHandler(
+        _ handler: @escaping @Sendable (String) -> Void
+    ) {
+        storage.register(handler)
+    }
+
+    public static func handle(
+        identifier: String,
+        completionHandler: @escaping () -> Void
+    ) {
+        storage.store(identifier: identifier, completionHandler: completionHandler)
+    }
+
+    fileprivate static func finish(identifier: String) {
+        storage.finish(identifier: identifier)
+    }
+}
+
+private final class TransformerBackgroundSessionEventStorage: @unchecked Sendable {
+    private let lock = NSLock()
+    private var completionHandlers: [String: () -> Void] = [:]
+    private var reconnectHandler: (@Sendable (String) -> Void)?
+    private var pendingIdentifiers: Set<String> = []
+
+    func register(_ handler: @escaping @Sendable (String) -> Void) {
+        let pending = lock.withLock {
+            reconnectHandler = handler
+            let pending = pendingIdentifiers
+            pendingIdentifiers.removeAll()
+            return pending
+        }
+        for identifier in pending {
+            handler(identifier)
+        }
+    }
+
+    func store(
+        identifier: String,
+        completionHandler: @escaping () -> Void
+    ) {
+        let handler = lock.withLock { () -> (@Sendable (String) -> Void)? in
+            completionHandlers[identifier] = completionHandler
+            if let reconnectHandler {
+                return reconnectHandler
+            }
+            pendingIdentifiers.insert(identifier)
+            return nil
+        }
+        handler?(identifier)
+    }
+
+    func finish(identifier: String) {
+        let completionHandler = lock.withLock {
+            completionHandlers.removeValue(forKey: identifier)
+        }
+        guard let completionHandler else {
+            return
+        }
+        completionHandler()
     }
 }
 

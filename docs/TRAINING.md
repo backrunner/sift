@@ -137,7 +137,7 @@ retrain.
 
 ```bash
 pnpm pipeline -- train-transformer \
-  --version-transformer mmbert-0.1 --quantize int8
+  --version-transformer signal-v1 --quantize int8
 ```
 
 - `--device auto` selects cuda (NVIDIA or AMD ROCm), then mps (Apple Silicon),
@@ -147,49 +147,52 @@ pnpm pipeline -- train-transformer \
   metaspace BPE tokenizer. Override with `--backbone`.
 - Every run writes `transformer-model/checkpoint/` and `training-report.html`
   with loss curves, per-label accuracy, and confusion pairs.
-- Size controls: `--quantize int8` and `--truncate-layers N`. The BPE tokenizer
+- Size controls include `--quantize int8` and experimental
+  `--truncate-layers N`. Do not reduce layers when the full model meets the
+  device memory and latency gates, because that trades away quality without a
+  release benefit. The BPE tokenizer
   is exported as the memory-mapped
-  `SiftTransformerClassifier.tokenizer.siftbpe` artifact.
-- The exported `SiftTransformerClassifier.manifest.json` includes
+  `SiftSignalModel.tokenizer.siftbpe` artifact.
+- The exported `SiftSignalModel.manifest.json` includes
   `remoteArtifacts` and `downloadBytes`. `.mlpackage` is a directory package,
   so remote distribution downloads the listed files individually.
 - Core ML export targets iOS 18.0. This is required for W4 per-block PTQ;
   exporting at an older deployment target makes Core ML reject block
   quantization before quality evaluation.
-- The accepted `mmbert-boundary-v8` checkpoint keeps 99.58% fixed-set accuracy
-  and reaches 98.00% on the breadth-first 150-row promotion boundary set after
-  one epoch at `1e-5`. The 96 added zh/en/ja variants cover game marketplaces,
+- The accepted 22-layer W8A16 `signal-v1` candidate reaches 99.37% on the
+  474-row fixed set and 100% on the 150-row promotion boundary set. The 96
+  added zh/en/ja variants cover game marketplaces,
   retail, finance, carrier offers, travel, insurance, services, loans, housing,
   and semantically adjacent transaction/normal-message/scam negatives.
 
-### 2.5 Upload The Premium Transformer Model
+### 2.5 Upload The Premium Sift Signal Model
 
 The app reads the manifest first when a Premium user switches to the transformer:
 
 ```text
-https://sift.alkinum.io/models/SiftTransformerClassifier.manifest.json
+https://sift.alkinum.io/models/channels/v2/SiftSignalModel.channel.json
 ```
 
-After accepting a transformer training run, upload
-`build/pipeline/transformer-model/` to the public directory behind that URL.
+After accepting a training run, publish the selected candidate and its signed
+channel pointer to the public directory behind that URL.
 The recommended target is a Cloudflare R2 bucket exposed through a public
 custom domain or Worker/Pages route.
 
 - Recommended R2 object key prefix: `models/`.
 - Public base URL used by the app: `https://sift.alkinum.io/models`.
 - These must map one-to-one so
-  `models/SiftTransformerClassifier.manifest.json` is publicly reachable.
+  `models/channels/v2/SiftSignalModel.channel.json` is publicly reachable.
 
 Credentials must not be committed. Copy the dotenv sample and provide real
 values locally or via CI secrets:
 
 ```bash
-cp .env.transformer-model.example .env.transformer-model
+cp .env.signal-model.example .env.signal-model
 ```
 
-The upload script loads `.env.transformer-model` from the repository root when
+The upload script loads `.env.signal-model` from the repository root when
 present. Use `--env-file /path/to/file` to choose another file or
-`--no-env-file` to skip dotenv loading. The real `.env.transformer-model` file
+`--no-env-file` to skip dotenv loading. The real `.env.signal-model` file
 is git-ignored and must not be committed.
 
 Use Cloudflare R2 S3-compatible access keys for `AWS_ACCESS_KEY_ID` and
@@ -198,7 +201,8 @@ run a dry-run to validate the manifest, hashes, and total byte size:
 
 ```bash
 pnpm upload:transformer-model -- \
-  --model-dir build/pipeline/transformer-model \
+  --model-dir build/pipeline/transformer-model/quantization-tournament/candidates/w8a16-channel-ptq \
+  --selection build/pipeline/transformer-model/quantization-tournament/selected-candidate.json \
   --dry-run
 ```
 
@@ -206,7 +210,8 @@ Upload to R2:
 
 ```bash
 pnpm upload:transformer-model -- \
-  --model-dir build/pipeline/transformer-model \
+  --model-dir build/pipeline/transformer-model/quantization-tournament/candidates/w8a16-channel-ptq \
+  --selection build/pipeline/transformer-model/quantization-tournament/selected-candidate.json \
   --r2-bucket "$SIFT_MODEL_R2_BUCKET" \
   --verify-http
 ```
@@ -220,7 +225,8 @@ You can also copy to a local publish directory:
 
 ```bash
 pnpm upload:transformer-model -- \
-  --model-dir build/pipeline/transformer-model \
+  --model-dir build/pipeline/transformer-model/quantization-tournament/candidates/w8a16-channel-ptq \
+  --selection build/pipeline/transformer-model/quantization-tournament/selected-candidate.json \
   --dest-dir /path/to/public/models
 ```
 
@@ -230,7 +236,8 @@ file, supporting `{src}`, `{path}`, `{content_type}`, and `{cache_control}`:
 
 ```bash
 pnpm upload:transformer-model -- \
-  --model-dir build/pipeline/transformer-model \
+  --model-dir build/pipeline/transformer-model/quantization-tournament/candidates/w8a16-channel-ptq \
+  --selection build/pipeline/transformer-model/quantization-tournament/selected-candidate.json \
   --base-url https://sift.alkinum.io/models \
   --upload-command 'rclone copyto {src} r2:sift-models/models/{path}' \
   --verify-http
@@ -242,15 +249,14 @@ Release acceptance:
    export size.
 2. `--verify-http` must confirm that the manifest and every artifact are
    reachable through the CDN.
-3. On device, selecting transformer while not purchased should open the Premium
-   purchase flow only. After purchase, selecting transformer should start the
+3. On device, selecting Sift Signal while not purchased should open the Premium
+   purchase flow only. After purchase, selecting Sift Signal should start the
    download. Expensive or Low Data Mode networks should show the traffic prompt.
 4. Until download and checksum validation complete, the extension must keep
    using the classic model. It switches only after validation.
-5. On pre-A12 hardware, the Premium settings row must show an unsupported-device
-   state, model selection must not start purchase or download, and the actual
-   IdentityLookup extension must fall back to Classic without loading the
-   Transformer runtime.
+5. On the available physical release device, the production message-filter
+   engine must pass the cold/warm latency, fallback, watchdog, jetsam, and
+   positive-memory-drift gates using the manifest's compute-unit policy.
 
 ### 2.6 Incremental Fine-Tuning
 
@@ -321,7 +327,7 @@ and per-language evaluation.
 | `build/pipeline/train.curated.ndjson` | CloudKit/public corpus after quality and diversity filtering, before augmentation |
 | `build/pipeline/augmentation-report.json` | Added/rejected generalization rows by label and family |
 | `build/pipeline/apple-model/SiftSMSClassifier.{mlmodel,manifest.json}` | App and extension classic model |
-| `build/pipeline/transformer-model/SiftTransformerClassifier.{mlpackage,tokenizer.siftbpe,manifest.json}` | Upload to `https://sift.alkinum.io/models/` for Premium on-demand download |
+| `build/pipeline/transformer-model/SiftSignalModel.{mlpackage,tokenizer.siftbpe,manifest.json}` | Upload to `https://sift.alkinum.io/models/` for Premium on-demand download |
 | `build/pipeline/transformer-model/checkpoint/` | Fine-tuning starting point |
 | `build/pipeline/transformer-model/training-report.html` | Training report |
 | `build/pii-model/SiftPIIDetector.*` | Optional app PII model |

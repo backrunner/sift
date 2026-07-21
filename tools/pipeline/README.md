@@ -13,8 +13,8 @@ pnpm pipeline -- finetune                     # resume last checkpoint, low LR
 pnpm pipeline -- train-transformer \
   --resume-from build/pipeline/transformer-model/checkpoint
 pnpm pipeline -- quantize-transformer \
-  --version-transformer mmbert-boundary-v9 --release-sequence 9 \
-  --minimum-app-build 7 --maximum-app-build 20
+  --version-transformer signal-v1 --release-sequence 1 \
+  --minimum-app-build 9 --maximum-app-build 2147483647
 # Add --qat-model w4a16-block16-qat=/path/to/qat.mlpackage when PTQ quality fails.
 ```
 
@@ -45,10 +45,11 @@ inputs, so any stage can be re-run in isolation; artifacts live under
   cuda (NVIDIA/ROCm) → mps (Apple Silicon) → cpu automatically, always writes
   a resumable checkpoint, and emits
   `training-report.html` (loss curve, per-label accuracy, confusion pairs).
-- `quantize-transformer` regenerates FP16, W8A16, W8A8, W4A16 and W4A8
-  candidates for the current checkpoint. It never reuses the previous
-  release's winner. W4 QAT candidates are considered only when their paired
-  PTQ candidate fails quality gates.
+- `quantize-transformer` regenerates FP16, W8A16, and supported W4A16
+  candidates for the current checkpoint. Unsupported activation-quantized
+  combinations are not generated. It never reuses the previous release's
+  winner. W4 QAT candidates are considered only when their paired PTQ
+  candidate fails quality gates.
 - `finetune` is the incremental path after new data lands: it resumes the
   latest checkpoint with a low learning rate (default 1e-5) instead of
   retraining from scratch.
@@ -61,24 +62,22 @@ enabled). The orchestrator itself is stdlib-only Python 3.10+.
 
 For every candidate report under
 `build/pipeline/transformer-model/quantization-tournament/reports`, run
-`TransformerRuntimeBenchmark` and the real IdentityLookup extension suite on
-both an A12/iOS 18 device and a current-generation iPhone. Merge both evidence
-sets into the report:
+`TransformerRuntimeBenchmark` and the device-hosted production
+`MessageFilterEngine` stress suite on the physical iPhone available for the
+release. Merge that evidence into the report:
 
 ```bash
 python3 tools/transformer-trainer/record_device_metrics.py \
   --report build/pipeline/transformer-model/quantization-tournament/reports/w8a16-channel-ptq.report.json \
-  --runtime-benchmark /path/to/a12-runtime.json \
-  --extension-evidence /path/to/a12-extension.json \
-  --current-runtime-benchmark /path/to/current-runtime.json \
-  --current-extension-evidence /path/to/current-extension.json
+  --runtime-benchmark /path/to/runtime-benchmark.json \
+  --extension-evidence /path/to/extension-evidence.json
 ```
 
 After every candidate has device evidence, select the winner. Selection fails
 instead of falling back to FP16 when no int8/int4 candidate passes:
 
 ```bash
-pnpm pipeline -- select-transformer --release-sequence 9
+pnpm pipeline -- select-transformer --release-sequence 1
 ```
 
 Publish only the selected candidate. The publisher verifies the report SHA,
@@ -88,6 +87,6 @@ before writing the immutable release and mutable channel pointer:
 ```bash
 python3 tools/transformer-trainer/upload_transformer_model.py \
   --model-dir build/pipeline/transformer-model/quantization-tournament/candidates/w8a16-channel-ptq \
-  --selection build/pipeline/transformer-model/selected-candidate.json \
+  --selection build/pipeline/transformer-model/quantization-tournament/selected-candidate.json \
   --r2-bucket "$SIFT_MODEL_R2_BUCKET" --verify-http
 ```

@@ -286,6 +286,9 @@ public final class SiftAppModel {
     private let transformerUpdateChecker: (any TransformerModelUpdateChecking)?
 
     @ObservationIgnored
+    private let transformerNetworkConditionChecker: any TransformerNetworkConditionChecking
+
+    @ObservationIgnored
     private let modelClassifierLoader: any SiftModelClassifierLoading
 
     @ObservationIgnored
@@ -293,6 +296,15 @@ public final class SiftAppModel {
 
     @ObservationIgnored
     private var transformerUpdateCheckTask: Task<Void, Never>?
+
+    @ObservationIgnored
+    private var automaticTransformerUpdateTask: Task<Void, Never>?
+
+    @ObservationIgnored
+    private var automaticTransformerUpdateRequestID: UUID?
+
+    @ObservationIgnored
+    private var hasPendingTransformerBackgroundDownloadEvents = false
 
     @ObservationIgnored
     private var installedTransformerIdentity: ModelArtifactIdentity?
@@ -362,6 +374,7 @@ public final class SiftAppModel {
         transformerDeviceSupportOverride: TransformerDeviceSupport? = nil,
         transformerDownloader: (any TransformerModelDownloading)? = TransformerModelDownloadClient.configured(),
         transformerUpdateChecker: (any TransformerModelUpdateChecking)? = nil,
+        transformerNetworkConditionChecker: any TransformerNetworkConditionChecking = PathNetworkConditionChecker(),
         transformerModelRemover: any TransformerModelRemoving = TransformerModelStoreRemover(),
         modelClassifierLoader: any SiftModelClassifierLoading = DefaultSiftModelClassifierLoader(),
         modelSelectionDefaults: UserDefaults? = nil,
@@ -386,14 +399,14 @@ public final class SiftAppModel {
         self.transformerDownloader = transformerDownloader
         self.transformerUpdateChecker = transformerUpdateChecker
             ?? (transformerDownloader as? any TransformerModelUpdateChecking)
-            ?? TransformerModelDownloadClient.configured()
+        self.transformerNetworkConditionChecker = transformerNetworkConditionChecker
         self.transformerModelRemover = transformerModelRemover
         self.modelClassifierLoader = modelClassifierLoader
         let resolvedTransformerDeviceSupport = transformerDeviceSupportOverride ?? .current()
         self.transformerDeviceSupport = resolvedTransformerDeviceSupport
         self.premium = PremiumStore(backend: premiumBackend)
 
-        let installedTransformer = TransformerModelStore.installedModel(validateChecksums: false)
+        let installedTransformer = TransformerClassifierLoader.installedModel(validateChecksums: false)
         self.installedTransformerVersion = installedTransformer?.manifest.version
         self.installedTransformerTrainedAt = installedTransformer?.manifest.trainedAt
         self.installedTransformerIdentity = installedTransformer?.manifest.artifactIdentity
@@ -418,6 +431,12 @@ public final class SiftAppModel {
         self.pipeline = ClassificationPipeline(classifier: placeholder)
         self.rules = Self.loadPersistedRules(defaults: ruleDefaults)
         self.categoryMappings = SharedCategoryMappingStore.load(defaults: categoryMappingDefaults)
+
+        TransformerBackgroundSessionEvents.registerReconnectHandler { [weak self] _ in
+            Task { @MainActor [weak self] in
+                self?.resumeTransformerBackgroundDownload()
+            }
+        }
 
         if let cachedHistory = SubmissionHistoryCache.load(defaults: ledgerDefaults) {
             self.submissionHistory = Array(cachedHistory.submissions.prefix(Self.historyMaxItems))
@@ -456,6 +475,7 @@ public final class SiftAppModel {
             }
             let wasWaitingToRestoreTransformer = self.modelVariantToRestoreAfterEntitlement == .transformer
             self.modelVariantToRestoreAfterEntitlement = nil
+            self.cancelAutomaticTransformerUpdate()
             self.cancelPendingTransformerDownload()
             if self.modelVariantBeingLoaded == .transformer {
                 self.cancelModelSwitch()
@@ -576,6 +596,17 @@ public final class SiftAppModel {
         beginTransformerDownloadAndSwitch(allowMeteredNetwork: false)
     }
 
+    public func applicationDidBecomeActive() {
+        scheduleAutomaticTransformerUpdateIfEligible(
+            force: hasPendingTransformerBackgroundDownloadEvents
+        )
+    }
+
+    func resumeTransformerBackgroundDownload() {
+        hasPendingTransformerBackgroundDownloadEvents = true
+        scheduleAutomaticTransformerUpdateIfEligible(force: true)
+    }
+
     public var availableModelVariants: [ModelVariant] {
         ModelVariant.allCases
     }
@@ -620,11 +651,15 @@ public final class SiftAppModel {
             return
         }
 
+        if variant == .classic {
+            cancelAutomaticTransformerUpdate()
+        }
+
         switchToModelVariant(variant)
     }
 
     public func showTransformerUnsupportedMessage() {
-        showToast(.info, String(localized: "此设备不支持 Transformer 高级模型"))
+        showToast(.info, String(localized: "此设备不支持 Sift Signal 高级模型"))
     }
 
     private func switchToModelVariant(
@@ -716,6 +751,9 @@ public final class SiftAppModel {
                 self.showToast(.success, String(localized: "已切换至\(variant.title)"))
             }
             completion?(true)
+            if variant == .transformer {
+                self.scheduleAutomaticTransformerUpdateIfEligible()
+            }
         }
     }
 
@@ -738,6 +776,7 @@ public final class SiftAppModel {
         }
 
         isClearingTransformerModel = true
+        cancelAutomaticTransformerUpdate()
         if selectedModelVariant == .transformer {
             switchToModelVariant(.classic, showsSuccessToast: false) { [weak self] didSwitch in
                 guard let self else { return }
@@ -769,7 +808,7 @@ public final class SiftAppModel {
                 self.installedTransformerIdentity = nil
                 self.isClearingTransformerModel = false
                 self.transformerCleanupTask = nil
-                self.showToast(.success, String(localized: "Transformer 模型已清理"))
+                self.showToast(.success, String(localized: "Sift Signal 模型已清理"))
             } catch is CancellationError {
                 self.isClearingTransformerModel = false
                 self.transformerCleanupTask = nil
@@ -779,7 +818,7 @@ public final class SiftAppModel {
                 self.showToast(
                     .error,
                     String(
-                        format: String(localized: "清理 Transformer 模型失败：%@"),
+                        format: String(localized: "清理 Sift Signal 模型失败：%@"),
                         error.localizedDescription
                     )
                 )
@@ -871,7 +910,7 @@ public final class SiftAppModel {
             beginTransformerDownloadAndSwitch(allowMeteredNetwork: true)
             return
         }
-        downloadPreparedTransformerPlan(pendingTransformerDownloadPlan)
+        downloadPreparedTransformerPlan(pendingTransformerDownloadPlan.allowingMeteredNetwork())
     }
 
     public func cancelPendingTransformerDownload() {
@@ -898,6 +937,8 @@ public final class SiftAppModel {
             return
         }
 
+        cancelAutomaticTransformerUpdate()
+
         transformerDownloadPhase = .checking
         transformerDownloadProgress = nil
         transformerDownloadTask = Task { [weak self] in
@@ -913,7 +954,9 @@ public final class SiftAppModel {
                     return
                 }
                 transformerDownloadTask = nil
-                downloadPreparedTransformerPlan(plan)
+                downloadPreparedTransformerPlan(
+                    allowMeteredNetwork ? plan.allowingMeteredNetwork() : plan
+                )
             } catch {
                 guard !Task.isCancelled else { return }
                 handleTransformerDownloadFailure(error)
@@ -1012,6 +1055,135 @@ public final class SiftAppModel {
         transformerDownloadPhase = .failed(message)
         transformerDownloadTask = nil
         showToast(.error, message)
+    }
+
+    private func scheduleAutomaticTransformerUpdateIfEligible(force: Bool = false) {
+        guard
+            selectedModelVariant == .transformer,
+            premium.isUnlocked,
+            isTransformerDeviceSupported,
+            isTransformerModelAvailable,
+            transformerDownloadTask == nil,
+            automaticTransformerUpdateTask == nil,
+            let transformerDownloader,
+            let transformerUpdateChecker
+        else {
+            return
+        }
+
+        let mustReconnectBackgroundSession = hasPendingTransformerBackgroundDownloadEvents
+        let lastCheck = appDefaults.object(forKey: Self.transformerUpdateLastCheckKey) as? Date
+        if
+            let lastCheck,
+            !force,
+            !mustReconnectBackgroundSession,
+            Date().timeIntervalSince(lastCheck) < Self.transformerUpdateCheckInterval
+        {
+            return
+        }
+
+        let identity = installedTransformerIdentity
+        let networkChecker = transformerNetworkConditionChecker
+        let requestID = UUID()
+        automaticTransformerUpdateRequestID = requestID
+        automaticTransformerUpdateTask = Task(priority: .utility) { [weak self] in
+            guard let self else { return }
+            let networkCondition = await networkChecker.currentCondition()
+            guard
+                self.isAutomaticTransformerUpdateCurrent(requestID, expectedIdentity: identity),
+                networkCondition.allowsAutomaticModelUpdate
+            else {
+                self.finishAutomaticTransformerUpdate(requestID)
+                return
+            }
+
+            self.hasPendingTransformerBackgroundDownloadEvents = false
+
+            let state = await transformerUpdateChecker.checkForUpdate(currentIdentity: identity)
+            guard self.isAutomaticTransformerUpdateCurrent(requestID, expectedIdentity: identity) else {
+                self.finishAutomaticTransformerUpdate(requestID)
+                return
+            }
+            self.transformerUpdateState = state
+            self.appDefaults.set(Date(), forKey: Self.transformerUpdateLastCheckKey)
+            guard case .updateAvailable = state else {
+                self.finishAutomaticTransformerUpdate(requestID)
+                return
+            }
+
+            do {
+                let plan = try await transformerDownloader.prepareDownload().forAutomaticUpdate()
+                guard
+                    self.isAutomaticTransformerUpdateCurrent(requestID, expectedIdentity: identity),
+                    plan.networkCondition.allowsAutomaticModelUpdate
+                else {
+                    self.finishAutomaticTransformerUpdate(requestID)
+                    return
+                }
+                try await transformerDownloader.download(
+                    plan,
+                    progress: { _ in },
+                    phase: { _ in }
+                )
+                guard self.isAutomaticTransformerUpdateCurrent(requestID, expectedIdentity: identity) else {
+                    self.finishAutomaticTransformerUpdate(requestID)
+                    return
+                }
+
+                self.isTransformerModelDownloaded = TransformerClassifierLoader.isDownloadedModelAvailable()
+                self.isTransformerModelAvailable = TransformerClassifierLoader.isAvailable()
+                guard self.isTransformerModelAvailable else {
+                    self.finishAutomaticTransformerUpdate(requestID)
+                    return
+                }
+
+                self.installedTransformerVersion = plan.manifest.version
+                self.installedTransformerTrainedAt = plan.manifest.trainedAt
+                self.installedTransformerIdentity = plan.manifest.artifactIdentity
+                self.transformerUpdateState = .current
+                ModelSelectionStore.save(
+                    .transformer,
+                    defaults: self.modelSelectionDefaults,
+                    artifactIdentity: plan.manifest.artifactIdentity
+                )
+                self.finishAutomaticTransformerUpdate(requestID)
+                self.switchToModelVariant(
+                    .transformer,
+                    showsSuccessToast: false,
+                    priority: .utility
+                )
+            } catch is CancellationError {
+                self.finishAutomaticTransformerUpdate(requestID)
+            } catch {
+                // Automatic updates are best-effort. The currently loaded and
+                // installed model remain active, and the next eligible launch retries.
+                self.finishAutomaticTransformerUpdate(requestID)
+            }
+        }
+    }
+
+    private func isAutomaticTransformerUpdateCurrent(
+        _ requestID: UUID,
+        expectedIdentity: ModelArtifactIdentity?
+    ) -> Bool {
+        !Task.isCancelled
+            && automaticTransformerUpdateRequestID == requestID
+            && selectedModelVariant == .transformer
+            && premium.isUnlocked
+            && isTransformerDeviceSupported
+            && installedTransformerIdentity == expectedIdentity
+    }
+
+    private func finishAutomaticTransformerUpdate(_ requestID: UUID) {
+        guard automaticTransformerUpdateRequestID == requestID else { return }
+        automaticTransformerUpdateTask = nil
+        automaticTransformerUpdateRequestID = nil
+    }
+
+    private func cancelAutomaticTransformerUpdate() {
+        automaticTransformerUpdateTask?.cancel()
+        automaticTransformerUpdateTask = nil
+        automaticTransformerUpdateRequestID = nil
     }
 
     fileprivate func updateTransformerDownloadProgress(_ progress: TransformerModelDownloadProgress) {
