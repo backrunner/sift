@@ -5,7 +5,7 @@ ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 PWCLI="${CODEX_HOME:-$HOME/.codex}/skills/playwright/scripts/playwright_cli.sh"
 PORT="8765"
 PAGE="http://127.0.0.1:${PORT}/tools/app-store-assets/index.html"
-OUTPUT="${ROOT}/output/app-store/1.0/final-v3"
+OUTPUT="${ROOT}/output/app-store/1.0/final-v3.0"
 SESSION="sift-app-store-assets"
 
 mkdir -p "$OUTPUT"
@@ -28,7 +28,7 @@ for locale in zh-Hans en-US ja; do
   for screen in 1 2 3 4 5 6; do
     filename="$(printf '%02d' "$screen")-sift.png"
     bash "$PWCLI" --session "$SESSION" open "${PAGE}?locale=${locale}&screen=${screen}"
-    bash "$PWCLI" --session "$SESSION" resize 1320 2868
+    bash "$PWCLI" --session "$SESSION" resize 1284 2778
     bash "$PWCLI" --session "$SESSION" run-code \
       "async (page) => { await page.evaluate(() => window.appStoreAssetReady); await page.waitForTimeout(150); }"
     bash "$PWCLI" --session "$SESSION" screenshot \
