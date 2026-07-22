@@ -72,6 +72,11 @@ The product is not launched yet; backward compatibility is not required.
 12. **PII models have a false-positive gate.** `--install-ios` must keep PII
     micro F1 >= 0.90 and clean-sentence FPR <= 0.02 on both the synthetic eval
     and `tools/pii-trainer/Evaluation/clean-negatives.ndjson`.
+13. **Branch policy:** all development commits land on `main` first. The
+    `release` branch is only updated by merging the verified `main` tip for an
+    Xcode Cloud release build, then pushing that merge. Do not commit directly
+    to `release`; Xcode Cloud workflows bind to `release`, while local builds
+    use `main`.
 
 ## Current Model Baselines (2026-07-22)
 

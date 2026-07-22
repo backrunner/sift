@@ -58,6 +58,27 @@ The build log must contain `Restoring built-in models` and `Xcode Cloud model
 preflight passed` before the `xcodebuild` phase. Their absence means the
 workflow selected a different project path or is building an older commit.
 
+## Branch Policy
+
+All development work is committed and pushed to `main`, which is the local
+build branch. Keep `release` reserved for a release candidate that has already
+passed local validation:
+
+```bash
+git switch main
+git pull --ff-only origin main
+cd apps/ios && swift build && swift test && swift run CoreSmokeTests
+cd ../..
+pnpm typecheck && pnpm test
+git switch release
+git merge --ff-only main
+git push origin release
+```
+
+The Xcode Cloud workflow is bound only to `release`. Do not commit directly to
+`release`, and do not use a failed historical Xcode Cloud commit for a retry;
+start a new build from the latest pushed `release` commit.
+
 ## Publishing A Built-In Model Bundle
 
 Install only accepted trainer outputs into `apps/ios/GeneratedModels`, then run:
