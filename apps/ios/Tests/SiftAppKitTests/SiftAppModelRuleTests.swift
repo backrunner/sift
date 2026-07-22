@@ -1,10 +1,35 @@
 #if canImport(Testing)
 import Foundation
 import MessageFilterCore
-import SiftAppKit
+@testable import SiftAppKit
 import Testing
 
 private let remoteSamplePrivacyConsentKey = "Sift.hasAcceptedRemoteSamplePrivacy"
+
+@Test
+func classificationResultTitleOmitsDuplicateGroupTitle() {
+    let duplicateTitleDecision = ClassificationDecision(
+        labelID: "verification",
+        labelTitle: "验证码",
+        groupID: "verification",
+        groupTitle: "验证码",
+        confidence: 0.98,
+        systemAction: .transaction,
+        source: .model
+    )
+    let distinctTitleDecision = ClassificationDecision(
+        labelID: "finance.bank",
+        labelTitle: "银行",
+        groupID: "finance",
+        groupTitle: "财务",
+        confidence: 0.98,
+        systemAction: .transaction,
+        source: .model
+    )
+
+    #expect(classificationResultTitle(for: duplicateTitleDecision) == "验证码")
+    #expect(classificationResultTitle(for: distinctTitleDecision) == "财务 / 银行")
+}
 
 @MainActor
 @Test

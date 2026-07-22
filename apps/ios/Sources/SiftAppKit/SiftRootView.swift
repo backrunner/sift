@@ -1889,13 +1889,19 @@ private struct ResultStrip: View {
 
     private var resultTitle: String {
         guard decision.source == .rule else {
-            return "\(decision.groupTitle) / \(decision.labelTitle)"
+            return classificationResultTitle(for: decision)
         }
         return decision.systemAction == .none
             ? String(localized: "规则放行")
             : String(localized: "规则阻止")
     }
 
+}
+
+func classificationResultTitle(for decision: ClassificationDecision) -> String {
+    decision.groupTitle == decision.labelTitle
+        ? decision.labelTitle
+        : "\(decision.groupTitle) / \(decision.labelTitle)"
 }
 
 private struct GlassTextField: View {

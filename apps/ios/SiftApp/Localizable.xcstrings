@@ -1,6 +1,22 @@
 {
   "sourceLanguage" : "zh-Hans",
   "strings" : {
+    "您的验证码是 482913，请联系 13800138000 或访问 https://example.com/claim 完成验证。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verification code: 482913. Call +1 415 555 0136 or visit https://example.com/claim to continue."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "認証コード: 482913。090-1234-5678に連絡するか、https://example.com/claim を開いてください。"
+          }
+        }
+      }
+    },
     "Sift Signal" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Sift Signal" } },
@@ -1941,22 +1957,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "お住まいのストアでは現在この商品を購入できません"
-          }
-        }
-      }
-    },
-    "当前模型不支持本地微调，请使用匿名提交" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "The current model doesn't support local fine-tuning; use anonymous contribution"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "現在のモデルはローカルFine-tuningに対応していません。匿名提出をご利用ください"
           }
         }
       }

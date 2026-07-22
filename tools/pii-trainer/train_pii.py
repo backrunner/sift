@@ -397,6 +397,14 @@ def directory_sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
+def normalize_package_permissions(path: Path) -> None:
+    """Make exported Core ML packages readable by Xcode's build sandbox."""
+    path.chmod(path.stat().st_mode | 0o755)
+    for item in path.rglob("*"):
+        required = 0o755 if item.is_dir() else 0o644
+        item.chmod(item.stat().st_mode | required)
+
+
 def main() -> None:
     arguments = parse_arguments()
     repo_root = locate_repo_root()
@@ -609,6 +617,7 @@ def main() -> None:
     if package_path.exists():
         shutil.rmtree(package_path)
     mlmodel.save(str(package_path))
+    normalize_package_permissions(package_path)
 
     vocab_path = out / f"{arguments.model_name}.vocab.txt"
     vocab_path.write_text("\n".join(tokens) + "\n", encoding="utf-8")

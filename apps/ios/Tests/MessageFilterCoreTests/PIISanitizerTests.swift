@@ -53,6 +53,31 @@ func sanitizerRedactsPassportNumbers() {
 }
 
 @Test
+func sanitizerRedactsVerificationCodesWithNaturalParticles() {
+    let sanitizer = PrivacySanitizer()
+    let samples = [
+        "您的验证码是 482913，请勿告知他人。",
+        "Your verification code is 482913. Do not share it.",
+        "認証コードは482913です。第三者に共有しないでください。"
+    ]
+
+    for sample in samples {
+        let result = sanitizer.sanitize(sample)
+        #expect(result.text.contains("{{CODE}}"))
+        #expect(!result.text.contains("482913"))
+    }
+}
+
+@Test
+func sanitizerRedactsJapanesePhoneWithContactContext() {
+    let sanitizer = PrivacySanitizer()
+    let result = sanitizer.sanitize("090-1234-5678に連絡してください。")
+
+    #expect(result.text.contains("{{PHONE}}"))
+    #expect(!result.text.contains("090-1234-5678"))
+}
+
+@Test
 func sanitizerRedactsVehicleLicensePlates() {
     let sanitizer = PrivacySanitizer()
     let samples = [

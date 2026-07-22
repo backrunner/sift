@@ -1492,7 +1492,6 @@ public final class SiftAppModel {
         switch submissionDestination {
         case .local:
             guard supportsLocalPersonalization else {
-                showSubmissionFeedback(.error, String(localized: "当前模型不支持本地微调，请使用匿名提交"))
                 return
             }
             isSubmittingSample = true

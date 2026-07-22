@@ -151,7 +151,7 @@ public struct PrivacySanitizer {
         ))
         redactions.append(contentsOf: regexRedactions(
             in: text,
-            pattern: #"(?:验证码|校验码|动态码|安全码|确认码|認証コード|確認コード|ワンタイムパスワード|verification code|security code|one[- ]time (?:code|password)|otp|passcode)\s*(?:是|为|：|:)?\s*([A-Z0-9-]{4,10})"#,
+            pattern: #"(?:验证码|校验码|动态码|安全码|确认码|認証コード|確認コード|ワンタイムパスワード|verification code|security code|one[- ]time (?:code|password)|otp|passcode)\s*(?:是|为|：|:|is|は)?\s*([A-Z0-9-]{4,10})"#,
             token: "{{CODE}}",
             captureGroup: 1
         ))
@@ -492,7 +492,7 @@ public struct PrivacySanitizer {
         let lower = text.index(range.lowerBound, offsetBy: -20, limitedBy: text.startIndex) ?? text.startIndex
         let upper = text.index(range.upperBound, offsetBy: 12, limitedBy: text.endIndex) ?? text.endIndex
         let context = text[lower..<upper].lowercased()
-        return ["联系电话", "手机号", "手机号码", "电话", "拨打", "致电", "tel", "phone", "call", "電話", "連絡先"]
+        return ["联系电话", "手机号", "手机号码", "电话", "拨打", "致电", "tel", "phone", "call", "電話", "連絡先", "連絡"]
             .contains { context.contains($0) }
     }
 

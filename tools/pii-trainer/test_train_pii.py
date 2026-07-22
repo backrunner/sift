@@ -1,9 +1,12 @@
 import random
+import tempfile
 import unittest
+from pathlib import Path
 
 from train_pii import (
     FakePII,
     contextualize_value,
+    normalize_package_permissions,
     ordinary_code_negative,
     ordinary_grouped_number_negative,
     synthesize,
@@ -11,6 +14,24 @@ from train_pii import (
 
 
 class PIISynthesisTests(unittest.TestCase):
+    def test_exported_package_permissions_are_xcode_sandbox_readable(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            package = Path(temporary_directory) / "Detector.mlpackage"
+            weights = package / "Data/com.apple.CoreML/weights"
+            weights.mkdir(parents=True)
+            model = package / "Data/com.apple.CoreML/model.mlmodel"
+            weight = weights / "weight.bin"
+            model.write_bytes(b"model")
+            weight.write_bytes(b"weights")
+            weights.chmod(0o700)
+            model.chmod(0o600)
+
+            normalize_package_permissions(package)
+
+            self.assertEqual(weights.stat().st_mode & 0o055, 0o055)
+            self.assertEqual(model.stat().st_mode & 0o044, 0o044)
+            self.assertEqual(weight.stat().st_mode & 0o044, 0o044)
+
     def test_amount_values_cover_thousands_separators_and_currency_context(self) -> None:
         amounts = [FakePII(random.Random(seed)).value("AMOUNT", seed % 2 == 0) for seed in range(100)]
         japanese_amounts = [FakePII(random.Random(seed)).value("AMOUNT", True, True) for seed in range(100)]
