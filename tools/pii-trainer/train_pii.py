@@ -98,7 +98,7 @@ class FakePII:
     def __init__(self, rng: random.Random) -> None:
         self.rng = rng
 
-    def value(self, tag: str, cjk: bool) -> str:
+    def value(self, tag: str, cjk: bool, japanese: bool = False) -> str:
         r = self.rng
         if tag == "PHONE":
             if cjk:
@@ -121,7 +121,15 @@ class FakePII:
         if tag == "ORDER_ID":
             return f"{r.choice(['SF', 'YT', 'JD', ''])}{r.randint(100000000, 9999999999)}"
         if tag == "AMOUNT":
-            return f"{r.randint(1, 9999)}.{r.randint(0, 99):02d}{'元' if cjk else ' USD'}"
+            whole = r.randint(1, 9_999_999)
+            number = f"{whole:,}" if whole >= 1000 and r.random() < 0.75 else str(whole)
+            if r.random() < 0.8:
+                number += f".{r.randint(0, 99):02d}"
+            if japanese:
+                return r.choice([f"¥{number}", f"￥{number}", f"{number}円", f"JPY {number}"])
+            if cjk:
+                return r.choice([f"¥{number}", f"￥{number}", f"{number}元"])
+            return r.choice([f"${number}", f"USD {number}", f"{number} USD"])
         if tag == "CODE":
             return str(r.randint(1000, 999999))
         if tag == "NAME":
@@ -133,6 +141,10 @@ class FakePII:
 
 def is_cjk(text: str) -> bool:
     return any("一" <= ch <= "鿿" or "぀" <= ch <= "ヿ" for ch in text)
+
+
+def is_japanese(text: str) -> bool:
+    return any("぀" <= ch <= "ヿ" for ch in text)
 
 
 def contextualize_value(tag: str, value: str, carrier: str, rng: random.Random) -> tuple[str, int, int]:
@@ -169,6 +181,26 @@ def ordinary_code_negative(rng: random.Random) -> str:
         f"商品コード SKU-{suffix} を今週の販売一覧に追加しました。",
         f"ビルド番号 release-{year}.{rng.randint(1, 9)} はすべての検査に合格しました。",
         f"企画番号 CAM-{suffix} はゲームアイテム取引セール用です。",
+    ]
+    return rng.choice(templates)
+
+
+def ordinary_grouped_number_negative(rng: random.Random) -> str:
+    """Generate comma-grouped quantities that are not monetary amounts."""
+    value = f"{rng.randint(1_000, 9_999_999):,}"
+    templates = [
+        f"本次活动共有{value}名参与者，请按现场安排入场。",
+        f"当前积分余额为{value}分，再完成任务即可升级。",
+        f"该商品累计售出{value}件，库存仍然充足。",
+        f"今天已经完成{value}步，运动目标即将达成。",
+        f"The event has {value} participants and registration is now closed.",
+        f"Your rewards balance is now {value} points after the purchase.",
+        f"The video reached {value} views during its first week.",
+        f"You completed {value} steps toward today's activity goal.",
+        f"イベントの参加者は{value}人で、受付は終了しました。",
+        f"現在のポイント残高は{value}ポイントです。",
+        f"この商品は累計{value}件販売されました。",
+        f"今日は目標まであと少しの{value}歩を記録しました。",
     ]
     return rng.choice(templates)
 
@@ -213,11 +245,18 @@ def synthesize(carriers: list[str], rng: random.Random, clean_fraction: float = 
 
     for carrier in carriers:
         if rng.random() < clean_fraction:
-            text = ordinary_code_negative(rng) if rng.random() < 0.35 else carrier
+            negative_kind = rng.random()
+            if negative_kind < 0.35:
+                text = ordinary_code_negative(rng)
+            elif negative_kind < 0.65:
+                text = ordinary_grouped_number_negative(rng)
+            else:
+                text = carrier
             examples.append({"text": text, "spans": []})
             continue
 
         cjk = is_cjk(carrier)
+        japanese = is_japanese(carrier)
         words = carrier.split(" ") if " " in carrier else [carrier]
         text_parts: list[str] = []
         spans: list[tuple[int, int, str]] = []
@@ -228,7 +267,7 @@ def synthesize(carriers: list[str], rng: random.Random, clean_fraction: float = 
         for word_index in range(len(words) + 1):
             if position_index < len(insert_positions) and insert_positions[position_index] == word_index:
                 tag = rng.choice(TAGS[1:])
-                value = factory.value(tag, cjk)
+                value = factory.value(tag, cjk, japanese)
                 rendered, value_start, value_end = contextualize_value(tag, value, carrier, rng)
                 prefix = "" if not text_parts else " "
                 rendered_start = cursor + len(prefix)

@@ -290,12 +290,16 @@ positive and hard-negative fixtures covering China, Japan, Europe, the US, and
 Hong Kong. This keeps generic order numbers, flight numbers, product models,
 company registrations, and student enrollment identifiers visible.
 
-The accepted `pii-boundary-v5` result is 99.66% precision, 99.09% recall,
-99.37% F1, 0/498 synthetic clean false positives, and 0/45 fixed zh/en/ja
-hard-negative false positives. CODE positives are synthesized only with
-authentication context, while ordinary error codes, product codes, SKUs,
-build identifiers, and campaign references are clean negatives. Runtime also
-rejects model CODE detections without explicit verification/OTP context.
+The accepted `pii-boundary-v7` Core ML INT8 result is 99.27% precision, 98.90%
+recall, 99.08% F1, 0/487 synthetic clean false positives, and 0/64 fixed
+zh/en/ja hard-negative false positives. Compared with v6, v7 improves recall
+and F1 without increasing either clean false-positive set. Training covers
+comma-grouped amounts and currency placement in all three languages while
+grouped points, scores, participants, views, and step counts remain clean
+negatives. CODE positives are synthesized only with authentication context,
+while ordinary error codes, product codes, SKUs, build identifiers, and
+campaign references are clean negatives. Runtime also rejects model CODE
+detections without explicit verification/OTP context.
 
 ## 3. Multilingual Strategy Decision
 

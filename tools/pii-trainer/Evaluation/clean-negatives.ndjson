@@ -39,6 +39,10 @@
 {"text":"Order AB-123-CD is ready for pickup at the service desk."}
 {"text":"License plate is invalid and must be entered again."}
 {"text":"Plate number unknown was not accepted."}
+{"text":"本次活动共有2,345名参与者，请按现场安排入场。"}
+{"text":"当前积分为12,345分，再积655分即可升级。"}
+{"text":"Score increased from 1,200 to 2,345 points after the match."}
+{"text":"イベントの参加者は2,345人で、受付は終了しました。"}
 {"text":"予約番号品川 300 あ 12-34です。"}
 {"text":"Product code XG-2026 is now active in the catalog."}
 {"text":"Error code E1007 means the inventory sync is pending."}

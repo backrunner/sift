@@ -79,7 +79,7 @@ The product is not launched yet; backward compatibility is not required.
 | --- | --- | ---: | ---: | --- |
 | Classic | `maxent-boundary-v9` | 98.95% | 96.00% | 347.3 KB; Conversation 30/30 abstain |
 | Premium | `signal-v1` | 99.37% | 100.00% | v11 lineage; 22-layer W8A16 Core ML, CPU-only; 159,107,309 download bytes |
-| PII | `pii-boundary-v5` | n/a | n/a | F1 99.37%; clean FPR 0/498 and 0/45 |
+| PII | `pii-boundary-v7` | n/a | n/a | Core ML INT8 P 99.27%, R 98.90%, F1 99.08%; clean FPR 0/487 and 0/64; grouped amounts |
 
 The shared leak-free Premium candidate contains 13,419 rows with complete zh/en/ja
 coverage. Its boundary-v3 source contained 54 exact and 9 near collisions with

@@ -46,7 +46,10 @@ Vehicle-plate accuracy is gated separately by Swift sanitizer regressions. The
 shared `Evaluation/plate-positives.ndjson` fixture covers China, Japan, Europe,
 the US, and Hong Kong; `clean-negatives.ndjson` contains plate-shaped flight,
 order, product, registration, and enrollment identifiers that must remain
-visible.
+visible. The same fixed set includes comma-grouped points, scores, participant
+counts, and similar non-monetary quantities. Positive amount synthesis covers
+grouped zh/en/ja currency formats such as `￥2,345.67`, `$2,345.67`, and
+`2,345円`.
 
 Every run writes `quality-report.json` before the install gate. Failed
 candidates therefore retain auditable F1/FPR results even though

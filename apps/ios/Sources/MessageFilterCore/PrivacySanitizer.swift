@@ -144,7 +144,11 @@ public struct PrivacySanitizer {
             token: "{{ADDRESS}}",
             captureGroup: 1
         ))
-        redactions.append(contentsOf: regexRedactions(in: text, pattern: #"(?:¥|￥|RMB|CNY)\s*\d+(?:\.\d{1,2})?|\b\d+(?:\.\d{1,2})?\s*(?:元|块)\b"#, token: "{{AMOUNT}}"))
+        redactions.append(contentsOf: regexRedactions(
+            in: text,
+            pattern: AmountPatterns.amount,
+            token: "{{AMOUNT}}"
+        ))
         redactions.append(contentsOf: regexRedactions(
             in: text,
             pattern: #"(?:验证码|校验码|动态码|安全码|确认码|認証コード|確認コード|ワンタイムパスワード|verification code|security code|one[- ]time (?:code|password)|otp|passcode)\s*(?:是|为|：|:)?\s*([A-Z0-9-]{4,10})"#,
@@ -350,9 +354,52 @@ public struct PrivacySanitizer {
             return isPlausibleOrderID(String(text[detection.range]), range: detection.range, in: text)
         case .phone:
             return isPlausiblePhone(String(text[detection.range]), range: detection.range, in: text)
+        case .amount:
+            return isPlausibleAmount(String(text[detection.range]), range: detection.range, in: text)
         default:
             return true
         }
+    }
+
+    private func isPlausibleAmount(_ value: String, range: Range<String.Index>, in text: String) -> Bool {
+        guard value.contains(where: \.isNumber) else { return false }
+
+        let lower = text.index(range.lowerBound, offsetBy: -24, limitedBy: text.startIndex) ?? text.startIndex
+        let upper = text.index(range.upperBound, offsetBy: 16, limitedBy: text.endIndex) ?? text.endIndex
+        let context = text[lower..<upper].lowercased()
+        let currencyMarkers = ["¥", "￥", "$", "€", "£", "rmb", "cny", "usd", "eur", "gbp", "jpy", "元", "块", "円"]
+        let tightLower = text.index(range.lowerBound, offsetBy: -6, limitedBy: text.startIndex) ?? text.startIndex
+        let tightUpper = text.index(range.upperBound, offsetBy: 6, limitedBy: text.endIndex) ?? text.endIndex
+        let tightContext = text[tightLower..<tightUpper].lowercased()
+
+        let nonAmountMarkers = [
+            "积分", "得分", "参与者", "参加者", "人数",
+            "points", "score", "participants", "attendees", "views", "steps",
+            "ポイント", "スコア", "参加者"
+        ]
+        if nonAmountMarkers.contains(where: context.contains) {
+            return false
+        }
+
+        let suffix = text[range.upperBound..<upper]
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .lowercased()
+        if ["名", "人", "件", "步", "歩", "分", "points", "participants", "attendees", "views", "steps"]
+            .contains(where: suffix.hasPrefix)
+        {
+            return false
+        }
+
+        if currencyMarkers.contains(where: tightContext.contains) {
+            return true
+        }
+
+        return [
+            "金额", "金額", "价格", "價格", "价款", "價款", "支付", "付款", "应还", "應還",
+            "实付", "實付", "到账", "到賬", "入账", "入賬", "账单", "帳單", "合计", "合計",
+            "amount", "price", "total", "payment", "paid", "charged", "charge", "due", "cost",
+            "料金", "価格", "支払", "請求", "合計", "入金"
+        ].contains(where: context.contains)
     }
 
     private func isPlausibleCode(_ value: String, range: Range<String.Index>, in text: String) -> Bool {

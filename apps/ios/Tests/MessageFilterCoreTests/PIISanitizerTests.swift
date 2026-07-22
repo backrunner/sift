@@ -1,6 +1,6 @@
 #if canImport(Testing)
 import Foundation
-import MessageFilterCore
+@testable import MessageFilterCore
 import Testing
 
 private struct PlatePositiveFixture: Decodable {
@@ -185,6 +185,64 @@ func sanitizerRedactsEmailAndKeepsPlainText() {
 }
 
 @Test
+func sanitizerRedactsCompleteAmountsWithThousandsSeparators() {
+    let sanitizer = PrivacySanitizer()
+    let samples = [
+        ("本月应还￥2,345.67，请按时还款。", "本月应还{{AMOUNT}}，请按时还款。"),
+        ("账户到账2,345元。", "账户到账{{AMOUNT}}。"),
+        ("优惠金额为 CNY 12，345.00。", "优惠金额为 {{AMOUNT}}。"),
+        ("ご利用金額は￥1,234,567です。", "ご利用金額は{{AMOUNT}}です。"),
+        ("請求額は2,345円です。", "請求額は{{AMOUNT}}です。"),
+        ("The total is $2,345.00.", "The total is {{AMOUNT}}."),
+        ("Payment received: 2,345.00 USD.", "Payment received: {{AMOUNT}}.")
+    ]
+
+    for (input, expected) in samples {
+        #expect(sanitizer.sanitize(input).text == expected)
+    }
+}
+
+@Test
+func sanitizerDoesNotPartiallyRedactMalformedGroupedAmounts() {
+    let sanitizer = PrivacySanitizer()
+    let samples = [
+        "账单金额为￥2,34，请人工核对。",
+        "账单金额为2,34元，请人工核对。",
+        "账单金额为￥1,2345，请人工核对。"
+    ]
+
+    for sample in samples {
+        #expect(sanitizer.sanitize(sample).text == sample)
+    }
+}
+
+@Test
+func piiDetectionExpandsARecognizedAmountAcrossGroupedDigits() throws {
+    let text = "本月应还￥2,345.67，请按时还款。"
+    let partialRange = try #require(text.range(of: "￥2"))
+    let detections = PIIDetectionPostprocessor.expandingGroupedAmounts(
+        [PIIDetection(kind: .amount, range: partialRange)],
+        in: text
+    )
+
+    let detection = try #require(detections.first)
+    #expect(String(text[detection.range]) == "￥2,345.67")
+}
+
+@Test
+func piiDetectionDoesNotExpandMalformedGroupedDigits() throws {
+    let text = "本月应还￥2,34，请人工核对。"
+    let partialRange = try #require(text.range(of: "￥2"))
+    let detections = PIIDetectionPostprocessor.expandingGroupedAmounts(
+        [PIIDetection(kind: .amount, range: partialRange)],
+        in: text
+    )
+
+    let detection = try #require(detections.first)
+    #expect(detection.range == partialRange)
+}
+
+@Test
 func sanitizerDoesNotRedactOrdinaryNumericProductContent() {
     let sanitizer = PrivacySanitizer()
     let samples = [
@@ -196,7 +254,9 @@ func sanitizerDoesNotRedactOrdinaryNumericProductContent() {
         "商品条码6901234567890123，请核对包装信息。",
         "客服工单20260711001已经处理完成。",
         "租房面积58平方米，靠近地铁2号线。",
-        "游戏充值648档位赠送30%额外钻石。"
+        "游戏充值648档位赠送30%额外钻石。",
+        "本次活动共有2,345名参与者。",
+        "Score increased from 1,200 to 2,345 points."
     ]
 
     for sample in samples {
@@ -264,6 +324,28 @@ func modelOrderDetectionRequiresOrderContext() {
 
     #expect(PrivacySanitizer(modelDetector: detector).sanitize("Product model \(value) is now available.").text.contains("{{ORDER_ID}}") == false)
     #expect(PrivacySanitizer(modelDetector: detector).sanitize("Order number \(value) is ready for pickup.").text.contains("{{ORDER_ID}}"))
+}
+
+@Test
+func modelAmountDetectionRequiresCurrencyOrAmountContext() {
+    let value = "2,345"
+    let detector = FakeDetector(kind: .amount, needle: value)
+
+    let amount = PrivacySanitizer(modelDetector: detector).sanitize("账单金额为 \(value)，请核对。")
+    #expect(amount.text.contains("{{AMOUNT}}"))
+
+    let points = "本次活动获得 \(value) 积分。"
+    #expect(PrivacySanitizer(modelDetector: detector).sanitize(points).text == points)
+
+    let attendees = "イベントの参加者は\(value)人です。"
+    #expect(PrivacySanitizer(modelDetector: detector).sanitize(attendees).text == attendees)
+
+    let nearbyAmount = "支付￥2,345后获得2,346积分。"
+    let nearbyDetector = FakeDetector(kind: .amount, needle: "2,346")
+    #expect(
+        PrivacySanitizer(modelDetector: nearbyDetector).sanitize(nearbyAmount).text
+            == "支付{{AMOUNT}}后获得2,346积分。"
+    )
 }
 
 @Test

@@ -4,6 +4,17 @@ import Foundation
 import CoreML
 #endif
 
+enum AmountPatterns {
+    // Accept conventional thousands grouping without allowing a malformed
+    // value to be partially redacted on either side of a separator.
+    static let groupedNumber = #"(?<!\d)(?<!\d[,，.])\d{1,3}(?:[,，]\d{3})+(?:\.\d{1,2})?(?!\d|[,，.]\d)"#
+    static let number = #"(?:\d{1,3}(?:[,，]\d{3})+|\d+)(?:\.\d{1,2})?(?!\d|[,，.]\d)"#
+    static let currencyPrefixed = #"(?:[¥￥$€£]|(?:RMB|CNY|USD|EUR|GBP|JPY)(?![A-Z]))\s*"# + number
+    static let currencySuffixed = #"(?<!\d)(?<!\d[,，.])"# + number
+        + #"\s*(?:(?:元|块|円)|(?:USD|EUR|GBP|JPY)(?![A-Z]))"#
+    static let amount = "(?:\(currencyPrefixed)|\(currencySuffixed))"
+}
+
 /// Categories of sensitive information the sanitizer can redact. Raw values
 /// match the token-classification tags emitted by `tools/pii-trainer`.
 public enum PIIKind: String, Codable, CaseIterable, Sendable {
@@ -30,6 +41,60 @@ public struct PIIDetection: Hashable, Sendable {
     public init(kind: PIIKind, range: Range<String.Index>) {
         self.kind = kind
         self.range = range
+    }
+}
+
+enum PIIDetectionPostprocessor {
+    static func expandingGroupedAmounts(
+        _ detections: [PIIDetection],
+        in text: String
+    ) -> [PIIDetection] {
+        guard
+            detections.contains(where: { $0.kind == .amount }),
+            let regex = try? NSRegularExpression(pattern: AmountPatterns.groupedNumber)
+        else {
+            return detections
+        }
+
+        let wholeRange = NSRange(text.startIndex..., in: text)
+        let groupedNumberRanges = regex.matches(in: text, range: wholeRange).compactMap {
+            Range($0.range, in: text)
+        }
+        guard !groupedNumberRanges.isEmpty else { return detections }
+
+        let expanded = detections.map { detection in
+            guard
+                detection.kind == .amount,
+                let groupedRange = groupedNumberRanges.first(where: { $0.overlaps(detection.range) })
+            else {
+                return detection
+            }
+            let lowerBound = min(detection.range.lowerBound, groupedRange.lowerBound)
+            let upperBound = max(detection.range.upperBound, groupedRange.upperBound)
+            return PIIDetection(
+                kind: .amount,
+                range: lowerBound..<upperBound
+            )
+        }
+
+        var merged: [PIIDetection] = []
+        for detection in expanded {
+            if
+                let last = merged.last,
+                last.kind == detection.kind,
+                last.range.overlaps(detection.range)
+            {
+                let lowerBound = min(last.range.lowerBound, detection.range.lowerBound)
+                let upperBound = max(last.range.upperBound, detection.range.upperBound)
+                merged[merged.count - 1] = PIIDetection(
+                    kind: last.kind,
+                    range: lowerBound..<upperBound
+                )
+            } else {
+                merged.append(detection)
+            }
+        }
+        return merged
     }
 }
 
@@ -205,7 +270,8 @@ public final class CoreMLPIIDetector: PIIDetecting, @unchecked Sendable {
             }
 
             let wordKinds = classifyWords(encoded: encoded, logits: logits)
-            return mergeAdjacent(wordKinds: wordKinds, wordRanges: encoded.wordRanges)
+            let detections = mergeAdjacent(wordKinds: wordKinds, wordRanges: encoded.wordRanges)
+            return PIIDetectionPostprocessor.expandingGroupedAmounts(detections, in: text)
         } catch {
             return []
         }
