@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ROOT_DIR="${CI_PRIMARY_REPOSITORY_PATH:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT_DIR="${CI_PRIMARY_REPOSITORY_PATH:-$(cd "$SCRIPT_DIR/../.." && pwd)}"
 MODELS_DIR="$ROOT_DIR/apps/ios/GeneratedModels"
 VERIFY_SCRIPT="$ROOT_DIR/tools/verify_ios_builtin_models.sh"
 LOCK_FILE="$ROOT_DIR/apps/ios/BuiltinModels.lock.json"
@@ -44,6 +45,7 @@ curl_arguments=(
 if [[ -n "${SIFT_BUILTIN_MODELS_TOKEN:-}" ]]; then
   curl_arguments+=(--header "Authorization: Bearer $SIFT_BUILTIN_MODELS_TOKEN")
 fi
+echo "Restoring built-in models from $models_url"
 curl "${curl_arguments[@]}" "$models_url"
 
 actual_sha="$(shasum -a 256 "$archive_path" | awk '{print $1}')"

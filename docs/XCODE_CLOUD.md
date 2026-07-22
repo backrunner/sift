@@ -17,6 +17,10 @@ Create an App Store Connect Xcode Cloud workflow with these settings:
   not use `Latest` for release archives.
 - Start condition: the release branch or a manual build
 
+Keep `apps/ios/Sift.xcodeproj/xcshareddata/xcodecloud/manifest.json` in Git.
+Xcode writes the selected product metadata there, and Apple requires teams to
+push it to the remote repository.
+
 The normal restore URL and archive SHA-256 are versioned in
 `apps/ios/BuiltinModels.lock.json`. No workflow variable is required for the
 normal production path. The locked URL points to an immutable object in the
@@ -36,15 +40,23 @@ Secret variables are not exposed to builds from untrusted pull requests. Use
 a public, unguessable immutable URL for PR builds, or limit this archive
 workflow to trusted branches.
 
-The scripts under `ci_scripts/` run automatically. They perform the following
-gates:
+Apple requires the custom script directory to be next to the selected Xcode
+project or workspace. Because Sift's project is `apps/ios/Sift.xcodeproj`, the
+scripts live under `apps/ios/ci_scripts/`, not at the repository root. Xcode
+Cloud discovers them automatically and performs the following gates:
 
-1. Download the ZIP and verify its configured archive SHA-256.
-2. Verify every Classic and PII artifact against
+1. Restore the models after clone, then restore/check them again immediately
+   before `xcodebuild` so Core ML code generation can never start without them.
+2. Download the ZIP and verify its configured archive SHA-256.
+3. Verify every Classic and PII artifact against
    `apps/ios/BuiltinModels.lock.json` and each trainer manifest.
-3. Compile both models with the exact Xcode toolchain selected by the workflow.
-4. After archiving, require Classic in the app and extension, require PII only
+4. Compile both models with the exact Xcode toolchain selected by the workflow.
+5. After archiving, require Classic in the app and extension, require PII only
    in the app, and reject any bundled Premium Transformer artifact.
+
+The build log must contain `Restoring built-in models` and `Xcode Cloud model
+preflight passed` before the `xcodebuild` phase. Their absence means the
+workflow selected a different project path or is building an older commit.
 
 ## Publishing A Built-In Model Bundle
 
@@ -107,3 +119,8 @@ tools/verify_ios_builtin_models.sh --compile
 
 The Premium Sift Signal model is intentionally absent from this bundle and is
 still downloaded on demand after entitlement unlock and explicit selection.
+
+Apple references:
+
+- [Writing custom build scripts](https://developer.apple.com/documentation/xcode/writing-custom-build-scripts)
+- [Getting started with Xcode Cloud](https://developer.apple.com/documentation/xcode/getting-started-with-xcode-cloud)

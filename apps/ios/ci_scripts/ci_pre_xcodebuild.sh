@@ -1,10 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ROOT_DIR="${CI_PRIMARY_REPOSITORY_PATH:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT_DIR="${CI_PRIMARY_REPOSITORY_PATH:-$(cd "$SCRIPT_DIR/../.." && pwd)}"
 IOS_DIR="$ROOT_DIR/apps/ios"
 
-echo "Validating built-in models with the selected Xcode toolchain:"
+echo "Restoring and validating built-in models immediately before xcodebuild:"
+"$SCRIPT_DIR/restore_builtin_models.sh"
 xcodebuild -version
 "$ROOT_DIR/tools/verify_ios_builtin_models.sh" \
   --models-dir "$IOS_DIR/GeneratedModels" \
