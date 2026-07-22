@@ -273,7 +273,6 @@ private struct ModelPickerView: View {
                         isLockedByPremium: isLocked,
                         isBlockedByDevice: isBlockedByDevice,
                         isSwitchingTo: model.modelVariantBeingLoaded == variant,
-                        version: model.modelVersion(for: variant).map(formatModelVersion),
                         downloadPhase: variant == .transformer ? model.transformerDownloadPhase : nil,
                         downloadProgress: variant == .transformer ? model.transformerDownloadProgress : nil,
                         downloadSizeText: variant == .transformer ? model.transformerDownloadByteCountText : nil,
@@ -367,7 +366,6 @@ private struct ModelVariantCard: View {
     var isLockedByPremium: Bool = false
     var isBlockedByDevice: Bool = false
     var isSwitchingTo: Bool = false
-    let version: String?
     var downloadPhase: TransformerModelDownloadPhase?
     var downloadProgress: TransformerModelDownloadProgress?
     var downloadSizeText: String?
@@ -391,14 +389,6 @@ private struct ModelVariantCard: View {
                         Text(variant.title)
                             .font(.callout.weight(.semibold))
                             .foregroundStyle(.primary)
-                        if let version {
-                            Text(version)
-                                .font(.caption2.weight(.bold).monospaced())
-                                .foregroundStyle(Color.siftMint)
-                                .padding(.horizontal, 6)
-                                .padding(.vertical, 2)
-                                .background(Color.siftMint.opacity(0.12), in: Capsule())
-                        }
                         if !isAvailable {
                             Text(isBlockedByDevice ? String(localized: "设备不支持") : String(localized: "未内置"))
                                 .font(.caption2.weight(.semibold))
@@ -588,14 +578,6 @@ private struct TransformerModelDetailView: View {
                 Divider()
 
                 VStack(alignment: .leading, spacing: 10) {
-                    modelDetailRow(
-                        String(localized: "当前版本"),
-                        value: model.modelVersion(for: .transformer).map(formatModelVersion) ?? "-"
-                    )
-                    modelDetailRow(
-                        String(localized: "最新版本"),
-                        value: model.transformerUpdateReleaseID ?? "-"
-                    )
                     if let size = model.transformerUpdateDownloadSizeText {
                         modelDetailRow(String(localized: "下载大小"), value: size)
                     }
@@ -662,27 +644,6 @@ private func formatDownloadBytes(_ bytes: Int64) -> String {
     formatter.allowedUnits = [.useMB, .useGB]
     formatter.countStyle = .file
     return formatter.string(fromByteCount: bytes)
-}
-
-/// 从 manifest 里的 `<codename>-<major>.<minor>` 格式（如 `corpus-0.1`）
-/// 中提取纯版本号 `major.minor`，展示在 "模型版本 <version>" 胶囊里。
-func formatModelVersion(_ raw: String) -> String {
-    let trimmed = raw.trimmingCharacters(in: .whitespaces)
-    guard !trimmed.isEmpty else {
-        return "0.1"
-    }
-    let parts = trimmed.split(separator: "-").map(String.init)
-    guard let last = parts.last,
-          let major = last.split(separator: ".").first,
-          Int(major) != nil
-    else {
-        return trimmed
-    }
-
-    let versionParts = last.split(separator: ".")
-    let major2 = versionParts.first.map(String.init) ?? "0"
-    let minor2 = versionParts.dropFirst().first.map(String.init) ?? "1"
-    return "\(major2).\(minor2)"
 }
 
 private struct InterceptionSetupPanel: View {
@@ -841,7 +802,14 @@ private struct SubmitSamplePanel: View {
                         model.sampleSubmissionFeedback = nil
                     }
             } else {
-                TransformerSubmissionNotice()
+                if !model.hasDismissedTransformerSubmissionNotice {
+                    TransformerSubmissionNotice {
+                        withAnimation(.snappy(duration: 0.24)) {
+                            model.hasDismissedTransformerSubmissionNotice = true
+                        }
+                    }
+                    .transition(.opacity.combined(with: .move(edge: .top)))
+                }
             }
 
             if model.submissionDestination == .remote {
@@ -939,12 +907,16 @@ private struct SubmitSamplePanel: View {
         .padding(18)
         .cardSurface()
         .onAppear { model.refreshRemoteAccountStatus() }
+        .animation(.snappy(duration: 0.24), value: model.hasDismissedTransformerSubmissionNotice)
+        .animation(.snappy(duration: 0.24), value: model.hasAcceptedRemoteSamplePrivacy)
     }
 }
 
 /// Shown instead of the local/remote selector while the transformer model is
 /// active: that variant cannot be fine-tuned on device.
 private struct TransformerSubmissionNotice: View {
+    let dismiss: () -> Void
+
     var body: some View {
         HStack(alignment: .top, spacing: 9) {
             Image(systemName: "lock.badge.clock")
@@ -955,15 +927,25 @@ private struct TransformerSubmissionNotice: View {
                 Text(String(localized: "Sift Signal 模型不支持本地微调"))
                     .font(.footnote.weight(.bold))
                     .foregroundStyle(.primary)
-                Text(String(localized: "样本可继续通过 iCloud 匿名共享，用于云端训练下一版模型；切回经典模型可恢复本地微调。"))
+                Text(String(localized: "仍可匿名贡献样本。"))
                     .font(.caption)
                     .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
+                    .lineLimit(1)
             }
+            Spacer(minLength: 0)
+            Button(action: dismiss) {
+                Image(systemName: "xmark")
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(.secondary)
+                    .frame(width: 44, height: 44)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(String(localized: "关闭"))
         }
         .padding(12)
         .insetSurface(cornerRadius: 12)
-        .accessibilityElement(children: .combine)
+        .accessibilityElement(children: .contain)
     }
 }
 
@@ -982,13 +964,23 @@ private struct RemoteSubmissionPrivacyCard: View {
                     .foregroundStyle(Color.siftMint)
                     .frame(width: 18)
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(String(localized: "匿名贡献隐私说明"))
+                    Text(
+                        isAccepted
+                            ? String(localized: "匿名贡献")
+                            : String(localized: "匿名贡献隐私说明")
+                    )
                         .font(.footnote.weight(.bold))
                         .foregroundStyle(.primary)
-                    Text(String(localized: "会通过 iCloud 共享脱敏后的样本文本、分类、模型版本和粗粒度语言地区（如 zh-CN）；不发送发送方、账号或设备标识。你可以用回执删除最近一次远程样本。"))
+                        .contentTransition(.opacity)
+                    Text(
+                        isAccepted
+                            ? String(localized: "样本已脱敏，不含个人信息或设备标识，可随时删除。")
+                            : String(localized: "样本提交前会自动脱敏，不包含你的个人信息或设备标识；提交后可随时删除。")
+                    )
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
+                        .contentTransition(.opacity)
                 }
             }
 
@@ -999,29 +991,33 @@ private struct RemoteSubmissionPrivacyCard: View {
                 .disabled(!isEnabled)
                 .opacity(isEnabled ? 1 : 0.5)
 
-            HStack(spacing: 12) {
-                Button {
-                    openPrivacyPolicy(privacyPolicyURL)
-                } label: {
-                    Label(String(localized: "隐私说明"), systemImage: "doc.text.magnifyingglass")
-                        .font(.caption.weight(.semibold))
-                }
-                .buttonStyle(.plain)
-                .foregroundStyle(Color.siftMint)
+            if !isAccepted {
+                HStack(spacing: 12) {
+                    Button {
+                        openPrivacyPolicy(privacyPolicyURL)
+                    } label: {
+                        Label(String(localized: "隐私说明"), systemImage: "doc.text.magnifyingglass")
+                            .font(.caption.weight(.semibold))
+                    }
+                    .buttonStyle(.plain)
+                    .foregroundStyle(Color.siftMint)
 
-                Button {
-                    openPrivacyPolicy(termsOfServiceURL)
-                } label: {
-                    Label(String(localized: "服务条款"), systemImage: "checkmark.seal")
-                        .font(.caption.weight(.semibold))
+                    Button {
+                        openPrivacyPolicy(termsOfServiceURL)
+                    } label: {
+                        Label(String(localized: "服务条款"), systemImage: "checkmark.seal")
+                            .font(.caption.weight(.semibold))
+                    }
+                    .buttonStyle(.plain)
+                    .foregroundStyle(Color.siftMint)
                 }
-                .buttonStyle(.plain)
-                .foregroundStyle(Color.siftMint)
+                .transition(.opacity.combined(with: .move(edge: .top)))
             }
         }
         .padding(12)
         .insetSurface(cornerRadius: 12)
         .accessibilityElement(children: .contain)
+        .animation(.snappy(duration: 0.24), value: isAccepted)
     }
 }
 

@@ -517,7 +517,6 @@ struct SettingsView: View {
 
             SettingsRowContent(
                 title: String(localized: "Sift Signal 模型"),
-                subtitle: transformerStorageSubtitle,
                 icon: "brain.filled.head.profile"
             ) {
                 if let transformerStorageByteCount {
@@ -557,14 +556,6 @@ struct SettingsView: View {
         }
         .padding(18)
         .cardSurface()
-    }
-
-    private var transformerStorageSubtitle: String {
-        let version = model.modelVersion(for: .transformer) ?? String(localized: "未知")
-        return String(
-            format: String(localized: "已下载 · 版本 %@"),
-            version
-        )
     }
 
     private static func formatStorageByteCount(_ byteCount: Int64) -> String {

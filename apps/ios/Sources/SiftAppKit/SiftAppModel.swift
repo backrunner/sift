@@ -229,6 +229,14 @@ public final class SiftAppModel {
             appDefaults.set(hasAcceptedRemoteSamplePrivacy, forKey: Self.remoteSamplePrivacyConsentKey)
         }
     }
+    public var hasDismissedTransformerSubmissionNotice: Bool {
+        didSet {
+            appDefaults.set(
+                hasDismissedTransformerSubmissionNotice,
+                forKey: Self.transformerSubmissionNoticeDismissedKey
+            )
+        }
+    }
     public var hasConfirmedFilterSetup: Bool {
         didSet {
             appDefaults.set(hasConfirmedFilterSetup, forKey: Self.filterSetupConfirmationKey)
@@ -387,6 +395,9 @@ public final class SiftAppModel {
         let resolvedAppDefaults = appDefaults ?? .standard
         self.appDefaults = resolvedAppDefaults
         self.hasAcceptedRemoteSamplePrivacy = resolvedAppDefaults.bool(forKey: Self.remoteSamplePrivacyConsentKey)
+        self.hasDismissedTransformerSubmissionNotice = resolvedAppDefaults.bool(
+            forKey: Self.transformerSubmissionNoticeDismissedKey
+        )
         self.hasConfirmedFilterSetup = resolvedAppDefaults.bool(forKey: Self.filterSetupConfirmationKey)
         self.modelSelectionDefaults = modelSelectionDefaults
         self.ledgerDefaults = ledgerDefaults
@@ -2136,6 +2147,7 @@ public final class SiftAppModel {
     }
 
     private static let remoteSamplePrivacyConsentKey = "Sift.hasAcceptedRemoteSamplePrivacy"
+    private static let transformerSubmissionNoticeDismissedKey = "Sift.hasDismissedTransformerSubmissionNotice"
     private static let filterSetupConfirmationKey = "Sift.hasConfirmedFilterSetup"
     private static let transformerUpdateLastCheckKey = "Sift.transformerUpdateLastCheck.v1"
     private static let transformerUpdateCheckInterval: TimeInterval = 6 * 60 * 60

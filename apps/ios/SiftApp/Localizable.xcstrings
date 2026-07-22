@@ -681,6 +681,22 @@
         }
       }
     },
+    "仍可匿名贡献样本。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Anonymous contribution remains available."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "匿名でのサンプル提出は引き続き利用できます。"
+          }
+        }
+      }
+    },
     "匿名存储，随时导出或抹除。" : {
       "localizations" : {
         "en" : {
@@ -1477,6 +1493,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "マスキング済みサンプルを匿名提出"
+          }
+        }
+      }
+    },
+    "匿名贡献" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Anonymous Contribution"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "匿名での提出"
           }
         }
       }
@@ -2549,6 +2581,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "サンプルは引き続きiCloud経由で匿名共有され、次期モデルの学習に使われます。クラシックモデルに戻すとローカルFine-tuningを再開できます。"
+          }
+        }
+      }
+    },
+    "样本提交前会自动脱敏，不包含你的个人信息或设备标识；提交后可随时删除。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Samples are sanitized before submission and contain no personal information or device identifiers. You can delete them at any time."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "サンプルは送信前に自動でマスキングされ、個人情報や端末識別子は含まれません。送信後もいつでも削除できます。"
+          }
+        }
+      }
+    },
+    "样本已脱敏，不含个人信息或设备标识，可随时删除。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sanitized samples contain no personal information or device identifiers and can be deleted at any time."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "マスキング済みで個人情報や端末識別子を含まず、いつでも削除できます。"
           }
         }
       }

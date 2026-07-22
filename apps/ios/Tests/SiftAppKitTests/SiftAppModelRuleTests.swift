@@ -71,6 +71,23 @@ func ruleAddEditToggleAndDeletePersistAcrossModelInstances() throws {
 
 @MainActor
 @Test
+func dismissedTransformerSubmissionNoticePersistsAcrossModelInstances() throws {
+    let suiteName = "SiftTests.transformerNotice.persistence.\(UUID().uuidString)"
+    let defaults = try #require(UserDefaults(suiteName: suiteName))
+    defer { defaults.removePersistentDomain(forName: suiteName) }
+    let remoteClient = MockRemoteSampleClient(result: .success("unused"))
+
+    let model = SiftAppModel(remoteSampleClient: remoteClient, appDefaults: defaults)
+    #expect(!model.hasDismissedTransformerSubmissionNotice)
+
+    model.hasDismissedTransformerSubmissionNotice = true
+
+    let reloaded = SiftAppModel(remoteSampleClient: remoteClient, appDefaults: defaults)
+    #expect(reloaded.hasDismissedTransformerSubmissionNotice)
+}
+
+@MainActor
+@Test
 func remoteSubmitFailureKeepsVisibleFeedback() async throws {
     let suiteName = "SiftTests.remoteFailure.\(UUID().uuidString)"
     let defaults = try #require(UserDefaults(suiteName: suiteName))
