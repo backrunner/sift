@@ -8,7 +8,7 @@ COMPILE_MODELS=0
 
 usage() {
   cat <<'USAGE'
-Usage: tools/verify_ios_builtin_models.sh [--models-dir PATH] [--compile]
+Usage: tools/verify_ios_builtin_models.sh [--models-dir PATH] [--lock-file PATH] [--compile]
 
 Validates the exact Classic and PII artifacts pinned by
 apps/ios/BuiltinModels.lock.json. --compile additionally asks the selected
@@ -27,6 +27,11 @@ while [[ $# -gt 0 ]]; do
       shift
       [[ $# -gt 0 ]] || fail "--models-dir requires a path"
       MODELS_DIR="$1"
+      ;;
+    --lock-file)
+      shift
+      [[ $# -gt 0 ]] || fail "--lock-file requires a path"
+      LOCK_FILE="$1"
       ;;
     --compile)
       COMPILE_MODELS=1

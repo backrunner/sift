@@ -48,29 +48,47 @@ gates:
 
 ## Publishing A Built-In Model Bundle
 
-Install only accepted trainer outputs into `apps/ios/GeneratedModels`, update
-`apps/ios/BuiltinModels.lock.json`, and regenerate the project:
+Install only accepted trainer outputs into `apps/ios/GeneratedModels`, then run:
 
 ```bash
-cd apps/ios
-xcodegen generate
-cd ../..
-tools/package_ios_builtin_models.sh
+pnpm publish:ios-models
 ```
 
-Upload the resulting ZIP from `build/ios-models/` to immutable object storage.
-The existing `https://sift.alkinum.io/models/...` R2-backed route is suitable,
-but use a dedicated built-in release key rather than the Premium channel, for
-example:
+The publisher performs the release transaction in this order:
+
+1. Read the Classic and PII versions from their trainer manifests.
+2. Hash all five source artifacts and compile both models with the selected
+   Xcode toolchain.
+3. Build an immutable ZIP and derive its release URL and SHA-256.
+4. Refuse to overwrite a different R2 object; resume safely when an interrupted
+   publication already uploaded the exact candidate bytes.
+5. Upload to `sift-models`, download it through the public Worker route, and
+   verify the full archive SHA-256.
+6. Only after public verification succeeds, atomically replace
+   `BuiltinModels.lock.json` and regenerate `Sift.xcodeproj`.
+
+Use `pnpm publish:ios-models --dry-run` to run all local gates without
+uploading or changing the lock. Use `--models-dir PATH` when validating trainer
+output before it is installed under `apps/ios/GeneratedModels`.
+
+After a successful publication, commit and push the updated lock and generated
+project. The next Xcode Cloud clone reads that lock and restores the newly
+published archive automatically; no workflow environment variable changes are
+needed.
+
+Published ZIPs remain under `build/ios-models/` locally and use a dedicated
+built-in release key rather than the Premium channel, for example:
 
 ```text
 models/releases/ios-builtins/maxent-boundary-v9-pii-boundary-v7.zip
 ```
 
-With the production Cloudflare account selected, the corresponding upload is:
+The publisher runs the corresponding Wrangler upload automatically. For
+diagnosis, the equivalent command is:
 
 ```bash
-pnpm -C apps/site exec wrangler r2 object put \
+cd apps/site
+pnpm exec wrangler r2 object put \
   sift-models/models/releases/ios-builtins/maxent-boundary-v9-pii-boundary-v7.zip \
   --file ../../build/ios-models/SiftBuiltinModels-maxent-boundary-v9+pii-boundary-v7.zip \
   --content-type application/zip \
@@ -78,12 +96,10 @@ pnpm -C apps/site exec wrangler r2 object put \
   --remote --config wrangler.jsonc
 ```
 
-Set `archive.url` in `BuiltinModels.lock.json` to that object URL and set
-`archive.sha256` to the value printed by the packaging tool. Never replace an
-object at an existing URL. Publish a new key and update the lock for each
-accepted model release.
+Never replace an object at an existing URL. Every changed Classic or PII model
+must also increment its manifest version; the publisher enforces both rules.
 
-Before switching the workflow variables, test the same artifact locally:
+For a lower-level local check without packaging or upload, run:
 
 ```bash
 tools/verify_ios_builtin_models.sh --compile
