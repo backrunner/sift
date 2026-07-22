@@ -7,28 +7,12 @@ import Testing
 private let remoteSamplePrivacyConsentKey = "Sift.hasAcceptedRemoteSamplePrivacy"
 
 @Test
-func classificationResultTitleOmitsDuplicateGroupTitle() {
-    let duplicateTitleDecision = ClassificationDecision(
-        labelID: "verification",
-        labelTitle: "验证码",
-        groupID: "verification",
-        groupTitle: "验证码",
-        confidence: 0.98,
-        systemAction: .transaction,
-        source: .model
-    )
-    let distinctTitleDecision = ClassificationDecision(
-        labelID: "finance.bank",
-        labelTitle: "银行",
-        groupID: "finance",
-        groupTitle: "财务",
-        confidence: 0.98,
-        systemAction: .transaction,
-        source: .model
-    )
-
-    #expect(classificationResultTitle(for: duplicateTitleDecision) == "验证码")
-    #expect(classificationResultTitle(for: distinctTitleDecision) == "财务 / 银行")
+func categoryPresentationOmitsRedundantInlineHierarchy() {
+    #expect(categoryDisplayTitle(groupTitle: "验证码", labelTitle: "验证码") == "验证码")
+    #expect(categoryDisplayTitle(groupTitle: "", labelTitle: "未分类") == "未分类")
+    #expect(categoryDisplayTitle(groupTitle: "财务", labelTitle: "银行") == "财务 / 银行")
+    #expect(!categoryShowsDistinctGroupTitle(groupTitle: "验证码", labelTitle: "验证码"))
+    #expect(categoryShowsDistinctGroupTitle(groupTitle: "财务", labelTitle: "银行"))
 }
 
 @MainActor

@@ -1889,19 +1889,16 @@ private struct ResultStrip: View {
 
     private var resultTitle: String {
         guard decision.source == .rule else {
-            return classificationResultTitle(for: decision)
+            return categoryDisplayTitle(
+                groupTitle: decision.groupTitle,
+                labelTitle: decision.labelTitle
+            )
         }
         return decision.systemAction == .none
             ? String(localized: "规则放行")
             : String(localized: "规则阻止")
     }
 
-}
-
-func classificationResultTitle(for decision: ClassificationDecision) -> String {
-    decision.groupTitle == decision.labelTitle
-        ? decision.labelTitle
-        : "\(decision.groupTitle) / \(decision.labelTitle)"
 }
 
 private struct GlassTextField: View {
@@ -2144,11 +2141,16 @@ private struct CategoryMenu: View {
                 Spacer(minLength: 12)
 
                 HStack(spacing: 6) {
-                    Text(selectedLabel.groupTitle)
-                        .foregroundStyle(.secondary)
-                    Image(systemName: "chevron.right")
-                        .font(.caption2.weight(.bold))
-                        .foregroundStyle(.tertiary)
+                    if categoryShowsDistinctGroupTitle(
+                        groupTitle: selectedLabel.groupTitle,
+                        labelTitle: selectedLabel.title
+                    ) {
+                        Text(selectedLabel.groupTitle)
+                            .foregroundStyle(.secondary)
+                        Image(systemName: "chevron.right")
+                            .font(.caption2.weight(.bold))
+                            .foregroundStyle(.tertiary)
+                    }
                     Text(selectedLabel.title)
                         .foregroundStyle(.primary)
                 }
