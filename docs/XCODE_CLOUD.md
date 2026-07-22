@@ -58,6 +58,35 @@ The build log must contain `Restoring built-in models` and `Xcode Cloud model
 preflight passed` before the `xcodebuild` phase. Their absence means the
 workflow selected a different project path or is building an older commit.
 
+## Version and Build Numbers
+
+`MARKETING_VERSION` is the user-facing App Store version (`1.0` in the current
+release). `CURRENT_PROJECT_VERSION` is the integer build number (`CFBundleVersion`);
+it must be unique and higher than the last uploaded build for the same marketing
+version.
+
+Xcode Cloud owns its build-number counter. Set the initial or next value in App
+Store Connect under **App page > Xcode Cloud > Settings > Build Number > Edit
+Next Build Number**. For example, when `1.0 (12)` is already uploaded, set the
+next Cloud build number to `13`. Leave `MARKETING_VERSION` at `1.0` until the
+next user-facing release (for example, `1.1`). Do not change `project.yml` for
+each Xcode Cloud build; Cloud overrides the repository default with its managed
+number.
+
+Local archives and TestFlight uploads do not use Xcode Cloud's counter. Supply
+an explicit, unused build number with `tools/upload_ios_testflight.sh` and
+coordinate it with the Cloud number, or reserve App Store uploads for the
+release workflow to avoid collisions:
+
+```bash
+pnpm upload:ios-testflight --build-number 14
+```
+
+If the next release changes the marketing version, update `MARKETING_VERSION`
+and continue with an unused integer build number. Do not assume that a local
+archive or a marketing-version change resets the App Store Connect counter.
+The App Store Connect Cloud setting is authoritative for Cloud uploads.
+
 ## Branch Policy
 
 All development work is committed and pushed to `main`, which is the local
