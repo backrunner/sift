@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "release": "maxent-boundary-v9+pii-boundary-v7",
+  "archive": {
+    "url": "https://sift.alkinum.io/models/releases/ios-builtins/maxent-boundary-v9-pii-boundary-v7.zip",
+    "sha256": "bed3a72ff0747c76bb9a727e8927fe619d9666f0d4a00c269955069ef2c6da52"
+  },
+  "classic": {
+    "version": "maxent-boundary-v9",
+    "modelSHA256": "658acbf78dd7e7e56e973e88a4029d4ea5e81fc2f184b614b64ada42ab31cc57",
+    "manifestSHA256": "0f2e82a284ac5b27b2ab9016bcf3c3c00f290c48335e10700fb5e5efd8696048"
+  },
+  "pii": {
+    "version": "pii-boundary-v7",
+    "packageSHA256": "2a141d7adc05d6d7859e8a48a198a87f380a27e041fdf77de29b873daa63ca9c",
+    "vocabularySHA256": "fe5311ad4e6d962e4180ea63158c69befb6c50e37f5361dc8918c63b3b229f89",
+    "manifestSHA256": "0f23e98707cb8ca524aae36e516eb58fb6999c0117959bfdc9d84a4acaecb074"
+  }
+}

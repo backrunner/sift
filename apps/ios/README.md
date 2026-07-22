@@ -87,9 +87,11 @@ local model's own coarse classification (`predictedLabel`,
 disagreements; a high-confidence mismatch shows a non-blocking hint after
 submitting.
 
-The PII model artifacts are not part of the default TestFlight build. Keep the
-app rules-only unless the trainer produces an accepted model, then wire the
-generated `SiftPIIDetector.*` files into `project.yml` for that release.
+Production archives include the accepted PII model artifacts pinned by
+`BuiltinModels.lock.json`. The artifacts remain git-ignored and Xcode Cloud
+restores their immutable release ZIP before building. Keep a candidate out of
+the release bundle unless it passes both false-positive gates, then update the
+lock and `project.yml` together.
 
 When full Xcode is installed:
 
@@ -100,6 +102,9 @@ open Sift.xcodeproj
 ```
 
 If Xcode commands report that the license has not been accepted, run `sudo xcodebuild -license` once from Terminal. XcodeGen is a separate project generator; install it with Homebrew if `xcodegen` is not on PATH.
+
+Xcode Cloud setup, model artifact publishing, and archive gates are documented
+in [XCODE_CLOUD.md](../../docs/XCODE_CLOUD.md).
 
 ## TestFlight upload
 
