@@ -283,7 +283,8 @@ private struct ModelPickerView: View {
                         // 购买成功后用户再次点 Transformer 才开始下载/切换。
                         if isBlockedByDevice {
                             model.showTransformerUnsupportedMessage()
-                        } else if variant == .transformer, model.isTransformerModelDownloaded,
+                        } else if variant == .transformer, model.premium.isUnlocked,
+                           model.isTransformerModelDownloaded,
                            model.transformerUpdateReleaseID != nil {
                             isShowingTransformerDetails = true
                         } else {
@@ -402,7 +403,7 @@ private struct ModelVariantCard: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
                     downloadStatusView
-                    if variant == .transformer, !isBlockedByDevice, let updateStatusText {
+                    if canShowTransformerStatus, let updateStatusText {
                         downloadLine(
                             icon: "arrow.down.circle.fill",
                             text: updateStatusText,
@@ -447,7 +448,7 @@ private struct ModelVariantCard: View {
                 progress: nil,
                 showsSpinner: true
             )
-        } else if variant == .transformer, let downloadPhase {
+        } else if canShowTransformerStatus, let downloadPhase {
             switch downloadPhase {
             case .notDownloaded:
                 if !isLockedByPremium && !isSelected {
@@ -507,6 +508,10 @@ private struct ModelVariantCard: View {
                 )
             }
         }
+    }
+
+    private var canShowTransformerStatus: Bool {
+        variant == .transformer && !isBlockedByDevice && !isLockedByPremium
     }
 
     private var downloadSizeSuffix: String {
@@ -801,15 +806,6 @@ private struct SubmitSamplePanel: View {
                     .onChange(of: model.submissionDestination) { _, _ in
                         model.sampleSubmissionFeedback = nil
                     }
-            } else {
-                if !model.hasDismissedTransformerSubmissionNotice {
-                    TransformerSubmissionNotice {
-                        withAnimation(.snappy(duration: 0.24)) {
-                            model.hasDismissedTransformerSubmissionNotice = true
-                        }
-                    }
-                    .transition(.opacity.combined(with: .move(edge: .top)))
-                }
             }
 
             if model.submissionDestination == .remote {
@@ -907,45 +903,7 @@ private struct SubmitSamplePanel: View {
         .padding(18)
         .cardSurface()
         .onAppear { model.refreshRemoteAccountStatus() }
-        .animation(.snappy(duration: 0.24), value: model.hasDismissedTransformerSubmissionNotice)
         .animation(.snappy(duration: 0.24), value: model.hasAcceptedRemoteSamplePrivacy)
-    }
-}
-
-/// Shown instead of the local/remote selector while the transformer model is
-/// active: that variant cannot be fine-tuned on device.
-private struct TransformerSubmissionNotice: View {
-    let dismiss: () -> Void
-
-    var body: some View {
-        HStack(alignment: .top, spacing: 9) {
-            Image(systemName: "lock.badge.clock")
-                .font(.callout.weight(.semibold))
-                .foregroundStyle(Color.siftHalo)
-                .frame(width: 18)
-            VStack(alignment: .leading, spacing: 3) {
-                Text(String(localized: "Sift Signal 模型不支持本地微调"))
-                    .font(.footnote.weight(.bold))
-                    .foregroundStyle(.primary)
-                Text(String(localized: "仍可匿名贡献样本。"))
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-            }
-            Spacer(minLength: 0)
-            Button(action: dismiss) {
-                Image(systemName: "xmark")
-                    .font(.caption.weight(.bold))
-                    .foregroundStyle(.secondary)
-                    .frame(width: 44, height: 44)
-                    .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel(String(localized: "关闭"))
-        }
-        .padding(12)
-        .insetSurface(cornerRadius: 12)
-        .accessibilityElement(children: .contain)
     }
 }
 
@@ -972,15 +930,10 @@ private struct RemoteSubmissionPrivacyCard: View {
                         .font(.footnote.weight(.bold))
                         .foregroundStyle(.primary)
                         .contentTransition(.opacity)
-                    Text(
-                        isAccepted
-                            ? String(localized: "样本已脱敏，不含个人信息或设备标识，可随时删除。")
-                            : String(localized: "样本提交前会自动脱敏，不包含你的个人信息或设备标识；提交后可随时删除。")
-                    )
+                    Text(String(localized: "样本经脱敏后匿名提交，您可随时抹除，隐私始终由您掌控。"))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
-                        .contentTransition(.opacity)
                 }
             }
 

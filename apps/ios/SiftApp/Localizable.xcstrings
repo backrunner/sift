@@ -681,22 +681,6 @@
         }
       }
     },
-    "仍可匿名贡献样本。" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Anonymous contribution remains available."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "匿名でのサンプル提出は引き続き利用できます。"
-          }
-        }
-      }
-    },
     "匿名存储，随时导出或抹除。" : {
       "localizations" : {
         "en" : {
@@ -853,22 +837,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Sift Signal 多言語モデルを永久にご利用いただけます"
-          }
-        }
-      }
-    },
-    "Sift Signal 模型不支持本地微调" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "The Sift Signal model doesn't support on-device fine-tuning"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sift SignalモデルはデバイスでのFine-tuningに対応していません"
           }
         }
       }
@@ -2585,34 +2553,18 @@
         }
       }
     },
-    "样本提交前会自动脱敏，不包含你的个人信息或设备标识；提交后可随时删除。" : {
+    "样本经脱敏后匿名提交，您可随时抹除，隐私始终由您掌控。" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Samples are sanitized before submission and contain no personal information or device identifiers. You can delete them at any time."
+            "value" : "Samples are sanitized and submitted anonymously. Erase them anytime to stay in control of your privacy."
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "サンプルは送信前に自動でマスキングされ、個人情報や端末識別子は含まれません。送信後もいつでも削除できます。"
-          }
-        }
-      }
-    },
-    "样本已脱敏，不含个人信息或设备标识，可随时删除。" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sanitized samples contain no personal information or device identifiers and can be deleted at any time."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "マスキング済みで個人情報や端末識別子を含まず、いつでも削除できます。"
+            "value" : "サンプルはマスキング後に匿名で送信され、いつでも消去できます。プライバシーは常にご自身で管理できます。"
           }
         }
       }
