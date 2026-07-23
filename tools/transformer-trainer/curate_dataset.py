@@ -45,6 +45,7 @@ class Row:
     label: str
     source: str
     language: str = "unknown"
+    source_label: str | None = None
     predicted_label: str | None = None
     predicted_confidence: float | None = None
     agreement: int | None = None
@@ -60,6 +61,10 @@ class Report:
     rejected: Counter = field(default_factory=Counter)
     rehydrated_rows: int = 0
     matrix: dict[str, dict[str, int]] = field(default_factory=dict)
+    source_counts: dict[str, int] = field(default_factory=dict)
+    source_label_language: dict[str, int] = field(default_factory=dict)
+    source_label_counts: dict[str, int] = field(default_factory=dict)
+    template_clusters: dict[str, dict[str, int | float]] = field(default_factory=dict)
     audit_gaps: list[str] = field(default_factory=list)
 
 
@@ -105,6 +110,12 @@ def parse_arguments() -> argparse.Namespace:
     )
     parser.add_argument("--min-centroid-rows", type=int, default=8, help="labels with fewer rows are exempt from the model filter")
     parser.add_argument(
+        "--max-rows-per-source-label-language",
+        type=int,
+        default=500,
+        help="deterministic diversity cap for each source × label × language bucket; 0 disables",
+    )
+    parser.add_argument(
         "--remote-disagreement-keep",
         type=float,
         default=0.5,
@@ -139,6 +150,23 @@ def normalize_language_hint(value: object) -> str:
     return normalized if normalized in SUPPORTED_LANGUAGES else "unknown"
 
 
+def canonicalize_carrier_billing(text: str, label: str) -> tuple[str, bool]:
+    """Recover the new billing leaf from legacy carrier labels.
+
+    Older app builds could only submit `carrier.other` or
+    `carrier.data_reminder`; only unambiguous bill/payment language is moved.
+    """
+    if label not in {"carrier.other", "carrier.data_reminder"}:
+        return label, False
+    lowered = text.casefold()
+    markers = (
+        "账单", "缴费", "充值成功", "欠费", "应缴", "账期", "月结单",
+        "billing", "mobile bill", "monthly statement", "payment received",
+        "autopay", "airtime balance", "請求", "支払い", "料金残高",
+    )
+    return ("carrier.billing", True) if any(marker in lowered for marker in markers) else (label, False)
+
+
 def load_rows(paths: list[Path], report: Report) -> list[Row]:
     rows: list[Row] = []
     for path in paths:
@@ -155,6 +183,7 @@ def load_rows(paths: list[Path], report: Report) -> list[Row]:
                 record = json.loads(line)
                 text, label = str(record.get("text", "")), str(record.get("label", ""))
                 if text and label:
+                    label, relabeled = canonicalize_carrier_billing(text, label)
                     language = normalize_language_hint(record.get("textLanguage") or record.get("language"))
                     confidence = record.get("predictedConfidence")
                     agreement = record.get("agreement")
@@ -162,12 +191,13 @@ def load_rows(paths: list[Path], report: Report) -> list[Row]:
                     rows.append(Row(
                         text=text,
                         label=label,
-                        source=path.name,
+                        source=str(record.get("source") or path.name),
                         language=language,
-                        predicted_label=(str(record["predictedLabel"]).strip() if record.get("predictedLabel") else None),
-                        predicted_confidence=(float(confidence) if isinstance(confidence, (int, float)) else None),
-                        agreement=(int(agreement) if isinstance(agreement, (int, float)) else None),
-                        model_version=(str(record["modelVersion"]).strip() if record.get("modelVersion") else None),
+                        source_label=(str(record["sourceLabel"]).strip() if record.get("sourceLabel") else None),
+                        predicted_label=(None if relabeled else (str(record["predictedLabel"]).strip() if record.get("predictedLabel") else None)),
+                        predicted_confidence=(None if relabeled else (float(confidence) if isinstance(confidence, (int, float)) else None)),
+                        agreement=(None if relabeled else (int(agreement) if isinstance(agreement, (int, float)) else None)),
+                        model_version=(None if relabeled else (str(record["modelVersion"]).strip() if record.get("modelVersion") else None)),
                         schema_version=(int(schema_version) if isinstance(schema_version, (int, float)) else None),
                     ))
                     count += 1
@@ -607,6 +637,44 @@ def apply_model_tier(
     return kept
 
 
+def apply_source_caps(
+    rows: list[Row],
+    limit: int,
+    report: Report,
+    rejected_sink: list[dict],
+) -> list[Row]:
+    """Bound source concentration without changing class or language floors.
+
+    Rows are ranked by a stable digest rather than input order. This prevents a
+    large public corpus, a repeated export, or a changed filesystem ordering
+    from silently deciding which examples survive.
+    """
+    if limit <= 0:
+        return rows
+    buckets: dict[tuple[str, str, str], list[Row]] = defaultdict(list)
+    for row in rows:
+        buckets[(row.source, row.label, row.language)].append(row)
+
+    kept: list[Row] = []
+    for key in sorted(buckets):
+        bucket = buckets[key]
+        bucket.sort(key=lambda row: hashlib.sha256(
+            f"{row.source}\x1f{row.label}\x1f{row.language}\x1f{row.text}".encode("utf-8")
+        ).hexdigest())
+        kept.extend(bucket[:limit])
+        for row in bucket[limit:]:
+            report.rejected["source-cap"] += 1
+            rejected_sink.append({
+                "text": row.text,
+                "label": row.label,
+                "source": row.source,
+                "language": row.language,
+                "reason": "source-cap",
+                "limit": limit,
+            })
+    return kept
+
+
 # --- Audit ---------------------------------------------------------------------
 
 def build_matrix(rows: list[Row], valid_labels: set[str], report: Report) -> None:
@@ -614,6 +682,33 @@ def build_matrix(rows: list[Row], valid_labels: set[str], report: Report) -> Non
     for row in rows:
         matrix[row.label][row.language] += 1
     report.matrix = {label: dict(counts) for label, counts in matrix.items()}
+
+
+def build_quality_report(rows: list[Row], report: Report) -> None:
+    source_counts: Counter[str] = Counter(row.source for row in rows)
+    source_label_language: Counter[str] = Counter(
+        f"{row.source}\x1f{row.label}\x1f{row.language}" for row in rows
+    )
+    source_label_counts: Counter[str] = Counter(
+        f"{row.source}\x1f{row.source_label}" for row in rows if row.source_label
+    )
+    template_groups: dict[str, set[str]] = defaultdict(set)
+    template_rows: Counter[str] = Counter()
+    for row in rows:
+        key = f"{row.label}\x1f{row.language}"
+        template_groups[key].add(template_signature(row.text))
+        template_rows[key] += 1
+    report.source_counts = dict(sorted(source_counts.items()))
+    report.source_label_language = dict(sorted(source_label_language.items()))
+    report.source_label_counts = dict(sorted(source_label_counts.items()))
+    report.template_clusters = {
+        key: {
+            "rows": template_rows[key],
+            "unique": len(values),
+            "concentration": round(template_rows[key] / max(len(values), 1), 3),
+        }
+        for key, values in sorted(template_groups.items())
+    }
 
 
 def audit_core_coverage(report: Report, min_core_rows: int) -> None:
@@ -667,6 +762,7 @@ def main() -> None:
                 row.language = detect_language(row.text)
         rows = [row for row in rows if row.label in valid_labels]
         build_matrix(rows, valid_labels, report)
+        build_quality_report(rows, report)
         audit_core_coverage(report, arguments.min_core_rows)
         print_audit(report, arguments.min_core_rows)
         if arguments.report:
@@ -687,6 +783,12 @@ def main() -> None:
         holdout_exact,
         holdout_signatures,
     )
+    rows = apply_source_caps(
+        rows,
+        arguments.max_rows_per_source_label_language,
+        report,
+        rejected_sink,
+    )
     if arguments.model_filter != "off":
         rows = apply_model_tier(rows, arguments, report, rejected_sink)
 
@@ -695,7 +797,14 @@ def main() -> None:
     audit_core_coverage(report, arguments.min_core_rows)
 
     arguments.out.parent.mkdir(parents=True, exist_ok=True)
-    payload = "\n".join(json.dumps({"text": row.text, "label": row.label}, ensure_ascii=False) for row in rows)
+    build_quality_report(rows, report)
+    payload = "\n".join(json.dumps({
+        "text": row.text,
+        "label": row.label,
+        "source": row.source,
+        "sourceLabel": row.source_label,
+        "language": row.language,
+    }, ensure_ascii=False) for row in rows)
     arguments.out.write_text(payload + "\n" if payload else "", encoding="utf-8")
 
     if arguments.rejected:

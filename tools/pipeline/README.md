@@ -13,7 +13,7 @@ pnpm pipeline -- finetune                     # resume last checkpoint, low LR
 pnpm pipeline -- train-transformer \
   --resume-from build/pipeline/transformer-model/checkpoint
 pnpm pipeline -- quantize-transformer \
-  --version-transformer signal-v1 --release-sequence 1 \
+  --version-transformer signal-v2-boundary-v15 --release-sequence 2 \
   --minimum-app-build 9 --maximum-app-build 2147483647
 # Add --qat-model w4a16-block16-qat=/path/to/qat.mlpackage when PTQ quality fails.
 ```
@@ -25,20 +25,24 @@ inputs, so any stage can be re-run in isolation; artifacts live under
 
 - `fetch-remote` needs `CLOUDKIT_KEY_ID` + `CLOUDKIT_PRIVATE_KEY`; without
   them it skips politely (pass `--require-remote` to fail instead).
+- `fetch-public` defaults to `--public-source-policy curated`; opt into
+  undeclared-license sources only for explicit research runs.
 - `curate` enforces data quality (see
   `tools/transformer-trainer/curate_dataset.py`) and audits that every
   taxonomy label has enough zh / en / ja rows; `--strict-audit` turns
   coverage gaps into pipeline failures. It also rejects exact and
-  digit-normalized collisions against both fixed external holdouts before any
+  digit-normalized collisions against every configured external holdout before any
   model can train or be installed. Both train stages repeat the collision check
   and refuse stale or manually replaced `train.ndjson` files.
+  A deterministic source/label/language cap prevents one corpus from
+  dominating a leaf; reports include provenance and template concentration.
 - `augment` reads `train.curated.ndjson`, applies only versioned label/language
-  transformations and reviewed boundary rows, rejects both external holdouts,
+  transformations and reviewed boundary rows, rejects every external holdout,
   template-deduplicates the result, and writes the final `train.ndjson` plus
   `augmentation-report.json`.
 - `train-classic` uses Create ML MaxEnt by default (`--algorithm-classic
   maxent`) because it is the validated high-accuracy, tiny-model baseline for
-  the current 50-label SMS corpus; pass `--algorithm-classic bert` or `auto`
+  the current 51-label SMS corpus; pass `--algorithm-classic bert` or `auto`
   only for comparison runs. Use `--split-seed-classic` to repeat validation
   on alternate deterministic per-label holdout splits.
 - `train-transformer` fine-tunes `jhu-clsp/mmBERT-small` by default, picks
@@ -49,7 +53,9 @@ inputs, so any stage can be re-run in isolation; artifacts live under
   candidates for the current checkpoint. Unsupported activation-quantized
   combinations are not generated. It never reuses the previous release's
   winner. W4 QAT candidates are considered only when their paired PTQ
-  candidate fails quality gates.
+candidate fails quality gates.
+  Reports and release selection include the billing/card holdout in addition
+  to fixed, promotion, and conversation metrics.
 - `finetune` is the incremental path after new data lands: it resumes the
   latest checkpoint with a low learning rate (default 1e-5) instead of
   retraining from scratch.

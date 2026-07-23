@@ -25,7 +25,8 @@ Build a richer generic local corpus from synthetic rows plus public SMS datasets
 swift run SiftAppleTrainer \
   --build-public-corpus ../../build/public-corpus.ndjson \
   --per-label 140 \
-  --public-per-label 250
+  --public-per-label 250 \
+  --public-source-policy curated
 ```
 
 Train from the generic corpus with Apple's native stack and install the raw model into the iOS project resources:
@@ -45,7 +46,7 @@ merchant promotions, game offers, rewards malls, carrier points, and factual
 points notifications. It is never merged into training rows; both pipeline
 trainers evaluate it after validation to catch regressions at these boundaries.
 
-`--algorithm maxent` is the validated default for the current 50-label SMS
+`--algorithm maxent` is the validated default for the current 51-label SMS
 corpus: it trains in seconds, produces a tiny model, and outperforms Create ML
 BERT transfer learning on the local validation splits. Use `--algorithm bert`
 or `--algorithm auto` only for comparison runs. Use `--split-seed` to repeat
@@ -67,6 +68,12 @@ Public corpus sources currently used by `--build-public-corpus`:
 - `Cypher-Z/FBS_SMS_Dataset`: Chinese fake-base-station spam SMS; preprocessed and anonymized by the dataset authors.
 - `codesignal/sms-spam-collection`: English SMS Spam Collection, CC BY 4.0.
 - `reportsmishing/Smishing-Dataset-IMC25`: global smishing SMS dataset, CC BY 4.0.
+
+The default `curated` policy excludes `hrwhisper/SpamMessage`, whose repository
+does not declare a data license. Use `--public-source-policy all` only for an
+explicit research run. Generated rows retain `source`, `sourceLabel`, and `language` metadata;
+trainers ignore those fields, while curation reports use them to detect source
+concentration.
 - `hrwhisper/SpamMessage`: ~800k labelled Chinese SMS; spam rows are split into
   Sift's `spam` vs `promotion` buckets heuristically.
 

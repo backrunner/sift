@@ -420,13 +420,19 @@ def verify_selected_candidate(selection_path: Path, manifest: dict[str, Any], mo
         raise SystemExit("error: MessageFilter rules override gate failed")
     if metrics.get("fixedAccuracy", 0) < 0.99:
         raise SystemExit("error: fixed accuracy gate failed")
-    if metrics.get("promotionAccuracy", 0) < 0.97:
+    if metrics.get("promotionAccuracy", 0) < 0.98:
         raise SystemExit("error: promotion accuracy gate failed")
+    if metrics.get("billingAccuracy", 0) < 0.90 or metrics.get("billingActionAccuracy", 0) < 0.95:
+        raise SystemExit("error: billing boundary gate failed")
     if metrics.get("fp16Top1Agreement", 0) < 0.985:
         raise SystemExit("error: FP16 top-1 agreement gate failed")
     if metrics.get("probabilitiesFinite") is not True or metrics.get("probabilitySumsValid") is not True:
         raise SystemExit("error: probability validity gate failed")
-    if actions.get("fixedAccuracy", 0) < 0.99 or actions.get("promotionAccuracy", 0) < 0.97:
+    if (
+        actions.get("fixedAccuracy", 0) < 0.99
+        or actions.get("promotionAccuracy", 0) < 0.98
+        or actions.get("billingAccuracy", 0) < 0.95
+    ):
         raise SystemExit("error: MessageFilter action accuracy gate failed")
     if actions.get("benignOrTransactionToJunk", 1) != 0:
         raise SystemExit("error: MessageFilter benign/transaction junk gate failed")

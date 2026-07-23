@@ -7,7 +7,7 @@
 ## What This Project Is
 
 Sift is a privacy-first iOS SMS filtering app. Classification runs on device
-through an IdentityLookup extension, using a 50-leaf taxonomy with first-class
+through an IdentityLookup extension, using a 51-leaf taxonomy with first-class
 zh/en/ja coverage, a dual-model setup (a locally fine-tunable Create ML classic
 model plus a paid Premium transformer model), anonymous CloudKit sample
 collection, user-defined allow/block rules, and an automated training pipeline.
@@ -67,7 +67,8 @@ The product is not launched yet; backward compatibility is not required.
 11. **Model selection must use leak-free external holdouts.** Before comparing
     candidates, remove exact and digit-normalized near duplicates against both
     `tools/apple-trainer/Evaluation/classification-regressions.ndjson` and
-    `tools/apple-trainer/Evaluation/promotion-regressions.ndjson`. Never select
+    `tools/apple-trainer/Evaluation/promotion-regressions.ndjson`, plus the
+    billing/card boundary set when those labels are touched. Never select
     a model from its internal validation score alone.
 12. **PII models have a false-positive gate.** `--install-ios` must keep PII
     micro F1 >= 0.90 and clean-sentence FPR <= 0.02 on both the synthetic eval
@@ -78,18 +79,18 @@ The product is not launched yet; backward compatibility is not required.
     to `release`; Xcode Cloud workflows bind to `release`, while local builds
     use `main`.
 
-## Current Model Baselines (2026-07-22)
+## Current Model Baselines (2026-07-24)
 
 | Variant | Version | Fixed 474 | Promotion 150 | Notes |
 | --- | --- | ---: | ---: | --- |
-| Classic | `maxent-boundary-v9` | 98.95% | 96.00% | 347.3 KB; Conversation 30/30 abstain |
-| Premium | `signal-v1` | 99.37% | 100.00% | v11 lineage; 22-layer W8A16 Core ML, CPU-only; 159,107,309 download bytes |
+| Classic | `maxent-boundary-v19` | 98.73% | 96.00% | Billing/card 90.00% raw / 100% action; Conversation 30/30 abstain; 354.0 KB |
+| Premium | `signal-v2-boundary-v15` candidate | 99.37% | 99.33% | Billing/card 93.33%; 22-layer W8A16 Core ML, CPU-only; 159,107,726 download bytes |
 | PII | `pii-boundary-v7` | n/a | n/a | Core ML INT8 P 99.27%, R 98.90%, F1 99.08%; clean FPR 0/487 and 0/64; grouped amounts |
 
-The shared leak-free Premium candidate contains 13,419 rows with complete zh/en/ja
-coverage. Its boundary-v3 source contained 54 exact and 9 near collisions with
-the fixed set; candidate preparation also removed 50 exact and 5 near
-collisions from the synthetic supplement against all 624 external holdout rows.
+The current Signal candidate was trained on 14,390 leak-free rows with complete
+zh/en/ja coverage. The pipeline isolates all 684 fixed, promotion, billing/card,
+and conversation holdout rows by exact and digit-normalized signatures before
+either model trains.
 The 150-row promotion boundary set spans game marketplaces, retail, finance,
 carrier offers, travel, insurance, services, loans, and housing, with paired
 order, points, bank, data-usage, update, and scam negatives. The previous

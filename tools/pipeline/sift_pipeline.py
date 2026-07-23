@@ -65,6 +65,7 @@ CLASSIC_OUT = PIPELINE_DIR / "apple-model"
 TRANSFORMER_OUT = PIPELINE_DIR / "transformer-model"
 PROMOTION_TEST_SET = APPLE_TRAINER / "Evaluation" / "promotion-regressions.ndjson"
 CLASSIFICATION_TEST_SET = APPLE_TRAINER / "Evaluation" / "classification-regressions.ndjson"
+BILLING_CARD_TEST_SET = APPLE_TRAINER / "Evaluation" / "billing-card-regressions.ndjson"
 CONVERSATION_TEST_SET = TRANSFORMER_TRAINER / "Evaluation" / "conversation-regressions.ndjson"
 
 
@@ -79,6 +80,12 @@ def parse_arguments() -> argparse.Namespace:
     corpus.add_argument("--core-per-label", type=int, default=60, help="en/ja synthetic rows per label")
     corpus.add_argument("--intl-per-label", type=int, default=16, help="rows per covered label for other languages")
     corpus.add_argument("--public-per-label", type=int, default=500, help="max public-dataset rows per label")
+    corpus.add_argument(
+        "--public-source-policy",
+        choices=["curated", "all"],
+        default="curated",
+        help="curated keeps sources with explicit reuse terms; all opts into undeclared-license sources",
+    )
     corpus.add_argument("--seed-languages", default="all", help="seed languages passed to SiftAppleTrainer")
     corpus.add_argument("--extra-input", type=Path, action="append", default=[], help="additional NDJSON merged during curation (repeatable)")
 
@@ -93,6 +100,12 @@ def parse_arguments() -> argparse.Namespace:
     quality.add_argument("--min-core-rows", type=int, default=10, help="audit floor per label for zh/en/ja")
     quality.add_argument("--strict-audit", action="store_true", help="fail the pipeline on core-language coverage gaps")
     quality.add_argument("--remote-disagreement-keep", type=float, default=0.5, help="keep fraction for high-confidence CloudKit/model disagreements")
+    quality.add_argument(
+        "--max-rows-per-source-label-language",
+        type=int,
+        default=500,
+        help="deterministic source diversity cap applied before model filtering (0 disables)",
+    )
     quality.add_argument(
         "--augmentation-config",
         type=Path,
@@ -191,6 +204,7 @@ def require_holdout_isolation(path: Path) -> None:
     holdout_texts = (
         load_texts(CLASSIFICATION_TEST_SET)
         + load_texts(PROMOTION_TEST_SET)
+        + load_texts(BILLING_CARD_TEST_SET)
         + load_texts(CONVERSATION_TEST_SET)
     )
     holdout_exact = {text.lower() for text in holdout_texts}
@@ -219,6 +233,7 @@ def stage_fetch_public(arguments: argparse.Namespace) -> None:
             "--core-per-label", str(arguments.core_per_label),
             "--intl-per-label", str(arguments.intl_per_label),
             "--public-per-label", str(arguments.public_per_label),
+            "--public-source-policy", arguments.public_source_policy,
             "--languages", arguments.seed_languages,
         ],
         cwd=APPLE_TRAINER,
@@ -282,12 +297,14 @@ def stage_curate(arguments: argparse.Namespace) -> None:
         "--report", str(CURATION_REPORT),
         "--holdout", str(CLASSIFICATION_TEST_SET),
         "--holdout", str(PROMOTION_TEST_SET),
+        "--holdout", str(BILLING_CARD_TEST_SET),
         "--holdout", str(CONVERSATION_TEST_SET),
         "--model-filter", arguments.model_filter,
         "--hard-floor", str(arguments.hard_floor),
         "--gray-keep", str(arguments.gray_keep),
         "--min-core-rows", str(arguments.min_core_rows),
         "--remote-disagreement-keep", str(arguments.remote_disagreement_keep),
+        "--max-rows-per-source-label-language", str(arguments.max_rows_per_source_label_language),
         "--audit",
     ]
     if arguments.strict_audit:
@@ -306,6 +323,7 @@ def stage_augment(arguments: argparse.Namespace) -> None:
             "--config", str(arguments.augmentation_config),
             "--holdout", str(CLASSIFICATION_TEST_SET),
             "--holdout", str(PROMOTION_TEST_SET),
+            "--holdout", str(BILLING_CARD_TEST_SET),
             "--holdout", str(CONVERSATION_TEST_SET),
             "--taxonomy", str(REPO_ROOT / "packages/taxonomy/taxonomy.json"),
             "--out", str(TRAIN_SET),
@@ -339,6 +357,7 @@ def stage_train_classic(arguments: argparse.Namespace) -> None:
             "--model", str(CLASSIC_OUT / "SiftSMSClassifier.mlmodel"),
             "--fixed", str(CLASSIFICATION_TEST_SET),
             "--promotion", str(PROMOTION_TEST_SET),
+            "--billing", str(BILLING_CARD_TEST_SET),
             "--conversation", str(CONVERSATION_TEST_SET),
             "--output", str(CLASSIC_OUT / "classic-message-filter-report.json"),
         ],
@@ -408,6 +427,7 @@ def stage_quantize_transformer(arguments: argparse.Namespace) -> None:
         "--calibration-input", str(TRAIN_SET),
         "--fixed-holdout", str(CLASSIFICATION_TEST_SET),
         "--promotion-holdout", str(PROMOTION_TEST_SET),
+        "--billing-holdout", str(BILLING_CARD_TEST_SET),
         "--conversation-holdout", str(CONVERSATION_TEST_SET),
         "--taxonomy", str(REPO_ROOT / "packages/taxonomy/taxonomy.json"),
         "--profiles", str(arguments.quantization_profiles),

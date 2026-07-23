@@ -490,7 +490,7 @@ public final class TransformerModelDownloadClient: TransformerModelDownloading, 
         }
         guard
             manifest.validationMetrics.fixedAccuracy >= 0.99,
-            manifest.validationMetrics.promotionAccuracy >= 0.97,
+            manifest.validationMetrics.promotionAccuracy >= 0.98,
             manifest.validationMetrics.fp16Agreement >= 0.985,
             manifest.languages.contains("zh"),
             manifest.languages.contains("en"),

@@ -136,6 +136,8 @@ swift run MessageFilterArtifactTests \
   --manifest ../../build/pipeline/<run>/candidates/<profile>/SiftSignalModel.manifest.json \
   --fixed ../../tools/apple-trainer/Evaluation/classification-regressions.ndjson \
   --promotion ../../tools/apple-trainer/Evaluation/promotion-regressions.ndjson \
+  --billing ../../tools/apple-trainer/Evaluation/billing-card-regressions.ndjson \
+  --conversation ../../tools/transformer-trainer/Evaluation/conversation-regressions.ndjson \
   --output ../../build/pipeline/<run>/candidates/<profile>/production-dynamic-validation.json \
   --install-dynamic --readable-cases --inspect-compute-plan
 ```
@@ -192,8 +194,11 @@ the automated pipeline runs between "fetch" and "train":
 # rule tier only (stdlib, no ML deps)
 python3 curate_dataset.py --inputs a.ndjson b.ndjson \
   --out train.ndjson --rejected rejected.ndjson --report report.json --audit \
+  --max-rows-per-source-label-language 500 \
   --holdout ../apple-trainer/Evaluation/classification-regressions.ndjson \
-  --holdout ../apple-trainer/Evaluation/promotion-regressions.ndjson
+  --holdout ../apple-trainer/Evaluation/promotion-regressions.ndjson \
+  --holdout ../apple-trainer/Evaluation/billing-card-regressions.ndjson \
+  --holdout Evaluation/conversation-regressions.ndjson
 
 # + embedding label-noise filter (drops rows closer to another label's centroid)
 uv run curate_dataset.py --inputs ... --out train.ndjson --model-filter on
@@ -214,17 +219,24 @@ The pipeline then runs `augment_dataset.py` with the versioned
 `generalization-augmentation.json`. It adds only label/language-scoped semantic
 replacements and reviewed boundary rows, caps additions per label, and repeats
 exact/digit-normalized holdout and template-cluster checks before producing the
-final `train.ndjson`.
+final `train.ndjson`. Base rows retain `source`, `sourceLabel`, and `language`
+metadata; generated variants are marked as `augmentation:<family>`.
 
 CloudKit exports retain the device-detected `textLanguage`. Curation normalizes
 that hint (`zh-Hans` → `zh`, `ja-JP` → `ja`) and only falls back to script
 detection when the hint is absent, so kanji-only Japanese samples are not
 rehydrated with Chinese values.
 
-The automated pipeline always supplies both external holdouts. Exact and
+The automated pipeline always supplies every configured external holdout. Exact and
 digit-normalized collisions are rejected before either model can train or be
 installed, and the counts appear as `holdout-exact` / `holdout-near` in the
 curation report.
+
+The curation report also records source counts, source/label/language buckets,
+and template-cluster concentration. The deterministic source cap runs before
+the embedding filter, preventing one large public dataset or CloudKit export
+from dominating a label while preserving the core-language coverage audit.
+Use a lower cap such as 160 for an explicit aggressive-pruning experiment.
 
 Model tier (`--model-filter auto|on`): embeds every row with the backbone,
 builds per-label centroids, and rejects rows whose own-label cosine trails

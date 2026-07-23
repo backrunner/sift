@@ -1,0 +1,30 @@
+{"text":"中国移动提醒：7月话费账单已生成，本期应缴86.40元，8月5日前缴清。","label":"carrier.billing"}
+{"text":"联通缴费成功，100元已到账，当前通信账户余额126.35元。","label":"carrier.billing"}
+{"text":"本月套餐已使用18.2GB，剩余6.8GB，结转流量月底失效。","label":"carrier.data_reminder"}
+{"text":"中国电信流量提醒：本计费周期可用流量还剩3.4GB。","label":"carrier.data_reminder"}
+{"text":"信用卡分期购买手机成功，订单金额6299元，首期支付524.92元。","label":"finance.consumption"}
+{"text":"尾号4821信用卡在青禾超市消费268.50元，交易已入账。","label":"finance.consumption"}
+{"text":"信用卡消费退款成功，商户已将268.50元原路退回。","label":"finance.refund"}
+{"text":"分期订单取消，已支付的首期524.92元将在3个工作日内退回。","label":"finance.refund"}
+{"text":"信用卡还款成功，本次入账3200元，当前应还金额0元。","label":"finance.credit_card"}
+{"text":"信用卡7月月结账单已出，本期应还1860元，最低还款186元。","label":"finance.credit_card"}
+{"text":"MetroTel bill ready: $72.18 is due on August 5. View the monthly statement in the app.","label":"carrier.billing"}
+{"text":"Payment received by AirLink Mobile: $50 added, airtime balance now $63.40.","label":"carrier.billing"}
+{"text":"You have used 18.2GB this cycle; 6.8GB of mobile data remains.","label":"carrier.data_reminder"}
+{"text":"GlobalCell data alert: 80% of your monthly allowance has been used.","label":"carrier.data_reminder"}
+{"text":"Installment purchase approved: $899 phone order, first card payment $74.92 completed.","label":"finance.consumption"}
+{"text":"Card ending 4821 was used for a $268.50 grocery purchase at GreenLeaf Market.","label":"finance.consumption"}
+{"text":"Credit card purchase refund complete: $268.50 returned to the original card.","label":"finance.refund"}
+{"text":"Installment order cancelled. Your first payment of $74.92 is being refunded.","label":"finance.refund"}
+{"text":"Credit card repayment received: $3,200 posted and the amount due is now $0.","label":"finance.credit_card"}
+{"text":"Your July credit card statement is ready: $1,860 due, minimum payment $186.","label":"finance.credit_card"}
+{"text":"通信料金のお知らせ：7月分8,640円を8月5日までにお支払いください。","label":"carrier.billing"}
+{"text":"モバイルワンへの支払い5,000円を受け付けました。残高は6,340円です。","label":"carrier.billing"}
+{"text":"今月は18.2GB使用しました。データ残量は6.8GBです。","label":"carrier.data_reminder"}
+{"text":"通信量のお知らせ：今月のデータ容量を80%使用しました。","label":"carrier.data_reminder"}
+{"text":"クレジットカードで端末を分割購入しました。初回74,920円の決済が完了しました。","label":"finance.consumption"}
+{"text":"末尾4821のカードでスーパーにて26,850円を利用しました。","label":"finance.consumption"}
+{"text":"カード購入の返金26,850円を元のお支払い方法へ返しました。","label":"finance.refund"}
+{"text":"分割購入をキャンセルしました。初回支払額7,492円を返金します。","label":"finance.refund"}
+{"text":"クレジットカードの返済32万円を受け付けました。現在の請求残高は0円です。","label":"finance.credit_card"}
+{"text":"7月のクレジットカード請求書が確定しました。支払額18万6千円、最低支払額1万8千6百円。","label":"finance.credit_card"}

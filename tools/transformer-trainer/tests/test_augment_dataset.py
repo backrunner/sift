@@ -11,7 +11,13 @@ from augment_dataset import augment
 
 class AugmentDatasetTests(unittest.TestCase):
     def test_adds_diverse_boundary_and_replacement_rows(self) -> None:
-        base = [{"text": "No credit check loan asks for an upfront fee", "label": "spam", "language": "en"}]
+        base = [{
+            "text": "No credit check loan asks for an upfront fee",
+            "label": "spam",
+            "language": "en",
+            "source": "public:example",
+            "sourceLabel": "loan_scam",
+        }]
         config = {
             "schemaVersion": 1,
             "minimumSemanticChange": 0.01,
@@ -28,6 +34,10 @@ class AugmentDatasetTests(unittest.TestCase):
 
         self.assertEqual(len(rows), 3)
         self.assertEqual(report["augmentedCount"], 2)
+        base_row = next(row for row in rows if row["text"] == base[0]["text"])
+        self.assertEqual(base_row["source"], "public:example")
+        self.assertEqual(base_row["sourceLabel"], "loan_scam")
+        self.assertTrue(all(row.get("source") for row in rows))
 
     def test_rejects_holdout_digit_variant(self) -> None:
         base = [{"text": "Normal account status message", "label": "finance.bank", "language": "en"}]

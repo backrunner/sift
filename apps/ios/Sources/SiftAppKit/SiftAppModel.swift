@@ -426,7 +426,9 @@ public final class SiftAppModel {
             ModelSelectionStore.save(.classic, defaults: modelSelectionDefaults)
         }
         let placeholder = HeuristicClassifier()
-        self.selectedModelVariant = .classic
+        // Keep the persisted choice visible while the initial classifier load
+        // runs, avoiding a misleading classic-model flash on launch.
+        self.selectedModelVariant = shouldRestoreTransformer ? .transformer : .classic
         self.baseClassifier = placeholder
         self.pipeline = ClassificationPipeline(classifier: placeholder)
         self.rules = Self.loadPersistedRules(defaults: ruleDefaults)
@@ -459,6 +461,11 @@ public final class SiftAppModel {
                 return
             }
             if unlocked {
+                if self.selectedModelVariant == .transformer {
+                    self.scheduleAutomaticTransformerUpdateIfEligible(force: true)
+                } else {
+                    self.checkForTransformerUpdate()
+                }
                 guard self.modelVariantToRestoreAfterEntitlement == .transformer else {
                     return
                 }
@@ -543,23 +550,15 @@ public final class SiftAppModel {
 
     public var transformerUpdateStatusText: String? {
         switch transformerUpdateState {
-        case .unknown, .current:
+        case .unknown, .checking, .current, .requiresAppUpdate, .incompatible, .failed:
             return nil
-        case .checking:
-            return String(localized: "正在检查模型更新…")
         case .updateAvailable:
             return String(localized: "有新版本可下载")
-        case .requiresAppUpdate:
-            return String(localized: "需要更新 App 后使用")
-        case .incompatible:
-            return String(localized: "此模型与当前设备不兼容")
-        case .failed:
-            return String(localized: "暂时无法检查更新")
         }
     }
 
     public func checkForTransformerUpdate(force: Bool = false) {
-        guard isTransformerDeviceSupported else {
+        guard premium.isUnlocked, isTransformerDeviceSupported else {
             return
         }
         guard transformerUpdateCheckTask == nil, let transformerUpdateChecker else {
@@ -597,9 +596,13 @@ public final class SiftAppModel {
     }
 
     public func applicationDidBecomeActive() {
-        scheduleAutomaticTransformerUpdateIfEligible(
-            force: hasPendingTransformerBackgroundDownloadEvents
-        )
+        if selectedModelVariant == .transformer {
+            scheduleAutomaticTransformerUpdateIfEligible(
+                force: hasPendingTransformerBackgroundDownloadEvents
+            )
+        } else {
+            checkForTransformerUpdate()
+        }
     }
 
     func resumeTransformerBackgroundDownload() {
@@ -1632,6 +1635,7 @@ public final class SiftAppModel {
             return
         }
 
+        sampleSubmissionFeedback = nil
         Task {
             do {
                 let deleted = try await remoteSampleClient.delete(receiptToken: receiptToken)
@@ -1640,16 +1644,16 @@ public final class SiftAppModel {
                     SubmissionLedger.decrement(defaults: self.ledgerDefaults)
                     submittedSampleCount = SubmissionLedger.count(defaults: self.ledgerDefaults)
                     removeCachedSubmission(recordName: receiptToken)
-                    showSubmissionFeedback(.success, String(localized: "远程样本已删除"))
+                    showToast(.success, String(localized: "远程样本已删除"))
                 } else {
                     lastReceiptToken = nil
                     SubmissionLedger.decrement(defaults: self.ledgerDefaults)
                     submittedSampleCount = SubmissionLedger.count(defaults: self.ledgerDefaults)
                     removeCachedSubmission(recordName: receiptToken)
-                    showSubmissionFeedback(.info, String(localized: "未找到可删除的远程样本"))
+                    showToast(.info, String(localized: "未找到可删除的远程样本"))
                 }
             } catch {
-                showSubmissionFeedback(.error, remoteDeletionErrorMessage(for: error))
+                showToast(.error, remoteDeletionErrorMessage(for: error))
             }
         }
     }

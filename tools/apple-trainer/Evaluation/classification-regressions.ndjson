@@ -404,7 +404,7 @@
 {"text": "【壹号】团建活动报名提醒：请在 2026-12-27 前确认参加.感谢您的配合. ✨", "label": "work.announcement"}
 {"text": "Dear customer, Vaccination reminder: dose 43 scheduled for 2026-06-01. Please do not reply. 🛒", "label": "life.medical"}
 {"text": "Official: Your package moved to a pickup point. Details to follow. Thank you.", "label": "life.express"}
-{"text": "⚡ Hi Lisa, Your billing statement is ready in the app. If this wasn't you, ignore this message.", "label": "carrier.other"}
+{"text": "⚡ Hi Lisa, Your billing statement is ready in the app. If this wasn't you, ignore this message.", "label": "carrier.billing"}
 {"text": "🌧 [云上] 车辆年检预约已确认,请按时到检测站.", "label": "government.traffic"}
 {"text": "Hi 李先生，山下 转账已入账，金额 257.03 元，付款方 李先生。（回T退订）", "label": "finance.income"}
 {"text": "紅葉社より：ATMで169.07円出金、口座末尾6433。", "label": "finance.bank"}

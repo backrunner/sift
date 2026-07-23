@@ -51,6 +51,9 @@ Cloud discovers them automatically and performs the following gates:
 3. Verify every Classic and PII artifact against
    `apps/ios/BuiltinModels.lock.json` and each trainer manifest.
 4. Compile both models with the exact Xcode toolchain selected by the workflow.
+   The restore step keeps the hash-verified PII source package, but prepares a
+   `.mlmodelc` resource before `xcodebuild` to avoid the Xcode 26 build-sandbox
+   failure for Core ML packages with external weights.
 5. After archiving, require Classic in the app and extension, require PII only
    in the app, and reject any bundled Premium Transformer artifact.
 

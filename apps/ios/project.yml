@@ -69,7 +69,8 @@ targets:
       - path: GeneratedModels/SiftSMSClassifier.manifest.json
         buildPhase: resources
         optional: true
-      - path: GeneratedModels/SiftPIIDetector.mlpackage
+      - path: GeneratedModels/SiftPIIDetector.mlmodelc
+        buildPhase: resources
         optional: true
       - path: GeneratedModels/SiftPIIDetector.vocab.txt
         buildPhase: resources

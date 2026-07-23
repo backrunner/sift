@@ -779,6 +779,7 @@ func storedTransformerStartupLoadsOnlyTransformer() async throws {
         modelSelectionDefaults: defaults
     )
 
+    #expect(model.selectedModelVariant == .transformer)
     try await waitFor { model.premium.isEntitlementResolved && !model.isSwitchingModelVariant }
     #expect(model.selectedModelVariant == .transformer)
     #expect(await recorder.recordedVariants() == [.transformer])

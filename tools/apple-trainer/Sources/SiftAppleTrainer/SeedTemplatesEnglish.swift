@@ -36,7 +36,7 @@ enum SeedTemplatesEnglish {
         ],
         "finance.credit_card": [
             "Your credit card statement is ready. Amount due ${amount}, payment due {date}.",
-            "Card ending {tail} was charged ${amount}. Pay on time to avoid interest.",
+            "Your card statement is ready. ${amount} is due by {date}.",
             "Autopay scheduled: ${amount} will be drafted on {date}.",
             "Your credit limit increase request for card ending {tail} was received.",
             "Installment reminder: this month's payment is ${amount}.",
@@ -47,9 +47,12 @@ enum SeedTemplatesEnglish {
             "Purchase alert: ${amount} at {merchant} on {time}.",
             "Payment to {merchant} of ${amount} completed. Order {order}.",
             "You paid {merchant} ${amount} via {platform}.",
+            "Retail card transaction approved at {merchant} for ${amount}; card ending {tail}.",
             "Contactless payment approved: ${amount} at {merchant}.",
             "Card ending {tail} used for ${amount}. Monthly spend so far: ${amount2}.",
-            "Subscription renewed: {platform} charged ${amount} for your monthly plan."
+            "Subscription renewed: {platform} charged ${amount} for your monthly plan.",
+            "Installment purchase at {merchant}: ${amount} was paid with your card.",
+            "Installment payment complete for order {order}: ${amount}."
         ],
         "finance.income": [
             "You received a transfer of ${amount}. New balance ${amount2}.",
@@ -65,7 +68,13 @@ enum SeedTemplatesEnglish {
             "{platform}: refund for return {order} has been processed.",
             "The merchant initiated a ${amount} refund. Watch for the credit.",
             "Refund approved. ${amount} will appear on your statement shortly.",
-            "Partial refund of ${amount} for order {order} has arrived."
+            "Partial refund of ${amount} for order {order} has arrived.",
+            "Transaction refund of ${amount} was sent back to the original payment method.",
+            "Your refund request was approved; funds will return to the original account.",
+            "After-sales update: the refund for order {order} is complete.",
+            "The merchant reversed the transaction and is returning ${amount}.",
+            "Card purchase reversal complete. ${amount} has been credited back.",
+            "Installment order cancelled. The first payment of ${amount} is being refunded."
         ],
         "finance.stock": [
             "{brand} shares moved {percent}% today. Review your positions.",
@@ -338,13 +347,25 @@ enum SeedTemplatesEnglish {
             "You've used {count}GB this month. {remain}GB left in your plan.",
             "Plan alert: your data pack expires soon.",
             "{carrier}: {remain}GB of nationwide data remaining.",
-            "Low balance: under ${amount}. Top up to stay connected.",
             "Voice usage: {count} minutes so far this month.",
             "Data cap protection is on — browsing pauses at your limit.",
             "You've used {percent}% of your data. Overage rates apply beyond your plan.",
             "Your plan has {remain}GB remaining, and rollover data clears at month end.",
             "Usage notice: {remain}GB is available in this billing cycle and resets next month.",
-            "Current data balance is {remain}GB; this message is a usage reminder only."
+            "Current data balance is {remain}GB; this message is a usage reminder only.",
+            "You've used {percent}% of your monthly mobile allowance."
+        ],
+        "carrier.billing": [
+            "{carrier} billing notice: ${amount} is due by {date}.",
+            "Low airtime balance: ${amount} remains on your account. Please top up.",
+            "Payment received: ${amount} was added to your {carrier} account. New balance ${remain}.",
+            "Your monthly {carrier} statement is ready in the app.",
+            "Autopay reminder: this month's mobile bill will be charged on {date}.",
+            "Overdue account notice: ${amount} is outstanding. Pay to avoid service suspension.",
+            "Your {carrier} bill is paid in full. Thank you.",
+            "Account balance notice: ${amount} remains available for mobile service.",
+            "{carrier} monthly bill ready: ${amount} is due by {date}.",
+            "Mobile service statement: ${amount} must be paid before {date}."
         ],
         "carrier.service": [
             "Service request received. We'll text you the result.",
@@ -372,8 +393,7 @@ enum SeedTemplatesEnglish {
             "Service reminder: see the latest announcement.",
             "{carrier}: rate your recent support experience.",
             "Maintenance window: brief outages after midnight on {date}.",
-            "Line status: secondary SIM info synced.",
-            "Your billing statement is ready in the app."
+            "Line status: secondary SIM info synced."
         ],
         "government.notice": [
             "Public service notice: {task} has been received.",

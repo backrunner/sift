@@ -14,6 +14,7 @@ swift run ClassicMessageFilterArtifactTests \
   --model GeneratedModels/SiftSMSClassifier.mlmodel \
   --fixed ../../tools/apple-trainer/Evaluation/classification-regressions.ndjson \
   --promotion ../../tools/apple-trainer/Evaluation/promotion-regressions.ndjson \
+  --billing ../../tools/apple-trainer/Evaluation/billing-card-regressions.ndjson \
   --conversation ../../tools/transformer-trainer/Evaluation/conversation-regressions.ndjson \
   --output ../../build/pipeline/apple-model/classic-message-filter-report.json
 ```

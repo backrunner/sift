@@ -17,6 +17,9 @@ from curate_dataset import (  # noqa: E402
     Report,
     Row,
     apply_rule_tier,
+    apply_source_caps,
+    build_quality_report,
+    canonicalize_carrier_billing,
     detect_language,
     is_placeholder_only,
     junk_reason,
@@ -88,6 +91,38 @@ class DetectLanguageTests(unittest.TestCase):
         self.assertEqual(row.predicted_label, "finance.bank")
         self.assertEqual(row.predicted_confidence, 0.97)
         self.assertEqual(row.agreement, 0)
+
+    def test_explicit_source_metadata_is_preserved(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "public.ndjson"
+            path.write_text(json.dumps({
+                "text": "Your mobile bill is ready in the carrier app.",
+                "label": "carrier.billing",
+                "source": "public:licensed-example",
+                "sourceLabel": "mobile_bill",
+                "language": "en",
+            }) + "\n", encoding="utf-8")
+
+            row = load_rows([path], Report())[0]
+
+        self.assertEqual(row.source, "public:licensed-example")
+        self.assertEqual(row.source_label, "mobile_bill")
+        self.assertEqual(row.language, "en")
+
+    def test_legacy_carrier_billing_rows_are_recovered(self):
+        label, relabeled = canonicalize_carrier_billing(
+            "中国移动月度账单已生成，本月应缴话费 88 元。",
+            "carrier.other",
+        )
+        self.assertEqual(label, "carrier.billing")
+        self.assertTrue(relabeled)
+
+        label, relabeled = canonicalize_carrier_billing(
+            "本月套餐还剩 8GB 流量。",
+            "carrier.data_reminder",
+        )
+        self.assertEqual(label, "carrier.data_reminder")
+        self.assertFalse(relabeled)
 
 
 class JunkReasonTests(unittest.TestCase):
@@ -265,6 +300,37 @@ class RuleTierTests(unittest.TestCase):
 
         self.assertEqual(len(kept), 1)
         self.assertEqual(report.rejected["template-duplicate"], 1)
+
+    def test_source_cap_is_deterministic_per_label_and_language(self):
+        rows = [
+            Row(text=f"Carrier payment notice variant {index}", label="carrier.billing", source="public:a", language="en")
+            for index in range(5)
+        ] + [
+            Row(text=f"Carrier payment notice source B {index}", label="carrier.billing", source="public:b", language="en")
+            for index in range(3)
+        ]
+        first_report, second_report = Report(), Report()
+        first_rejected: list[dict] = []
+        second_rejected: list[dict] = []
+
+        first = apply_source_caps(rows, 2, first_report, first_rejected)
+        second = apply_source_caps(list(reversed(rows)), 2, second_report, second_rejected)
+
+        self.assertEqual({row.text for row in first}, {row.text for row in second})
+        self.assertEqual(len(first), 4)
+        self.assertEqual(first_report.rejected["source-cap"], 4)
+
+    def test_quality_report_exposes_source_and_template_concentration(self):
+        rows = [
+            Row(text="Bill 123 is ready", label="carrier.billing", source="public:a", language="en"),
+            Row(text="Payment 456 was received", label="carrier.billing", source="public:b", language="en"),
+        ]
+        report = Report()
+
+        build_quality_report(rows, report)
+
+        self.assertEqual(report.source_counts, {"public:a": 1, "public:b": 1})
+        self.assertEqual(report.template_clusters["carrier.billing\x1fen"]["rows"], 2)
 
 
 class RehydrationTests(unittest.TestCase):

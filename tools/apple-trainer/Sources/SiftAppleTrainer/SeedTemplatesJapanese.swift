@@ -35,7 +35,7 @@ enum SeedTemplatesJapanese {
         ],
         "finance.credit_card": [
             "ご利用明細が確定しました：{amount}円、お支払い期限 {date}。",
-            "カード末尾{tail}で{amount}円のご利用がありました。",
+            "カード末尾{tail}の月次請求額は{amount}円です。支払日は{date}です。",
             "自動引き落とし予定：{date}に{amount}円。",
             "お支払いを確認しました：{amount}円入金。ありがとうございます。",
             "最低支払額{amount}円の期限は{date}です。延滞にご注意ください。",
@@ -45,9 +45,12 @@ enum SeedTemplatesJapanese {
             "ご利用通知：{merchant}で{amount}円のお支払いが完了しました。",
             "{merchant}への支払い{amount}円が完了。注文番号 {order}。",
             "{platform}経由で{merchant}に{amount}円を支払いました。",
+            "カード末尾{tail}で{merchant}の商品{amount}円を購入しました。",
             "タッチ決済が承認されました：{merchant}で{amount}円。",
             "カード末尾{tail}で{amount}円。今月の累計利用額は{amount2}円です。",
-            "サブスク更新：{platform}の月額{amount}円が決済されました。"
+            "サブスク更新：{platform}の月額{amount}円が決済されました。",
+            "カードで分割購入：{merchant}の{amount}円の支払いが完了しました。",
+            "分割払いの購入が完了しました。注文{order}、{amount}円。"
         ],
         "finance.income": [
             "{amount}円の振込を受け取りました。新しい残高は{amount2}円です。",
@@ -63,7 +66,13 @@ enum SeedTemplatesJapanese {
             "{platform}：返品 {order} の返金処理が完了しました。",
             "店舗が{amount}円の返金を開始しました。入金をお待ちください。",
             "返金が承認されました。まもなく明細に反映されます。",
-            "一部返金{amount}円が到着しました。注文 {order}。"
+            "一部返金{amount}円が到着しました。注文 {order}。",
+            "取引の返金{amount}円を元のお支払い方法へ返しました。",
+            "返金申請が承認されました。元の口座へ返金します。",
+            "注文{order}の返品返金処理が完了しました。",
+            "加盟店が取引を取り消し、{amount}円を返金しています。",
+            "カード利用の取消が完了し、{amount}円を返金しました。",
+            "分割購入をキャンセルしました。初回支払額{amount}円を返金します。"
         ],
         "finance.stock": [
             "{brand}株が本日{percent}%変動しました。保有状況をご確認ください。",
@@ -327,7 +336,6 @@ enum SeedTemplatesJapanese {
         "carrier.data_reminder": [
             "今月{count}GB使用しました。残り{remain}GBです。",
             "{carrier}：データ残量は{remain}GBです。",
-            "残高が{amount}円を下回りました。チャージをお願いします。",
             "データを{percent}%消費しました。超過分は追加料金となります。",
             "今月の通話時間は{count}分です。",
             "月末締めのお知らせ：残りデータ{remain}GBは繰り越されません。",
@@ -335,6 +343,18 @@ enum SeedTemplatesJapanese {
             "プラン残量は{remain}GBで、繰越データは月末に失効します。",
             "利用状況通知：今月は{remain}GB利用可能で、翌月にリセットされます。",
             "現在のデータ残量は{remain}GBです。本SMSは利用量のお知らせです。"
+        ],
+        "carrier.billing": [
+            "{carrier}請求のお知らせ：今月のお支払いは{amount}円、支払期限は{date}です。",
+            "通話料金の残高は{amount}円です。チャージをお願いします。",
+            "{carrier}への支払い{amount}円を受け付けました。残高は{remain}円です。",
+            "{carrier}の月額請求書をアプリで確認できます。",
+            "自動支払いのお知らせ：{date}に今月の通信料金を引き落とします。",
+            "未払いのお知らせ：{amount}円のお支払いをお願いします。",
+            "{carrier}の請求額は全額お支払い済みです。",
+            "アカウント残高のお知らせ：残り{amount}円です。",
+            "{carrier}の月額料金が確定しました。{amount}円を{date}までにお支払いください。",
+            "通信料金の請求書を発行しました。支払額{amount}円、期限{date}。"
         ],
         "carrier.service": [
             "お手続きを受け付けました。結果はSMSでお知らせします。",
@@ -362,8 +382,7 @@ enum SeedTemplatesJapanese {
             "サービスのお知らせ：最新の告知をご確認ください。",
             "{carrier}：先日のサポート対応の評価にご協力ください。",
             "メンテナンスのお知らせ：{date}深夜に一部サービスが一時停止します。",
-            "回線状態：サブ回線の情報を同期しました。",
-            "ご利用明細をアプリで確認できます。"
+            "回線状態：サブ回線の情報を同期しました。"
         ],
         "government.notice": [
             "行政サービス通知：{task}を受け付けました。",

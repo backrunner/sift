@@ -1,6 +1,6 @@
 # Sift SMS Taxonomy And Labeling Guide
 
-The taxonomy has 50 leaf labels across 9 groups. Each group sets the default
+The taxonomy has 51 leaf labels across 9 groups. Each group sets the default
 system filter action (`systemAction`): `spam -> junk`, `promotion -> promotion`,
 and ordinary service messages -> `transaction`. Individual leaves may override
 that default when the user-facing intent differs from the group, such as
@@ -27,6 +27,8 @@ and iOS 16+ IdentityLookup sub-action mapping.
 | `transaction.message` vs `transaction.other` | `transaction.message` is content-style platform messaging such as inbox messages, comments, and support replies. `transaction.other` is the status-style fallback. |
 | `government.notice` vs `government.policy` | `government.notice` is a personal case or service-progress notice. `government.policy` is a public policy announcement. |
 | `finance.bank` vs `government.social_security` | Loan applications, loan approvals, and mortgage notices are banking. Social insurance, medical insurance, benefit, certificate, and housing-fund contribution notices are `government.social_security`. |
+| `finance.consumption` vs `finance.credit_card` | A purchase, installment purchase/payment, card charge, or card-funded refund follows the underlying money movement: purchase -> `finance.consumption`, refund -> `finance.refund`. `finance.credit_card` is reserved for card-account management such as statement generation, repayment success, minimum payment, due dates, autopay, and credit-limit notices. |
+| `carrier.billing` vs `carrier.data_reminder` | `carrier.billing` covers carrier account balances, recharge/payment receipts, due notices, and periodic statements. `carrier.data_reminder` is limited to usage, remaining data/voice, caps, and rollover. |
 
 ## iOS Message Filter Mapping
 

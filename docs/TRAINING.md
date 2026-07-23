@@ -47,13 +47,16 @@ pnpm pipeline -- train-transformer --device mps     # Force a training device
 
 ```bash
 pnpm pipeline -- fetch-public \
-  --per-label 80 --core-per-label 60 --intl-per-label 16 --public-per-label 500
+  --per-label 80 --core-per-label 60 --intl-per-label 16 --public-per-label 500 \
+  --public-source-policy curated
 pnpm pipeline -- fetch-remote --cloudkit-env production
 ```
 
 `fetch-public` builds synthetic seed data for all zh labels, all en/ja labels,
 and core categories in es/pt/fr/de/ru/ko/id/vi/th, then downloads public
 datasets.
+The default source policy keeps only datasets with explicit reuse terms and
+preserves `source`/`sourceLabel`/`language` provenance in every generated row.
 
 ### 2.2 Curate And Audit
 
@@ -74,6 +77,12 @@ Two filters run:
    rejected; gray-zone rows in `[hard-floor, 0)` keep the top
    `--gray-keep` share per label (70% by default); rows with margin >= 0 are
    kept. This reduces noise while retaining likely correction samples.
+
+Before model filtering, `--max-rows-per-source-label-language 500` applies a
+deterministic concentration cap. The report includes source/label/language
+buckets and template-cluster concentration so row count cannot hide repeated
+expressions from one corpus. Use 160 only for an explicit aggressive-pruning
+experiment and re-run every external holdout before promotion.
 
 Outputs are `train.ndjson`, `rejected.ndjson` with rejection reasons and
 margins, and `curation-report.json` with source counts, rejection counts, and
@@ -98,13 +107,14 @@ pnpm pipeline -- train-classic --version-classic corpus-0.2 \
 `--language auto` trains as a single language when at least 90% of the corpus is
 one language; mixed corpora train language-independently. The validated default
 classic architecture is Create ML MaxEnt. `bert` and `auto` are available for
-comparison, but they underperformed MaxEnt on the current 50-label small SMS
+comparison, but they underperformed MaxEnt on the current 51-label small SMS
 dataset. Change `--split-seed-classic` when rechecking generalization; do not
 trust only the default seed 42.
 
-The automated curation stage always isolates both external holdouts before
-training. For a custom candidate assembled outside `pnpm pipeline`, use the
-same mandatory isolation helper:
+The automated curation stage always isolates the classification, promotion,
+billing/card, and conversation external holdouts before training. For a custom
+candidate assembled outside `pnpm pipeline`, use the same mandatory isolation
+helper:
 
 ```bash
 python3 tools/apple-trainer/Scripts/prepare_classic_candidate.py \
@@ -112,22 +122,27 @@ python3 tools/apple-trainer/Scripts/prepare_classic_candidate.py \
   --supplement build/pipeline/synthetic-tri-180-promotion-v8.ndjson \
   --holdout tools/apple-trainer/Evaluation/classification-regressions.ndjson \
   --holdout tools/apple-trainer/Evaluation/promotion-regressions.ndjson \
-  --labels promotion,carrier.promotion,transaction.message,transaction.order,transaction.points,finance.bank,finance.insurance,carrier.data_reminder,travel.ticketing,spam \
+  --holdout tools/apple-trainer/Evaluation/billing-card-regressions.ndjson \
+  --labels promotion,carrier.promotion,carrier.billing,carrier.data_reminder,transaction.message,transaction.order,transaction.points,finance.bank,finance.consumption,finance.credit_card,finance.refund,finance.insurance,travel.ticketing,spam \
   --out build/pipeline/classic-transformer-promotion-v8.ndjson \
   --report build/pipeline/classic-transformer-promotion-v8.report.json
 ```
 
 The script rejects exact and digit-normalized near duplicates before either
-classic or transformer training. `maxent-boundary-v9` is the accepted classic
-baseline at 98.95% on the fixed 474 rows and 96.00% on the breadth-first
-150-row promotion set. Its hidden abstain output reaches 30/30 on the isolated
-trilingual conversation set, so private chats complete with the `.none` action.
+classic or transformer training. `maxent-boundary-v19` is the accepted
+51-label classic candidate. On the taxonomy-corrected holdouts it scores
+98.73% fixed, 96.00% promotion, 90.00% billing/card raw (100% action), and
+100% conversation. Compared with v17 it preserves fixed and promotion accuracy
+while improving billing/card raw accuracy by 16.67 percentage points.
+
+Classic candidates must keep billing/card raw accuracy at or above 90% and
+billing/card action accuracy at or above 95%.
 
 `pnpm pipeline -- train-classic --install-ios` runs the real compiled model
 through `NLModelTextClassifier`, `CascadingClassifier`, and
 `MessageFilterEngine` before copying it into `GeneratedModels`. The artifact
-suite blocks installation unless Fixed, Promotion, Conversation, and unsafe
-junk-action gates pass.
+suite blocks installation unless Fixed, Promotion, Billing/Card, Conversation,
+and unsafe junk-action gates pass.
 
 Training prints the weakest 12 labels and the top confusion pairs. Use those
 reports as the main improvement loop: add targeted templates or samples, then
@@ -159,11 +174,15 @@ pnpm pipeline -- train-transformer \
 - Core ML export targets iOS 18.0. This is required for W4 per-block PTQ;
   exporting at an older deployment target makes Core ML reject block
   quantization before quality evaluation.
-- The accepted 22-layer W8A16 `signal-v1` candidate reaches 99.37% on the
-  474-row fixed set and 100% on the 150-row promotion boundary set. The 96
-  added zh/en/ja variants cover game marketplaces,
+- The 22-layer W8A16 `signal-v2-boundary-v15` candidate reaches 99.37% fixed,
+  99.33% promotion, 93.33% billing/card, and 100% conversation after Core ML
+  quantization. Its production MessageFilter action accuracy is 100% on all
+  four sets. The added zh/en/ja variants cover game marketplaces,
   retail, finance, carrier offers, travel, insurance, services, loans, housing,
   and semantically adjacent transaction/normal-message/scam negatives.
+- Premium candidates must score at least 98% on the isolated promotion set,
+  at least 90% raw billing/card accuracy, and at least 95% billing action
+  accuracy. Selection, download validation, and upload enforce the same floors.
 
 ### 2.5 Upload The Premium Sift Signal Model
 

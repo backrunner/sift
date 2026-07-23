@@ -49,7 +49,7 @@ enum SeedTemplatesChinese {
         ],
         "finance.credit_card": [
             "信用卡账单已出，本期应还 {amount} 元，最后还款日 {date}。",
-            "信用卡尾号 {tail} 交易 {amount} 元，请按时还款。",
+            "信用卡月结账单已出，本期应还 {amount} 元，最后还款日 {date}。",
             "信用卡自动还款已预约，将于 {date} 从绑定账户扣款。",
             "您尾号 {tail} 的信用卡额度调整申请已受理。",
             "分期账单提醒：本期分期应还 {amount} 元。",
@@ -62,11 +62,14 @@ enum SeedTemplatesChinese {
             "消费提醒：您在 {brand} 完成支付 {amount} 元。",
             "商户扣款成功，交易时间 {time}，金额 {amount} 元。",
             "您通过 {platform} 向 {merchant} 支付 {amount} 元。",
+            "尾号 {tail} 的信用卡在 {merchant} 完成购物扣款 {amount} 元。",
             "收款方 {merchant} 已确认收款，订单号 {order}。",
             "扫码支付成功，金额 {amount} 元，交易时间 {time}。",
             "银行卡尾号 {tail} 完成快捷支付 {amount} 元。",
             "免密支付扣款 {amount} 元（{platform}月度会员自动续费）。",
-            "您在 {merchant} 的消费 {amount} 元已入账，本月累计消费 {amount2} 元。"
+            "您在 {merchant} 的消费 {amount} 元已入账，本月累计消费 {amount2} 元。",
+            "信用卡分期购买 {merchant} 商品 {amount} 元，首期支付已完成。",
+            "分期付款成功：{merchant} 订单 {order} 支付 {amount} 元。"
         ],
         "finance.income": [
             "您尾号 {tail} 的账户收到一笔转账 {amount} 元，余额 {amount2} 元。",
@@ -88,7 +91,13 @@ enum SeedTemplatesChinese {
             "退款审核通过，资金将在 {days} 个工作日内返回。",
             "部分退款已到账，退款金额 {amount} 元。",
             "机票退票手续费 {amount} 元已扣除，剩余票款将原路退回。",
-            "您申请的价保补差 {amount} 元已退至支付账户。"
+            "您申请的价保补差 {amount} 元已退至支付账户。",
+            "交易退款已原路退回 {amount} 元，预计 {days} 个工作日到账。",
+            "退款申请审核通过，款项将退回原支付账户。",
+            "售后退款进度更新：订单 {order} 的退款已完成。",
+            "商户已确认撤销交易，{amount} 元正在退回。",
+            "银行卡消费冲正成功，原交易金额 {amount} 元已退回。",
+            "分期订单已取消，首期付款 {amount} 元正在原路退回。"
         ],
         "finance.stock": [
             "股票 {brand} 今日涨跌幅 {percent}%，请及时关注市场变化。",
@@ -387,7 +396,6 @@ enum SeedTemplatesChinese {
             "本月流量已使用 {count}GB，套餐剩余 {remain}GB。",
             "套餐提醒：您的流量包即将到期。",
             "{carrier}提醒：国内通用流量剩余 {remain}GB。",
-            "话费余额不足 {amount} 元，请及时充值。",
             "本月语音通话已使用 {count} 分钟。",
             "流量封顶保护已开启，达到阈值后将暂停上网。",
             "您本月流量已使用 {percent}%，超出部分按套餐外资费计费。",
@@ -395,6 +403,18 @@ enum SeedTemplatesChinese {
             "套餐剩余 {remain}GB 流量，其中结转部分将在月底清零。",
             "流量使用通知：本周期可用 {remain}GB，月结后自动重置。",
             "当前数据余额为 {remain}GB，本短信仅为用量提醒。"
+        ],
+        "carrier.billing": [
+            "{carrier}账单通知：本月应缴话费 {amount} 元，缴费截止 {date}。",
+            "话费余额提醒：当前账户余额 {amount} 元，请及时充值。",
+            "{carrier}缴费成功，充值 {amount} 元已到账，当前余额 {remain} 元。",
+            "您的{carrier}月度账单已生成，可在掌厅查看费用明细。",
+            "自动缴费提醒：将于 {date} 从绑定账户扣除本月通信费用。",
+            "{carrier}欠费通知：账户欠费 {amount} 元，请尽快缴清以免停机。",
+            "本期账单已结清，感谢您使用{carrier}通信服务。",
+            "余额通知：您的通信账户剩余 {amount} 元。",
+            "{carrier}话费账单已生成，本期应缴 {amount} 元，请在 {date} 前缴清。",
+            "通信费用月结通知：本月账单金额 {amount} 元，截止日 {date}。"
         ],
         "carrier.service": [
             "业务办理已受理，处理结果将通过短信通知。",
@@ -423,8 +443,7 @@ enum SeedTemplatesChinese {
             "通信服务提醒：请注意最新公告。",
             "{carrier}服务评价邀请：请对本次服务进行评分。",
             "网络维护通知：{date} 凌晨部分业务可能短暂中断。",
-            "号码状态提醒：副卡资料已同步更新。",
-            "通信账单明细已生成，可在掌厅查看。"
+            "号码状态提醒：副卡资料已同步更新。"
         ],
         "government.notice": [
             "政务服务通知：{task} 已受理，请留意后续消息。",

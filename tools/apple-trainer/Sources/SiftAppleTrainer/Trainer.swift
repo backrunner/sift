@@ -12,6 +12,23 @@ let modelAbstainLabel = "__sift_abstain__"
 struct SampleRow: Codable, Hashable, Sendable {
     let text: String
     let label: String
+    let source: String?
+    let sourceLabel: String?
+    let language: String?
+
+    init(
+        text: String,
+        label: String,
+        source: String? = nil,
+        sourceLabel: String? = nil,
+        language: String? = nil
+    ) {
+        self.text = text
+        self.label = label
+        self.source = source
+        self.sourceLabel = sourceLabel
+        self.language = language
+    }
 }
 
 struct TaxonomyDocument: Decodable {
@@ -57,6 +74,7 @@ struct TrainerArguments {
     var languages: [SeedLanguage] = SeedLanguage.allCases
     var trainingLanguage = "auto"
     var publicPerLabel = 500
+    var publicSourcePolicy = "curated"
     var installToIOS = false
     var compileModel = true
 
@@ -146,6 +164,12 @@ struct TrainerArguments {
                     throw TrainerError.invalidArgument("--public-per-label must be greater than 0")
                 }
                 arguments.publicPerLabel = count
+            case "--public-source-policy":
+                let policy = try value(after: token).lowercased()
+                guard policy == "curated" || policy == "all" else {
+                    throw TrainerError.invalidArgument("--public-source-policy must be curated or all")
+                }
+                arguments.publicSourcePolicy = policy
             case "--install-ios":
                 arguments.installToIOS = true
             case "--skip-compile":
@@ -217,6 +241,8 @@ enum TrainerError: Error, CustomStringConvertible {
       --language <code|auto>      Training language hint for Create ML. auto picks
                                   zh-Hans for pure-Chinese corpora and multilingual otherwise.
       --public-per-label <n>      Max public rows retained per leaf label. Defaults to 500.
+      --public-source-policy <p> curated (default) uses attributed/reviewed sources;
+                                  all also includes the source with no declared license.
       --test-input <path>         Optional held-out NDJSON evaluated after training.
       --out <dir>                 Output directory. Defaults to <repo>/build/apple-model.
       --taxonomy <path>           Taxonomy JSON. Defaults to <repo>/packages/taxonomy/taxonomy.json.
@@ -340,7 +366,10 @@ enum SiftAppleTrainer {
                 languages: arguments.languages,
                 validLabels: labels
             )
-            let publicRows = try fetchPublicCorpusRows(publicPerLabel: arguments.publicPerLabel)
+            let publicRows = try fetchPublicCorpusRows(
+                publicPerLabel: arguments.publicPerLabel,
+                policy: arguments.publicSourcePolicy
+            )
             let rows = deduplicate(syntheticRows + publicRows.map(\.row))
             try validate(rows: rows, validLabels: labels)
             try writeNDJSON(rows, to: outputURL)
@@ -611,21 +640,44 @@ func loadRows(from url: URL) throws -> [SampleRow] {
     return rows
 }
 
-func fetchPublicCorpusRows(publicPerLabel: Int) throws -> [PublicCorpusRow] {
+func fetchPublicCorpusRows(publicPerLabel: Int, policy: String = "curated") throws -> [PublicCorpusRow] {
     var rows: [PublicCorpusRow] = []
     rows.append(contentsOf: try fetchFBSRows())
     rows.append(contentsOf: try fetchCodeSignalSMSRows())
     rows.append(contentsOf: try fetchReportSmishingRows())
-    rows.append(contentsOf: try fetchHrwhisperChineseRows())
+    if policy == "all" {
+        rows.append(contentsOf: try fetchHrwhisperChineseRows())
+    }
 
     rows = deduplicatePublic(rows)
 
     var retained: [PublicCorpusRow] = []
-    for (label, bucket) in Dictionary(grouping: rows, by: { $0.row.label }).sorted(by: { $0.key < $1.key }) {
-        var shuffled = bucket
-        var generator = SeededGenerator(seed: stableHash("public:\(label)"))
-        shuffled.shuffle(using: &generator)
-        retained.append(contentsOf: shuffled.prefix(publicPerLabel))
+    for (label, labelRows) in Dictionary(grouping: rows, by: { $0.row.label }).sorted(by: { $0.key < $1.key }) {
+        var buckets = Dictionary(grouping: labelRows, by: \.source)
+            .mapValues { bucket -> [PublicCorpusRow] in
+                var shuffled = bucket
+                var generator = SeededGenerator(seed: stableHash("public:\(label):\(bucket.first?.source ?? "unknown")"))
+                shuffled.shuffle(using: &generator)
+                return shuffled
+            }
+        // Round-robin source buckets so a single large spam corpus cannot
+        // consume the whole label budget before other sources contribute.
+        var sourceKeys = buckets.keys.sorted()
+        var offset = 0
+        var labelRetained = 0
+        while labelRetained < publicPerLabel, !sourceKeys.isEmpty {
+            let source = sourceKeys[offset % sourceKeys.count]
+            if buckets[source]?.isEmpty == false {
+                retained.append(buckets[source]!.removeFirst())
+                labelRetained += 1
+            } else {
+                sourceKeys.removeAll { $0 == source }
+                if sourceKeys.isEmpty { break }
+                offset %= sourceKeys.count
+                continue
+            }
+            offset += 1
+        }
     }
 
     var shuffleGenerator = SeededGenerator(seed: 84)
@@ -660,13 +712,19 @@ func fetchFBSRows() throws -> [PublicCorpusRow] {
             contentsOf: text
                 .split(separator: "\n")
                 .compactMap { line -> PublicCorpusRow? in
-                    let body = normalizePublicText(String(line))
+                    let body = normalizeFBSAnonymizedText(String(line))
                     guard isUsablePublicText(body) else { return nil }
                     guard let label = inferFBSLabel(file: file, text: body) else {
                         return nil
                     }
                     return PublicCorpusRow(
-                        row: SampleRow(text: body, label: label),
+                        row: SampleRow(
+                            text: body,
+                            label: label,
+                            source: "github:Cypher-Z/FBS_SMS_Dataset",
+                            sourceLabel: file,
+                            language: "zh"
+                        ),
                         source: "github:Cypher-Z/FBS_SMS_Dataset",
                         sourceLabel: file
                     )
@@ -708,6 +766,9 @@ func inferCarrierAdvertisingLabel(_ text: String) -> String {
 
     let hasUsageSignal = containsAny(text, ["已 使用", "剩余", "余额", "本月", "免费 项目", "话费", "流量"])
     let hasPromotionSignal = containsAny(text, ["优惠", "活动", "赠送", "免费 领取", "送", "抽奖", "下载", "折", "特价", "办理 新", "回复", "开通"])
+    if containsAny(text, ["账单", "缴费", "充值 成功", "欠费", "应缴", "账期", "bill", "billing", "statement", "payment received", "autopay", "請求", "支払い"]) {
+        return "carrier.billing"
+    }
     if hasUsageSignal && !hasPromotionSignal {
         return "carrier.data_reminder"
     }
@@ -821,7 +882,13 @@ func fetchCodeSignalSMSRows() throws -> [PublicCorpusRow] {
         let body = normalizePublicText(record["message"] ?? "")
         guard isUsablePublicText(body) else { return nil }
         return PublicCorpusRow(
-            row: SampleRow(text: body, label: "spam"),
+            row: SampleRow(
+                text: body,
+                label: "spam",
+                source: "huggingface:codesignal/sms-spam-collection",
+                sourceLabel: "spam",
+                language: "en"
+            ),
             source: "huggingface:codesignal/sms-spam-collection",
             sourceLabel: "spam"
         )
@@ -829,12 +896,21 @@ func fetchCodeSignalSMSRows() throws -> [PublicCorpusRow] {
 }
 
 func fetchReportSmishingRows() throws -> [PublicCorpusRow] {
-    let csv = try downloadText("https://raw.githubusercontent.com/reportsmishing/Smishing-Dataset-IMC25/main/dataset/final_dataset_output.csv")
+    let csv = try downloadText("https://raw.githubusercontent.com/reportsmishing/Smishing-Dataset-IMC25/master/dataset/final_dataset_output.csv")
     return parseCSVRecords(csv).compactMap { record in
-        let body = normalizePublicText(record["text"] ?? record["translation"] ?? "")
+        let sourceLanguage = normalizePublicLanguageName(record["language"] ?? "")
+        let original = record["text"] ?? ""
+        let translation = record["translation"] ?? ""
+        let body = normalizePublicText(sourceLanguage == nil && !translation.isEmpty ? translation : original)
         guard isUsablePublicText(body) else { return nil }
         return PublicCorpusRow(
-            row: SampleRow(text: body, label: "spam"),
+            row: SampleRow(
+                text: body,
+                label: "spam",
+                source: "github:reportsmishing/Smishing-Dataset-IMC25",
+                sourceLabel: record["scam_type"] ?? "smishing",
+                language: sourceLanguage ?? detectPublicLanguage(body)
+            ),
             source: "github:reportsmishing/Smishing-Dataset-IMC25",
             sourceLabel: record["scam_type"] ?? "smishing"
         )
@@ -862,7 +938,13 @@ func fetchHrwhisperChineseRows() throws -> [PublicCorpusRow] {
         guard isUsablePublicText(body) else { continue }
         let leaf = inferChineseSpamSplit(body)
         rows.append(PublicCorpusRow(
-            row: SampleRow(text: body, label: leaf),
+            row: SampleRow(
+                text: body,
+                label: leaf,
+                source: "github:hrwhisper/SpamMessage",
+                sourceLabel: "spam",
+                language: "zh"
+            ),
             source: "github:hrwhisper/SpamMessage",
             sourceLabel: "spam"
         ))
@@ -958,6 +1040,49 @@ func normalizePublicText(_ text: String) -> String {
         .replacingOccurrences(of: #"\s+"#, with: " ", options: .regularExpression)
 }
 
+func normalizeFBSAnonymizedText(_ text: String) -> String {
+    let replacements = [
+        ("CELLPHONE", "13800138000"),
+        ("HOTLINE", "400-800-1234"),
+        ("WECHAT", "微信号wx8472"),
+        ("PHONE", "021-55551234"),
+        ("DIGIT", "8472"),
+        ("PLACE", "海岚"),
+        ("NAME", "李先生"),
+        ("BANK", "海岚银行"),
+        ("URL", "https://example.com/info"),
+        ("QQ", "824719"),
+    ]
+    let rehydrated = replacements.reduce(text) { value, replacement in
+        value.replacingOccurrences(of: replacement.0, with: replacement.1)
+    }
+    return normalizePublicText(rehydrated)
+        .replacingOccurrences(
+            of: #"(?<=\p{Han})\s+(?=\p{Han})"#,
+            with: "",
+            options: .regularExpression
+        )
+}
+
+func detectPublicLanguage(_ text: String) -> String {
+    if text.unicodeScalars.contains(where: { (0x3040...0x30FF).contains($0.value) }) { return "ja" }
+    if text.unicodeScalars.contains(where: { (0xAC00...0xD7AF).contains($0.value) }) { return "ko" }
+    if text.unicodeScalars.contains(where: { (0x3400...0x9FFF).contains($0.value) }) { return "zh" }
+    return "en"
+}
+
+func normalizePublicLanguageName(_ value: String) -> String? {
+    let lowered = value.lowercased()
+    let mappings: [(String, String)] = [
+        ("chinese", "zh"), ("mandarin", "zh"), ("japanese", "ja"),
+        ("english", "en"), ("spanish", "es"), ("portuguese", "pt"),
+        ("french", "fr"), ("german", "de"), ("russian", "ru"),
+        ("korean", "ko"), ("indonesian", "id"), ("vietnamese", "vi"),
+        ("thai", "th"),
+    ]
+    return mappings.first(where: { lowered.contains($0.0) })?.1
+}
+
 func isUsablePublicText(_ text: String) -> Bool {
     let count = text.count
     return count >= 8 && count <= 500
@@ -1026,7 +1151,7 @@ func generateSyntheticRows(
                     text = "\(text) #\(100000 + (attempt % 900000))"
                 }
                 if seenTexts.insert(text).inserted {
-                    labelRows.append(SampleRow(text: text, label: label))
+                    labelRows.append(SampleRow(text: text, label: label, source: "synthetic:\(language.rawValue)", language: language.rawValue))
                 }
                 attempt += 1
             }

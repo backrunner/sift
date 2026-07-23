@@ -28,6 +28,8 @@ class UploadTransformerModelTests(unittest.TestCase):
             "metrics": {
                 "fixedAccuracy": 0.995,
                 "promotionAccuracy": 0.98,
+                "billingAccuracy": 0.95,
+                "billingActionAccuracy": 1.0,
                 "fp16Top1Agreement": 0.99,
                 "probabilitiesFinite": True,
                 "probabilitySumsValid": True,
@@ -35,6 +37,7 @@ class UploadTransformerModelTests(unittest.TestCase):
             "messageFilterActions": {
                 "fixedAccuracy": 0.995,
                 "promotionAccuracy": 0.98,
+                "billingAccuracy": 1.0,
                 "benignOrTransactionToJunk": 0,
                 "promotionFalsePositiveRate": 0.0,
                 "scamJunkRecall": 1.0,

@@ -51,16 +51,12 @@ public struct SiftRootView: View {
             case .active where hasEnteredBackground:
                 hasEnteredBackground = false
                 model.clearTransientReceipt()
-                model.checkForTransformerUpdate()
+                model.applicationDidBecomeActive()
             case .active, .inactive:
                 break
             @unknown default:
                 break
             }
-        }
-        .task {
-            await Task.yield()
-            model.checkForTransformerUpdate()
         }
     }
 
@@ -321,9 +317,6 @@ private struct ModelPickerView: View {
         }
         .scrollIndicators(.hidden)
         .background(AtmosphericBackground())
-        .task {
-            model.checkForTransformerUpdate(force: true)
-        }
         .navigationDestination(isPresented: $isShowingTransformerDetails) {
             TransformerModelDetailView(model: model)
         }
@@ -2498,7 +2491,7 @@ private struct ToastOverlay: View {
     var body: some View {
         ZStack(alignment: .top) {
             if let toast = center.toast {
-                ToastBubble(toast: toast)
+                ToastBubble(toast: toast, onDismiss: clear)
                     .id(toast.id)
                     .padding(.top, 12)
                     .padding(.horizontal, 16)
@@ -2530,6 +2523,7 @@ private struct ToastOverlay: View {
 
 private struct ToastBubble: View {
     let toast: SiftToast
+    let onDismiss: () -> Void
 
     private var icon: String {
         switch toast.kind {
@@ -2557,6 +2551,15 @@ private struct ToastBubble: View {
                 .foregroundStyle(.primary)
                 .lineLimit(2)
             Spacer(minLength: 0)
+            Button(action: onDismiss) {
+                Image(systemName: "xmark")
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(.secondary)
+                    .frame(width: 28, height: 28)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(String(localized: "关闭"))
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 11)

@@ -201,6 +201,25 @@ private func expandedPromotionSegmentsClassifyCorrectly(example: PromotionClassi
     #expect(decision.labelID == example.expectedLabelID)
 }
 
+@Test(arguments: [
+    PromotionClassificationCase(text: "信用卡分期购买手机 3200 元，首期支付已完成。", expectedLabelID: "finance.consumption"),
+    PromotionClassificationCase(text: "尾号4821信用卡在青禾超市消费268.50元，交易已入账。", expectedLabelID: "finance.consumption"),
+    PromotionClassificationCase(text: "Installment purchase at Northwind Market: $320 was paid with your card.", expectedLabelID: "finance.consumption"),
+    PromotionClassificationCase(text: "Card ending 4821 was used for a $268.50 grocery purchase at GreenLeaf Market.", expectedLabelID: "finance.consumption"),
+    PromotionClassificationCase(text: "末尾4821のカードでスーパーにて26,850円を利用しました。", expectedLabelID: "finance.consumption"),
+    PromotionClassificationCase(text: "信用卡还款成功，入账金额 654.27 元。", expectedLabelID: "finance.credit_card"),
+    PromotionClassificationCase(text: "Your credit card statement is ready. Amount due $603.50.", expectedLabelID: "finance.credit_card"),
+    PromotionClassificationCase(text: "Payment received: $500 applied to your card.", expectedLabelID: "finance.credit_card"),
+    PromotionClassificationCase(text: "お支払いを確認しました：5,000円入金。ありがとうございます。", expectedLabelID: "finance.credit_card"),
+    PromotionClassificationCase(text: "中国移动月度账单已生成，本月应缴话费 88 元。", expectedLabelID: "carrier.billing"),
+    PromotionClassificationCase(text: "中国联通套餐剩余 8GB 流量。", expectedLabelID: "carrier.data_reminder"),
+    PromotionClassificationCase(text: "水费缴费成功，本次支付 88 元。", expectedLabelID: "transaction.other")
+])
+private func financialAndCarrierBoundariesClassifyCorrectly(example: PromotionClassificationCase) {
+    let decision = HeuristicClassifier().classify(sender: nil, body: example.text)
+    #expect(decision.labelID == example.expectedLabelID)
+}
+
 @Test
 func gameItemMarketplacePromotionAndOrderBoundaryIsPrecise() {
     let classifier = HeuristicClassifier()

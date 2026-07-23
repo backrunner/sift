@@ -27,6 +27,7 @@ def parse_arguments() -> argparse.Namespace:
     parser.add_argument("--calibration-input", type=Path, required=True)
     parser.add_argument("--fixed-holdout", type=Path, required=True)
     parser.add_argument("--promotion-holdout", type=Path, required=True)
+    parser.add_argument("--billing-holdout", type=Path, required=True)
     parser.add_argument("--conversation-holdout", type=Path, required=True)
     parser.add_argument("--taxonomy", type=Path, required=True)
     parser.add_argument("--profiles", type=Path, default=Path(__file__).with_name("quantization-profiles.json"))
@@ -107,6 +108,7 @@ def run_message_filter_artifact_suite(
     manifest_path: Path,
     fixed_holdout: Path,
     promotion_holdout: Path,
+    billing_holdout: Path,
     conversation_holdout: Path,
 ) -> dict[str, Any]:
     swift = shutil.which("swift")
@@ -122,6 +124,7 @@ def run_message_filter_artifact_suite(
             "--manifest", str(manifest_path),
             "--fixed", str(fixed_holdout),
             "--promotion", str(promotion_holdout),
+            "--billing", str(billing_holdout),
             "--conversation", str(conversation_holdout),
             "--output", str(output),
             "--readable-cases",
@@ -575,9 +578,11 @@ def main() -> None:
     published_tokenizer_name = tokenizer_artifact_name(arguments.model_name)
     fixed_rows = read_ndjson(arguments.fixed_holdout)
     promotion_rows = read_ndjson(arguments.promotion_holdout)
+    billing_rows = read_ndjson(arguments.billing_holdout)
     conversation_rows = read_ndjson(arguments.conversation_holdout)
     fixed_samples = encode_samples(tokenizer, fixed_rows, arguments.max_length)
     promotion_samples = encode_samples(tokenizer, promotion_rows, arguments.max_length)
+    billing_samples = encode_samples(tokenizer, billing_rows, arguments.max_length)
     conversation_samples = encode_samples(tokenizer, conversation_rows, arguments.max_length)
     actions = taxonomy_actions(arguments.taxonomy)
     labels = checkpoint_labels(arguments.checkpoint)
@@ -753,18 +758,23 @@ def main() -> None:
 
         fixed = evaluate(candidate, fixed_samples, fixed_rows, labels, actions)
         promotion = evaluate(candidate, promotion_samples, promotion_rows, labels, actions)
+        billing = evaluate(candidate, billing_samples, billing_rows, labels, actions)
         conversation = evaluate(candidate, conversation_samples, conversation_rows, labels, actions)
         language_accuracy = combined_language_accuracy(fixed, promotion)
         if profile["id"] == "fp16-baseline":
             baseline_predictions = {
                 "fixed": fixed["predictions"],
                 "promotion": promotion["predictions"],
+                "billing": billing["predictions"],
                 "conversation": conversation["predictions"],
             }
-        agreement_total = len(fixed_rows) + len(promotion_rows) + len(conversation_rows)
+        agreement_total = len(fixed_rows) + len(promotion_rows) + len(billing_rows) + len(conversation_rows)
         agreement_correct = sum(
             predicted == baseline
             for predicted, baseline in zip(fixed["predictions"], baseline_predictions.get("fixed", fixed["predictions"]))
+        ) + sum(
+            predicted == baseline
+            for predicted, baseline in zip(billing["predictions"], baseline_predictions.get("billing", billing["predictions"]))
         ) + sum(
             predicted == baseline
             for predicted, baseline in zip(promotion["predictions"], baseline_predictions.get("promotion", promotion["predictions"]))
@@ -791,6 +801,7 @@ def main() -> None:
             "validationMetrics": {
                 "fixedAccuracy": fixed["accuracy"],
                 "promotionAccuracy": promotion["accuracy"],
+                "billingAccuracy": billing["accuracy"],
                 "conversationAccuracy": conversation["accuracy"],
                 "fp16Agreement": agreement_correct / agreement_total,
                 "languageAccuracy": language_accuracy,
@@ -824,6 +835,7 @@ def main() -> None:
             manifest_path,
             arguments.fixed_holdout,
             arguments.promotion_holdout,
+            arguments.billing_holdout,
             arguments.conversation_holdout,
         )
         report = {
@@ -835,11 +847,13 @@ def main() -> None:
             "metrics": {
                 "fixedAccuracy": fixed["accuracy"],
                 "promotionAccuracy": promotion["accuracy"],
+                "billingAccuracy": billing["accuracy"],
+                "billingActionAccuracy": billing["actionAccuracy"],
                 "conversationAccuracy": conversation["accuracy"],
                 "conversationActionAccuracy": conversation["actionAccuracy"],
                 "fp16Top1Agreement": agreement_correct / agreement_total,
-                "probabilitiesFinite": fixed["probabilitiesFinite"] and promotion["probabilitiesFinite"] and conversation["probabilitiesFinite"],
-                "probabilitySumsValid": fixed["probabilitySumsValid"] and promotion["probabilitySumsValid"] and conversation["probabilitySumsValid"],
+                "probabilitiesFinite": fixed["probabilitiesFinite"] and promotion["probabilitiesFinite"] and billing["probabilitiesFinite"] and conversation["probabilitiesFinite"],
+                "probabilitySumsValid": fixed["probabilitySumsValid"] and promotion["probabilitySumsValid"] and billing["probabilitySumsValid"] and conversation["probabilitySumsValid"],
                 "languageAccuracy": language_accuracy,
             },
             "messageFilterActions": message_filter_actions,

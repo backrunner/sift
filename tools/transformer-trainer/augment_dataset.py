@@ -47,7 +47,12 @@ def load_rows(path: Path) -> list[dict[str, str]]:
             if not text or not label:
                 raise SystemExit(f"error: invalid row at {path}:{number}")
             language = str(record.get("language", "")).strip() or detect_language(text)
-            rows.append({"text": text, "label": label, "language": language})
+            row = {"text": text, "label": label, "language": language}
+            for key in ("source", "sourceLabel"):
+                value = str(record.get(key, "")).strip()
+                if value:
+                    row[key] = value
+            rows.append(row)
     if not rows:
         raise SystemExit(f"error: dataset is empty: {path}")
     return rows
@@ -99,7 +104,13 @@ def augment(
     augmented_by_label: Counter[str] = Counter()
     augmented_by_family: Counter[str] = Counter()
 
-    def retain(text: str, label: str, family: str, is_base: bool = False) -> bool:
+    def retain(
+        text: str,
+        label: str,
+        family: str,
+        is_base: bool = False,
+        metadata: dict[str, str] | None = None,
+    ) -> bool:
         text = normalize(text)
         exact = text.lower()
         near = near_duplicate_signature(text)
@@ -120,7 +131,15 @@ def augment(
         if template and (label, template) in used_templates:
             rejected[f"{family}:template-duplicate"] += 1
             return False
-        output.append({"text": text, "label": label})
+        output_row = {"text": text, "label": label}
+        if is_base and metadata is not None:
+            for key in ("language", "source", "sourceLabel"):
+                if metadata.get(key):
+                    output_row[key] = metadata[key]
+        elif not is_base:
+            output_row["source"] = f"augmentation:{family}"
+            output_row["language"] = detect_language(text)
+        output.append(output_row)
         exact_to_label[exact] = label
         used_near.add((label, near))
         if template:
@@ -133,7 +152,7 @@ def augment(
     for row in base_rows:
         if row["label"] not in valid_labels:
             raise SystemExit(f"error: base row has unknown label: {row['label']}")
-        retain(row["text"], row["label"], "base", is_base=True)
+        retain(row["text"], row["label"], "base", is_base=True, metadata=row)
 
     base_retained_count = len(output)
 

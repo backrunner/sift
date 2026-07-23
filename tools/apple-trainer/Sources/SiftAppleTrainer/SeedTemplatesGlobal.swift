@@ -49,10 +49,13 @@ enum SeedTemplatesGlobal {
         ],
         "finance.credit_card": [
             "Tu estado de cuenta está listo: ${amount} a pagar antes del {date}.",
-            "Compra con tarjeta terminación {tail} por ${amount}.",
             "Pago automático programado: ${amount} el {date}.",
             "Pago recibido: ${amount} aplicado a tu tarjeta. Gracias.",
             "Pago mínimo ${amount} vence el {date}; evita intereses."
+        ],
+        "finance.consumption": [
+            "Compra con tarjeta terminación {tail} por ${amount}.",
+            "Pago de compra confirmado: ${amount} en {merchant}."
         ],
         "finance.income": [
             "Recibiste una transferencia de ${amount}. Nuevo saldo ${amount2}.",
@@ -133,10 +136,13 @@ enum SeedTemplatesGlobal {
         ],
         "finance.credit_card": [
             "Sua fatura fechou: R${amount} com vencimento em {date}.",
-            "Compra no cartão final {tail} de R${amount}.",
             "Débito automático agendado: R${amount} em {date}.",
             "Pagamento recebido: R${amount} creditado no cartão. Obrigado.",
             "Pagamento mínimo de R${amount} vence em {date}; evite juros."
+        ],
+        "finance.consumption": [
+            "Compra no cartão final {tail} de R${amount}.",
+            "Pagamento de compra confirmado: R${amount} em {merchant}."
         ],
         "finance.income": [
             "Você recebeu uma transferência de R${amount}. Novo saldo R${amount2}.",
@@ -217,10 +223,13 @@ enum SeedTemplatesGlobal {
         ],
         "finance.credit_card": [
             "Votre relevé est disponible : {amount} € à régler avant le {date}.",
-            "Achat carte se terminant par {tail} : {amount} €.",
             "Prélèvement automatique prévu : {amount} € le {date}.",
             "Paiement reçu : {amount} € crédités sur votre carte. Merci.",
             "Paiement minimum de {amount} € dû le {date} ; évitez les intérêts."
+        ],
+        "finance.consumption": [
+            "Achat carte se terminant par {tail} : {amount} €.",
+            "Paiement d'achat confirmé : {amount} € chez {merchant}."
         ],
         "finance.income": [
             "Vous avez reçu un virement de {amount} €. Nouveau solde {amount2} €.",
@@ -301,10 +310,13 @@ enum SeedTemplatesGlobal {
         ],
         "finance.credit_card": [
             "Ihre Abrechnung ist da: {amount} € fällig am {date}.",
-            "Kartenzahlung Endziffern {tail}: {amount} €.",
             "Lastschrift geplant: {amount} € am {date}.",
             "Zahlung eingegangen: {amount} € Ihrer Karte gutgeschrieben. Danke.",
             "Mindestzahlung {amount} € fällig am {date}; vermeiden Sie Zinsen."
+        ],
+        "finance.consumption": [
+            "Kartenzahlung Endziffern {tail}: {amount} €.",
+            "Kaufzahlung bestätigt: {amount} € bei {merchant}."
         ],
         "finance.income": [
             "Sie haben eine Überweisung über {amount} € erhalten. Neuer Saldo {amount2} €.",
@@ -385,10 +397,13 @@ enum SeedTemplatesGlobal {
         ],
         "finance.credit_card": [
             "Выписка готова: к оплате {amount} ₽ до {date}.",
-            "Покупка по карте *{tail}: {amount} ₽.",
             "Автоплатёж: {amount} ₽ спишется {date}.",
             "Платёж получен: {amount} ₽ зачислено на карту. Спасибо.",
             "Минимальный платёж {amount} ₽ до {date}; не допускайте просрочки."
+        ],
+        "finance.consumption": [
+            "Покупка по карте *{tail}: {amount} ₽.",
+            "Оплата покупки подтверждена: {amount} ₽ в {merchant}."
         ],
         "finance.income": [
             "Вам перевели {amount} ₽. Новый баланс {amount2} ₽.",
@@ -469,10 +484,13 @@ enum SeedTemplatesGlobal {
         ],
         "finance.credit_card": [
             "청구서가 확정되었습니다: {amount}원, 납부 기한 {date}.",
-            "끝자리 {tail} 카드로 {amount}원 결제되었습니다.",
             "자동납부 예정: {date}에 {amount}원 출금.",
             "결제 확인: 카드에 {amount}원 입금되었습니다. 감사합니다.",
             "최소 결제금액 {amount}원의 기한은 {date}입니다. 연체에 유의하세요."
+        ],
+        "finance.consumption": [
+            "끝자리 {tail} 카드로 {amount}원 결제되었습니다.",
+            "구매 결제 완료: {merchant}에서 {amount}원."
         ],
         "finance.income": [
             "{amount}원 이체를 받았습니다. 새 잔액 {amount2}원.",
@@ -553,10 +571,13 @@ enum SeedTemplatesGlobal {
         ],
         "finance.credit_card": [
             "Tagihan Anda terbit: Rp{amount}.000 jatuh tempo {date}.",
-            "Transaksi kartu akhiran {tail} sebesar Rp{amount}.000.",
             "Autodebit terjadwal: Rp{amount}.000 pada {date}.",
             "Pembayaran diterima: Rp{amount}.000 masuk ke kartu Anda. Terima kasih.",
             "Pembayaran minimum Rp{amount}.000 jatuh tempo {date}; hindari bunga."
+        ],
+        "finance.consumption": [
+            "Transaksi kartu akhiran {tail} sebesar Rp{amount}.000.",
+            "Pembayaran pembelian dikonfirmasi: Rp{amount}.000 di {merchant}."
         ],
         "finance.income": [
             "Anda menerima transfer Rp{amount}.000. Saldo baru Rp{amount2}.000.",
@@ -637,10 +658,13 @@ enum SeedTemplatesGlobal {
         ],
         "finance.credit_card": [
             "Sao kê đã chốt: {amount}.000đ, hạn thanh toán {date}.",
-            "Thẻ đuôi {tail} vừa chi tiêu {amount}.000đ.",
             "Thanh toán tự động: {amount}.000đ vào ngày {date}.",
             "Đã nhận thanh toán: {amount}.000đ ghi có vào thẻ. Cảm ơn bạn.",
             "Khoản tối thiểu {amount}.000đ đến hạn {date}; tránh phát sinh lãi."
+        ],
+        "finance.consumption": [
+            "Thẻ đuôi {tail} vừa chi tiêu {amount}.000đ.",
+            "Đã xác nhận thanh toán mua hàng: {amount}.000đ tại {merchant}."
         ],
         "finance.income": [
             "Bạn nhận được {amount}.000đ. Số dư mới {amount2}.000đ.",
@@ -721,10 +745,13 @@ enum SeedTemplatesGlobal {
         ],
         "finance.credit_card": [
             "ใบแจ้งยอดออกแล้ว: {amount} บาท ครบกำหนด {date}",
-            "บัตรลงท้าย {tail} มีรายการใช้จ่าย {amount} บาท",
             "ตัดบัญชีอัตโนมัติ: {amount} บาท วันที่ {date}",
             "รับชำระแล้ว: {amount} บาทเข้าบัตรของคุณ ขอบคุณค่ะ",
             "ยอดขั้นต่ำ {amount} บาท ครบกำหนด {date} โปรดชำระตรงเวลา"
+        ],
+        "finance.consumption": [
+            "บัตรลงท้าย {tail} มีรายการใช้จ่าย {amount} บาท",
+            "ยืนยันการชำระค่าสินค้า {amount} บาทที่ {merchant}"
         ],
         "finance.income": [
             "คุณได้รับเงินโอน {amount} บาท ยอดใหม่ {amount2} บาท",

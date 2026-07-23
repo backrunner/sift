@@ -16,6 +16,8 @@ def report(profile_id: str, *, footprint: int, download: int, latency: float, pr
         "metrics": {
             "fixedAccuracy": 0.995,
             "promotionAccuracy": promotion,
+            "billingAccuracy": 0.95,
+            "billingActionAccuracy": 1.0,
             "conversationAccuracy": 1.0,
             "conversationActionAccuracy": 1.0,
             "fp16Top1Agreement": 0.99,
@@ -29,6 +31,7 @@ def report(profile_id: str, *, footprint: int, download: int, latency: float, pr
             "readableCases": [{"passed": True} for _ in range(17)],
             "fixedAccuracy": 0.995,
             "promotionAccuracy": 0.98,
+            "billingAccuracy": 1.0,
             "conversationAccuracy": 1.0,
             "benignOrTransactionToJunk": 0,
             "promotionFalsePositiveRate": 0.0,
@@ -95,6 +98,23 @@ class QuantizationCandidateSelectionTests(unittest.TestCase):
 
         self.assertEqual(selected["profileID"], "w4a16-block16-qat")
         self.assertIn("promotionAccuracy", selected["rejectedCandidates"]["w4a16-block16-ptq"])
+
+    def test_promotion_gate_requires_at_least_ninety_eight_percent(self) -> None:
+        baseline = report("fp16-baseline", footprint=200, download=300, latency=20)
+        candidate = report("w8a16-channel-ptq", footprint=100, download=100, latency=10, promotion=0.979)
+
+        failures = candidate_failures(candidate, baseline)
+
+        self.assertIn("promotionAccuracy", failures)
+
+    def test_billing_gate_rejects_a_boundary_regression(self) -> None:
+        baseline = report("fp16-baseline", footprint=200, download=300, latency=20)
+        candidate = report("w8a16-channel-ptq", footprint=100, download=100, latency=10)
+        candidate["metrics"]["billingAccuracy"] = 0.899
+
+        failures = candidate_failures(candidate, baseline)
+
+        self.assertIn("billingAccuracy", failures)
 
     def test_rejects_candidate_without_matching_runtime_evidence(self) -> None:
         baseline = report("fp16-baseline", footprint=200, download=300, latency=20)

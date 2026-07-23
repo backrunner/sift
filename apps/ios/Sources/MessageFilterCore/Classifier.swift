@@ -67,6 +67,51 @@ public struct HeuristicClassifier: MessageClassifier {
     private func bestMatch(in body: String) -> (label: LeafLabel, confidence: Double) {
         // Keyword fallback for when no model is bundled. Chinese first, plus a
         // thin layer of high-precision English keywords for multilingual SMS.
+        let carrierBillingPhrases = [
+            "话费余额", "通信账单", "话费账单", "通信费用", "mobile bill",
+            "airtime balance", "通信料金", "料金残高", "月額請求"
+        ]
+        let carrierContexts = [
+            "中国移动", "中国联通", "中国电信", "中国广电", "运营商", "通信账户",
+            "mobile", "carrier", "airtime", "wireless", "cellular", "telecom",
+            "モバイル", "通信", "携帯"
+        ]
+        let billingSignals = [
+            "账单", "缴费", "充值成功", "欠费", "应缴", "余额", "bill", "billing",
+            "statement", "payment received", "autopay", "請求", "支払い", "残高"
+        ]
+        if
+            carrierBillingPhrases.contains(where: body.contains)
+                || (
+                    carrierContexts.contains(where: body.contains)
+                        && billingSignals.contains(where: body.contains)
+                ),
+            let label = SiftTaxonomy.leaf(id: "carrier.billing")
+        {
+            return (label, 0.94)
+        }
+
+        // A card identifier describes the payment instrument, not the account
+        // event. Merchant purchases belong to consumption; statements and
+        // repayments remain under the credit-card account label.
+        let cardMarkers = ["信用卡", "credit card", "card ending", "クレジットカード", "カード"]
+        let purchaseMarkers = [
+            "消费", "购买", "购物", "刷卡", "purchase", "purchased", "grocery",
+            "shopping", "merchant", "利用", "購入", "買い物"
+        ]
+        let accountEventMarkers = [
+            "账单", "月结", "还款", "最低还款", "到期还款", "逾期", "statement",
+            "repayment", "payment due", "refund", "退款", "退回", "返金"
+        ]
+        if
+            cardMarkers.contains(where: body.contains),
+            purchaseMarkers.contains(where: body.contains),
+            !accountEventMarkers.contains(where: body.contains),
+            let label = SiftTaxonomy.leaf(id: "finance.consumption")
+        {
+            return (label, 0.95)
+        }
+
         let rules: [(labelID: String, keywords: [String], confidence: Double)] = [
             ("verification", ["验证码", "动态码", "校验码", "verification code", "security code", "otp", "passcode", "認証コード", "確認コード", "ワンタイム"], 0.99),
             ("spam", ["刷单", "贷款秒批", "无视征信", "先交保证金", "安全账户", "涉嫌洗钱", "代办证件", "彩票内幕", "中奖通知", "点击链接完成认证", "you won", "winner", "claim your prize", "your account will be frozen", "guaranteed returns", "no credit check", "pay a deposit", "審査なし即日融資", "保証金", "当選しました", "至急ご確認ください"], 0.95),
@@ -75,9 +120,10 @@ public struct HeuristicClassifier: MessageClassifier {
             ("transaction.order", ["游戏道具订单", "装备订单", "订单中的皮肤", "订单中的金币", "订单已支付", "订单已进入验号", "item order is paid", "gear order is paid", "items in your order", "trade is in verification", "アイテム注文", "装備注文", "注文したスキン", "取引は確認段階"], 0.95),
             ("promotion", ["退订", "回复t", "推广", "营销", "广告", "优惠", "限时", "活动", "折扣", "领券", "促销", "积分商城", "银行商城", "积分兑换好礼", "首充双倍", "充值返利", "充值节", "赛季通行证", "限定皮肤", "游戏礼包", "游戏道具", "装备交易", "金币交易", "账号交易", "武库轮换", "武库换新", "更新货架", "即开即售", "寄售季", "新品发布", "新品上线", "新房源", "预约看房", "租金优惠", "贷款利率优惠", "服装折扣", "超市特卖", "% off", "flash sale", "discount", "voucher", "reply stop", "rewards mall", "bank marketplace", "game server", "top-up bonus", "game top-up", "season pass", "in-game item", "armory rotation", "armory refresh", "instant listing", "consignment event", "new product", "new rental", "loan rate offer", "fashion sale", "grocery member day", "supermarket sale", "ポイントモール", "銀行モール", "新サーバー", "初回チャージ", "ゲームチャージ", "武器庫ローテーション", "武器庫更新", "委託販売イベント", "新商品", "新着物件", "金利優遇", "ゲームアイテム", "衣料品セール", "スーパー特売"], 0.94),
             ("finance.refund", ["退款", "退回", "原路返回", "refund"], 0.96),
+            ("finance.consumption", ["分期购买", "分期付款成功", "分期支付", "purchase alert", "purchase completed", "installment purchase", "buy now pay later", "分割購入", "分割払いで購入"], 0.95),
             ("finance.income", ["工资到账", "转账到账", "代发", "存入现金", "收到转账", "salary", "deposited"], 0.93),
             ("finance.bank", ["银行", "账户", "余额", "转账", "扣款", "debited", "credited", "balance"], 0.82),
-            ("finance.credit_card", ["信用卡", "账单", "还款", "最低还款", "credit card", "statement", "payment due"], 0.88),
+            ("finance.credit_card", ["信用卡", "账单", "还款", "最低还款", "credit card", "statement", "repayment received", "payment due", "applied to your card", "お支払いを確認", "返済"], 0.88),
             ("life.express", ["快递", "包裹", "派送", "签收", "out for delivery", "parcel", "package"], 0.91),
             ("life.logistics", ["物流", "运单", "发货", "揽收", "shipment", "in transit"], 0.9),
             ("life.pickup_code", ["取件码", "自提", "驿站", "柜机", "pickup code", "locker"], 0.97),

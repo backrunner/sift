@@ -80,7 +80,9 @@ def candidate_failures(report: dict[str, Any], fp16: dict[str, Any]) -> list[str
             failures.append(name)
 
     require(metrics.get("fixedAccuracy", 0) >= 0.99, "fixedAccuracy")
-    require(metrics.get("promotionAccuracy", 0) >= 0.97, "promotionAccuracy")
+    require(metrics.get("promotionAccuracy", 0) >= 0.98, "promotionAccuracy")
+    require(metrics.get("billingAccuracy", 0) >= 0.90, "billingAccuracy")
+    require(metrics.get("billingActionAccuracy", 0) >= 0.95, "billingActionAccuracy")
     require(metrics.get("conversationAccuracy", 0) >= 1.0, "conversationAccuracy")
     require(metrics.get("conversationActionAccuracy", 0) >= 1.0, "conversationActionAccuracy")
     require(fp16_metrics.get("fixedAccuracy", 0) - metrics.get("fixedAccuracy", 0) <= 0.01, "fixedDrop")
@@ -94,7 +96,8 @@ def candidate_failures(report: dict[str, Any], fp16: dict[str, Any]) -> list[str
         require(baseline_score - candidate_score <= 0.015, f"{language}Drop")
 
     require(actions.get("fixedAccuracy", 0) >= 0.99, "messageFilterFixedAccuracy")
-    require(actions.get("promotionAccuracy", 0) >= 0.97, "messageFilterPromotionAccuracy")
+    require(actions.get("promotionAccuracy", 0) >= 0.98, "messageFilterPromotionAccuracy")
+    require(actions.get("billingAccuracy", 0) >= 0.95, "messageFilterBillingAccuracy")
     require(actions.get("conversationAccuracy", 0) >= 1.0, "messageFilterConversationAccuracy")
     require(actions.get("benignOrTransactionToJunk", 1) == 0, "benignOrTransactionToJunk")
     require(actions.get("promotionFalsePositiveRate", 1) <= 0.01, "promotionFalsePositiveRate")

@@ -7,6 +7,7 @@ private struct Arguments {
     let model: URL
     let fixed: URL
     let promotion: URL
+    let billing: URL
     let conversation: URL
     let output: URL
     let confidenceThreshold: Double
@@ -25,6 +26,7 @@ private struct Arguments {
             let model = values["--model"],
             let fixed = values["--fixed"],
             let promotion = values["--promotion"],
+            let billing = values["--billing"],
             let conversation = values["--conversation"],
             let output = values["--output"]
         else {
@@ -33,6 +35,7 @@ private struct Arguments {
         self.model = URL(fileURLWithPath: model)
         self.fixed = URL(fileURLWithPath: fixed)
         self.promotion = URL(fileURLWithPath: promotion)
+        self.billing = URL(fileURLWithPath: billing)
         self.conversation = URL(fileURLWithPath: conversation)
         self.output = URL(fileURLWithPath: output)
         let threshold = values["--confidence-threshold"].flatMap(Double.init) ?? 0.62
@@ -49,6 +52,7 @@ private enum SuiteError: Error {
     case unknownLabel(String)
     case fixedGateFailed
     case promotionGateFailed
+    case billingGateFailed
     case conversationGateFailed
     case unsafeActionGateFailed
 }
@@ -80,6 +84,7 @@ private struct Report: Encodable {
     let modelBytes: Int64
     let fixed: DatasetReport
     let promotion: DatasetReport
+    let billing: DatasetReport
     let conversation: DatasetReport
     let benignOrTransactionToJunk: Int
 }
@@ -172,6 +177,7 @@ private func run() async throws {
     let rawModel = try NLModel(contentsOf: compiledURL)
     let fixedRows = try loadRows(at: arguments.fixed)
     let promotionRows = try loadRows(at: arguments.promotion)
+    let billingRows = try loadRows(at: arguments.billing)
     let conversationRows = try loadRows(at: arguments.conversation)
 
     let fixed = try await evaluate(
@@ -184,18 +190,24 @@ private func run() async throws {
         rawPredictions: promotionRows.map { rawModel.predictedLabel(for: $0.text) ?? "<nil>" },
         engine: engine
     )
+    let billing = try await evaluate(
+        billingRows,
+        rawPredictions: billingRows.map { rawModel.predictedLabel(for: $0.text) ?? "<nil>" },
+        engine: engine
+    )
     let conversation = try await evaluate(
         conversationRows,
         rawPredictions: conversationRows.map { rawModel.predictedLabel(for: $0.text) ?? "<nil>" },
         engine: engine
     )
     let modelBytes = (try FileManager.default.attributesOfItem(atPath: arguments.model.path)[.size] as? NSNumber)?.int64Value ?? 0
-    let unsafeJunk = fixed.unsafeJunk + promotion.unsafeJunk + conversation.unsafeJunk
+    let unsafeJunk = fixed.unsafeJunk + promotion.unsafeJunk + billing.unsafeJunk + conversation.unsafeJunk
     let report = Report(
-        suiteVersion: 1,
+        suiteVersion: 2,
         modelBytes: modelBytes,
         fixed: fixed.report,
         promotion: promotion.report,
+        billing: billing.report,
         conversation: conversation.report,
         benignOrTransactionToJunk: unsafeJunk
     )
@@ -208,6 +220,9 @@ private func run() async throws {
     }
     guard promotion.report.rawLabelAccuracy >= 0.95, promotion.report.actionAccuracy >= 0.85 else {
         throw SuiteError.promotionGateFailed
+    }
+    guard billing.report.rawLabelAccuracy >= 0.90, billing.report.actionAccuracy >= 0.95 else {
+        throw SuiteError.billingGateFailed
     }
     guard
         conversation.report.rawLabelAccuracy == 1,

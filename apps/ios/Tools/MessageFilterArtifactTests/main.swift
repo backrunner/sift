@@ -9,6 +9,7 @@ private struct Arguments {
     let manifest: URL
     let fixed: URL
     let promotion: URL
+    let billing: URL
     let conversation: URL
     let output: URL
     let runtimeBenchmarkOutput: URL?
@@ -44,6 +45,7 @@ private struct Arguments {
             let manifest = values["--manifest"],
             let fixed = values["--fixed"],
             let promotion = values["--promotion"],
+            let billing = values["--billing"],
             let conversation = values["--conversation"],
             let output = values["--output"]
         else {
@@ -54,6 +56,7 @@ private struct Arguments {
         self.manifest = URL(fileURLWithPath: manifest)
         self.fixed = URL(fileURLWithPath: fixed)
         self.promotion = URL(fileURLWithPath: promotion)
+        self.billing = URL(fileURLWithPath: billing)
         self.conversation = URL(fileURLWithPath: conversation)
         self.output = URL(fileURLWithPath: output)
         self.runtimeBenchmarkOutput = values["--runtime-benchmark-output"].map(URL.init(fileURLWithPath:))
@@ -81,6 +84,7 @@ private enum ArtifactSuiteError: Error {
     case dynamicInstallFailed
     case readableCaseGateFailed
     case conversationGateFailed
+    case billingGateFailed
 }
 
 private struct DatasetRow: Decodable, Sendable {
@@ -103,6 +107,7 @@ private struct ArtifactActionReport: Encodable {
     let readableCaseCount: Int
     let fixedAccuracy: Double
     let promotionAccuracy: Double
+    let billingAccuracy: Double
     let conversationAccuracy: Double
     let benignOrTransactionToJunk: Int
     let promotionFalsePositiveRate: Double
@@ -692,6 +697,11 @@ private func run() async throws {
         engine: runtime.engine,
         configuration: configuration
     )
+    let billing = try await evaluate(
+        loadRows(at: arguments.billing),
+        engine: runtime.engine,
+        configuration: configuration
+    )
     let conversation = try await evaluate(
         loadRows(at: arguments.conversation),
         engine: runtime.engine,
@@ -724,9 +734,10 @@ private func run() async throws {
         readableCaseCount: readable.count,
         fixedAccuracy: Double(fixed.actionCorrect) / Double(fixed.count),
         promotionAccuracy: Double(promotion.actionCorrect) / Double(promotion.count),
+        billingAccuracy: Double(billing.actionCorrect) / Double(billing.count),
         conversationAccuracy: Double(conversation.actionCorrect) / Double(conversation.count),
-        benignOrTransactionToJunk: fixed.benignOrTransactionToJunk + promotion.benignOrTransactionToJunk,
-        promotionFalsePositiveRate: Double(promotion.promotionFalsePositives) / Double(max(promotion.promotionNegatives, 1)),
+        benignOrTransactionToJunk: fixed.benignOrTransactionToJunk + promotion.benignOrTransactionToJunk + billing.benignOrTransactionToJunk,
+        promotionFalsePositiveRate: Double(promotion.promotionFalsePositives + billing.promotionFalsePositives) / Double(max(promotion.promotionNegatives + billing.promotionNegatives, 1)),
         scamJunkRecall: Double(fixed.scamCorrect + promotion.scamCorrect) / Double(max(fixed.scamCount + promotion.scamCount, 1)),
         rulesOverrideRate: await rulesOverrideRate(engine: runtime.engine, identity: runtime.identity),
         artifactIdentity: runtime.identity,
@@ -740,6 +751,9 @@ private func run() async throws {
     try encoder.encode(report).write(to: arguments.output, options: .atomic)
     guard conversation.actionCorrect == conversation.count else {
         throw ArtifactSuiteError.conversationGateFailed
+    }
+    guard Double(billing.actionCorrect) / Double(billing.count) >= 0.95 else {
+        throw ArtifactSuiteError.billingGateFailed
     }
     guard readable.allSatisfy(\.passed) else {
         throw ArtifactSuiteError.readableCaseGateFailed

@@ -400,6 +400,15 @@
           }
         },
         {
+          "id": "carrier.billing",
+          "title": "账单",
+          "titles": {
+            "zh": "账单",
+            "en": "Billing & Payments",
+            "ja": "請求・支払い"
+          }
+        },
+        {
           "id": "carrier.service",
           "title": "业务办理",
           "titles": {

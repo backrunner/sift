@@ -163,6 +163,7 @@ class QuantizeCandidateTests(unittest.TestCase):
                     candidate / "manifest.json",
                     candidate / "fixed.ndjson",
                     candidate / "promotion.ndjson",
+                    candidate / "billing.ndjson",
                     candidate / "conversation.ndjson",
                 )
 
@@ -170,6 +171,7 @@ class QuantizeCandidateTests(unittest.TestCase):
         command = run.call_args.args[0]
         self.assertIn("--readable-cases", command)
         self.assertIn("--conversation", command)
+        self.assertIn("--billing", command)
 
     def test_message_filter_artifact_suite_keeps_quality_failure_report(self) -> None:
         result = subprocess.CompletedProcess(
@@ -193,6 +195,7 @@ class QuantizeCandidateTests(unittest.TestCase):
                     candidate / "manifest.json",
                     candidate / "fixed.ndjson",
                     candidate / "promotion.ndjson",
+                    candidate / "billing.ndjson",
                     candidate / "conversation.ndjson",
                 )
 

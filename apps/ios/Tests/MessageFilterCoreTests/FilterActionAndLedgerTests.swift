@@ -184,6 +184,7 @@ private let expectedSystemMappings: [ExpectedSystemMapping] = [
     .init(labelID: "work.other", action: .transaction, subAction: .transactionalOthers),
     .init(labelID: "carrier.call_reminder", action: .transaction, subAction: .transactionalCarrier),
     .init(labelID: "carrier.data_reminder", action: .transaction, subAction: .transactionalCarrier),
+    .init(labelID: "carrier.billing", action: .transaction, subAction: .transactionalCarrier),
     .init(labelID: "carrier.service", action: .transaction, subAction: .transactionalCarrier),
     .init(labelID: "carrier.promotion", action: .promotion, subAction: .promotionalOffers),
     .init(labelID: "carrier.other", action: .transaction, subAction: .transactionalCarrier),

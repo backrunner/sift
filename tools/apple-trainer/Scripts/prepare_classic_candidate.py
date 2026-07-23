@@ -10,6 +10,7 @@ signature as the curation pipeline.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import random
 import re
@@ -27,6 +28,12 @@ def parse_arguments() -> argparse.Namespace:
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--report", type=Path, required=True)
     parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument(
+        "--max-supplement-per-label",
+        type=int,
+        default=0,
+        help="deterministic cap for each supplement label; 0 keeps all",
+    )
     return parser.parse_args()
 
 
@@ -40,6 +47,32 @@ def near_duplicate_signature(text: str) -> str:
     return collapsed[:80]
 
 
+def canonicalize_label(text: str, label: str) -> str:
+    """Migrate unambiguous legacy carrier/card rows to current boundaries."""
+    lowered = text.casefold()
+    if label in {"carrier.other", "carrier.data_reminder"} and any(marker in lowered for marker in (
+        "账单", "缴费", "充值成功", "欠费", "应缴", "账期", "月结单",
+        "billing", "mobile bill", "monthly statement", "payment received", "autopay",
+        "請求", "支払い", "料金残高",
+    )):
+        return "carrier.billing"
+
+    if label == "finance.credit_card":
+        if any(marker in lowered for marker in (
+            "退款", "退回", "原路返回", "原路 返回", "refund", "refunded", "chargeback",
+        )):
+            return "finance.refund"
+        if any(marker in lowered for marker in (
+            "消费", "购买", "购物", "支付成功", "付款成功", "分期付款成功", "分期消费",
+            "purchase", "purchased", "purchase approved", "installment purchase",
+            "payment complete for order", "購入", "利用", "分割購入", "分割払いの購入",
+        )) and not any(marker in lowered for marker in (
+            "账单", "月结", "还款", "最低还款", "到期还款", "逾期", "statement", "repayment", "due date",
+        )):
+            return "finance.consumption"
+    return label
+
+
 def load_rows(path: Path) -> list[dict[str, str]]:
     rows: list[dict[str, str]] = []
     with path.open(encoding="utf-8") as handle:
@@ -48,7 +81,7 @@ def load_rows(path: Path) -> list[dict[str, str]]:
                 continue
             record = json.loads(line)
             text = normalize(str(record.get("text", "")))
-            label = str(record.get("label", "")).strip()
+            label = canonicalize_label(text, str(record.get("label", "")).strip())
             if not text or not label:
                 raise SystemExit(f"error: invalid row at {path}:{number}")
             rows.append({"text": text, "label": label})
@@ -99,6 +132,15 @@ def main() -> None:
 
     supplement_rows = load_rows(arguments.supplement)
     selected_supplement = [row for row in supplement_rows if row["label"] in selected_labels]
+    if arguments.max_supplement_per_label > 0:
+        capped: list[dict[str, str]] = []
+        for label in sorted(selected_labels):
+            bucket = [row for row in selected_supplement if row["label"] == label]
+            bucket.sort(key=lambda row: hashlib.sha256(
+                f"{label}\x1f{row['text']}".encode("utf-8")
+            ).hexdigest())
+            capped.extend(bucket[:arguments.max_supplement_per_label])
+        selected_supplement = capped
     for row in selected_supplement:
         retain(row, "supplement")
 
