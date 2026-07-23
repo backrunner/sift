@@ -84,10 +84,10 @@ The product is not launched yet; backward compatibility is not required.
 | Variant | Version | Fixed 474 | Promotion 150 | Notes |
 | --- | --- | ---: | ---: | --- |
 | Classic | `maxent-boundary-v19` | 98.73% | 96.00% | Billing/card 90.00% raw / 100% action; Conversation 30/30 abstain; 354.0 KB |
-| Premium | `signal-v2-boundary-v15` candidate | 99.37% | 99.33% | Billing/card 93.33%; 22-layer W8A16 Core ML, CPU-only; 159,107,726 download bytes |
+| Premium | `signal-v2-boundary-v15` | 99.37% | 99.33% | Billing/card 93.33%; 22-layer W8A16 Core ML, CPU-only; build >= 10; 159,107,726 download bytes |
 | PII | `pii-boundary-v7` | n/a | n/a | Core ML INT8 P 99.27%, R 98.90%, F1 99.08%; clean FPR 0/487 and 0/64; grouped amounts |
 
-The current Signal candidate was trained on 14,390 leak-free rows with complete
+The current Signal release was trained on 14,390 leak-free rows with complete
 zh/en/ja coverage. The pipeline isolates all 684 fixed, promotion, billing/card,
 and conversation holdout rows by exact and digit-normalized signatures before
 either model trains.

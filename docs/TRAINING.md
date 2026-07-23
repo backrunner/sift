@@ -174,7 +174,7 @@ pnpm pipeline -- train-transformer \
 - Core ML export targets iOS 18.0. This is required for W4 per-block PTQ;
   exporting at an older deployment target makes Core ML reject block
   quantization before quality evaluation.
-- The 22-layer W8A16 `signal-v2-boundary-v15` candidate reaches 99.37% fixed,
+- The released 22-layer W8A16 `signal-v2-boundary-v15` reaches 99.37% fixed,
   99.33% promotion, 93.33% billing/card, and 100% conversation after Core ML
   quantization. Its production MessageFilter action accuracy is 100% on all
   four sets. The added zh/en/ja variants cover game marketplaces,

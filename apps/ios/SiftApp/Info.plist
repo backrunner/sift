@@ -37,7 +37,7 @@
 	<key>SiftPremiumProductIdentifier</key>
 	<string>com.alkinum.sift.premium</string>
 	<key>SiftSignalModelEstimatedBytes</key>
-	<integer>159107309</integer>
+	<integer>159107726</integer>
 	<key>SiftSignalModelChannelURL</key>
 	<string>$(SIFT_SIGNAL_MODEL_CHANNEL_URL)</string>
 	<key>SiftSignalModelPublicKeys</key>

@@ -14,7 +14,7 @@ pnpm pipeline -- train-transformer \
   --resume-from build/pipeline/transformer-model/checkpoint
 pnpm pipeline -- quantize-transformer \
   --version-transformer signal-v2-boundary-v15 --release-sequence 2 \
-  --minimum-app-build 9 --maximum-app-build 2147483647
+  --minimum-app-build 10 --maximum-app-build 2147483647
 # Add --qat-model w4a16-block16-qat=/path/to/qat.mlpackage when PTQ quality fails.
 ```
 
