@@ -2188,24 +2188,34 @@ private struct CategorySelectionView: View {
     @State private var searchText = ""
 
     var body: some View {
-        ScrollView {
-            LazyVStack(alignment: .leading, spacing: 16) {
-                ForEach(visibleGroups) { group in
-                    CategoryGroupCard(
-                        group: group,
-                        leaves: matchingLeaves(in: group),
-                        selectedLabelID: selectedLabelID
-                    ) { leaf in
-                        selectedLabelID = leaf.id
-                        dismiss()
+        GeometryReader { geometry in
+            ScrollViewReader { proxy in
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 16) {
+                        ForEach(visibleGroups) { group in
+                            CategoryGroupCard(
+                                group: group,
+                                leaves: matchingLeaves(in: group),
+                                selectedLabelID: selectedLabelID
+                            ) { leaf in
+                                selectedLabelID = leaf.id
+                                dismiss()
+                            }
+                        }
                     }
+                    .padding(.horizontal, 16)
+                    // Let labels at either edge of the taxonomy reach the viewport center.
+                    .padding(.vertical, geometry.size.height / 2)
+                }
+                .scrollIndicators(.hidden)
+                .onAppear {
+                    scrollToSelectedLabel(using: proxy)
+                }
+                .onChange(of: selectedLabelID) { _, _ in
+                    scrollToSelectedLabel(using: proxy)
                 }
             }
-            .padding(.horizontal, 16)
-            .padding(.top, 16)
-            .padding(.bottom, 16)
         }
-        .scrollIndicators(.hidden)
         .safeAreaInset(edge: .bottom, spacing: 0) {
             TaxonomySearchBar(text: $searchText)
         }
@@ -2224,6 +2234,13 @@ private struct CategorySelectionView: View {
             if !searchText.isEmpty, visibleGroups.isEmpty {
                 ContentUnavailableView.search(text: searchText)
             }
+        }
+    }
+
+    private func scrollToSelectedLabel(using proxy: ScrollViewProxy) {
+        guard SiftTaxonomy.leaf(id: selectedLabelID) != nil else { return }
+        withAnimation(.snappy(duration: 0.3)) {
+            proxy.scrollTo(selectedLabelID, anchor: .center)
         }
     }
 
@@ -2289,6 +2306,7 @@ private struct CategoryGroupCard: View {
                         .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
+                    .id(leaf.id)
                 }
             }
         }
