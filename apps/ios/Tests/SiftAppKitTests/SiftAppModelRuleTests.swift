@@ -368,6 +368,36 @@ func inFlightRemoteSubmissionPreventsCounterReconciliationDoubleCounting() async
 
 @MainActor
 @Test
+func staleRemoteCountCannotOverwriteACompletedLocalDeletion() async throws {
+    let suiteName = "SiftTests.remoteCounter.staleRefresh.\(UUID().uuidString)"
+    let defaults = try #require(UserDefaults(suiteName: suiteName))
+    SubmissionLedger.set(20, defaults: defaults)
+    defer { defaults.removePersistentDomain(forName: suiteName) }
+
+    let gate = DelayedCountGate()
+    let model = SiftAppModel(
+        remoteSampleClient: DelayedCountRemoteSampleClient(gate: gate),
+        ledgerDefaults: defaults
+    )
+
+    let refreshTask = Task {
+        await model.refreshSubmittedSampleCount(force: true)
+    }
+    try await waitUntilCountStarts(gate)
+
+    model.lastReceiptToken = "receipt-to-delete"
+    model.deleteLastRemoteSample()
+    try await waitUntil { model.submittedSampleCount == 19 }
+
+    await gate.release(count: 20)
+    await refreshTask.value
+
+    #expect(model.submittedSampleCount == 19)
+    #expect(SubmissionLedger.count(defaults: defaults) == 19)
+}
+
+@MainActor
+@Test
 func testPreviewAppliesCustomRulesBeforeModel() async throws {
     let suiteName = "SiftTests.rules.preview.\(UUID().uuidString)"
     let defaults = try #require(UserDefaults(suiteName: suiteName))
@@ -438,6 +468,23 @@ actor DelayedSubmissionGate {
     }
 }
 
+actor DelayedCountGate {
+    private(set) var hasStarted = false
+    private var continuation: CheckedContinuation<Int, Never>?
+
+    func waitForCount() async -> Int {
+        await withCheckedContinuation { continuation in
+            self.continuation = continuation
+            hasStarted = true
+        }
+    }
+
+    func release(count: Int) {
+        continuation?.resume(returning: count)
+        continuation = nil
+    }
+}
+
 struct DelayedRemoteSampleClient: RemoteSampleSubmitting {
     let gate: DelayedSubmissionGate
 
@@ -453,6 +500,25 @@ struct DelayedRemoteSampleClient: RemoteSampleSubmitting {
 
     func delete(receiptToken: String) async throws -> Bool { true }
     func fetchMySubmissions() async throws -> [RemoteSubmissionSummary] { [] }
+    func fetchMySubmissions(before createdAtMillis: Int64?, limit: Int) async throws -> [RemoteSubmissionSummary] { [] }
+    func eraseAllSubmissions() async throws -> Int { 0 }
+}
+
+struct DelayedCountRemoteSampleClient: RemoteSampleSubmitting {
+    let gate: DelayedCountGate
+
+    func submit(
+        sanitizedText: String,
+        labelID: String,
+        modelVersion: String?,
+        assessment: LocalAssessment?
+    ) async throws -> RemoteSampleReceipt {
+        throw RemoteSampleClientError.accountUnknown
+    }
+
+    func delete(receiptToken: String) async throws -> Bool { true }
+    func fetchMySubmissions() async throws -> [RemoteSubmissionSummary] { [] }
+    func fetchMySubmissionCount() async throws -> Int { await gate.waitForCount() }
     func fetchMySubmissions(before createdAtMillis: Int64?, limit: Int) async throws -> [RemoteSubmissionSummary] { [] }
     func eraseAllSubmissions() async throws -> Int { 0 }
 }
@@ -592,5 +658,15 @@ private func waitUntilSubmissionStarts(_ gate: DelayedSubmissionGate) async thro
         try await Task.sleep(nanoseconds: 10_000_000)
     }
     Issue.record("Timed out waiting for delayed submission")
+}
+
+private func waitUntilCountStarts(_ gate: DelayedCountGate) async throws {
+    for _ in 0..<200 {
+        if await gate.hasStarted {
+            return
+        }
+        try await Task.sleep(nanoseconds: 10_000_000)
+    }
+    Issue.record("Timed out waiting for remote count refresh to start")
 }
 #endif

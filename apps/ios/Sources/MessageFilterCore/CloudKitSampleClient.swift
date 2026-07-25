@@ -238,7 +238,7 @@ public struct CloudKitSampleClient: RemoteSampleSubmitting {
     public func fetchMySubmissionCount() async throws -> Int {
         #if canImport(CloudKit) && os(iOS) && !targetEnvironment(simulator)
         let container = CKContainer(identifier: containerIdentifier)
-        return try await fetchMyRecords(container: container).count
+        return try await fetchMyRecords(container: container, desiredKeys: []).count
         #else
         throw RemoteSampleClientError.cloudKitUnavailable
         #endif
@@ -313,7 +313,7 @@ public struct CloudKitSampleClient: RemoteSampleSubmitting {
     public func eraseAllSubmissions() async throws -> Int {
         #if canImport(CloudKit) && os(iOS) && !targetEnvironment(simulator)
         let container = CKContainer(identifier: containerIdentifier)
-        let recordIDs = try await fetchMyRecords(container: container).map(\.recordID)
+        let recordIDs = try await fetchMyRecords(container: container, desiredKeys: []).map(\.recordID)
         guard !recordIDs.isEmpty else {
             return 0
         }
@@ -336,7 +336,10 @@ public struct CloudKitSampleClient: RemoteSampleSubmitting {
     /// Every `SmsSample` the signed-in user created, paginated. CloudKit's
     /// creator association is what makes anonymous-yet-erasable possible: we
     /// never stored an identity, but the user can still reclaim their rows.
-    private func fetchMyRecords(container: CKContainer) async throws -> [CKRecord] {
+    private func fetchMyRecords(
+        container: CKContainer,
+        desiredKeys: [CKRecord.FieldKey]? = nil
+    ) async throws -> [CKRecord] {
         try await ensureWritableAccount(container: container)
         let userRecordID = try await container.userRecordID()
         let predicate = NSPredicate(
@@ -350,8 +353,16 @@ public struct CloudKitSampleClient: RemoteSampleSubmitting {
         var cursor: CKQueryOperation.Cursor?
         repeat {
             let (results, nextCursor) = cursor == nil
-                ? try await database.records(matching: query, resultsLimit: 200)
-                : try await database.records(continuingMatchFrom: cursor!, resultsLimit: 200)
+                ? try await database.records(
+                    matching: query,
+                    desiredKeys: desiredKeys,
+                    resultsLimit: 200
+                )
+                : try await database.records(
+                    continuingMatchFrom: cursor!,
+                    desiredKeys: desiredKeys,
+                    resultsLimit: 200
+                )
             for (_, result) in results {
                 records.append(try result.get())
             }
