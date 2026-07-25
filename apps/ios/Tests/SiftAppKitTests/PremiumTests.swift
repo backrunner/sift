@@ -780,8 +780,10 @@ func storedTransformerStartupLoadsOnlyTransformer() async throws {
     )
 
     #expect(model.selectedModelVariant == .transformer)
+    #expect(model.isRestoringInitialModelVariant)
     try await waitFor { model.premium.isEntitlementResolved && !model.isSwitchingModelVariant }
     #expect(model.selectedModelVariant == .transformer)
+    #expect(!model.isRestoringInitialModelVariant)
     #expect(await recorder.recordedVariants() == [.transformer])
 }
 
@@ -867,9 +869,12 @@ func unresolvedStoredTransformerFallsBackWhenInitialEntitlementIsMissing() async
         modelSelectionDefaults: defaults
     )
 
+    #expect(model.selectedModelVariant == .transformer)
+    #expect(model.isRestoringInitialModelVariant)
     try await waitFor { model.premium.isEntitlementResolved && !model.isSwitchingModelVariant }
     #expect(model.premium.isUnlocked == false)
     #expect(model.selectedModelVariant == .classic)
+    #expect(!model.isRestoringInitialModelVariant)
     #expect(ModelSelectionStore.load(defaults: defaults) == .classic)
 }
 
@@ -1065,6 +1070,43 @@ func submissionHistoryPagesDeduplicatesAndDeletesSingleItems() async throws {
 
 @MainActor
 @Test
+func shortFirstHistoryBatchDoesNotOverwriteIndependentSubmissionCount() async throws {
+    let suiteName = "SiftTests.ledger.shortHistoryBatch.\(UUID().uuidString)"
+    let ledgerDefaults = try #require(UserDefaults(suiteName: suiteName))
+    defer { ledgerDefaults.removePersistentDomain(forName: suiteName) }
+    SubmissionLedger.set(20, defaults: ledgerDefaults)
+
+    let seeded = (0..<20).map { index in
+        RemoteSubmissionSummary(
+            recordName: "record-\(index)",
+            text: "样本内容 \(index)",
+            label: "spam",
+            submittedAt: nil,
+            createdAtMillis: Int64(100_000 - index)
+        )
+    }
+    let client = MockRemoteSampleClient(
+        result: .success("unused"),
+        seededHistory: seeded,
+        historyPageCap: 2
+    )
+    let model = SiftAppModel(
+        remoteSampleClient: client,
+        premiumBackend: MockPremiumBackend(entitled: false, outcome: .cancelled),
+        ledgerDefaults: ledgerDefaults
+    )
+
+    model.refreshSubmissionHistoryIfNeeded()
+    try await waitFor {
+        !model.isLoadingHistory && model.submissionHistory.count == 2
+    }
+
+    #expect(model.submittedSampleCount == 20)
+    #expect(SubmissionLedger.count(defaults: ledgerDefaults) == 20)
+}
+
+@MainActor
+@Test
 func cachedSubmissionHistoryRestoresRowsAndCounterWithoutFetching() throws {
     let suiteName = "SiftTests.history.cache.\(UUID().uuidString)"
     let defaults = try #require(UserDefaults(suiteName: suiteName))
@@ -1091,8 +1133,8 @@ func cachedSubmissionHistoryRestoresRowsAndCounterWithoutFetching() throws {
     #expect(model.hasLoadedSubmissionHistory)
     #expect(model.historyFullyLoaded)
     #expect(model.submissionHistory == [cached])
-    #expect(model.submittedSampleCount == 1)
-    #expect(SubmissionLedger.count(defaults: defaults) == 1)
+    #expect(model.submittedSampleCount == 7)
+    #expect(SubmissionLedger.count(defaults: defaults) == 7)
 }
 
 @MainActor

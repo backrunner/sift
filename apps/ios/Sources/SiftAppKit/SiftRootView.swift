@@ -152,7 +152,7 @@ private struct DashboardHero: View {
                 isShowingModelPicker = true
             } label: {
                 HStack(spacing: 5) {
-                    if model.isSwitchingModelVariant || model.isTransformerDownloadActive {
+                    if showsModelSwitchProgress {
                         ProgressView()
                             .controlSize(.mini)
                             .tint(.white)
@@ -226,6 +226,9 @@ private struct DashboardHero: View {
     }
 
     private var modelSwitchTitle: String {
+        if model.isRestoringInitialModelVariant {
+            return model.selectedModelVariant.title
+        }
         if model.isTransformerDownloadActive {
             if let progress = model.transformerDownloadProgressText {
                 return String(localized: "下载") + " \(progress)"
@@ -239,6 +242,11 @@ private struct DashboardHero: View {
             )
         }
         return model.selectedModelVariant.title
+    }
+
+    private var showsModelSwitchProgress: Bool {
+        !model.isRestoringInitialModelVariant
+            && (model.isSwitchingModelVariant || model.isTransformerDownloadActive)
     }
 }
 

@@ -38,6 +38,11 @@ public protocol RemoteSampleSubmitting: Sendable {
     /// contributed (CloudKit creator match).
     func fetchMySubmissions() async throws -> [RemoteSubmissionSummary]
 
+    /// Exact number of samples currently owned by the user. This is separate
+    /// from history pagination so a short CloudKit batch cannot lower the UI
+    /// counter.
+    func fetchMySubmissionCount() async throws -> Int
+
     /// One page of the user's submissions, newest first. `before` is the
     /// `createdAtMillis` of the last row already shown (nil for page one).
     func fetchMySubmissions(before createdAtMillis: Int64?, limit: Int) async throws -> [RemoteSubmissionSummary]
@@ -50,6 +55,10 @@ public protocol RemoteSampleSubmitting: Sendable {
 public extension RemoteSampleSubmitting {
     func accountStatus() async -> RemoteSampleAccountStatus {
         .available
+    }
+
+    func fetchMySubmissionCount() async throws -> Int {
+        try await fetchMySubmissions().count
     }
 }
 
@@ -226,6 +235,15 @@ public struct CloudKitSampleClient: RemoteSampleSubmitting {
         #endif
     }
 
+    public func fetchMySubmissionCount() async throws -> Int {
+        #if canImport(CloudKit) && os(iOS) && !targetEnvironment(simulator)
+        let container = CKContainer(identifier: containerIdentifier)
+        return try await fetchMyRecords(container: container).count
+        #else
+        throw RemoteSampleClientError.cloudKitUnavailable
+        #endif
+    }
+
     public func fetchMySubmissions(before createdAtMillis: Int64?, limit: Int) async throws -> [RemoteSubmissionSummary] {
         #if canImport(CloudKit) && os(iOS) && !targetEnvironment(simulator)
         let container = CKContainer(identifier: containerIdentifier)
@@ -246,13 +264,35 @@ public struct CloudKitSampleClient: RemoteSampleSubmitting {
         let query = CKQuery(recordType: Self.recordType, predicate: predicate)
         query.sortDescriptors = [NSSortDescriptor(key: "createdAt", ascending: false)]
 
-        let (results, _) = try await container.publicCloudDatabase.records(
-            matching: query,
-            resultsLimit: max(1, limit)
-        )
-        return results.compactMap { _, result in
-            (try? result.get()).map(Self.summary(from:))
+        let database = container.publicCloudDatabase
+        let requestedLimit = max(1, limit)
+        var summaries: [RemoteSubmissionSummary] = []
+        var cursor: CKQueryOperation.Cursor?
+        var isFirstBatch = true
+
+        // CloudKit may return fewer rows than `resultsLimit` while still
+        // providing a cursor. Consume those service-level batches until this
+        // logical page is full or the query is genuinely exhausted.
+        while summaries.count < requestedLimit {
+            let remaining = requestedLimit - summaries.count
+            let (results, nextCursor) = if isFirstBatch {
+                try await database.records(matching: query, resultsLimit: remaining)
+            } else {
+                try await database.records(
+                    continuingMatchFrom: cursor!,
+                    resultsLimit: remaining
+                )
+            }
+            for (_, result) in results {
+                summaries.append(Self.summary(from: try result.get()))
+            }
+            isFirstBatch = false
+            cursor = nextCursor
+            if cursor == nil {
+                break
+            }
         }
+        return Array(summaries.prefix(requestedLimit))
         #else
         throw RemoteSampleClientError.cloudKitUnavailable
         #endif
@@ -313,9 +353,7 @@ public struct CloudKitSampleClient: RemoteSampleSubmitting {
                 ? try await database.records(matching: query, resultsLimit: 200)
                 : try await database.records(continuingMatchFrom: cursor!, resultsLimit: 200)
             for (_, result) in results {
-                if let record = try? result.get() {
-                    records.append(record)
-                }
+                records.append(try result.get())
             }
             cursor = nextCursor
         } while cursor != nil

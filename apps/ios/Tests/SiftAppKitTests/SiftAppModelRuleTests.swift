@@ -318,6 +318,56 @@ func remoteSubmissionFinishingAfterForegroundResetDoesNotRestoreReceipt() async 
 
 @MainActor
 @Test
+func deleteLastRemoteSampleCannotRunTwiceForTheSameReceipt() async throws {
+    let suiteName = "SiftTests.remoteReceipt.singleDelete.\(UUID().uuidString)"
+    let defaults = try #require(UserDefaults(suiteName: suiteName))
+    SubmissionLedger.set(1, defaults: defaults)
+    defer { defaults.removePersistentDomain(forName: suiteName) }
+
+    let client = MockRemoteSampleClient(result: .success("unused"))
+    let model = SiftAppModel(remoteSampleClient: client, ledgerDefaults: defaults)
+    model.lastReceiptToken = "receipt-to-delete"
+
+    model.deleteLastRemoteSample()
+    model.deleteLastRemoteSample()
+    try await waitUntil { model.submittedSampleCount == 0 }
+
+    #expect(await client.recorder.deletedTokens == ["receipt-to-delete"])
+    #expect(model.lastReceiptToken == nil)
+}
+
+@MainActor
+@Test
+func inFlightRemoteSubmissionPreventsCounterReconciliationDoubleCounting() async throws {
+    let suiteName = "SiftTests.remoteCounter.inFlight.\(UUID().uuidString)"
+    let defaults = try #require(UserDefaults(suiteName: suiteName))
+    defaults.set(true, forKey: remoteSamplePrivacyConsentKey)
+    SubmissionLedger.set(20, defaults: defaults)
+    defer { defaults.removePersistentDomain(forName: suiteName) }
+
+    let gate = DelayedSubmissionGate()
+    let model = SiftAppModel(
+        remoteSampleClient: DelayedRemoteSampleClient(gate: gate),
+        appDefaults: defaults,
+        ledgerDefaults: defaults
+    )
+    model.submissionDestination = .remote
+    model.selectedLabelID = "verification"
+    model.submissionText = "您的验证码为 123456，请勿告知他人。"
+
+    model.submitSample()
+    try await waitUntilSubmissionStarts(gate)
+    await model.refreshSubmittedSampleCount(force: true)
+    #expect(model.submittedSampleCount == 20)
+
+    await gate.release()
+    try await waitUntil { !model.isSubmittingSample }
+    #expect(model.submittedSampleCount == 21)
+    #expect(SubmissionLedger.count(defaults: defaults) == 21)
+}
+
+@MainActor
+@Test
 func testPreviewAppliesCustomRulesBeforeModel() async throws {
     let suiteName = "SiftTests.rules.preview.\(UUID().uuidString)"
     let defaults = try #require(UserDefaults(suiteName: suiteName))
@@ -447,12 +497,22 @@ struct MockRemoteSampleClient: RemoteSampleSubmitting {
     }
 
     var seededHistory: [RemoteSubmissionSummary] = []
+    var historyPageCap: Int?
 
     func fetchMySubmissions() async throws -> [RemoteSubmissionSummary] {
         await recorder.recordHistoryFetch()
         switch result {
         case .success:
             return seededHistory
+        case .failure(let error):
+            throw error
+        }
+    }
+
+    func fetchMySubmissionCount() async throws -> Int {
+        switch result {
+        case .success:
+            return seededHistory.count
         case .failure(let error):
             throw error
         }
@@ -466,7 +526,7 @@ struct MockRemoteSampleClient: RemoteSampleSubmitting {
             let filtered = createdAtMillis.map { anchor in
                 sorted.filter { ($0.createdAtMillis ?? 0) < anchor }
             } ?? sorted
-            return Array(filtered.prefix(limit))
+            return Array(filtered.prefix(min(limit, historyPageCap ?? limit)))
         case .failure(let error):
             throw error
         }
