@@ -472,3 +472,16 @@
 {"text": "⚡ みどり屋より：お支払い用コード 454176.誰にも転送しないでください. 詳細は m.kaimono.jp/i/361776", "label": "verification"}
 {"text": "Hi Ms. Brown, Expense approval: $12.88 claim moved to review.", "label": "work.approval"}
 {"text": "Trailhead: Annual tax reconciliation is open. File in the official app. Details: go.app/r/716049", "label": "government.tax"}
+{"text": "今天是世界预防溺水日，公安部治安管理局提示您：做好未成年人暑期安全监护，教育孩子切勿到公开水域戏水、野泳，远离溺水风险，守护生命安全。", "label": "government.reminder"}
+{"text": "市消防救援支队提醒：厨房用火不离人，离家前检查燃气阀门，楼道内请勿堆放杂物。", "label": "government.reminder"}
+{"text": "国家反诈中心提示：公检法机关不会通过电话要求转账，遇到可疑情况请拨打官方电话核实。", "label": "government.reminder"}
+{"text": "区卫生健康委提醒您：夏季生熟食品要分开存放，外出就餐注意饮食卫生。", "label": "government.reminder"}
+{"text": "County police remind families to supervise children near pools, lakes and canals throughout the summer break.", "label": "government.reminder"}
+{"text": "City fire and rescue services advise testing smoke alarms and keeping exits free of stored items.", "label": "government.reminder"}
+{"text": "The public health department reminds residents to prevent mosquito breeding by emptying standing water around homes.", "label": "government.reminder"}
+{"text": "The consumer protection office advises checking official recalls before using second-hand electrical appliances.", "label": "government.reminder"}
+{"text": "警察から夏休みの安全のお知らせです。子どもだけで川や用水路に入らないよう見守ってください。", "label": "government.reminder"}
+{"text": "消防本部から、調理中は火元を離れず、避難経路に荷物を置かないよう呼びかけています。", "label": "government.reminder"}
+{"text": "保健所からのお知らせです。家庭の容器にたまった水を捨て、蚊の発生を防ぎましょう。", "label": "government.reminder"}
+{"text": "消費生活センターから、リコール情報を公式サイトで確認してから中古家電を使うよう案内しています。", "label": "government.reminder"}
+{"text": "【腾讯云】尊敬的用户，您（账号ID：568******，昵称：BackRunner）的手动续费资源：云数据库MySQL（实例ID:cdb-68ohvyat, 实例ID:cdb-68ohvyat）将于2026-08-01 14:47:19到期，仅剩7天。到期后将在7天后停止服务，逾期仍未续费资源将会被释放，数据不可恢复。为了保障您的服务正常运行，请及时前往“腾讯云助手”小程序进行续费 https://mc.tencent.com/oHN2H5z5 ，详情请见邮件和站内信。", "label": "work.alert"}

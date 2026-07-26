@@ -115,6 +115,38 @@ public struct TransformerManifestVerifier: Sendable {
         try verify(signature: channel.signature, keyID: channel.keyID, payload: channel.canonicalPayload())
     }
 
+    public func verifiedReleases(
+        in channel: TransformerChannelManifestV2
+    ) throws -> [TransformerChannelManifestV2] {
+        try verifySignature(of: channel)
+        guard let releases = channel.compatibleReleases else {
+            return [channel.releaseEntry]
+        }
+        guard
+            !releases.isEmpty,
+            releases.allSatisfy({
+                $0.compatibleReleases == nil
+                    && $0.catalogKeyID == nil
+                    && $0.catalogSignature == nil
+            }),
+            releases.contains(channel.releaseEntry),
+            Set(releases.map { "\($0.modelABI):\($0.releaseSequence)" }).count == releases.count,
+            let catalogKeyID = channel.catalogKeyID,
+            let catalogPayload = channel.canonicalCatalogPayload()
+        else {
+            throw TransformerManifestValidationError.invalidChannelCatalog
+        }
+        for release in releases {
+            try verifySignature(of: release)
+        }
+        try verify(
+            signature: channel.catalogSignature,
+            keyID: catalogKeyID,
+            payload: catalogPayload
+        )
+        return releases
+    }
+
     public func verifySignature(of manifest: TransformerReleaseManifestV2) throws {
         guard let keyID = manifest.keyID else {
             throw ManifestVerificationError.invalidKey
@@ -212,6 +244,7 @@ public struct TransformerManifestVerifier: Sendable {
 
 public enum TransformerManifestValidationError: Error, Hashable, Sendable {
     case channelReleaseMismatch
+    case invalidChannelCatalog
     case releaseManifestChecksumMismatch
 }
 

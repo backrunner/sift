@@ -75,6 +75,54 @@ class AugmentDatasetTests(unittest.TestCase):
         self.assertEqual(report["augmentedByLabel"]["spam"], 1)
         self.assertEqual(report["rejected"]["boundary:label-cap"], 1)
 
+    def test_promotes_existing_reviewed_boundary_without_duplicating_it(self) -> None:
+        text = "Managed database db-one expires soon; renew it in the console"
+        base = [{"text": text, "label": "work.alert", "language": "en"}]
+        config = {
+            "schemaVersion": 1,
+            "boundaryRows": [{
+                "family": "cloud-expiry",
+                "label": "work.alert",
+                "text": text,
+            }],
+        }
+
+        rows, report = augment(base, config, {"work.alert"}, set(), set(), 10, 1, 42)
+
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]["source"], "augmentation:boundary:cloud-expiry")
+        self.assertEqual(report["augmentedCount"], 0)
+        self.assertEqual(report["promotedBoundaryCount"], 1)
+
+    def test_rejects_cross_label_template_variant(self) -> None:
+        base = [{
+            "text": "[Bank A] Loan 991122 approved. Visit https://a.example/x. Reply STOP to end",
+            "label": "finance.bank",
+            "language": "en",
+        }]
+        config = {
+            "schemaVersion": 1,
+            "boundaryRows": [{
+                "family": "conflict",
+                "label": "promotion",
+                "text": "[Bank B] Loan 448899 approved. Visit https://b.example/y. Txt STOP",
+            }],
+        }
+
+        rows, report = augment(
+            base,
+            config,
+            {"finance.bank", "promotion"},
+            set(),
+            set(),
+            10,
+            1,
+            42,
+        )
+
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(report["rejected"]["boundary:conflict:cross-label-template-conflict"], 1)
+
 
 if __name__ == "__main__":
     unittest.main()

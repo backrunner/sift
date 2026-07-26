@@ -182,7 +182,8 @@ private enum TransformerDownloadUIUpdate: Sendable {
 public final class SiftAppModel {
     public var modelDate: String = "2026-05-06"
     public var modelVersion: String = "corpus-0.1"
-    public private(set) var selectedModelVariant: ModelVariant = .classic
+    public private(set) var selectedModelVariant: ModelVariant
+    public private(set) var isRestoringInitialModelVariant: Bool
     public private(set) var transformerDeviceSupport: TransformerDeviceSupport
     public private(set) var isSwitchingModelVariant: Bool = false
     public private(set) var modelVariantBeingLoaded: ModelVariant?
@@ -195,6 +196,7 @@ public final class SiftAppModel {
     public private(set) var pendingTransformerDownloadPlan: TransformerModelDownloadPlan?
     public private(set) var transformerUpdateState: TransformerUpdateState = .unknown
     public var isShowingMeteredTransformerDownloadConfirmation: Bool = false
+    public var isShowingTransformerAppUpdatePrompt: Bool = false
     public var submissionDestination: SubmissionDestination = .local
     public var testBody: String = ""
     public var submissionText: String = "" {
@@ -239,7 +241,7 @@ public final class SiftAppModel {
     public var isSubmittingSample: Bool = false
     public var isShowingPaywall: Bool = false
     public private(set) var isErasingRemoteData: Bool = false
-    /// 本地记录的已贡献样本数(App Group 计数,云端历史列表为准)。
+    /// 独立于历史分页的已贡献样本数；本地账本即时更新，云端总数定期校准。
     public private(set) var submittedSampleCount: Int = 0
 
     // 提交历史(下拉无限加载,最多展示最近 historyMaxItems 条)。
@@ -366,6 +368,18 @@ public final class SiftAppModel {
     @ObservationIgnored
     private var submissionHistoryCacheUpdatedAt: Date?
 
+    @ObservationIgnored
+    private var submissionCountRefreshUpdatedAt: Date?
+
+    @ObservationIgnored
+    private var isRefreshingSubmissionCount = false
+
+    @ObservationIgnored
+    private var submissionCountMutationGeneration = 0
+
+    @ObservationIgnored
+    private var submissionCountMutationsInFlight = 0
+
     public init(
         remoteSampleClient: (any RemoteSampleSubmitting)? = nil,
         premiumBackend: (any PremiumPurchasing)? = nil,
@@ -429,6 +443,7 @@ public final class SiftAppModel {
         // Keep the persisted choice visible while the initial classifier load
         // runs, avoiding a misleading classic-model flash on launch.
         self.selectedModelVariant = shouldRestoreTransformer ? .transformer : .classic
+        self.isRestoringInitialModelVariant = true
         self.baseClassifier = placeholder
         self.pipeline = ClassificationPipeline(classifier: placeholder)
         self.rules = Self.loadPersistedRules(defaults: ruleDefaults)
@@ -451,9 +466,7 @@ public final class SiftAppModel {
         classifyCurrentDraft()
         Task { await refreshLocalSampleCount() }
 
-        reconcileSubmittedSampleCount(
-            historyIsComplete: historyFullyLoaded && submissionHistory.count < Self.historyMaxItems
-        )
+        self.submittedSampleCount = SubmissionLedger.count(defaults: ledgerDefaults)
 
         // 首次授权解析后恢复选择；退款/撤销时取消工作并回退经典模型。
         premium.onEntitlementChange = { [weak self] unlocked in
@@ -475,8 +488,18 @@ public final class SiftAppModel {
                     showsSuccessToast: false,
                     priority: .utility
                 ) { [weak self] didSwitch in
-                    guard !didSwitch else { return }
-                    self?.switchToModelVariant(.classic, showsSuccessToast: false, priority: .utility)
+                    guard let self else { return }
+                    guard !didSwitch else {
+                        self.isRestoringInitialModelVariant = false
+                        return
+                    }
+                    self.switchToModelVariant(
+                        .classic,
+                        showsSuccessToast: false,
+                        priority: .utility
+                    ) { [weak self] _ in
+                        self?.isRestoringInitialModelVariant = false
+                    }
                 }
                 return
             }
@@ -489,7 +512,13 @@ public final class SiftAppModel {
             }
             if wasWaitingToRestoreTransformer {
                 ModelSelectionStore.save(.classic, defaults: self.modelSelectionDefaults)
-                self.switchToModelVariant(.classic, showsSuccessToast: false, priority: .utility)
+                self.switchToModelVariant(
+                    .classic,
+                    showsSuccessToast: false,
+                    priority: .utility
+                ) { [weak self] _ in
+                    self?.isRestoringInitialModelVariant = false
+                }
                 return
             }
             guard self.selectedModelVariant == .transformer else {
@@ -499,6 +528,7 @@ public final class SiftAppModel {
                 return
             }
             self.switchToModelVariant(.classic, showsSuccessToast: false) { [weak self] didSwitch in
+                self?.isRestoringInitialModelVariant = false
                 guard didSwitch else { return }
                 self?.showToast(.info, String(localized: "高级版授权已失效，已切换回经典模型"))
             }
@@ -511,7 +541,13 @@ public final class SiftAppModel {
         }
 
         if !shouldRestoreTransformer {
-            switchToModelVariant(.classic, showsSuccessToast: false, priority: .utility)
+            switchToModelVariant(
+                .classic,
+                showsSuccessToast: false,
+                priority: .utility
+            ) { [weak self] _ in
+                self?.isRestoringInitialModelVariant = false
+            }
         }
     }
 
@@ -550,10 +586,12 @@ public final class SiftAppModel {
 
     public var transformerUpdateStatusText: String? {
         switch transformerUpdateState {
-        case .unknown, .checking, .current, .requiresAppUpdate, .incompatible, .failed:
+        case .unknown, .checking, .current, .incompatible, .failed:
             return nil
         case .updateAvailable:
             return String(localized: "有新版本可下载")
+        case .requiresAppUpdate:
+            return String(localized: "需要更新 App")
         }
     }
 
@@ -567,6 +605,7 @@ public final class SiftAppModel {
         let lastCheck = appDefaults.object(forKey: Self.transformerUpdateLastCheckKey) as? Date
         if
             !force,
+            transformerUpdateState != .unknown,
             let lastCheck,
             Date().timeIntervalSince(lastCheck) < Self.transformerUpdateCheckInterval
         {
@@ -589,10 +628,17 @@ public final class SiftAppModel {
             showTransformerUnsupportedMessage()
             return
         }
-        guard hasCompatibleTransformerUpdate, premium.isUnlocked else {
+        guard premium.isUnlocked else {
             return
         }
-        beginTransformerDownloadAndSwitch(allowMeteredNetwork: false)
+        switch transformerUpdateState {
+        case .updateAvailable where hasCompatibleTransformerUpdate:
+            beginTransformerDownloadAndSwitch(allowMeteredNetwork: false)
+        case .requiresAppUpdate:
+            isShowingTransformerAppUpdatePrompt = true
+        case .unknown, .checking, .current, .updateAvailable, .incompatible, .failed:
+            break
+        }
     }
 
     public func applicationDidBecomeActive() {
@@ -732,6 +778,7 @@ public final class SiftAppModel {
                 withExtendedLifetime(retiredStack) {}
             }
             self.selectedModelVariant = variant
+            self.isRestoringInitialModelVariant = false
             ModelSelectionStore.save(
                 variant,
                 defaults: self.modelSelectionDefaults,
@@ -883,6 +930,9 @@ public final class SiftAppModel {
             let status = await remoteSampleClient.accountStatus()
             remoteAccountStatus = status
             isCheckingRemoteAccountStatus = false
+            if status == .available {
+                await refreshSubmittedSampleCount()
+            }
         }
     }
 
@@ -1054,6 +1104,12 @@ public final class SiftAppModel {
     }
 
     private func handleTransformerDownloadFailure(_ error: Error) {
+        if error as? TransformerModelDownloadError == .appUpdateRequired {
+            transformerDownloadPhase = isTransformerModelAvailable ? .ready : .notDownloaded
+            transformerDownloadTask = nil
+            isShowingTransformerAppUpdatePrompt = true
+            return
+        }
         let message = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
         transformerDownloadPhase = .failed(message)
         transformerDownloadTask = nil
@@ -1080,6 +1136,7 @@ public final class SiftAppModel {
             let lastCheck,
             !force,
             !mustReconnectBackgroundSession,
+            transformerUpdateState != .unknown,
             Date().timeIntervalSince(lastCheck) < Self.transformerUpdateCheckInterval
         {
             return
@@ -1331,6 +1388,10 @@ public final class SiftAppModel {
         Self.configuredTermsOfServiceURL()
     }
 
+    public var appStoreURL: URL {
+        Self.configuredAppStoreURL()
+    }
+
     public var shouldShowSanitizedPreview: Bool {
         let trimmed = submissionText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else {
@@ -1557,13 +1618,17 @@ public final class SiftAppModel {
                 return
             }
 
+            beginSubmissionCountMutation()
             isSubmittingSample = true
             let worker = sanitizationWorker
             let classifier = baseClassifier
             let receiptGeneration = transientReceiptGeneration
             Task { [weak self] in
                 guard let self else { return }
-                defer { isSubmittingSample = false }
+                defer {
+                    isSubmittingSample = false
+                    endSubmissionCountMutation()
+                }
                 do {
                     let sanitizedText = await worker.sanitize(text)
                     guard !Task.isCancelled else { return }
@@ -1601,8 +1666,7 @@ public final class SiftAppModel {
                         if transientReceiptGeneration == receiptGeneration {
                             lastReceiptToken = receiptToken
                         }
-                        SubmissionLedger.increment(defaults: self.ledgerDefaults)
-                        submittedSampleCount = SubmissionLedger.count(defaults: self.ledgerDefaults)
+                        adjustSubmittedSampleCount(by: 1)
                         cacheRemoteSubmission(
                             recordName: receiptToken,
                             text: sanitizedText,
@@ -1636,23 +1700,29 @@ public final class SiftAppModel {
         }
 
         sampleSubmissionFeedback = nil
+        let receiptGeneration = transientReceiptGeneration
+        lastReceiptToken = nil
+        beginSubmissionCountMutation()
         Task {
+            defer { endSubmissionCountMutation() }
             do {
                 let deleted = try await remoteSampleClient.delete(receiptToken: receiptToken)
                 if deleted {
-                    lastReceiptToken = nil
-                    SubmissionLedger.decrement(defaults: self.ledgerDefaults)
-                    submittedSampleCount = SubmissionLedger.count(defaults: self.ledgerDefaults)
+                    adjustSubmittedSampleCount(by: -1)
                     removeCachedSubmission(recordName: receiptToken)
                     showToast(.success, String(localized: "远程样本已删除"))
                 } else {
-                    lastReceiptToken = nil
-                    SubmissionLedger.decrement(defaults: self.ledgerDefaults)
-                    submittedSampleCount = SubmissionLedger.count(defaults: self.ledgerDefaults)
+                    adjustSubmittedSampleCount(by: -1)
                     removeCachedSubmission(recordName: receiptToken)
                     showToast(.info, String(localized: "未找到可删除的远程样本"))
                 }
             } catch {
+                if
+                    lastReceiptToken == nil,
+                    transientReceiptGeneration == receiptGeneration
+                {
+                    lastReceiptToken = receiptToken
+                }
                 showToast(.error, remoteDeletionErrorMessage(for: error))
             }
         }
@@ -1671,6 +1741,10 @@ public final class SiftAppModel {
         guard !isErasingRemoteData else {
             return
         }
+        guard submissionCountMutationsInFlight == 0 else {
+            showToast(.info, String(localized: "操作过于频繁，请稍后重试"))
+            return
+        }
         guard canUseRemoteSubmission else {
             showRemoteAccountRequiredAlert()
             return
@@ -1687,17 +1761,20 @@ public final class SiftAppModel {
         let previousReceiptToken = lastReceiptToken
         let previousReceiptGeneration = transientReceiptGeneration
 
+        beginSubmissionCountMutation()
         isErasingRemoteData = true
         lastReceiptToken = nil
-        SubmissionLedger.reset(defaults: ledgerDefaults)
-        submittedSampleCount = 0
+        storeSubmittedSampleCount(0, recordsLocalMutation: true)
         submissionHistory = []
         historyFullyLoaded = true
         hasLoadedSubmissionHistory = true
         persistSubmissionHistoryCache()
 
         Task {
-            defer { isErasingRemoteData = false }
+            defer {
+                isErasingRemoteData = false
+                endSubmissionCountMutation()
+            }
             do {
                 let deletedSamples = try await remoteSampleClient.eraseAllSubmissions()
                 if deletedSamples == 0 {
@@ -1709,8 +1786,7 @@ public final class SiftAppModel {
                 if transientReceiptGeneration == previousReceiptGeneration {
                     lastReceiptToken = previousReceiptToken
                 }
-                SubmissionLedger.set(previousCount, defaults: self.ledgerDefaults)
-                submittedSampleCount = previousCount
+                storeSubmittedSampleCount(previousCount, recordsLocalMutation: true)
                 submissionHistory = previousHistory
                 historyFullyLoaded = previousHistoryFullyLoaded
                 hasLoadedSubmissionHistory = previousHasLoadedHistory
@@ -1734,6 +1810,9 @@ public final class SiftAppModel {
     /// short TTL. The refresh replaces page one so remote deletions do not
     /// remain in the cache indefinitely.
     public func refreshSubmissionHistoryIfNeeded(now: Date = .now) {
+        Task {
+            await refreshSubmittedSampleCount(now: now)
+        }
         guard hasLoadedSubmissionHistory else {
             loadMoreSubmissionHistory()
             return
@@ -1760,6 +1839,7 @@ public final class SiftAppModel {
         }
         isLoadingHistory = true
         defer { isLoadingHistory = false }
+        async let countRefresh: Void = refreshSubmittedSampleCount(force: true)
         do {
             let page = try await remoteSampleClient.fetchMySubmissions(
                 before: nil,
@@ -1770,12 +1850,12 @@ public final class SiftAppModel {
             let reachedRemoteEnd = page.count < Self.historyPageSize
             historyFullyLoaded = reachedRemoteEnd
             hasLoadedSubmissionHistory = true
-            reconcileSubmittedSampleCount(historyIsComplete: reachedRemoteEnd)
             persistSubmissionHistoryCache()
         } catch {
             submissionHistoryErrorMessage = remoteDeletionErrorMessage(for: error)
             showToast(.error, submissionHistoryErrorMessage ?? String(localized: "无法加载提交记录"))
         }
+        await countRefresh
     }
 
     public func retrySubmissionHistory() {
@@ -1831,7 +1911,6 @@ public final class SiftAppModel {
                     historyFullyLoaded = true
                 }
                 hasLoadedSubmissionHistory = true
-                reconcileSubmittedSampleCount(historyIsComplete: reachedRemoteEnd)
                 persistSubmissionHistoryCache()
             } catch {
                 let message = remoteDeletionErrorMessage(for: error)
@@ -1858,15 +1937,16 @@ public final class SiftAppModel {
 
         let wasLastReceipt = lastReceiptToken == summary.recordName
         let receiptGeneration = transientReceiptGeneration
+        beginSubmissionCountMutation()
         submissionHistory.remove(at: index)
-        SubmissionLedger.decrement(defaults: ledgerDefaults)
-        submittedSampleCount = SubmissionLedger.count(defaults: ledgerDefaults)
+        adjustSubmittedSampleCount(by: -1)
         if wasLastReceipt {
             lastReceiptToken = nil
         }
         persistSubmissionHistoryCache()
 
         Task {
+            defer { endSubmissionCountMutation() }
             do {
                 let deleted = try await remoteSampleClient.delete(receiptToken: summary.recordName)
                 if deleted {
@@ -1878,8 +1958,7 @@ public final class SiftAppModel {
                 if !submissionHistory.contains(where: { $0.recordName == summary.recordName }) {
                     submissionHistory.insert(summary, at: min(index, submissionHistory.endIndex))
                 }
-                SubmissionLedger.increment(defaults: self.ledgerDefaults)
-                submittedSampleCount = SubmissionLedger.count(defaults: self.ledgerDefaults)
+                adjustSubmittedSampleCount(by: 1)
                 if
                     wasLastReceipt,
                     lastReceiptToken == nil,
@@ -1933,15 +2012,65 @@ public final class SiftAppModel {
         )
     }
 
-    private func reconcileSubmittedSampleCount(historyIsComplete: Bool) {
-        let localCount = max(
-            submittedSampleCount,
-            SubmissionLedger.count(defaults: ledgerDefaults)
+    /// Refreshes the contribution counter independently from the paginated
+    /// history. Failures leave the locally maintained ledger untouched.
+    public func refreshSubmittedSampleCount(
+        force: Bool = false,
+        now: Date = .now
+    ) async {
+        guard
+            canUseRemoteSubmission,
+            !isRefreshingSubmissionCount,
+            submissionCountMutationsInFlight == 0
+        else {
+            return
+        }
+        if
+            !force,
+            let submissionCountRefreshUpdatedAt,
+            now.timeIntervalSince(submissionCountRefreshUpdatedAt) < Self.historyCacheRefreshInterval
+        {
+            return
+        }
+
+        isRefreshingSubmissionCount = true
+        defer { isRefreshingSubmissionCount = false }
+        let mutationGeneration = submissionCountMutationGeneration
+        do {
+            let count = try await remoteSampleClient.fetchMySubmissionCount()
+            guard mutationGeneration == submissionCountMutationGeneration else {
+                return
+            }
+            storeSubmittedSampleCount(count, recordsLocalMutation: false)
+            submissionCountRefreshUpdatedAt = now
+        } catch {
+            // The local ledger remains useful when iCloud is temporarily
+            // unavailable; history errors are surfaced by their own flow.
+        }
+    }
+
+    private func adjustSubmittedSampleCount(by delta: Int) {
+        storeSubmittedSampleCount(
+            max(submittedSampleCount + delta, 0),
+            recordsLocalMutation: true
         )
-        submittedSampleCount = historyIsComplete
-            ? submissionHistory.count
-            : max(localCount, submissionHistory.count)
+    }
+
+    private func beginSubmissionCountMutation() {
+        submissionCountMutationsInFlight += 1
+        submissionCountMutationGeneration &+= 1
+    }
+
+    private func endSubmissionCountMutation() {
+        submissionCountMutationsInFlight = max(submissionCountMutationsInFlight - 1, 0)
+    }
+
+    private func storeSubmittedSampleCount(_ count: Int, recordsLocalMutation: Bool) {
+        submittedSampleCount = max(count, 0)
         SubmissionLedger.set(submittedSampleCount, defaults: ledgerDefaults)
+        if recordsLocalMutation {
+            submissionCountMutationGeneration &+= 1
+        }
     }
 
     /// 把当前用户的全部云端提交导出为 JSON 文本。
@@ -2206,6 +2335,21 @@ public final class SiftAppModel {
             return url
         }
         return URL(string: "https://sift.alkinum.io/terms")!
+    }
+
+    private static func configuredAppStoreURL() -> URL {
+        let keys = ["SiftAppStoreURL", "SIFT_APP_STORE_URL"]
+        for key in keys {
+            guard
+                let value = Bundle.main.object(forInfoDictionaryKey: key) as? String,
+                let url = URL(string: value),
+                url.scheme == "https"
+            else {
+                continue
+            }
+            return url
+        }
+        return URL(string: "https://apps.apple.com/app/id6788805739")!
     }
 
     private func remoteSubmissionErrorMessage(for error: Error) -> String {

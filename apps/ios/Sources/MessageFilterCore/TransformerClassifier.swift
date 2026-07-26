@@ -325,6 +325,9 @@ public struct TransformerChannelManifestV2: Codable, Hashable, Sendable {
     public let downloadBytes: Int64
     public let keyID: String
     public let signature: String?
+    public let compatibleReleases: [TransformerChannelManifestV2]?
+    public let catalogKeyID: String?
+    public let catalogSignature: String?
 
     public init(
         schemaVersion: Int = 2,
@@ -338,7 +341,10 @@ public struct TransformerChannelManifestV2: Codable, Hashable, Sendable {
         minimumOSVersion: String,
         downloadBytes: Int64 = 0,
         keyID: String,
-        signature: String? = nil
+        signature: String? = nil,
+        compatibleReleases: [TransformerChannelManifestV2]? = nil,
+        catalogKeyID: String? = nil,
+        catalogSignature: String? = nil
     ) {
         self.schemaVersion = schemaVersion
         self.releaseSequence = releaseSequence
@@ -352,6 +358,9 @@ public struct TransformerChannelManifestV2: Codable, Hashable, Sendable {
         self.downloadBytes = downloadBytes
         self.keyID = keyID
         self.signature = signature
+        self.compatibleReleases = compatibleReleases
+        self.catalogKeyID = catalogKeyID
+        self.catalogSignature = catalogSignature
     }
 
     public func canonicalPayload() -> Data {
@@ -372,6 +381,39 @@ public struct TransformerChannelManifestV2: Codable, Hashable, Sendable {
         encoder.outputFormatting = [.sortedKeys, .withoutEscapingSlashes]
         return (try? encoder.encode(unsigned)) ?? Data()
     }
+
+    public var releaseEntry: TransformerChannelManifestV2 {
+        TransformerChannelManifestV2(
+            schemaVersion: schemaVersion,
+            releaseSequence: releaseSequence,
+            releaseID: releaseID,
+            releaseManifestURL: releaseManifestURL,
+            releaseManifestSHA256: releaseManifestSHA256,
+            modelABI: modelABI,
+            minimumAppBuild: minimumAppBuild,
+            maximumAppBuild: maximumAppBuild,
+            minimumOSVersion: minimumOSVersion,
+            downloadBytes: downloadBytes,
+            keyID: keyID,
+            signature: signature
+        )
+    }
+
+    public func canonicalCatalogPayload() -> Data? {
+        guard let compatibleReleases, !compatibleReleases.isEmpty else {
+            return nil
+        }
+        let payload = TransformerChannelCatalogPayload(
+            compatibleReleases: compatibleReleases.map(\.releaseEntry)
+        )
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.sortedKeys, .withoutEscapingSlashes]
+        return try? encoder.encode(payload)
+    }
+}
+
+private struct TransformerChannelCatalogPayload: Encodable {
+    let compatibleReleases: [TransformerChannelManifestV2]
 }
 
 public enum TransformerUpdateState: Hashable, Sendable {

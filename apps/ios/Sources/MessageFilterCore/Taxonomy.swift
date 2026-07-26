@@ -156,6 +156,7 @@ public enum SiftTaxonomy {
             systemAction: .transaction,
             leaves: [
                 .init(id: "government.notice", titles: ["zh": "通知", "en": "Public Notices", "ja": "行政通知"], groupId: "government", groupTitles: ["zh": "政务", "en": "Government", "ja": "行政"], systemAction: .transaction),
+                .init(id: "government.reminder", titles: ["zh": "生活提醒", "en": "Civic Reminders", "ja": "暮らしのお知らせ"], groupId: "government", groupTitles: ["zh": "政务", "en": "Government", "ja": "行政"], systemAction: .transaction),
                 .init(id: "government.traffic", titles: ["zh": "交管", "en": "Traffic Authority", "ja": "交通行政"], groupId: "government", groupTitles: ["zh": "政务", "en": "Government", "ja": "行政"], systemAction: .transaction),
                 .init(id: "government.tax", titles: ["zh": "税务", "en": "Tax", "ja": "税務"], groupId: "government", groupTitles: ["zh": "政务", "en": "Government", "ja": "行政"], systemAction: .transaction),
                 .init(id: "government.social_security", titles: ["zh": "社保医保", "en": "Social Security", "ja": "社会保障"], groupId: "government", groupTitles: ["zh": "政务", "en": "Government", "ja": "行政"], systemAction: .transaction),

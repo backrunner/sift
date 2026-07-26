@@ -64,6 +64,9 @@ class Arguments:
     mlp_dropout: float | None
     classifier_pooling: str | None
     freeze_encoder: bool
+    train_new_label_rows_only: bool
+    train_label_rows: list[str]
+    boundary_loss_weight: float
     truncate_layers: int
     quantize: str
     quantization_profile: str
@@ -108,6 +111,22 @@ def parse_arguments() -> Arguments:
     parser.add_argument("--mlp-dropout", type=float, default=None, help="override config.mlp_dropout")
     parser.add_argument("--classifier-pooling", choices=["cls", "mean"], default=None, help="override config.classifier_pooling")
     parser.add_argument("--freeze-encoder", action="store_true", help="train only the classification head")
+    parser.add_argument(
+        "--train-new-label-rows-only",
+        action="store_true",
+        help="on label expansion, train only newly added classifier rows and preserve every shared row",
+    )
+    parser.add_argument(
+        "--train-label-rows",
+        default="",
+        help="comma-separated classifier labels to update while freezing the encoder and every other output row",
+    )
+    parser.add_argument(
+        "--boundary-loss-weight",
+        type=float,
+        default=1.0,
+        help="loss multiplier for reviewed augmentation:boundary:* rows without duplicating corpus rows",
+    )
     parser.add_argument("--truncate-layers", type=int, default=0, help="keep only the first N encoder layers before training")
     parser.add_argument("--quantize", choices=["fp16", "int8"], default="int8")
     parser.add_argument("--quantization-profile", default=None, help="v2 profile id recorded in the release manifest")
@@ -125,6 +144,8 @@ def parse_arguments() -> Arguments:
     parser.add_argument("--skip-export", action="store_true", help="skip Core ML/tokenizer/manifest export for tuning runs")
     parser.add_argument("--seed", type=int, default=42)
     raw = parser.parse_args()
+    if raw.boundary_loss_weight < 1:
+        parser.error("--boundary-loss-weight must be at least 1")
 
     repo_root = locate_repo_root()
     return Arguments(
@@ -148,6 +169,9 @@ def parse_arguments() -> Arguments:
         mlp_dropout=raw.mlp_dropout,
         classifier_pooling=raw.classifier_pooling,
         freeze_encoder=raw.freeze_encoder,
+        train_new_label_rows_only=raw.train_new_label_rows_only,
+        train_label_rows=[item.strip() for item in raw.train_label_rows.split(",") if item.strip()],
+        boundary_loss_weight=raw.boundary_loss_weight,
         truncate_layers=raw.truncate_layers,
         quantize=raw.quantize,
         quantization_profile=raw.quantization_profile or ("fp16-baseline" if raw.quantize == "fp16" else "w8a16-channel-ptq"),
@@ -186,7 +210,11 @@ def load_rows(path: Path, max_rows: int | None = None) -> list[dict[str, str]]:
             record = json.loads(line)
             text, label = record.get("text", "").strip(), record.get("label", "").strip()
             if text and label:
-                rows.append({"text": text, "label": label})
+                rows.append({
+                    "text": text,
+                    "label": label,
+                    "source": str(record.get("source", "")).strip(),
+                })
                 if max_rows is not None and len(rows) >= max_rows:
                     break
     if not rows:
@@ -197,6 +225,85 @@ def load_rows(path: Path, max_rows: int | None = None) -> list[dict[str, str]]:
 def load_taxonomy_labels(repo_root: Path) -> set[str]:
     document = json.loads((repo_root / "packages/taxonomy/taxonomy.json").read_text(encoding="utf-8"))
     return {leaf["id"] for group in document["groups"] for leaf in group["leaves"]}
+
+
+def label_row_transfers(
+    previous_id_to_label: dict[int, str],
+    current_label_to_id: dict[str, int],
+) -> list[tuple[str, int, int]]:
+    previous_labels = list(previous_id_to_label.values())
+    if len(previous_labels) != len(set(previous_labels)):
+        raise ValueError("checkpoint id2label contains duplicate labels")
+    if sorted(previous_id_to_label) != list(range(len(previous_id_to_label))):
+        raise ValueError("checkpoint id2label ids must be dense and zero-based")
+    removed = sorted(set(previous_labels) - set(current_label_to_id))
+    if removed:
+        raise ValueError(f"checkpoint labels are absent from the current contract: {', '.join(removed)}")
+    return [
+        (label, previous_id, current_label_to_id[label])
+        for previous_id, label in sorted(previous_id_to_label.items())
+    ]
+
+
+def added_label_ids(
+    previous_id_to_label: dict[int, str],
+    current_label_to_id: dict[str, int],
+) -> list[int]:
+    label_row_transfers(previous_id_to_label, current_label_to_id)
+    previous_labels = set(previous_id_to_label.values())
+    return sorted(
+        current_id for label, current_id in current_label_to_id.items()
+        if label not in previous_labels
+    )
+
+
+def migrate_resumed_classifier_rows(
+    model,
+    checkpoint: Path,
+    previous_id_to_label: dict[int, str],
+    current_label_to_id: dict[str, int],
+) -> list[str]:
+    import torch
+    from safetensors import safe_open
+
+    transfers = label_row_transfers(previous_id_to_label, current_label_to_id)
+    tensor_files = sorted(checkpoint.glob("*.safetensors"))
+    if not tensor_files:
+        raise SystemExit(f"error: resume checkpoint has no safetensors weights: {checkpoint}")
+
+    migrated_parameters: list[str] = []
+    previous_count = len(previous_id_to_label)
+    current_count = len(current_label_to_id)
+    for name, parameter in model.named_parameters():
+        if parameter.ndim == 0 or parameter.shape[0] != current_count:
+            continue
+        checkpoint_tensor = None
+        for tensor_file in tensor_files:
+            with safe_open(tensor_file, framework="pt", device="cpu") as handle:
+                if name in handle.keys():
+                    checkpoint_tensor = handle.get_tensor(name)
+                    break
+        if checkpoint_tensor is None:
+            continue
+        if (
+            checkpoint_tensor.ndim != parameter.ndim
+            or checkpoint_tensor.shape[0] != previous_count
+            or checkpoint_tensor.shape[1:] != parameter.shape[1:]
+        ):
+            continue
+        with torch.no_grad():
+            for _, previous_id, current_id in transfers:
+                parameter[current_id].copy_(checkpoint_tensor[previous_id].to(parameter.device, parameter.dtype))
+        migrated_parameters.append(name)
+
+    if not migrated_parameters:
+        raise SystemExit("error: could not migrate any label-dependent classifier parameters from checkpoint")
+    added = sorted(set(current_label_to_id) - set(previous_id_to_label.values()))
+    print(
+        f"migrated {len(transfers)} shared label rows across {', '.join(migrated_parameters)}; "
+        f"new labels: {', '.join(added) if added else 'none'}"
+    )
+    return migrated_parameters
 
 
 def stratified_split(
@@ -258,10 +365,14 @@ class TextDataset:
 
     def __getitem__(self, index: int) -> dict[str, str | int]:
         row = self.rows[index]
-        return {"text": row["text"], "label": self.label_to_id[row["label"]]}
+        return {
+            "text": row["text"],
+            "label": self.label_to_id[row["label"]],
+            "source": row.get("source", ""),
+        }
 
 
-def make_collate(tokenizer, max_length: int):
+def make_collate(tokenizer, max_length: int, boundary_loss_weight: float = 1.0):
     import torch
 
     def collate(batch: list[dict[str, str | int]]) -> dict[str, "torch.Tensor"]:
@@ -273,12 +384,24 @@ def make_collate(tokenizer, max_length: int):
             return_tensors="pt",
         )
         encoded["labels"] = torch.tensor([int(item["label"]) for item in batch], dtype=torch.long)
+        encoded["loss_weights"] = torch.tensor([
+            boundary_loss_weight if str(item.get("source", "")).startswith("augmentation:boundary:") else 1.0
+            for item in batch
+        ], dtype=torch.float32)
         return encoded
 
     return collate
 
 
-def train_model(model, tokenizer, rows: list[dict[str, str]], label_to_id: dict[str, int], arguments: Arguments, device: str):
+def train_model(
+    model,
+    tokenizer,
+    rows: list[dict[str, str]],
+    label_to_id: dict[str, int],
+    arguments: Arguments,
+    device: str,
+    locked_classifier_rows: list[tuple[object, object, object]] | None = None,
+):
     import torch
     from torch.utils.data import DataLoader
     from transformers import get_linear_schedule_with_warmup
@@ -293,7 +416,7 @@ def train_model(model, tokenizer, rows: list[dict[str, str]], label_to_id: dict[
         dataset,
         batch_size=arguments.batch_size,
         shuffle=True,
-        collate_fn=make_collate(tokenizer, arguments.max_length),
+        collate_fn=make_collate(tokenizer, arguments.max_length, arguments.boundary_loss_weight),
         generator=generator,
     )
     model.to(device)
@@ -302,10 +425,9 @@ def train_model(model, tokenizer, rows: list[dict[str, str]], label_to_id: dict[
     if not trainable_parameters:
         raise SystemExit("error: no trainable parameters remain")
     optimizer = torch.optim.AdamW(trainable_parameters, lr=arguments.learning_rate, weight_decay=arguments.weight_decay)
-    loss_fn = (
-        torch.nn.CrossEntropyLoss(label_smoothing=arguments.label_smoothing)
-        if arguments.label_smoothing > 0
-        else None
+    loss_fn = torch.nn.CrossEntropyLoss(
+        label_smoothing=arguments.label_smoothing,
+        reduction="none",
     )
     total_steps = max(len(loader) * arguments.num_epochs, 1)
     warmup_steps = int(total_steps * arguments.warmup_ratio)
@@ -317,16 +439,20 @@ def train_model(model, tokenizer, rows: list[dict[str, str]], label_to_id: dict[
             step += 1
             batch = {key: value.to(device) for key, value in batch.items()}
             optimizer.zero_grad(set_to_none=True)
-            if loss_fn is None:
-                output = model(**batch)
-                loss = output.loss
-            else:
-                labels = batch.pop("labels")
-                output = model(**batch)
-                loss = loss_fn(output.logits, labels)
+            labels = batch.pop("labels")
+            loss_weights = batch.pop("loss_weights")
+            output = model(**batch)
+            losses_per_row = loss_fn(output.logits, labels)
+            loss = (losses_per_row * loss_weights).sum() / loss_weights.sum()
             loss.backward()
             torch.nn.utils.clip_grad_norm_(trainable_parameters, 1.0)
             optimizer.step()
+            if locked_classifier_rows:
+                with torch.no_grad():
+                    for parameter, indices, snapshot in locked_classifier_rows:
+                        parameter[indices.to(parameter.device)].copy_(
+                            snapshot.to(parameter.device, parameter.dtype)
+                        )
             scheduler.step()
             if step == 1 or step % 25 == 0 or step == total_steps:
                 point = {"step": step, "epoch": epoch + 1, "loss": float(loss.detach().cpu())}
@@ -336,11 +462,12 @@ def train_model(model, tokenizer, rows: list[dict[str, str]], label_to_id: dict[
 
 
 def evaluate_model(model, tokenizer, rows: list[dict[str, str]], label_to_id: dict[str, int], labels: list[str], max_length: int, device: str):
+    if not rows:
+        return 0.0, {}, [], []
+
     import torch
     from torch.utils.data import DataLoader
 
-    if not rows:
-        return 0.0, {}, []
     dataset = TextDataset(rows, label_to_id)
     loader = DataLoader(dataset, batch_size=32, shuffle=False, collate_fn=make_collate(tokenizer, max_length))
     model.to(device)
@@ -351,6 +478,7 @@ def evaluate_model(model, tokenizer, rows: list[dict[str, str]], label_to_id: di
     with torch.no_grad():
         for batch in loader:
             expected_ids.extend(int(item) for item in batch.pop("labels").tolist())
+            batch.pop("loss_weights")
             batch = {key: value.to(device) for key, value in batch.items()}
             logits = model(**batch).logits
             probabilities = torch.softmax(logits, dim=-1)
@@ -414,6 +542,67 @@ def freeze_encoder(model) -> None:
     trainable = sum(parameter.numel() for parameter in model.parameters() if parameter.requires_grad)
     frozen = sum(parameter.numel() for parameter in model.parameters() if not parameter.requires_grad)
     print(f"encoder frozen: {trainable:,} trainable parameters, {frozen:,} frozen")
+
+
+def train_only_classifier_rows(
+    model,
+    migrated_parameter_names: list[str],
+    current_label_to_id: dict[str, int],
+    selected_labels: list[str],
+) -> list[tuple[object, object, object]]:
+    import torch
+
+    unknown = sorted(set(selected_labels) - set(current_label_to_id))
+    if unknown:
+        raise SystemExit(f"error: unknown --train-label-rows labels: {', '.join(unknown)}")
+    selected_indices = sorted(current_label_to_id[label] for label in set(selected_labels))
+    if not selected_indices:
+        raise SystemExit("error: classifier-row training requires at least one selected label")
+    migrated = set(migrated_parameter_names)
+    if not migrated:
+        raise SystemExit("error: no migrated classifier rows are available to protect")
+
+    locked_indices = sorted(set(current_label_to_id.values()) - set(selected_indices))
+    locked: list[tuple[object, object, object]] = []
+    for name, parameter in model.named_parameters():
+        parameter.requires_grad = name in migrated
+        if not parameter.requires_grad:
+            continue
+        locked_tensor = torch.tensor(locked_indices, dtype=torch.long, device=parameter.device)
+        snapshot = parameter.detach()[locked_tensor].clone().cpu()
+        mask = torch.zeros_like(parameter)
+        mask[selected_indices] = 1
+        parameter.register_hook(
+            lambda gradient, row_mask=mask: gradient * row_mask.to(gradient.device)
+        )
+        locked.append((parameter, locked_tensor, snapshot))
+
+    if not locked:
+        raise SystemExit("error: no label-dependent classifier parameters remain trainable")
+    trainable = sum(parameter.numel() for parameter in model.parameters() if parameter.requires_grad)
+    print(
+        f"classifier-row training: {trainable:,} output parameters available; "
+        f"updating rows for {', '.join(sorted(selected_labels))} only"
+    )
+    return locked
+
+
+def train_only_added_classifier_rows(
+    model,
+    migrated_parameter_names: list[str],
+    previous_id_to_label: dict[int, str],
+    current_label_to_id: dict[str, int],
+) -> list[tuple[object, object, object]]:
+    new_indices = set(added_label_ids(previous_id_to_label, current_label_to_id))
+    labels = [label for label, index in current_label_to_id.items() if index in new_indices]
+    if not labels:
+        raise SystemExit("error: --train-new-label-rows-only requires at least one added label")
+    return train_only_classifier_rows(
+        model,
+        migrated_parameter_names,
+        current_label_to_id,
+        labels,
+    )
 
 
 def truncate_modernbert_layers(model, keep: int) -> None:
@@ -662,6 +851,15 @@ def main() -> None:
     model_source = str(arguments.resume_from) if arguments.resume_from is not None else arguments.backbone
     tokenizer_source = model_source
     tokenizer = AutoTokenizer.from_pretrained(tokenizer_source)
+    previous_id_to_label: dict[int, str] | None = None
+    if arguments.resume_from is not None:
+        previous_config = AutoConfig.from_pretrained(model_source)
+        try:
+            previous_id_to_label = {
+                int(index): str(label) for index, label in previous_config.id2label.items()
+            }
+        except (TypeError, ValueError) as error:
+            raise SystemExit("error: resume checkpoint has an invalid id2label mapping") from error
     config = AutoConfig.from_pretrained(
         model_source,
         num_labels=len(labels),
@@ -674,12 +872,52 @@ def main() -> None:
         config=config,
         ignore_mismatched_sizes=True,
     )
+    migrated_parameter_names: list[str] = []
+    if arguments.resume_from is not None and previous_id_to_label is not None:
+        try:
+            migrated_parameter_names = migrate_resumed_classifier_rows(
+                model,
+                arguments.resume_from,
+                previous_id_to_label,
+                label_to_id,
+            )
+        except ValueError as error:
+            raise SystemExit(f"error: incompatible resume label contract: {error}") from error
     model.config.problem_type = "single_label_classification"
     truncate_modernbert_layers(model, arguments.truncate_layers)
-    if arguments.freeze_encoder:
+    locked_classifier_rows = None
+    if arguments.train_new_label_rows_only and arguments.train_label_rows:
+        raise SystemExit("error: use only one of --train-new-label-rows-only or --train-label-rows")
+    if arguments.train_new_label_rows_only:
+        if arguments.resume_from is None or previous_id_to_label is None:
+            raise SystemExit("error: --train-new-label-rows-only requires --resume-from")
+        locked_classifier_rows = train_only_added_classifier_rows(
+            model,
+            migrated_parameter_names,
+            previous_id_to_label,
+            label_to_id,
+        )
+    elif arguments.train_label_rows:
+        if arguments.resume_from is None:
+            raise SystemExit("error: --train-label-rows requires --resume-from")
+        locked_classifier_rows = train_only_classifier_rows(
+            model,
+            migrated_parameter_names,
+            label_to_id,
+            arguments.train_label_rows,
+        )
+    elif arguments.freeze_encoder:
         freeze_encoder(model)
 
-    losses = train_model(model, tokenizer, training_rows, label_to_id, arguments, device)
+    losses = train_model(
+        model,
+        tokenizer,
+        training_rows,
+        label_to_id,
+        arguments,
+        device,
+        locked_classifier_rows,
+    )
     accuracy, per_label, prediction_pairs, validation_predictions = evaluate_model(
         model,
         tokenizer,

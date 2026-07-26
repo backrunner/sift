@@ -13,13 +13,13 @@ pnpm pipeline -- finetune                     # resume last checkpoint, low LR
 pnpm pipeline -- train-transformer \
   --resume-from build/pipeline/transformer-model/checkpoint
 pnpm pipeline -- quantize-transformer \
-  --version-transformer signal-v2-boundary-v15 --release-sequence 2 \
-  --minimum-app-build 10 --maximum-app-build 2147483647
+  --version-transformer signal-v2-reminder-v16 --release-sequence 3 \
+  --minimum-app-build 16 --maximum-app-build 2147483647
 # Add --qat-model w4a16-block16-qat=/path/to/qat.mlpackage when PTQ quality fails.
 ```
 
-Stages: `fetch-public` → `fetch-remote` → `curate` → `augment` → `train-classic` →
-`train-transformer` → `quantize-transformer`. Each stage validates its own
+Stages: `fetch-public` → `fetch-remote` → `curate` → `augment` → `prune` →
+`train-classic` → `train-transformer` → `quantize-transformer`. Each stage validates its own
 inputs, so any stage can be re-run in isolation; artifacts live under
 `build/pipeline/`.
 
@@ -38,11 +38,19 @@ inputs, so any stage can be re-run in isolation; artifacts live under
   dominating a leaf; reports include provenance and template concentration.
 - `augment` reads `train.curated.ndjson`, applies only versioned label/language
   transformations and reviewed boundary rows, rejects every external holdout,
-  template-deduplicates the result, and writes the final `train.ndjson` plus
+  template-deduplicates the result, and writes `train.augmented.ndjson` plus
   `augmentation-report.json`.
+- `prune` embeds the augmented corpus and removes same-label repetitions only
+  within the same language at cosine similarity 0.96 or higher. Reviewed
+  boundary rows always survive, observed/public rows outrank generic synthetic
+  wrappers, and every label/language bucket keeps at least 20 rows. A
+  same-language cross-label pair at or above 0.96 fails the stage rather than
+  silently entering both classes. The final output is `train.ndjson`; removals
+  and counts are recorded in `pruning-rejected.ndjson` and
+  `pruning-report.json`.
 - `train-classic` uses Create ML MaxEnt by default (`--algorithm-classic
   maxent`) because it is the validated high-accuracy, tiny-model baseline for
-  the current 51-label SMS corpus; pass `--algorithm-classic bert` or `auto`
+  the current 52-label SMS corpus; pass `--algorithm-classic bert` or `auto`
   only for comparison runs. Use `--split-seed-classic` to repeat validation
   on alternate deterministic per-label holdout splits.
 - `train-transformer` fine-tunes `jhu-clsp/mmBERT-small` by default, picks
@@ -58,11 +66,19 @@ candidate fails quality gates.
   to fixed, promotion, and conversation metrics.
 - `finetune` is the incremental path after new data lands: it resumes the
   latest checkpoint with a low learning rate (default 1e-5) instead of
-  retraining from scratch.
+  retraining from scratch. When labels are added, shared classifier rows are
+  migrated by label id and only new rows start from fresh weights.
+
+The `signal-v2-boundary-v16` target introduces `government.reminder`, so its
+signed catalog entry must keep `releaseSequence = 3` and
+`minimumAppBuild = 16`. The channel top level remains on release sequence 2 for
+legacy single-release parsers; build 16 and newer select sequence 3 from the
+signed `compatibleReleases` catalog. Build 15 and earlier must never receive
+the expanded label contract.
 
 Tool requirements per stage: `swift` (fetch-public, train-classic), `pnpm`
-(fetch-remote), `uv` (train-transformer, and curate when the model filter is
-enabled). The orchestrator itself is stdlib-only Python 3.10+.
+(fetch-remote), `uv` (prune, train-transformer, and curate when the model filter
+is enabled). The orchestrator itself is stdlib-only Python 3.10+.
 
 ## Transformer release gate
 

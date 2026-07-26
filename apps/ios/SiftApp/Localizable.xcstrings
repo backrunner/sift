@@ -4183,6 +4183,86 @@
         }
       }
     },
+    "前往 App Store" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Go to App Store"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "App Storeへ移動"
+          }
+        }
+      }
+    },
+    "更新 App" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Update App"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Appを更新"
+          }
+        }
+      }
+    },
+    "请先更新 Sift" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Update Sift First"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "先にSiftを更新してください"
+          }
+        }
+      }
+    },
+    "请先更新 Sift，再下载最新高级模型" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Update Sift before downloading the latest premium model"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最新のプレミアムモデルをダウンロードする前にSiftを更新してください"
+          }
+        }
+      }
+    },
+    "需要更新 App" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "App update required"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Appの更新が必要です"
+          }
+        }
+      }
+    },
     "需要更新 App 后使用" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -4196,6 +4276,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "このモデルを使うにはAppを更新してください"
+          }
+        }
+      }
+    },
+    "最新的 Sift Signal 需要新版 App。更新 App 后即可继续下载模型。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The latest Sift Signal requires a newer version of Sift. Update the app to continue downloading the model."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最新のSift Signalには新しいバージョンのSiftが必要です。Appを更新するとモデルのダウンロードを続行できます。"
           }
         }
       }

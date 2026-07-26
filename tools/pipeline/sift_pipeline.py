@@ -18,6 +18,8 @@ Stages (run individually with `--only`, or drop some with `--skip`):
                      (uv run curate_dataset.py), then coverage audit
   augment            add versioned, leak-free semantic and boundary variants
                      with per-label diversity caps
+  prune              remove high-similarity same-label/language repetitions
+                     while preserving reviewed boundaries and provenance
   train-classic      Create ML model (swift run SiftAppleTrainer --input …)
   train-transformer  frozen FP16 mmBERT Core ML baseline
   quantize-transformer  build every configured W8/W4 candidate and run the
@@ -46,7 +48,7 @@ import time
 import unicodedata
 from pathlib import Path
 
-STAGES = ["fetch-public", "fetch-remote", "curate", "augment", "train-classic", "train-transformer", "quantize-transformer"]
+STAGES = ["fetch-public", "fetch-remote", "curate", "augment", "prune", "train-classic", "train-transformer", "quantize-transformer"]
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 APPLE_TRAINER = REPO_ROOT / "tools/apple-trainer"
@@ -56,10 +58,13 @@ PIPELINE_DIR = REPO_ROOT / "build/pipeline"
 PUBLIC_CORPUS = PIPELINE_DIR / "public-corpus.ndjson"
 REMOTE_CORPUS = PIPELINE_DIR / "remote-training.ndjson"
 TRAIN_SET = PIPELINE_DIR / "train.ndjson"
+UNPRUNED_TRAIN_SET = PIPELINE_DIR / "train.augmented.ndjson"
 CURATED_SET = PIPELINE_DIR / "train.curated.ndjson"
 REJECTED_SET = PIPELINE_DIR / "rejected.ndjson"
 CURATION_REPORT = PIPELINE_DIR / "curation-report.json"
 AUGMENTATION_REPORT = PIPELINE_DIR / "augmentation-report.json"
+PRUNING_REPORT = PIPELINE_DIR / "pruning-report.json"
+PRUNING_REJECTED_SET = PIPELINE_DIR / "pruning-rejected.ndjson"
 CONVERSATION_TRAIN_SET = PIPELINE_DIR / "conversation-training.ndjson"
 CLASSIC_OUT = PIPELINE_DIR / "apple-model"
 TRANSFORMER_OUT = PIPELINE_DIR / "transformer-model"
@@ -113,9 +118,27 @@ def parse_arguments() -> argparse.Namespace:
     )
     quality.add_argument("--max-augmented-per-label", type=int, default=120)
     quality.add_argument("--max-variants-per-row", type=int, default=1)
+    quality.add_argument(
+        "--semantic-prune-threshold",
+        type=float,
+        default=0.96,
+        help="same-label/language cosine threshold for removing semantic repetitions",
+    )
+    quality.add_argument(
+        "--cross-label-similarity-threshold",
+        type=float,
+        default=0.96,
+        help="same-language cross-label cosine threshold that fails pruning",
+    )
+    quality.add_argument(
+        "--min-rows-per-label-language",
+        type=int,
+        default=20,
+        help="minimum rows preserved in each label/language bucket during pruning",
+    )
 
     training = parser.add_argument_group("training")
-    training.add_argument("--version-classic", default="corpus-0.2")
+    training.add_argument("--version-classic", default="maxent-reminder-v20")
     training.add_argument(
         "--algorithm-classic",
         choices=["maxent", "bert", "auto"],
@@ -123,14 +146,14 @@ def parse_arguments() -> argparse.Namespace:
         help="Create ML classic algorithm; maxent is the current validated default",
     )
     training.add_argument("--split-seed-classic", type=int, default=42, help="classic model holdout split seed")
-    training.add_argument("--version-transformer", default="signal-v1")
+    training.add_argument("--version-transformer", default="signal-v2-reminder-v16")
     training.add_argument("--model-abi", default="sift-signal-v1")
     training.add_argument("--backbone", default="jhu-clsp/mmBERT-small", help="transformer backbone")
     training.add_argument("--device", choices=["auto", "cpu", "cuda", "mps"], default="auto")
     training.add_argument("--quantize", choices=["fp16", "int8"], default="int8")
     training.add_argument("--quantization-profiles", type=Path, default=TRANSFORMER_TRAINER / "quantization-profiles.json")
-    training.add_argument("--release-sequence", type=int, default=1)
-    training.add_argument("--minimum-app-build", type=int, default=1)
+    training.add_argument("--release-sequence", type=int, default=3)
+    training.add_argument("--minimum-app-build", type=int, default=16)
     training.add_argument("--maximum-app-build", type=int, default=2_147_483_647)
     training.add_argument("--calibration-limit", type=int, default=256)
     training.add_argument(
@@ -157,6 +180,22 @@ def parse_arguments() -> argparse.Namespace:
     training.add_argument("--num-epochs", type=int, default=3)
     training.add_argument("--batch-size", type=int, default=8)
     training.add_argument("--warmup-ratio", type=float, default=0.06)
+    training.add_argument(
+        "--train-new-label-rows-only",
+        action="store_true",
+        help="on checkpoint label expansion, update only newly added classifier rows",
+    )
+    training.add_argument(
+        "--train-label-rows",
+        default="",
+        help="comma-separated classifier labels to update while preserving all other output rows",
+    )
+    training.add_argument(
+        "--boundary-loss-weight",
+        type=float,
+        default=1.0,
+        help="loss multiplier for reviewed boundary rows without duplicating corpus samples",
+    )
     training.add_argument("--install-ios", action="store_true", help="install trained artifacts into apps/ios/GeneratedModels")
 
     raw_arguments = sys.argv[1:]
@@ -326,7 +365,7 @@ def stage_augment(arguments: argparse.Namespace) -> None:
             "--holdout", str(BILLING_CARD_TEST_SET),
             "--holdout", str(CONVERSATION_TEST_SET),
             "--taxonomy", str(REPO_ROOT / "packages/taxonomy/taxonomy.json"),
-            "--out", str(TRAIN_SET),
+            "--out", str(UNPRUNED_TRAIN_SET),
             "--report", str(AUGMENTATION_REPORT),
             "--max-augmented-per-label", str(arguments.max_augmented_per_label),
             "--max-variants-per-row", str(arguments.max_variants_per_row),
@@ -335,10 +374,30 @@ def stage_augment(arguments: argparse.Namespace) -> None:
     )
 
 
+def stage_prune(arguments: argparse.Namespace) -> None:
+    require_tool("uv", "Install uv (https://docs.astral.sh/uv).")
+    if not UNPRUNED_TRAIN_SET.exists():
+        raise SystemExit(f"error: {UNPRUNED_TRAIN_SET} missing; run the augment stage first")
+    run(
+        [
+            "uv", "run", "prune_dataset.py",
+            "--input", str(UNPRUNED_TRAIN_SET),
+            "--out", str(TRAIN_SET),
+            "--rejected", str(PRUNING_REJECTED_SET),
+            "--report", str(PRUNING_REPORT),
+            "--similarity-threshold", str(arguments.semantic_prune_threshold),
+            "--cross-label-threshold", str(arguments.cross_label_similarity_threshold),
+            "--min-rows-per-label-language", str(arguments.min_rows_per_label_language),
+        ],
+        cwd=TRANSFORMER_TRAINER,
+    )
+    require_holdout_isolation(TRAIN_SET)
+
+
 def stage_train_classic(arguments: argparse.Namespace) -> None:
     require_tool("swift", "Install Xcode command line tools.")
     if not TRAIN_SET.exists():
-        raise SystemExit(f"error: {TRAIN_SET} missing; run the curate stage first")
+        raise SystemExit(f"error: {TRAIN_SET} missing; run the augment and prune stages first")
     require_holdout_isolation(TRAIN_SET)
     command = [
         "swift", "run", "-q", "SiftAppleTrainer",
@@ -374,7 +433,7 @@ def stage_train_classic(arguments: argparse.Namespace) -> None:
 def stage_train_transformer(arguments: argparse.Namespace, finetune: bool = False) -> None:
     require_tool("uv", "Install uv (https://docs.astral.sh/uv).")
     if not TRAIN_SET.exists():
-        raise SystemExit(f"error: {TRAIN_SET} missing; run the curate stage first")
+        raise SystemExit(f"error: {TRAIN_SET} missing; run the augment and prune stages first")
     require_holdout_isolation(TRAIN_SET)
 
     resume_from = arguments.resume_from
@@ -402,11 +461,16 @@ def stage_train_transformer(arguments: argparse.Namespace, finetune: bool = Fals
         "--num-epochs", str(arguments.num_epochs),
         "--batch-size", str(arguments.batch_size),
         "--warmup-ratio", str(arguments.warmup_ratio),
+        "--boundary-loss-weight", str(arguments.boundary_loss_weight),
         "--max-length", str(arguments.max_sequence_length),
         "--test-input", str(PROMOTION_TEST_SET),
     ]
     if arguments.truncate_layers > 0:
         command.extend(["--truncate-layers", str(arguments.truncate_layers)])
+    if arguments.train_new_label_rows_only:
+        command.append("--train-new-label-rows-only")
+    if arguments.train_label_rows:
+        command.extend(["--train-label-rows", arguments.train_label_rows])
     if resume_from is not None:
         command.extend(["--resume-from", str(resume_from.expanduser().resolve())])
     run(command, cwd=TRANSFORMER_TRAINER)
@@ -487,6 +551,7 @@ def main() -> None:
         "fetch-remote": stage_fetch_remote,
         "curate": stage_curate,
         "augment": stage_augment,
+        "prune": stage_prune,
         "train-classic": stage_train_classic,
         "train-transformer": stage_train_transformer,
         "quantize-transformer": stage_quantize_transformer,

@@ -465,6 +465,8 @@ def apply_rule_tier(
     seen_signatures: set[str] = set()
     seen_templates: set[str] = set()
     text_to_labels: dict[str, set[str]] = defaultdict(set)
+    signature_to_labels: dict[str, set[str]] = defaultdict(set)
+    template_to_labels: dict[str, set[str]] = defaultdict(set)
 
     prepared: list[Row] = []
     for row in rows:
@@ -499,8 +501,18 @@ def apply_rule_tier(
             report.rehydrated_rows += 1
         prepared.append(row)
         text_to_labels[row.text.lower()].add(row.label)
+        signature_to_labels[near_duplicate_signature(row.text)].add(row.label)
+        template = template_signature(row.text)
+        if template:
+            template_to_labels[template].add(row.label)
 
     conflicting_texts = {text for text, labels in text_to_labels.items() if len(labels) > 1}
+    conflicting_signatures = {
+        signature for signature, labels in signature_to_labels.items() if len(labels) > 1
+    }
+    conflicting_templates = {
+        template for template, labels in template_to_labels.items() if len(labels) > 1
+    }
 
     for row in prepared:
         reason = junk_reason(row.text, row.language, arguments.min_length, arguments.max_length)
@@ -510,26 +522,29 @@ def apply_rule_tier(
             reason = "cross-label-conflict"
         signature = near_duplicate_signature(row.text)
         template = template_signature(row.text)
+        if reason is None and signature in conflicting_signatures:
+            reason = "cross-label-near-conflict"
+        if reason is None and template and template in conflicting_templates:
+            reason = "cross-label-template-conflict"
         if reason is None and row.text.lower() in holdout_exact:
             reason = "holdout-exact"
         if reason is None and signature in holdout_signatures:
             reason = "holdout-near"
         if reason is None:
-            exact_key = f"{row.label}\x1f{row.text}"
+            exact_key = row.text.lower()
             if exact_key in seen_exact:
                 reason = "duplicate"
             else:
                 seen_exact.add(exact_key)
-                label_signature = f"{row.label}\x1f{signature}"
-                if label_signature in seen_signatures:
+                if signature in seen_signatures:
                     reason = "near-duplicate"
                 else:
-                    seen_signatures.add(label_signature)
-                    label_template = f"{row.label}\x1f{template}"
-                    if template and label_template in seen_templates:
+                    seen_signatures.add(signature)
+                    if template and template in seen_templates:
                         reason = "template-duplicate"
                     else:
-                        seen_templates.add(label_template)
+                        if template:
+                            seen_templates.add(template)
 
         if reason is None:
             kept.append(row)

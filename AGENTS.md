@@ -7,7 +7,7 @@
 ## What This Project Is
 
 Sift is a privacy-first iOS SMS filtering app. Classification runs on device
-through an IdentityLookup extension, using a 51-leaf taxonomy with first-class
+through an IdentityLookup extension, using a 52-leaf taxonomy with first-class
 zh/en/ja coverage, a dual-model setup (a locally fine-tunable Create ML classic
 model plus a paid Premium transformer model), anonymous CloudKit sample
 collection, user-defined allow/block rules, and an automated training pipeline.
@@ -88,9 +88,12 @@ The product is not launched yet; backward compatibility is not required.
 | PII | `pii-boundary-v7` | n/a | n/a | Core ML INT8 P 99.27%, R 98.90%, F1 99.08%; clean FPR 0/487 and 0/64; grouped amounts |
 
 The current Signal release was trained on 14,390 leak-free rows with complete
-zh/en/ja coverage. The pipeline isolates all 684 fixed, promotion, billing/card,
-and conversation holdout rows by exact and digit-normalized signatures before
-either model trains.
+zh/en/ja coverage and isolated the previous 684-row holdout suite. The expanded
+pipeline isolates all 697 fixed, promotion, billing/card, and conversation
+holdout rows by exact and digit-normalized signatures before either model trains.
+The next `government.reminder` release must use Signal release sequence 3 with
+minimum app build 16; build 15 and earlier remain on release sequence 2 because
+they do not contain the expanded label contract.
 The 150-row promotion boundary set spans game marketplaces, retail, finance,
 carrier offers, travel, insurance, services, loans, and housing, with paired
 order, points, bank, data-usage, update, and scam negatives. The previous

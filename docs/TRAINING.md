@@ -88,6 +88,15 @@ Outputs are `train.ndjson`, `rejected.ndjson` with rejection reasons and
 margins, and `curation-report.json` with source counts, rejection counts, and
 label-by-language matrices.
 
+After reviewed augmentation, the pipeline runs a conservative semantic prune
+on the complete candidate corpus. Rows are compared only within the same label
+and language; cosine similarity >= 0.96 removes the lower-priority repetition.
+Reviewed boundary rows are protected, observed/public examples outrank generic
+synthetic wrappers, and each label/language bucket retains at least 20 rows.
+The same embedding pass fails when a same-language pair in different labels is
+at least 0.96 similar. This prevents semantic duplicates from quietly training
+two categories while leaving genuinely multilingual translations independent.
+
 Audit rule: every label must have at least `--min-core-rows` rows (default 10)
 in each of zh/en/ja. With `--strict-audit`, failures exit with code 2. To audit
 any dataset directly:
@@ -107,7 +116,7 @@ pnpm pipeline -- train-classic --version-classic corpus-0.2 \
 `--language auto` trains as a single language when at least 90% of the corpus is
 one language; mixed corpora train language-independently. The validated default
 classic architecture is Create ML MaxEnt. `bert` and `auto` are available for
-comparison, but they underperformed MaxEnt on the current 51-label small SMS
+comparison, but they underperformed MaxEnt on the current 52-label small SMS
 dataset. Change `--split-seed-classic` when rechecking generalization; do not
 trust only the default seed 42.
 
@@ -129,8 +138,9 @@ python3 tools/apple-trainer/Scripts/prepare_classic_candidate.py \
 ```
 
 The script rejects exact and digit-normalized near duplicates before either
-classic or transformer training. `maxent-boundary-v19` is the accepted
-51-label classic candidate. On the taxonomy-corrected holdouts it scores
+classic or transformer training. `maxent-boundary-v19` is the accepted legacy
+51-label classic candidate; the next candidate expands the contract to 52
+labels with `government.reminder`. On the taxonomy-corrected holdouts v19 scores
 98.73% fixed, 96.00% promotion, 90.00% billing/card raw (100% action), and
 100% conversation. Compared with v17 it preserves fixed and promotion accuracy
 while improving billing/card raw accuracy by 16.67 percentage points.
@@ -152,7 +162,8 @@ retrain.
 
 ```bash
 pnpm pipeline -- train-transformer \
-  --version-transformer signal-v1 --quantize int8
+  --version-transformer signal-v2-reminder-v16 --quantize int8 \
+  --release-sequence 3 --minimum-app-build 16
 ```
 
 - `--device auto` selects cuda (NVIDIA or AMD ROCm), then mps (Apple Silicon),
@@ -193,7 +204,12 @@ https://sift.alkinum.io/models/channels/v2/SiftSignalModel.channel.json
 ```
 
 After accepting a training run, publish the selected candidate and its signed
-channel pointer to the public directory behind that URL.
+compatibility catalog to the public directory behind that URL. The channel's
+top-level release stays compatible with legacy single-release parsers. Build
+16 and newer verify the separately signed `compatibleReleases` list and select
+the highest release sequence compatible with their app build, OS, and model
+ABI. Every list entry remains individually signed, and the catalog signature
+prevents a valid newer entry from being removed or reordered.
 The recommended target is a Cloudflare R2 bucket exposed through a public
 custom domain or Worker/Pages route.
 
@@ -235,6 +251,29 @@ pnpm upload:transformer-model -- \
   --verify-http
 ```
 
+The publisher preserves and verifies the currently published channel history
+by default. When bootstrapping the catalog from an older single-release
+channel, add each older immutable manifest once:
+
+```bash
+pnpm upload:transformer-model -- \
+  --model-dir build/pipeline/transformer-model/quantization-tournament/candidates/w8a16-channel-ptq \
+  --selection build/pipeline/transformer-model/quantization-tournament/selected-candidate.json \
+  --compatible-release-manifest-url https://sift.alkinum.io/models/releases/signal-v2-boundary-v15/SiftSignalModel.manifest.json \
+  --r2-bucket "$SIFT_MODEL_R2_BUCKET" \
+  --verify-http
+```
+
+Never use `--no-preserve-channel-history` for a production publication. It is
+only for isolated fixtures and local static-directory tests.
+
+To repair signed metadata while preserving previously accepted model bytes,
+use a new `--release-id` with `--reuse-artifacts-base-url` pointing at the old
+immutable release directory. The publisher verifies every public artifact by
+SHA-256 and byte count, and refuses to change the release sequence, app-build
+range, OS floor, ABI, or download size. This metadata-only path avoids
+overwriting or duplicating model weights.
+
 If you do not want to place the account id in the environment, pass
 `--r2-endpoint-url https://<account-id>.r2.cloudflarestorage.com`. If you use an
 AWS profile, set `AWS_PROFILE=sift-r2` in dotenv or pass
@@ -266,14 +305,22 @@ Release acceptance:
 
 1. `--dry-run` must pass, and `upload bytes` should match the current Core ML
    export size.
-2. `--verify-http` must confirm that the manifest and every artifact are
-   reachable through the CDN.
-3. On device, selecting Sift Signal while not purchased should open the Premium
+2. Existing immutable release URLs are downloaded and compared byte-for-byte;
+   publication resumes only when their SHA-256 and byte count match. A
+   different object at the same release URL aborts the release.
+3. With `--verify-http`, every immutable release object is downloaded through
+   the public route and fully verified before the mutable channel pointer is
+   uploaded. The channel is then downloaded and verified separately.
+4. The channel top level must remain usable by the oldest retained app build.
+   A current app must select the highest compatible signed catalog entry, while
+   a newer incompatible entry must produce an App Store update prompt instead
+   of replacing or deleting the installed model.
+5. On device, selecting Sift Signal while not purchased should open the Premium
    purchase flow only. After purchase, selecting Sift Signal should start the
    download. Expensive or Low Data Mode networks should show the traffic prompt.
-4. Until download and checksum validation complete, the extension must keep
+6. Until download and checksum validation complete, the extension must keep
    using the classic model. It switches only after validation.
-5. On the available physical release device, the production message-filter
+7. On the available physical release device, the production message-filter
    engine must pass the cold/warm latency, fallback, watchdog, jetsam, and
    positive-memory-drift gates using the manifest's compute-unit policy.
 
@@ -348,7 +395,10 @@ and per-language evaluation.
 | --- | --- |
 | `build/pipeline/train.ndjson` | Input for both trainers |
 | `build/pipeline/train.curated.ndjson` | CloudKit/public corpus after quality and diversity filtering, before augmentation |
+| `build/pipeline/train.augmented.ndjson` | Full candidate after reviewed augmentation, before semantic pruning |
 | `build/pipeline/augmentation-report.json` | Added/rejected generalization rows by label and family |
+| `build/pipeline/pruning-report.json` | Semantic pruning counts, thresholds, protected rows, and cross-label audit result |
+| `build/pipeline/pruning-rejected.ndjson` | Removed same-label semantic repetitions with retained representative |
 | `build/pipeline/apple-model/SiftSMSClassifier.{mlmodel,manifest.json}` | App and extension classic model |
 | `build/pipeline/transformer-model/SiftSignalModel.{mlpackage,tokenizer.siftbpe,manifest.json}` | Upload to `https://sift.alkinum.io/models/` for Premium on-demand download |
 | `build/pipeline/transformer-model/checkpoint/` | Fine-tuning starting point |

@@ -285,7 +285,11 @@ enum SeedTemplatesEnglish {
             "Disk space is running low on the production server.",
             "Job failure count hit the alert threshold.",
             "Pager: on-call engineer, please ack P{count} now.",
-            "Build failed: pipeline {brand} errored at {time}."
+            "Build failed: pipeline {brand} errored at {time}.",
+            "Cloud database instance {brand}-{tail} expires on {date}; renew the manual subscription in the console.",
+            "The managed cache service stops in {days} days, and its instance and backups will be released after retention.",
+            "The object storage plan is about to expire; writes will be suspended and retained data purged afterward.",
+            "The container cluster subscription ends soon. Extend it in the admin console to keep workloads running."
         ],
         "work.meeting": [
             "Meeting reminder: starts at {time}. Join early.",
@@ -402,6 +406,20 @@ enum SeedTemplatesEnglish {
             "Your document application status was updated on the portal.",
             "Immigration application moved to the next step. Watch for SMS updates.",
             "Registry result ready — collect at the designated counter."
+        ],
+        "government.reminder": [
+            "Police reminder: supervise children around water and avoid unsupervised swimming in open water.",
+            "Fire department reminder: keep fire lanes clear and switch off unused appliances before leaving home.",
+            "Public health reminder: stay hydrated in hot weather and seek medical help if you feel unwell.",
+            "Emergency management advises staying indoors during severe wind and away from temporary structures.",
+            "Community reminder: never throw objects from balconies and help keep shared spaces safe.",
+            "Fraud prevention office reminder: stop if an unknown caller asks for a transfer or screen sharing.",
+            "Education department reminder: families should review home, road and online safety during school breaks.",
+            "Food safety authority reminder: check expiry dates and avoid food from unknown sources.",
+            "Police safety message: in holiday crowds, watch your belongings and keep children close.",
+            "Water authority reminder: conserve water and report public pipe leaks through official channels.",
+            "Police fraud-prevention reminder: investigators never ask you to transfer money into a so-called safe account.",
+            "Community police advise ending any call where someone claiming to be an officer demands screen sharing or payment credentials."
         ],
         "government.traffic": [
             "DMV reminder: appointment confirmed for {date}.",

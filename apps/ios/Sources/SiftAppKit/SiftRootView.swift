@@ -152,7 +152,7 @@ private struct DashboardHero: View {
                 isShowingModelPicker = true
             } label: {
                 HStack(spacing: 5) {
-                    if model.isSwitchingModelVariant || model.isTransformerDownloadActive {
+                    if showsModelSwitchProgress {
                         ProgressView()
                             .controlSize(.mini)
                             .tint(.white)
@@ -226,6 +226,9 @@ private struct DashboardHero: View {
     }
 
     private var modelSwitchTitle: String {
+        if model.isRestoringInitialModelVariant {
+            return model.selectedModelVariant.title
+        }
         if model.isTransformerDownloadActive {
             if let progress = model.transformerDownloadProgressText {
                 return String(localized: "下载") + " \(progress)"
@@ -239,6 +242,11 @@ private struct DashboardHero: View {
             )
         }
         return model.selectedModelVariant.title
+    }
+
+    private var showsModelSwitchProgress: Bool {
+        !model.isRestoringInitialModelVariant
+            && (model.isSwitchingModelVariant || model.isTransformerDownloadActive)
     }
 }
 
@@ -290,7 +298,10 @@ private struct ModelPickerView: View {
                             dismiss()
                         }
                     }
-                    .disabled(model.isSwitchingModelVariant || model.isTransformerDownloadActive)
+                    .disabled(
+                        model.isSwitchingModelVariant
+                            || (model.isTransformerDownloadActive && variant == .classic)
+                    )
                     .frame(maxWidth: .infinity)
                 }
 
@@ -561,6 +572,7 @@ private struct ModelVariantCard: View {
 
 private struct TransformerModelDetailView: View {
     @Bindable var model: SiftAppModel
+    @Environment(\.openURL) private var openURL
 
     var body: some View {
         ScrollView {
@@ -591,6 +603,17 @@ private struct TransformerModelDetailView: View {
         .background(AtmosphericBackground())
         .navigationTitle(String(localized: "模型详情"))
         .toolbarTitleDisplayMode(.inline)
+        .alert(
+            String(localized: "请先更新 Sift"),
+            isPresented: $model.isShowingTransformerAppUpdatePrompt
+        ) {
+            Button(String(localized: "前往 App Store")) {
+                openURL(model.appStoreURL)
+            }
+            Button(String(localized: "取消"), role: .cancel) {}
+        } message: {
+            Text(String(localized: "最新的 Sift Signal 需要新版 App。更新 App 后即可继续下载模型。"))
+        }
     }
 
     private func modelDetailRow(_ title: String, value: String) -> some View {
@@ -624,10 +647,14 @@ private struct TransformerModelDetailView: View {
             .buttonStyle(.borderedProminent)
             .controlSize(.large)
         } else if case .requiresAppUpdate = model.transformerUpdateState {
-            Label(String(localized: "需要更新 App 后使用"), systemImage: "exclamationmark.triangle.fill")
-                .foregroundStyle(Color.siftAmber)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 12)
+            Button {
+                model.downloadTransformerUpdate()
+            } label: {
+                Label(String(localized: "更新 App"), systemImage: "arrow.up.circle.fill")
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.borderedProminent)
+            .controlSize(.large)
         } else {
             Label(String(localized: "已是最新版本"), systemImage: "checkmark.circle.fill")
                 .foregroundStyle(Color.siftMint)
@@ -2180,24 +2207,34 @@ private struct CategorySelectionView: View {
     @State private var searchText = ""
 
     var body: some View {
-        ScrollView {
-            LazyVStack(alignment: .leading, spacing: 16) {
-                ForEach(visibleGroups) { group in
-                    CategoryGroupCard(
-                        group: group,
-                        leaves: matchingLeaves(in: group),
-                        selectedLabelID: selectedLabelID
-                    ) { leaf in
-                        selectedLabelID = leaf.id
-                        dismiss()
+        GeometryReader { geometry in
+            ScrollViewReader { proxy in
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 16) {
+                        ForEach(visibleGroups) { group in
+                            CategoryGroupCard(
+                                group: group,
+                                leaves: matchingLeaves(in: group),
+                                selectedLabelID: selectedLabelID
+                            ) { leaf in
+                                selectedLabelID = leaf.id
+                                dismiss()
+                            }
+                        }
                     }
+                    .padding(.horizontal, 16)
+                    // Let labels at either edge of the taxonomy reach the viewport center.
+                    .padding(.vertical, geometry.size.height / 2)
+                }
+                .scrollIndicators(.hidden)
+                .onAppear {
+                    scrollToSelectedLabel(using: proxy)
+                }
+                .onChange(of: selectedLabelID) { _, _ in
+                    scrollToSelectedLabel(using: proxy)
                 }
             }
-            .padding(.horizontal, 16)
-            .padding(.top, 16)
-            .padding(.bottom, 16)
         }
-        .scrollIndicators(.hidden)
         .safeAreaInset(edge: .bottom, spacing: 0) {
             TaxonomySearchBar(text: $searchText)
         }
@@ -2216,6 +2253,13 @@ private struct CategorySelectionView: View {
             if !searchText.isEmpty, visibleGroups.isEmpty {
                 ContentUnavailableView.search(text: searchText)
             }
+        }
+    }
+
+    private func scrollToSelectedLabel(using proxy: ScrollViewProxy) {
+        guard SiftTaxonomy.leaf(id: selectedLabelID) != nil else { return }
+        withAnimation(.snappy(duration: 0.3)) {
+            proxy.scrollTo(selectedLabelID, anchor: .center)
         }
     }
 
@@ -2281,6 +2325,7 @@ private struct CategoryGroupCard: View {
                         .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
+                    .id(leaf.id)
                 }
             }
         }

@@ -219,8 +219,26 @@ The pipeline then runs `augment_dataset.py` with the versioned
 `generalization-augmentation.json`. It adds only label/language-scoped semantic
 replacements and reviewed boundary rows, caps additions per label, and repeats
 exact/digit-normalized holdout and template-cluster checks before producing the
-final `train.ndjson`. Base rows retain `source`, `sourceLabel`, and `language`
+unpruned `train.augmented.ndjson`. Base rows retain `source`, `sourceLabel`, and `language`
 metadata; generated variants are marked as `augmentation:<family>`.
+
+`prune_dataset.py` is the final corpus step. It uses the same multilingual
+sentence encoder as curation to remove rows with cosine similarity >= 0.96,
+but compares repetitions only within one label and one language. Reviewed
+`augmentation:boundary:*` rows are protected; real/public rows are preferred
+over synthetic surface wrappers; and one anchor per replacement family and
+language is retained. It also performs a same-language cross-label scan and
+fails closed at 0.96, so a semantic near duplicate cannot silently train two
+different labels. The default floor retains at least 20 rows in every
+label/language bucket.
+
+```bash
+uv run prune_dataset.py \
+  --input ../../build/pipeline/train.augmented.ndjson \
+  --out ../../build/pipeline/train.ndjson \
+  --rejected ../../build/pipeline/pruning-rejected.ndjson \
+  --report ../../build/pipeline/pruning-report.json
+```
 
 CloudKit exports retain the device-detected `textLanguage`. Curation normalizes
 that hint (`zh-Hans` → `zh`, `ja-JP` → `ja`) and only falls back to script
@@ -284,6 +302,30 @@ python3 upload_transformer_model.py \
 uv run train_mmbert.py --input ../../build/public-corpus.ndjson \
   --num-epochs 0 --max-rows 80 --max-length 8 --truncate-layers 1
 ```
+
+The publisher verifies and preserves the existing signed compatibility
+catalog. Its top-level release remains readable by legacy apps, while current
+apps verify `compatibleReleases` and choose the newest release allowed by their
+app build, OS, ABI, and installed release sequence. Use
+`--compatible-release-manifest-url` only to bootstrap an older immutable
+release into the catalog; never use `--no-preserve-channel-history` for a
+production upload.
+
+If signed metadata must be repaired without changing accepted model bytes,
+publish a new release id and reuse the verified immutable artifact directory:
+
+```bash
+python3 upload_transformer_model.py \
+  --model-dir ../../build/pipeline/transformer-model/quantization-tournament/candidates/w8a16-channel-ptq \
+  --selection ../../build/pipeline/transformer-model/quantization-tournament/selected-candidate.json \
+  --release-id signal-v3-metadata-v2 \
+  --reuse-artifacts-base-url https://sift.alkinum.io/models/releases/signal-v3 \
+  --dry-run
+```
+
+This mode downloads and hash-checks every referenced public artifact, requires
+the existing release sequence and compatibility boundaries to remain
+unchanged, then publishes only the new manifest and channel metadata.
 
 Input is the same framework-neutral `{"text": ..., "label": ...}` NDJSON the
 Create ML trainer uses — build it with

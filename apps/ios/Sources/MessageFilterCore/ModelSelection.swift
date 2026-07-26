@@ -236,7 +236,8 @@ public enum SubmissionHistoryCache {
 
 /// Local counter of successfully contributed samples, kept in the shared
 /// app-group defaults so the dashboard can show "已贡献 N 条" without a
-/// network round-trip. The CloudKit history list stays the source of truth.
+/// network round-trip. It is refreshed from a dedicated remote count query;
+/// paginated history batches never overwrite it.
 public enum SubmissionLedger {
     static let countKey = "Sift.submittedSampleCount"
 

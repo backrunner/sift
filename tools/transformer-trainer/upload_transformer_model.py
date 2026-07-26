@@ -52,6 +52,7 @@ import argparse
 import base64
 import hashlib
 import json
+import math
 import mimetypes
 import os
 import shlex
@@ -61,6 +62,7 @@ import sys
 import tempfile
 import urllib.error
 import urllib.request
+import urllib.parse
 from dataclasses import dataclass
 from pathlib import Path
 from string import Formatter
@@ -71,6 +73,20 @@ DEFAULT_MODEL_NAME = "SiftSignalModel"
 DEFAULT_ARTIFACT_CACHE_CONTROL = "public, max-age=31536000, immutable"
 DEFAULT_MANIFEST_CACHE_CONTROL = "public, max-age=300"
 DEFAULT_DOTENV_NAME = ".env.signal-model"
+SIGNED_VALIDATION_METRIC_FIELDS = (
+    "fixedAccuracy",
+    "promotionAccuracy",
+    "fp16Agreement",
+    "languageAccuracy",
+)
+SIGNED_QUANTIZATION_PROFILE_FIELDS = (
+    "identifier",
+    "weightBits",
+    "activationBits",
+    "method",
+    "granularity",
+    "blockSize",
+)
 
 
 @dataclass(frozen=True)
@@ -92,6 +108,25 @@ def parse_arguments() -> argparse.Namespace:
     parser.add_argument("--selection", type=Path, required=True, help="selected-candidate.json produced by the quantization gate")
     parser.add_argument("--release-id", default=None, help="immutable release directory name; defaults to manifest version")
     parser.add_argument("--channel-path", default="channels/v2/SiftSignalModel.channel.json")
+    parser.add_argument(
+        "--compatible-release-manifest-url",
+        action="append",
+        default=[],
+        help="immutable signed release manifest to add to the compatibility catalog; repeat as needed",
+    )
+    parser.add_argument(
+        "--reuse-artifacts-base-url",
+        default=None,
+        help=(
+            "publish a metadata-only release whose artifacts remain at this HTTPS base URL; "
+            "every referenced object is hash-verified before publication"
+        ),
+    )
+    parser.add_argument(
+        "--no-preserve-channel-history",
+        action="store_true",
+        help="do not merge the currently published signed channel (intended only for isolated tests)",
+    )
     parser.add_argument("--signing-key", type=Path, default=os.getenv("SIFT_MODEL_SIGNING_KEY"))
     parser.add_argument("--signing-key-id", default=os.getenv("SIFT_MODEL_SIGNING_KEY_ID"))
     parser.add_argument("--model-name", default=DEFAULT_MODEL_NAME)
@@ -220,8 +255,15 @@ def main() -> None:
     ensure_safe_relative_path(release_id)
     release_prefix = f"releases/{release_id}"
     release_base_url = f"{base_url}/{release_prefix}"
-    manifest = normalize_manifest(manifest, model_dir, args.model_name, release_base_url)
+    artifact_base_url = (
+        normalize_reused_artifacts_base_url(args.reuse_artifacts_base_url)
+        if args.reuse_artifacts_base_url
+        else release_base_url
+    )
+    manifest = normalize_manifest(manifest, model_dir, args.model_name, artifact_base_url)
     validate_manifest_artifacts(manifest, model_dir)
+    if args.reuse_artifacts_base_url:
+        verify_reused_remote_artifacts(manifest, artifact_base_url)
     signing_key = require_signing_key(args.signing_key, args.signing_key_id)
     manifest["keyID"] = args.signing_key_id
     manifest["signature"] = sign_payload(canonical_release_payload(manifest), signing_key)
@@ -229,11 +271,34 @@ def main() -> None:
     with tempfile.TemporaryDirectory(prefix="sift-model-upload-") as temp:
         staged_manifest = Path(temp) / manifest_path.name
         staged_manifest.write_text(json.dumps(manifest, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
-        channel = make_channel_manifest(
+        release_channel = make_channel_manifest(
             manifest=manifest,
             release_id=release_id,
             release_manifest_url=f"{release_base_url}/{manifest_path.name}",
             release_manifest_sha256=file_sha256(staged_manifest),
+            key_id=args.signing_key_id,
+            signing_key=signing_key,
+        )
+        channel_entries = [release_channel]
+        if not args.no_preserve_channel_history:
+            published_entries = load_published_channel_entries(
+                f"{base_url}/{args.channel_path}",
+                signing_key,
+            )
+            if args.reuse_artifacts_base_url:
+                published_entries = entries_after_metadata_revision(published_entries, release_channel)
+            channel_entries.extend(published_entries)
+        for compatible_manifest_url in args.compatible_release_manifest_url:
+            compatible_entry = channel_entry_from_release_manifest(
+                compatible_manifest_url,
+                key_id=args.signing_key_id,
+                signing_key=signing_key,
+            )
+            if args.reuse_artifacts_base_url:
+                channel_entries = entries_after_metadata_revision(channel_entries, compatible_entry)
+            channel_entries.append(compatible_entry)
+        channel = make_channel_catalog(
+            channel_entries,
             key_id=args.signing_key_id,
             signing_key=signing_key,
         )
@@ -249,8 +314,10 @@ def main() -> None:
             release_prefix=release_prefix,
             channel_path=args.channel_path,
             staged_channel=staged_channel,
+            include_artifacts=not bool(args.reuse_artifacts_base_url),
         )
 
+        print_channel_summary(channel)
         print_plan(items, base_url)
 
         if args.write_manifest and not args.dry_run:
@@ -260,14 +327,31 @@ def main() -> None:
         if args.dry_run:
             return
 
+        channel_items = [item for item in items if item.path == args.channel_path]
+        release_items = [item for item in items if item.path != args.channel_path]
+        if len(channel_items) != 1:
+            raise SystemExit("error: upload plan must contain exactly one channel pointer")
+
         if args.dest_dir is not None:
-            copy_to_destination(items, args.dest_dir.expanduser().resolve())
-        if args.r2_bucket:
-            upload_to_r2(items, args)
-        if args.upload_command is not None:
-            run_upload_command(items, args.upload_command)
-        if args.verify_http:
-            verify_http(items, base_url)
+            destination = args.dest_dir.expanduser().resolve()
+            copy_to_destination(release_items, destination, immutable=True)
+
+        remote_enabled = bool(args.r2_bucket or args.upload_command is not None)
+        pending_release_items = release_items
+        if remote_enabled:
+            pending_release_items = pending_immutable_remote_items(release_items, base_url)
+            upload_remote_items(pending_release_items, args)
+            if args.verify_http:
+                verify_http(release_items, base_url)
+
+        # Publish the mutable pointer only after every immutable release object
+        # is present and, when requested, verified through the public route.
+        if args.dest_dir is not None:
+            copy_to_destination(channel_items, destination, immutable=False)
+        if remote_enabled:
+            upload_remote_items(channel_items, args)
+            if args.verify_http:
+                verify_http(channel_items, base_url)
 
 
 def normalize_base_url(value: str | None) -> str:
@@ -277,6 +361,38 @@ def normalize_base_url(value: str | None) -> str:
     if not value.startswith(("https://", "http://")):
         raise SystemExit("error: --base-url must be an absolute http(s) URL")
     return value
+
+
+def normalize_reused_artifacts_base_url(value: str) -> str:
+    normalized = normalize_base_url(value)
+    if not normalized.startswith("https://"):
+        raise SystemExit("error: --reuse-artifacts-base-url must use https")
+    return normalized
+
+
+def entries_after_metadata_revision(
+    published_entries: list[dict[str, Any]],
+    replacement: dict[str, Any],
+) -> list[dict[str, Any]]:
+    matches = [
+        entry for entry in published_entries
+        if entry.get("modelABI") == replacement.get("modelABI")
+        and entry.get("releaseSequence") == replacement.get("releaseSequence")
+    ]
+    if len(matches) != 1:
+        raise SystemExit("error: metadata revision must replace exactly one published release")
+    current = matches[0]
+    boundary_fields = (
+        "modelABI",
+        "releaseSequence",
+        "minimumAppBuild",
+        "maximumAppBuild",
+        "minimumOSVersion",
+        "downloadBytes",
+    )
+    if any(current.get(field) != replacement.get(field) for field in boundary_fields):
+        raise SystemExit("error: metadata revision cannot change release compatibility or download size")
+    return [entry for entry in published_entries if entry is not current]
 
 
 def read_manifest(path: Path) -> dict[str, Any]:
@@ -314,6 +430,8 @@ def normalize_manifest(manifest: dict[str, Any], model_dir: Path, model_name: st
     manifest["remoteBaseURL"] = base_url
     manifest["remoteArtifacts"] = artifacts
     manifest["downloadBytes"] = sum(int(item.get("byteCount", 0)) for item in artifacts)
+    manifest["quantizationProfile"] = normalize_quantization_profile(manifest.get("quantizationProfile"))
+    manifest["validationMetrics"] = normalize_validation_metrics(manifest.get("validationMetrics"))
 
     model_path = model_dir / model_artifact
     if model_path.exists():
@@ -325,6 +443,53 @@ def normalize_manifest(manifest: dict[str, Any], model_dir: Path, model_name: st
 
     manifest.setdefault("modelArtifact", f"{model_name}.mlpackage")
     return manifest
+
+
+def normalize_validation_metrics(raw: Any) -> dict[str, Any]:
+    if not isinstance(raw, dict):
+        raise SystemExit("error: validationMetrics must be an object")
+    missing = [key for key in SIGNED_VALIDATION_METRIC_FIELDS if key not in raw]
+    if missing:
+        raise SystemExit(f"error: validationMetrics is missing fields: {', '.join(missing)}")
+
+    normalized = {
+        key: normalize_manifest_number(raw[key], f"validationMetrics.{key}")
+        for key in SIGNED_VALIDATION_METRIC_FIELDS[:-1]
+    }
+    languages = raw["languageAccuracy"]
+    if not isinstance(languages, dict) or not languages:
+        raise SystemExit("error: validationMetrics.languageAccuracy must be a non-empty object")
+    normalized["languageAccuracy"] = {
+        language: normalize_manifest_number(value, f"validationMetrics.languageAccuracy.{language}")
+        for language, value in languages.items()
+        if isinstance(language, str) and language
+    }
+    if len(normalized["languageAccuracy"]) != len(languages):
+        raise SystemExit("error: validationMetrics.languageAccuracy keys must be non-empty strings")
+    return normalized
+
+
+def normalize_quantization_profile(raw: Any) -> dict[str, Any]:
+    if not isinstance(raw, dict):
+        raise SystemExit("error: quantizationProfile must be an object")
+    required = SIGNED_QUANTIZATION_PROFILE_FIELDS[:-1]
+    missing = [key for key in required if key not in raw]
+    if missing:
+        raise SystemExit(f"error: quantizationProfile is missing fields: {', '.join(missing)}")
+    return {
+        key: raw[key]
+        for key in SIGNED_QUANTIZATION_PROFILE_FIELDS
+        if key in raw and raw[key] is not None
+    }
+
+
+def normalize_manifest_number(raw: Any, field: str) -> int | float:
+    if isinstance(raw, bool) or not isinstance(raw, (int, float)):
+        raise SystemExit(f"error: {field} must be numeric")
+    value = float(raw)
+    if not math.isfinite(value):
+        raise SystemExit(f"error: {field} must be finite")
+    return int(value) if value.is_integer() else value
 
 
 def derive_remote_artifacts(model_dir: Path, relative_paths: list[str]) -> list[dict[str, Any]]:
@@ -479,8 +644,36 @@ def canonical_release_payload(manifest: dict[str, Any]) -> bytes:
 
 
 def canonical_channel_payload(channel: dict[str, Any]) -> bytes:
-    payload = {key: value for key, value in channel.items() if key != "signature"}
+    fields = (
+        "schemaVersion", "releaseSequence", "releaseID", "releaseManifestURL",
+        "releaseManifestSHA256", "modelABI", "minimumAppBuild", "maximumAppBuild",
+        "minimumOSVersion", "downloadBytes", "keyID",
+    )
+    payload = {key: channel[key] for key in fields if key in channel}
     return json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
+
+
+def canonical_catalog_payload(channel: dict[str, Any]) -> bytes:
+    releases = channel.get("compatibleReleases")
+    if not isinstance(releases, list) or not releases:
+        raise SystemExit("error: compatibility catalog must contain at least one release")
+    payload = {
+        "compatibleReleases": [channel_release_entry(release) for release in releases],
+    }
+    return json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
+
+
+def channel_release_entry(channel: dict[str, Any]) -> dict[str, Any]:
+    fields = (
+        "schemaVersion", "releaseSequence", "releaseID", "releaseManifestURL",
+        "releaseManifestSHA256", "modelABI", "minimumAppBuild", "maximumAppBuild",
+        "minimumOSVersion", "downloadBytes", "keyID", "signature",
+    )
+    entry = {key: channel[key] for key in fields if key in channel}
+    missing = [key for key in fields if key not in entry]
+    if missing:
+        raise SystemExit(f"error: channel release entry is missing fields: {', '.join(missing)}")
+    return entry
 
 
 def require_signing_key(path: Path | None, key_id: str | None) -> Path:
@@ -537,6 +730,124 @@ def make_channel_manifest(
     return channel
 
 
+def make_channel_catalog(
+    entries: list[dict[str, Any]],
+    key_id: str,
+    signing_key: Path,
+) -> dict[str, Any]:
+    releases = merge_channel_entries(entries)
+    if not releases:
+        raise SystemExit("error: compatibility catalog has no releases")
+    oldest_supported_build = min(int(entry["minimumAppBuild"]) for entry in releases)
+    legacy_candidates = [
+        entry for entry in releases
+        if int(entry["minimumAppBuild"]) <= oldest_supported_build <= int(entry["maximumAppBuild"])
+    ]
+    legacy = max(legacy_candidates, key=lambda entry: int(entry["releaseSequence"]))
+    channel = dict(legacy)
+    channel["compatibleReleases"] = releases
+    channel["catalogKeyID"] = key_id
+    channel["catalogSignature"] = sign_payload(canonical_catalog_payload(channel), signing_key)
+    return channel
+
+
+def merge_channel_entries(entries: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    merged: dict[tuple[str, int], dict[str, Any]] = {}
+    for raw in entries:
+        entry = channel_release_entry(raw)
+        key = (require_string(entry, "modelABI"), int(entry["releaseSequence"]))
+        existing = merged.get(key)
+        if existing is not None and existing != entry:
+            raise SystemExit(
+                "error: channel history contains different releases for "
+                f"modelABI={key[0]} releaseSequence={key[1]}"
+            )
+        merged[key] = entry
+    return sorted(merged.values(), key=lambda entry: (int(entry["releaseSequence"]), entry["modelABI"]))
+
+
+def signature_matches(payload: bytes, signature: Any, signing_key: Path) -> bool:
+    return isinstance(signature, str) and signature == sign_payload(payload, signing_key)
+
+
+def verified_channel_entries(channel: dict[str, Any], signing_key: Path) -> list[dict[str, Any]]:
+    if not signature_matches(canonical_channel_payload(channel), channel.get("signature"), signing_key):
+        raise SystemExit("error: published channel signature does not match the configured signing key")
+    releases = channel.get("compatibleReleases")
+    if releases is None:
+        return [channel_release_entry(channel)]
+    if not isinstance(releases, list) or not releases:
+        raise SystemExit("error: published compatibility catalog is invalid")
+    entries = [channel_release_entry(release) for release in releases]
+    for entry in entries:
+        if not signature_matches(canonical_channel_payload(entry), entry.get("signature"), signing_key):
+            raise SystemExit("error: published compatibility release signature is invalid")
+    if channel_release_entry(channel) not in entries:
+        raise SystemExit("error: published compatibility catalog omits its legacy channel release")
+    catalog = dict(channel)
+    catalog["compatibleReleases"] = entries
+    if not signature_matches(canonical_catalog_payload(catalog), channel.get("catalogSignature"), signing_key):
+        raise SystemExit("error: published compatibility catalog signature is invalid")
+    return entries
+
+
+def load_published_channel_entries(url: str, signing_key: Path) -> list[dict[str, Any]]:
+    request = publisher_request(url)
+    try:
+        with urllib.request.urlopen(request, timeout=30) as response:
+            if response.status < 200 or response.status >= 300:
+                raise SystemExit(f"error: {url} returned HTTP {response.status}")
+            data = response.read()
+    except urllib.error.HTTPError as error:
+        if error.code == 404:
+            return []
+        raise SystemExit(f"error: {url} returned HTTP {error.code}") from error
+    try:
+        channel = json.loads(data)
+    except json.JSONDecodeError as error:
+        raise SystemExit(f"error: invalid published channel JSON: {url}: {error}") from error
+    if not isinstance(channel, dict):
+        raise SystemExit(f"error: published channel must be an object: {url}")
+    return verified_channel_entries(channel, signing_key)
+
+
+def channel_entry_from_release_manifest(
+    url: str,
+    key_id: str,
+    signing_key: Path,
+) -> dict[str, Any]:
+    parsed = urllib.parse.urlparse(url)
+    if parsed.scheme != "https":
+        raise SystemExit("error: compatible release manifest URL must use https")
+    request = publisher_request(url)
+    try:
+        with urllib.request.urlopen(request, timeout=30) as response:
+            if response.status < 200 or response.status >= 300:
+                raise SystemExit(f"error: {url} returned HTTP {response.status}")
+            data = response.read()
+    except urllib.error.HTTPError as error:
+        raise SystemExit(f"error: {url} returned HTTP {error.code}") from error
+    try:
+        manifest = json.loads(data)
+    except json.JSONDecodeError as error:
+        raise SystemExit(f"error: invalid compatible release manifest JSON: {url}: {error}") from error
+    if not isinstance(manifest, dict):
+        raise SystemExit(f"error: compatible release manifest must be an object: {url}")
+    if manifest.get("keyID") != key_id:
+        raise SystemExit(f"error: compatible release uses a different signing key: {url}")
+    if not signature_matches(canonical_release_payload(manifest), manifest.get("signature"), signing_key):
+        raise SystemExit(f"error: compatible release signature is invalid: {url}")
+    release_id = Path(parsed.path).parent.name
+    return make_channel_manifest(
+        manifest=manifest,
+        release_id=release_id,
+        release_manifest_url=url,
+        release_manifest_sha256=hashlib.sha256(data).hexdigest(),
+        key_id=key_id,
+        signing_key=signing_key,
+    )
+
+
 def upload_items(
     manifest: dict[str, Any],
     model_dir: Path,
@@ -546,6 +857,7 @@ def upload_items(
     release_prefix: str = "",
     channel_path: str | None = None,
     staged_channel: Path | None = None,
+    include_artifacts: bool = True,
 ) -> list[UploadItem]:
     prefix = f"{release_prefix}/" if release_prefix else ""
     items = [
@@ -556,14 +868,15 @@ def upload_items(
             cache_control=manifest_cache_control,
         )
     ]
-    for artifact in manifest["remoteArtifacts"]:
-        path = artifact["path"]
-        items.append(UploadItem(
-            source=model_dir / path,
-            path=f"{prefix}{path}",
-            content_type=content_type_for(path),
-            cache_control=artifact_cache_control,
-        ))
+    if include_artifacts:
+        for artifact in manifest["remoteArtifacts"]:
+            path = artifact["path"]
+            items.append(UploadItem(
+                source=model_dir / path,
+                path=f"{prefix}{path}",
+                content_type=content_type_for(path),
+                cache_control=artifact_cache_control,
+            ))
     if channel_path and staged_channel:
         items.append(UploadItem(
             source=staged_channel,
@@ -591,12 +904,91 @@ def print_plan(items: list[UploadItem], base_url: str) -> None:
         print(f"  {item.path} <- {item.source} ({item.source.stat().st_size:,} bytes)")
 
 
-def copy_to_destination(items: list[UploadItem], dest_dir: Path) -> None:
+def print_channel_summary(channel: dict[str, Any]) -> None:
+    releases = channel.get("compatibleReleases", [channel])
+    summary = ", ".join(
+        f"seq {entry['releaseSequence']} (build {entry['minimumAppBuild']}...{entry['maximumAppBuild']})"
+        for entry in releases
+    )
+    print(
+        "legacy channel release: "
+        f"seq {channel['releaseSequence']} ({channel['releaseID']})"
+    )
+    print(f"signed compatibility releases: {summary}")
+
+
+def copy_to_destination(items: list[UploadItem], dest_dir: Path, *, immutable: bool) -> None:
     for item in items:
         target = dest_dir / item.path
         target.parent.mkdir(parents=True, exist_ok=True)
+        if immutable and target.exists():
+            if file_sha256(target) != file_sha256(item.source):
+                raise SystemExit(f"error: immutable destination already contains different bytes: {target}")
+            print(f"already published: {target}")
+            continue
         shutil.copy2(item.source, target)
         print(f"copied: {target}")
+
+
+def upload_remote_items(items: list[UploadItem], args: argparse.Namespace) -> None:
+    if args.r2_bucket:
+        upload_to_r2(items, args)
+    if args.upload_command is not None:
+        run_upload_command(items, args.upload_command)
+
+
+def public_object_digest(url: str) -> tuple[str, int] | None:
+    request = publisher_request(url)
+    try:
+        with urllib.request.urlopen(request, timeout=60) as response:
+            if response.status < 200 or response.status >= 300:
+                raise SystemExit(f"error: {url} returned HTTP {response.status}")
+            digest = hashlib.sha256()
+            byte_count = 0
+            while chunk := response.read(1024 * 1024):
+                digest.update(chunk)
+                byte_count += len(chunk)
+            return digest.hexdigest(), byte_count
+    except urllib.error.HTTPError as error:
+        if error.code == 404:
+            return None
+        raise SystemExit(f"error: {url} returned HTTP {error.code}") from error
+
+
+def publisher_request(url: str) -> urllib.request.Request:
+    return urllib.request.Request(
+        url,
+        headers={
+            "User-Agent": "SiftModelPublisher/1.0 (+https://sift.alkinum.io)",
+            "Cache-Control": "no-cache",
+        },
+    )
+
+
+def pending_immutable_remote_items(items: list[UploadItem], base_url: str) -> list[UploadItem]:
+    pending: list[UploadItem] = []
+    for item in items:
+        url = f"{base_url}/{item.path}"
+        remote = public_object_digest(url)
+        if remote is None:
+            pending.append(item)
+            continue
+        expected = (file_sha256(item.source), item.source.stat().st_size)
+        if remote != expected:
+            raise SystemExit(f"error: immutable model URL already contains different bytes: {url}")
+        print(f"already published: {url}")
+    return pending
+
+
+def verify_reused_remote_artifacts(manifest: dict[str, Any], artifact_base_url: str) -> None:
+    for artifact in manifest["remoteArtifacts"]:
+        path = artifact["path"]
+        url = f"{artifact_base_url}/{urllib.parse.quote(path, safe='/')}"
+        remote = public_object_digest(url)
+        expected = (artifact["sha256"], artifact["byteCount"])
+        if remote != expected:
+            raise SystemExit(f"error: reused model artifact does not match signed metadata: {url}")
+        print(f"verified reused artifact: {url}")
 
 
 def validate_r2_configuration(args: argparse.Namespace) -> None:
@@ -660,17 +1052,12 @@ def run_upload_command(items: list[UploadItem], template: str) -> None:
 def verify_http(items: list[UploadItem], base_url: str) -> None:
     for item in items:
         url = f"{base_url}/{item.path}"
-        request = urllib.request.Request(
-            url,
-            method="HEAD",
-            headers={"User-Agent": "SiftModelPublisher/1.0 (+https://sift.alkinum.io)"},
-        )
-        try:
-            with urllib.request.urlopen(request, timeout=20) as response:
-                if response.status < 200 or response.status >= 300:
-                    raise SystemExit(f"error: {url} returned HTTP {response.status}")
-        except urllib.error.HTTPError as error:
-            raise SystemExit(f"error: {url} returned HTTP {error.code}") from error
+        remote = public_object_digest(url)
+        expected = (file_sha256(item.source), item.source.stat().st_size)
+        if remote is None:
+            raise SystemExit(f"error: {url} returned HTTP 404")
+        if remote != expected:
+            raise SystemExit(f"error: public object bytes do not match upload: {url}")
         print(f"verified: {url}")
 
 

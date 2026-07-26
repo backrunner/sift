@@ -802,6 +802,12 @@ func inferGeneralFBSLabel(_ text: String) -> String? {
     if containsAny(text, ["政策", "国务院", "规划", "新规", "条例", "通告"]) {
         return "government.policy"
     }
+    if
+        containsAny(text, ["公安", "政府", "政务", "应急 管理", "消防", "卫健", "卫生 健康", "疾控", "教育局", "市场 监管", "消费者 权益 保护", "社区", "街道办", "反诈 中心", "水务"]),
+        containsAny(text, ["提示", "提醒", "倡议", "请勿", "预防", "防范", "注意 安全", "远离", "守护"])
+    {
+        return "government.reminder"
+    }
     if containsAny(text, ["公安", "政务", "政府", "通信 管理局", "公共服务"]) {
         return "government.notice"
     }
@@ -825,6 +831,12 @@ func inferGeneralFBSLabel(_ text: String) -> String? {
     }
     if containsAny(text, ["打卡", "考勤", "外勤", "排班", "值班", "加班 记录"]) {
         return "work.attendance"
+    }
+    if
+        containsAny(text, ["云 数据库", "云 服务器", "云 资源", "实例 id", "对象 存储"]),
+        containsAny(text, ["到期", "停止 服务", "停机", "资源 将会 被 释放", "数据 不可 恢复", "续费"])
+    {
+        return "work.alert"
     }
     if containsAny(text, ["公司 公告", "全员 通知", "组织 公告", "团建", "公司 福利"]) {
         return "work.announcement"

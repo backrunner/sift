@@ -3,8 +3,9 @@
 
 The base corpus is preserved except for rows colliding with a holdout. The
 supplement contributes only requested labels and is deduplicated against the
-base, every holdout, and earlier supplement rows using the same digit-insensitive
-signature as the curation pipeline.
+base, every holdout, and earlier supplement rows using the same exact,
+digit-insensitive, and template signatures as the curation pipeline. A
+supplement row can never introduce a cross-label similarity conflict.
 """
 
 from __future__ import annotations
@@ -25,6 +26,12 @@ def parse_arguments() -> argparse.Namespace:
     parser.add_argument("--supplement", type=Path, required=True)
     parser.add_argument("--holdout", type=Path, action="append", required=True)
     parser.add_argument("--labels", default="promotion,carrier.promotion,transaction.message,spam")
+    parser.add_argument(
+        "--supplement-source-prefix",
+        action="append",
+        default=[],
+        help="keep only supplement rows whose source starts with this prefix; repeatable",
+    )
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--report", type=Path, required=True)
     parser.add_argument("--seed", type=int, default=42)
@@ -45,6 +52,17 @@ def near_duplicate_signature(text: str) -> str:
     collapsed = re.sub(r"\d+", "0", normalize(text).lower())
     collapsed = re.sub(r"[\W_]+", "", collapsed, flags=re.UNICODE)
     return collapsed[:80]
+
+
+def template_signature(text: str) -> str:
+    collapsed = unicodedata.normalize("NFKC", text).lower()
+    collapsed = re.sub(r"https?://\S+|\b\w+[\w.+-]*@\w[\w.-]*\.[a-z]{2,}\b", " dynamicurl ", collapsed)
+    collapsed = re.sub(r"^\s*(?:\[[^\]]{1,30}\]|【[^】]{1,30}】|official\s*:|公式\s*[:：])\s*", "", collapsed)
+    collapsed = re.sub(r"(?:reply|txt)\s+stop\b.*$|回复\s*[a-z]\s*退订.*$|配信停止.*$", "", collapsed)
+    collapsed = re.sub(r"\b[a-z]{1,5}[-_]?[a-z0-9]{6,}\b", " dynamicid ", collapsed)
+    collapsed = re.sub(r"\d+", " dynamicnumber ", collapsed)
+    collapsed = re.sub(r"[\W_]+", "", collapsed, flags=re.UNICODE)
+    return collapsed
 
 
 def canonicalize_label(text: str, label: str) -> str:
@@ -84,7 +102,7 @@ def load_rows(path: Path) -> list[dict[str, str]]:
             label = canonicalize_label(text, str(record.get("label", "")).strip())
             if not text or not label:
                 raise SystemExit(f"error: invalid row at {path}:{number}")
-            rows.append({"text": text, "label": label})
+            rows.append({"text": text, "label": label, "source": str(record.get("source", ""))})
     return rows
 
 
@@ -97,13 +115,14 @@ def main() -> None:
 
     retained: list[dict[str, str]] = []
     exact_to_label: dict[str, str] = {}
-    label_exact: set[tuple[str, str]] = set()
-    label_near: set[tuple[str, str]] = set()
+    near_to_label: dict[str, str] = {}
+    template_to_label: dict[str, str] = {}
     rejected = Counter()
 
     def retain(row: dict[str, str], source: str) -> None:
         exact = row["text"].lower()
         signature = near_duplicate_signature(row["text"])
+        template = template_signature(row["text"])
         if exact in holdout_exact:
             rejected[f"{source}:holdout-exact"] += 1
             return
@@ -113,25 +132,38 @@ def main() -> None:
         if exact in exact_to_label and exact_to_label[exact] != row["label"]:
             rejected[f"{source}:cross-label-conflict"] += 1
             return
-        exact_key = (row["label"], exact)
-        near_key = (row["label"], signature)
-        if exact_key in label_exact:
+        if exact in exact_to_label:
             rejected[f"{source}:duplicate"] += 1
             return
-        if near_key in label_near:
-            rejected[f"{source}:near-duplicate"] += 1
+        existing_near_label = near_to_label.get(signature)
+        if existing_near_label is not None:
+            reason = "near-duplicate" if existing_near_label == row["label"] else "cross-label-near-conflict"
+            rejected[f"{source}:{reason}"] += 1
             return
-        retained.append(row)
+        existing_template_label = template_to_label.get(template) if template else None
+        if existing_template_label is not None:
+            reason = "template-duplicate" if existing_template_label == row["label"] else "cross-label-template-conflict"
+            rejected[f"{source}:{reason}"] += 1
+            return
+        retained.append({"text": row["text"], "label": row["label"]})
         exact_to_label[exact] = row["label"]
-        label_exact.add(exact_key)
-        label_near.add(near_key)
+        near_to_label[signature] = row["label"]
+        if template:
+            template_to_label[template] = row["label"]
 
     base_rows = load_rows(arguments.base)
     for row in base_rows:
         retain(row, "base")
 
     supplement_rows = load_rows(arguments.supplement)
-    selected_supplement = [row for row in supplement_rows if row["label"] in selected_labels]
+    selected_supplement = [
+        row for row in supplement_rows
+        if row["label"] in selected_labels
+        and (
+            not arguments.supplement_source_prefix
+            or any(row["source"].startswith(prefix) for prefix in arguments.supplement_source_prefix)
+        )
+    ]
     if arguments.max_supplement_per_label > 0:
         capped: list[dict[str, str]] = []
         for label in sorted(selected_labels):
@@ -155,6 +187,7 @@ def main() -> None:
         "baseCount": len(base_rows),
         "supplementCount": len(supplement_rows),
         "selectedSupplementCount": len(selected_supplement),
+        "supplementSourcePrefixes": arguments.supplement_source_prefix,
         "holdoutCount": len(holdout_rows),
         "outputCount": len(retained),
         "outputLabelCounts": dict(sorted(counts.items())),

@@ -93,6 +93,21 @@ private struct MockTransformerDownloader: TransformerModelDownloading {
     }
 }
 
+@Test
+func transformerChannelRequestsForceConditionalRevalidation() throws {
+    let url = try #require(URL(string: "https://example.com/models/channel.json"))
+    let request = TransformerModelDownloadClient.channelRequest(
+        url: url,
+        etag: "\"catalog-v3\"",
+        cacheBuster: "request-4"
+    )
+
+    #expect(request.cachePolicy == .reloadIgnoringLocalCacheData)
+    #expect(request.url?.absoluteString == "https://example.com/models/channel.json?_sift_revalidate=request-4")
+    #expect(request.value(forHTTPHeaderField: "Cache-Control") == "no-cache, max-age=0")
+    #expect(request.value(forHTTPHeaderField: "If-None-Match") == "\"catalog-v3\"")
+}
+
 private actor SuspendedTransformerDownloadGate {
     private var callCount = 0
     private var continuations: [Int: CheckedContinuation<Void, Never>] = [:]
@@ -724,6 +739,273 @@ func transformerReleaseSequenceRestartsOnlyAcrossModelABIMigration() {
 }
 
 @Test
+func transformerCatalogSelectsLatestReleaseCompatibleWithCurrentAppBuild() throws {
+    let release2 = TransformerChannelManifestV2(
+        releaseSequence: 2,
+        releaseID: "signal-v2-boundary-v15",
+        releaseManifestURL: "https://example.com/releases/v15/manifest.json",
+        releaseManifestSHA256: String(repeating: "2", count: 64),
+        modelABI: "sift-signal-v1",
+        minimumAppBuild: 10,
+        maximumAppBuild: 15,
+        minimumOSVersion: "18.0",
+        keyID: "test"
+    )
+    let release3 = TransformerChannelManifestV2(
+        releaseSequence: 3,
+        releaseID: "signal-v2-boundary-v16",
+        releaseManifestURL: "https://example.com/releases/v16/manifest.json",
+        releaseManifestSHA256: String(repeating: "3", count: 64),
+        modelABI: "sift-signal-v1",
+        minimumAppBuild: 16,
+        maximumAppBuild: .max,
+        minimumOSVersion: "18.0",
+        keyID: "test"
+    )
+    let releases = [release2, release3]
+    let verifier = TransformerManifestVerifier(publicKeys: [:])
+    let iOS18 = OperatingSystemVersion(majorVersion: 18, minorVersion: 0, patchVersion: 0)
+
+    #expect(TransformerModelDownloadClient.latestCompatibleRelease(
+        in: releases,
+        verifier: verifier,
+        appBuild: 15,
+        operatingSystemVersion: iOS18,
+        currentModelABI: nil,
+        currentReleaseSequence: 0
+    )?.releaseSequence == 2)
+    #expect(TransformerModelDownloadClient.latestCompatibleRelease(
+        in: releases,
+        verifier: verifier,
+        appBuild: 16,
+        operatingSystemVersion: iOS18,
+        currentModelABI: "sift-signal-v1",
+        currentReleaseSequence: 2
+    )?.releaseSequence == 3)
+    #expect(TransformerModelDownloadClient.latestReleaseRequiringAppUpdate(
+        in: releases,
+        verifier: verifier,
+        appBuild: 15,
+        operatingSystemVersion: iOS18,
+        currentModelABI: "sift-signal-v1",
+        currentReleaseSequence: 2
+    )?.releaseSequence == 3)
+    #expect(TransformerModelDownloadClient.updateState(
+        for: releases,
+        verifier: verifier,
+        appBuild: 15,
+        operatingSystemVersion: iOS18,
+        currentModelABI: nil,
+        currentReleaseSequence: 0
+    ) == .updateAvailable(release2))
+    #expect(TransformerModelDownloadClient.updateState(
+        for: releases,
+        verifier: verifier,
+        appBuild: 15,
+        operatingSystemVersion: iOS18,
+        currentModelABI: "sift-signal-v1",
+        currentReleaseSequence: 2
+    ) == .requiresAppUpdate(release3))
+    #expect(TransformerModelDownloadClient.updateState(
+        for: releases,
+        verifier: verifier,
+        appBuild: 16,
+        operatingSystemVersion: iOS18,
+        currentModelABI: "sift-signal-v1",
+        currentReleaseSequence: 2
+    ) == .updateAvailable(release3))
+    #expect(TransformerModelDownloadClient.updateState(
+        for: releases,
+        verifier: verifier,
+        appBuild: 16,
+        operatingSystemVersion: iOS18,
+        currentModelABI: "sift-signal-v1",
+        currentReleaseSequence: 3
+    ) == .current)
+}
+
+@MainActor
+@Test
+func manualIncompatibleTransformerUpdatePromptsForAppUpdateWithoutReplacingSignal() async throws {
+    let suiteName = "SiftTests.modelUpdate.requiresApp.\(UUID().uuidString)"
+    let defaults = try #require(UserDefaults(suiteName: suiteName))
+    defer { defaults.removePersistentDomain(forName: suiteName) }
+    ModelSelectionStore.save(.transformer, defaults: defaults)
+    defaults.set(Date(), forKey: "Sift.transformerUpdateLastCheck.v1")
+    let recorder = TransformerDownloadRecorder()
+    let release = TransformerChannelManifestV2(
+        releaseSequence: 3,
+        releaseID: "signal-v2-boundary-v16",
+        releaseManifestURL: "https://example.com/release.json",
+        releaseManifestSHA256: String(repeating: "a", count: 64),
+        modelABI: "sift-signal-v1",
+        minimumAppBuild: 16,
+        maximumAppBuild: .max,
+        minimumOSVersion: "18.0",
+        keyID: "test"
+    )
+    let model = SiftAppModel(
+        premiumBackend: MockPremiumBackend(entitled: true, outcome: .cancelled),
+        transformerAvailabilityOverride: true,
+        transformerDownloadedOverride: true,
+        transformerDownloader: MockTransformerDownloader(plan: mockTransformerDownloadPlan(), recorder: recorder),
+        transformerUpdateChecker: MockTransformerUpdateChecker(state: .requiresAppUpdate(release)),
+        modelClassifierLoader: MockSiftModelClassifierLoader(),
+        modelSelectionDefaults: defaults,
+        appDefaults: defaults
+    )
+    try await waitForPremiumRefresh(model)
+
+    model.checkForTransformerUpdate(force: true)
+    try await waitFor {
+        if case .requiresAppUpdate = model.transformerUpdateState { return true }
+        return false
+    }
+    model.downloadTransformerUpdate()
+
+    #expect(model.isShowingTransformerAppUpdatePrompt)
+    #expect(model.selectedModelVariant == .transformer)
+    #expect(await recorder.counts().prepare == 0)
+    #expect(model.appStoreURL.absoluteString == "https://apps.apple.com/app/id6788805739")
+}
+
+@MainActor
+@Test
+func unknownTransformerUpdateStateBypassesRecentCheckAfterRelaunch() async throws {
+    let suiteName = "SiftTests.modelUpdate.relaunchManual.\(UUID().uuidString)"
+    let defaults = try #require(UserDefaults(suiteName: suiteName))
+    defer { defaults.removePersistentDomain(forName: suiteName) }
+    defaults.set(Date(), forKey: "Sift.transformerUpdateLastCheck.v1")
+    let release = TransformerChannelManifestV2(
+        releaseSequence: 3,
+        releaseID: "signal-v2-boundary-v16",
+        releaseManifestURL: "https://example.com/release.json",
+        releaseManifestSHA256: String(repeating: "a", count: 64),
+        modelABI: "sift-signal-v1",
+        minimumAppBuild: 16,
+        maximumAppBuild: .max,
+        minimumOSVersion: "18.0",
+        keyID: "test"
+    )
+    let model = SiftAppModel(
+        premiumBackend: MockPremiumBackend(entitled: true, outcome: .cancelled),
+        transformerAvailabilityOverride: true,
+        transformerDownloadedOverride: true,
+        transformerDeviceSupportOverride: .supported,
+        transformerUpdateChecker: MockTransformerUpdateChecker(state: .requiresAppUpdate(release)),
+        appDefaults: defaults
+    )
+    try await waitForPremiumRefresh(model)
+
+    model.checkForTransformerUpdate()
+    try await waitFor {
+        if case .requiresAppUpdate = model.transformerUpdateState { return true }
+        return false
+    }
+}
+
+@MainActor
+@Test
+func selectedSignalUnknownUpdateStateBypassesRecentAutomaticCheckAfterRelaunch() async throws {
+    let suiteName = "SiftTests.modelUpdate.relaunchAutomatic.\(UUID().uuidString)"
+    let defaults = try #require(UserDefaults(suiteName: suiteName))
+    defer { defaults.removePersistentDomain(forName: suiteName) }
+    ModelSelectionStore.save(.transformer, defaults: defaults)
+    defaults.set(Date(), forKey: "Sift.transformerUpdateLastCheck.v1")
+    let release = TransformerChannelManifestV2(
+        releaseSequence: 3,
+        releaseID: "signal-v2-boundary-v16",
+        releaseManifestURL: "https://example.com/release.json",
+        releaseManifestSHA256: String(repeating: "a", count: 64),
+        modelABI: "sift-signal-v1",
+        minimumAppBuild: 16,
+        maximumAppBuild: .max,
+        minimumOSVersion: "18.0",
+        keyID: "test"
+    )
+    let networkRecorder = NetworkConditionRecorder()
+    let downloadRecorder = TransformerDownloadRecorder()
+    let model = SiftAppModel(
+        premiumBackend: MockPremiumBackend(entitled: true, outcome: .cancelled),
+        transformerAvailabilityOverride: true,
+        transformerDownloadedOverride: true,
+        transformerDeviceSupportOverride: .supported,
+        transformerDownloader: MockTransformerDownloader(
+            plan: mockTransformerDownloadPlan(),
+            recorder: downloadRecorder
+        ),
+        transformerUpdateChecker: MockTransformerUpdateChecker(state: .requiresAppUpdate(release)),
+        transformerNetworkConditionChecker: MockNetworkConditionChecker(
+            condition: TransformerNetworkCondition(isConnected: true, usesWiFi: true),
+            recorder: networkRecorder
+        ),
+        modelClassifierLoader: MockSiftModelClassifierLoader(),
+        modelSelectionDefaults: defaults,
+        appDefaults: defaults
+    )
+    try await waitForPremiumRefresh(model)
+
+    if model.selectedModelVariant != .transformer {
+        model.selectModelVariant(.transformer)
+        try await waitFor {
+            model.selectedModelVariant == .transformer && !model.isSwitchingModelVariant
+        }
+    }
+    model.applicationDidBecomeActive()
+    try await waitFor {
+        if case .requiresAppUpdate = model.transformerUpdateState { return true }
+        return false
+    }
+    #expect(await networkRecorder.callCount == 1)
+    #expect(model.selectedModelVariant == .transformer)
+}
+
+@MainActor
+@Test
+func selectedSignalRemainsUsableWhileInteractiveUpdateDownloads() async throws {
+    let suiteName = "SiftTests.modelUpdate.selectedSignal.\(UUID().uuidString)"
+    let defaults = try #require(UserDefaults(suiteName: suiteName))
+    defer { defaults.removePersistentDomain(forName: suiteName) }
+    ModelSelectionStore.save(.transformer, defaults: defaults)
+    defaults.set(Date(), forKey: "Sift.transformerUpdateLastCheck.v1")
+    let gate = SuspendedTransformerDownloadGate()
+    let release = TransformerChannelManifestV2(
+        releaseSequence: 2,
+        releaseID: "signal-v2",
+        releaseManifestURL: "https://example.com/release.json",
+        releaseManifestSHA256: String(repeating: "a", count: 64),
+        modelABI: "sift-signal-v1",
+        minimumAppBuild: 1,
+        maximumAppBuild: .max,
+        minimumOSVersion: "18.0",
+        keyID: "test"
+    )
+    let model = SiftAppModel(
+        premiumBackend: MockPremiumBackend(entitled: true, outcome: .cancelled),
+        transformerAvailabilityOverride: true,
+        transformerDownloadedOverride: true,
+        transformerDownloader: SuspendedTransformerDownloader(plan: mockTransformerDownloadPlan(), gate: gate),
+        transformerUpdateChecker: MockTransformerUpdateChecker(state: .updateAvailable(release)),
+        modelClassifierLoader: MockSiftModelClassifierLoader(),
+        modelSelectionDefaults: defaults,
+        appDefaults: defaults
+    )
+    try await waitForPremiumRefresh(model)
+    model.checkForTransformerUpdate(force: true)
+    try await waitFor { model.hasCompatibleTransformerUpdate }
+
+    model.downloadTransformerUpdate()
+    try await waitForSuspendedTransformerDownload(gate, count: 1)
+
+    #expect(model.selectedModelVariant == .transformer)
+    #expect(model.isTransformerDownloadActive)
+    #expect(model.isTransformerModelAvailable)
+
+    model.cancelPendingTransformerDownload()
+    await gate.release(1)
+}
+
+@Test
 func transformerDownloadRejectsManifestMissingCompactTokenizerFile() {
     let current = mockTransformerDownloadPlan().manifest
     let manifest = TransformerModelManifest(
@@ -780,8 +1062,10 @@ func storedTransformerStartupLoadsOnlyTransformer() async throws {
     )
 
     #expect(model.selectedModelVariant == .transformer)
+    #expect(model.isRestoringInitialModelVariant)
     try await waitFor { model.premium.isEntitlementResolved && !model.isSwitchingModelVariant }
     #expect(model.selectedModelVariant == .transformer)
+    #expect(!model.isRestoringInitialModelVariant)
     #expect(await recorder.recordedVariants() == [.transformer])
 }
 
@@ -867,9 +1151,12 @@ func unresolvedStoredTransformerFallsBackWhenInitialEntitlementIsMissing() async
         modelSelectionDefaults: defaults
     )
 
+    #expect(model.selectedModelVariant == .transformer)
+    #expect(model.isRestoringInitialModelVariant)
     try await waitFor { model.premium.isEntitlementResolved && !model.isSwitchingModelVariant }
     #expect(model.premium.isUnlocked == false)
     #expect(model.selectedModelVariant == .classic)
+    #expect(!model.isRestoringInitialModelVariant)
     #expect(ModelSelectionStore.load(defaults: defaults) == .classic)
 }
 
@@ -1065,6 +1352,43 @@ func submissionHistoryPagesDeduplicatesAndDeletesSingleItems() async throws {
 
 @MainActor
 @Test
+func shortFirstHistoryBatchDoesNotOverwriteIndependentSubmissionCount() async throws {
+    let suiteName = "SiftTests.ledger.shortHistoryBatch.\(UUID().uuidString)"
+    let ledgerDefaults = try #require(UserDefaults(suiteName: suiteName))
+    defer { ledgerDefaults.removePersistentDomain(forName: suiteName) }
+    SubmissionLedger.set(20, defaults: ledgerDefaults)
+
+    let seeded = (0..<20).map { index in
+        RemoteSubmissionSummary(
+            recordName: "record-\(index)",
+            text: "样本内容 \(index)",
+            label: "spam",
+            submittedAt: nil,
+            createdAtMillis: Int64(100_000 - index)
+        )
+    }
+    let client = MockRemoteSampleClient(
+        result: .success("unused"),
+        seededHistory: seeded,
+        historyPageCap: 2
+    )
+    let model = SiftAppModel(
+        remoteSampleClient: client,
+        premiumBackend: MockPremiumBackend(entitled: false, outcome: .cancelled),
+        ledgerDefaults: ledgerDefaults
+    )
+
+    model.refreshSubmissionHistoryIfNeeded()
+    try await waitFor {
+        !model.isLoadingHistory && model.submissionHistory.count == 2
+    }
+
+    #expect(model.submittedSampleCount == 20)
+    #expect(SubmissionLedger.count(defaults: ledgerDefaults) == 20)
+}
+
+@MainActor
+@Test
 func cachedSubmissionHistoryRestoresRowsAndCounterWithoutFetching() throws {
     let suiteName = "SiftTests.history.cache.\(UUID().uuidString)"
     let defaults = try #require(UserDefaults(suiteName: suiteName))
@@ -1091,8 +1415,8 @@ func cachedSubmissionHistoryRestoresRowsAndCounterWithoutFetching() throws {
     #expect(model.hasLoadedSubmissionHistory)
     #expect(model.historyFullyLoaded)
     #expect(model.submissionHistory == [cached])
-    #expect(model.submittedSampleCount == 1)
-    #expect(SubmissionLedger.count(defaults: defaults) == 1)
+    #expect(model.submittedSampleCount == 7)
+    #expect(SubmissionLedger.count(defaults: defaults) == 7)
 }
 
 @MainActor

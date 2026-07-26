@@ -100,6 +100,18 @@ private struct DatasetMetrics: Sendable {
     let promotionNegatives: Int
     let scamCorrect: Int
     let scamCount: Int
+    let failures: [DatasetFailureReport]
+}
+
+private struct DatasetFailureReport: Encodable, Sendable {
+    let text: String
+    let expectedLabelID: String
+    let expectedAction: SystemAction
+    let predictedLabelID: String
+    let confidence: Double
+    let source: ClassificationSource
+    let systemAction: SystemAction
+    let fallbackReason: MessageFilterFallbackReason
 }
 
 private struct ArtifactActionReport: Encodable {
@@ -118,6 +130,10 @@ private struct ArtifactActionReport: Encodable {
     let installedDirectory: String?
     let computePlan: TransformerComputePlanReport?
     let readableCases: [ReadableCaseReport]
+    let fixedFailures: [DatasetFailureReport]
+    let promotionFailures: [DatasetFailureReport]
+    let billingFailures: [DatasetFailureReport]
+    let conversationFailures: [DatasetFailureReport]
 }
 
 private struct ReadableCase: Sendable {
@@ -187,6 +203,7 @@ private func evaluate(
     var promotionNegatives = 0
     var scamCorrect = 0
     var scamCount = 0
+    var failures: [DatasetFailureReport] = []
 
     for row in rows {
         let label = SiftTaxonomy.leaf(id: row.label)
@@ -201,7 +218,20 @@ private func evaluate(
         let expected = label?.systemAction ?? .none
         let sourceCorrect = !TransformerModelContract.isAbstainLabel(row.label)
             || result.decision.source == .fallback
-        actionCorrect += result.systemAction == expected && sourceCorrect ? 1 : 0
+        let isCorrect = result.systemAction == expected && sourceCorrect
+        actionCorrect += isCorrect ? 1 : 0
+        if !isCorrect {
+            failures.append(DatasetFailureReport(
+                text: row.text,
+                expectedLabelID: row.label,
+                expectedAction: expected,
+                predictedLabelID: result.decision.labelID,
+                confidence: result.decision.confidence,
+                source: result.decision.source,
+                systemAction: result.systemAction,
+                fallbackReason: result.fallbackReason
+            ))
+        }
         if expected == .none || expected == .transaction {
             benignOrTransactionToJunk += result.systemAction == .junk ? 1 : 0
         }
@@ -221,7 +251,8 @@ private func evaluate(
         promotionFalsePositives: promotionFalsePositives,
         promotionNegatives: promotionNegatives,
         scamCorrect: scamCorrect,
-        scamCount: scamCount
+        scamCount: scamCount,
+        failures: failures
     )
 }
 
@@ -744,7 +775,11 @@ private func run() async throws {
         installedDynamically: arguments.installsDynamicRelease,
         installedDirectory: runtime.installedDirectory?.path,
         computePlan: computePlan,
-        readableCases: readable
+        readableCases: readable,
+        fixedFailures: fixed.failures,
+        promotionFailures: promotion.failures,
+        billingFailures: billing.failures,
+        conversationFailures: conversation.failures
     )
     let encoder = JSONEncoder()
     encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
