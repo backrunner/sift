@@ -89,6 +89,10 @@ struct SiftApp: App {
             _model = State(initialValue: screenshotModel)
             return
         }
+        if ProcessInfo.processInfo.environment["SIFT_DEBUG_TRANSFORMER_SUPPORTED"] == "1" {
+            _model = State(initialValue: SiftAppModel(transformerDeviceSupportOverride: .supported))
+            return
+        }
         #endif
 
         _model = State(initialValue: SiftAppModel())

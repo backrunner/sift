@@ -167,6 +167,42 @@ class NearDuplicateTests(unittest.TestCase):
 
 
 class RuleTierTests(unittest.TestCase):
+    def test_cross_label_digit_variants_are_both_rejected(self):
+        report = Report()
+        rejected: list[dict] = []
+        arguments = SimpleNamespace(min_length=8, max_length=500)
+        rows = [
+            Row(text="Account 123456 status was updated today", label="alpha", source="a.ndjson"),
+            Row(text="Account 987654 status was updated today", label="beta", source="b.ndjson"),
+        ]
+
+        kept = apply_rule_tier(rows, {"alpha", "beta"}, {"en"}, arguments, report, rejected)
+
+        self.assertEqual(kept, [])
+        self.assertEqual(report.rejected["cross-label-near-conflict"], 2)
+
+    def test_cross_label_template_variants_are_both_rejected(self):
+        report = Report()
+        rejected: list[dict] = []
+        arguments = SimpleNamespace(min_length=8, max_length=500)
+        rows = [
+            Row(
+                text="[Bank A] Loan 991122 approved. Visit https://a.example/x. Reply STOP to end",
+                label="alpha",
+                source="a.ndjson",
+            ),
+            Row(
+                text="[Bank B] Loan 448899 approved. Visit https://b.example/y. Txt STOP",
+                label="beta",
+                source="b.ndjson",
+            ),
+        ]
+
+        kept = apply_rule_tier(rows, {"alpha", "beta"}, {"en"}, arguments, report, rejected)
+
+        self.assertEqual(kept, [])
+        self.assertEqual(report.rejected["cross-label-template-conflict"], 2)
+
     def test_placeholder_only_rows_are_rejected_before_rehydration(self):
         report = Report()
         rejected: list[dict] = []

@@ -148,6 +148,7 @@ public enum TransformerModelDownloadError: Error, LocalizedError, Hashable, Send
     case missingRemoteManifestURL
     case invalidChannelManifest
     case incompatibleModel
+    case appUpdateRequired
     case invalidManifestSignature
     case invalidManifestResponse
     case missingRemoteArtifactList
@@ -164,6 +165,8 @@ public enum TransformerModelDownloadError: Error, LocalizedError, Hashable, Send
             return String(localized: "高级模型更新信息不可用")
         case .incompatibleModel:
             return String(localized: "此模型版本与当前 App 不兼容")
+        case .appUpdateRequired:
+            return String(localized: "请先更新 Sift，再下载最新高级模型")
         case .invalidManifestSignature:
             return String(localized: "高级模型签名校验失败")
         case .invalidManifestResponse:
@@ -376,21 +379,29 @@ public final class TransformerModelDownloadClient: TransformerModelDownloading, 
         let manifest: TransformerModelManifest
         if let channelURL, let manifestVerifier {
             let channel = try await fetchChannel(at: channelURL, verifier: manifestVerifier)
+            let releases = try manifestVerifier.verifiedReleases(in: channel)
             let installedManifest = TransformerClassifierLoader.manifest()
-            let currentSequence = Self.effectiveCurrentReleaseSequence(
-                currentModelABI: installedManifest?.modelABI,
-                currentReleaseSequence: installedManifest?.releaseSequence ?? 0,
-                channelABI: channel.modelABI
-            )
-            guard manifestVerifier.compatibility(
-                of: channel,
+            guard let compatibleRelease = Self.latestCompatibleRelease(
+                in: releases,
+                verifier: manifestVerifier,
                 appBuild: appBuild,
                 operatingSystemVersion: operatingSystemVersion,
-                currentReleaseSequence: currentSequence
-            ) == .compatible else {
+                currentModelABI: installedManifest?.modelABI,
+                currentReleaseSequence: installedManifest?.releaseSequence ?? 0
+            ) else {
+                if Self.latestReleaseRequiringAppUpdate(
+                    in: releases,
+                    verifier: manifestVerifier,
+                    appBuild: appBuild,
+                    operatingSystemVersion: operatingSystemVersion,
+                    currentModelABI: installedManifest?.modelABI,
+                    currentReleaseSequence: installedManifest?.releaseSequence ?? 0
+                ) != nil {
+                    throw TransformerModelDownloadError.appUpdateRequired
+                }
                 throw TransformerModelDownloadError.incompatibleModel
             }
-            guard let url = URL(string: channel.releaseManifestURL), url.scheme == "https" else {
+            guard let url = URL(string: compatibleRelease.releaseManifestURL), url.scheme == "https" else {
                 throw TransformerModelDownloadError.invalidChannelManifest
             }
             releaseURL = url
@@ -398,13 +409,13 @@ public final class TransformerModelDownloadClient: TransformerModelDownloading, 
             guard response.isSuccessfulHTTPResponse else {
                 throw TransformerModelDownloadError.invalidManifestResponse
             }
-            guard manifestVerifier.checksum(for: data) == channel.releaseManifestSHA256 else {
+            guard manifestVerifier.checksum(for: data) == compatibleRelease.releaseManifestSHA256 else {
                 throw TransformerManifestValidationError.releaseManifestChecksumMismatch
             }
             manifest = try JSONDecoder().decode(TransformerModelManifest.self, from: data)
             do {
                 try manifestVerifier.verifySignature(of: manifest)
-                try manifestVerifier.validateRelease(manifest, for: channel)
+                try manifestVerifier.validateRelease(manifest, for: compatibleRelease)
             } catch {
                 throw TransformerModelDownloadError.invalidManifestSignature
             }
@@ -432,26 +443,17 @@ public final class TransformerModelDownloadClient: TransformerModelDownloading, 
         }
         do {
             let channel = try await fetchChannel(at: channelURL, verifier: manifestVerifier)
-            let currentSequence = Self.effectiveCurrentReleaseSequence(
-                currentModelABI: currentIdentity?.variant == .transformer ? currentIdentity?.modelABI : nil,
-                currentReleaseSequence: currentIdentity?.releaseSequence ?? 0,
-                channelABI: channel.modelABI
-            )
-            let compatibility = manifestVerifier.compatibility(
-                of: channel,
+            let releases = try manifestVerifier.verifiedReleases(in: channel)
+            let currentModelABI = currentIdentity?.variant == .transformer ? currentIdentity?.modelABI : nil
+            let currentReleaseSequence = currentIdentity?.releaseSequence ?? 0
+            return Self.updateState(
+                for: releases,
+                verifier: manifestVerifier,
                 appBuild: appBuild,
                 operatingSystemVersion: operatingSystemVersion,
-                currentReleaseSequence: currentSequence
+                currentModelABI: currentModelABI,
+                currentReleaseSequence: currentReleaseSequence
             )
-            switch compatibility {
-            case .compatible:
-                return channel.releaseSequence > currentSequence ? .updateAvailable(channel) : .current
-            case .appBuildTooOld:
-                return .requiresAppUpdate(channel)
-            case .unsupportedSchema, .unsupportedABI, .appBuildTooNew,
-                 .operatingSystemTooOld, .releaseRollback:
-                return .incompatible(channel)
-            }
         } catch {
             return .failed(error.localizedDescription)
         }
@@ -506,6 +508,106 @@ public final class TransformerModelDownloadClient: TransformerModelDownloading, 
         channelABI: String
     ) -> Int {
         currentModelABI == channelABI ? currentReleaseSequence : 0
+    }
+
+    static func latestCompatibleRelease(
+        in releases: [TransformerChannelManifestV2],
+        verifier: TransformerManifestVerifier,
+        appBuild: Int,
+        operatingSystemVersion: OperatingSystemVersion,
+        currentModelABI: String?,
+        currentReleaseSequence: Int
+    ) -> TransformerChannelManifestV2? {
+        releases.filter { release in
+            let effectiveCurrentSequence = effectiveCurrentReleaseSequence(
+                currentModelABI: currentModelABI,
+                currentReleaseSequence: currentReleaseSequence,
+                channelABI: release.modelABI
+            )
+            return verifier.compatibility(
+                of: release,
+                appBuild: appBuild,
+                operatingSystemVersion: operatingSystemVersion,
+                currentReleaseSequence: effectiveCurrentSequence
+            ) == .compatible
+        }.max(by: { $0.releaseSequence < $1.releaseSequence })
+    }
+
+    static func latestReleaseRequiringAppUpdate(
+        in releases: [TransformerChannelManifestV2],
+        verifier: TransformerManifestVerifier,
+        appBuild: Int,
+        operatingSystemVersion: OperatingSystemVersion,
+        currentModelABI: String?,
+        currentReleaseSequence: Int
+    ) -> TransformerChannelManifestV2? {
+        releases.filter { release in
+            let effectiveCurrentSequence = effectiveCurrentReleaseSequence(
+                currentModelABI: currentModelABI,
+                currentReleaseSequence: currentReleaseSequence,
+                channelABI: release.modelABI
+            )
+            return release.releaseSequence > effectiveCurrentSequence
+                && verifier.compatibility(
+                    of: release,
+                    appBuild: appBuild,
+                    operatingSystemVersion: operatingSystemVersion,
+                    currentReleaseSequence: effectiveCurrentSequence
+                ) == .appBuildTooOld
+        }.max(by: { $0.releaseSequence < $1.releaseSequence })
+    }
+
+    static func updateState(
+        for releases: [TransformerChannelManifestV2],
+        verifier: TransformerManifestVerifier,
+        appBuild: Int,
+        operatingSystemVersion: OperatingSystemVersion,
+        currentModelABI: String?,
+        currentReleaseSequence: Int
+    ) -> TransformerUpdateState {
+        if let compatibleRelease = latestCompatibleRelease(
+            in: releases,
+            verifier: verifier,
+            appBuild: appBuild,
+            operatingSystemVersion: operatingSystemVersion,
+            currentModelABI: currentModelABI,
+            currentReleaseSequence: currentReleaseSequence
+        ) {
+            let effectiveCurrentSequence = effectiveCurrentReleaseSequence(
+                currentModelABI: currentModelABI,
+                currentReleaseSequence: currentReleaseSequence,
+                channelABI: compatibleRelease.modelABI
+            )
+            if compatibleRelease.releaseSequence > effectiveCurrentSequence {
+                return .updateAvailable(compatibleRelease)
+            }
+        }
+
+        if let appUpdateRelease = latestReleaseRequiringAppUpdate(
+            in: releases,
+            verifier: verifier,
+            appBuild: appBuild,
+            operatingSystemVersion: operatingSystemVersion,
+            currentModelABI: currentModelABI,
+            currentReleaseSequence: currentReleaseSequence
+        ) {
+            return .requiresAppUpdate(appUpdateRelease)
+        }
+
+        if latestCompatibleRelease(
+            in: releases,
+            verifier: verifier,
+            appBuild: appBuild,
+            operatingSystemVersion: operatingSystemVersion,
+            currentModelABI: currentModelABI,
+            currentReleaseSequence: currentReleaseSequence
+        ) != nil {
+            return .current
+        }
+        if let latestRelease = releases.max(by: { $0.releaseSequence < $1.releaseSequence }) {
+            return .incompatible(latestRelease)
+        }
+        return .failed(TransformerModelDownloadError.invalidChannelManifest.localizedDescription)
     }
 
     @concurrent
@@ -649,13 +751,10 @@ public final class TransformerModelDownloadClient: TransformerModelDownloading, 
         at url: URL,
         verifier: TransformerManifestVerifier
     ) async throws -> TransformerChannelManifestV2 {
-        var request = URLRequest(url: url)
         let (etag, cached) = stateLock.withLock {
             (channelETag, cachedChannel)
         }
-        if let etag {
-            request.setValue(etag, forHTTPHeaderField: "If-None-Match")
-        }
+        let request = Self.channelRequest(url: url, etag: etag)
         let (data, response) = try await session.data(for: request)
         if let http = response as? HTTPURLResponse, http.statusCode == 304, let cached {
             return cached
@@ -665,7 +764,7 @@ public final class TransformerModelDownloadClient: TransformerModelDownloading, 
         }
         let channel = try JSONDecoder().decode(TransformerChannelManifestV2.self, from: data)
         do {
-            try verifier.verifySignature(of: channel)
+            _ = try verifier.verifiedReleases(in: channel)
         } catch {
             throw TransformerModelDownloadError.invalidManifestSignature
         }
@@ -674,6 +773,28 @@ public final class TransformerModelDownloadClient: TransformerModelDownloading, 
             cachedChannel = channel
         }
         return channel
+    }
+
+    static func channelRequest(
+        url: URL,
+        etag: String?,
+        cacheBuster: String = UUID().uuidString
+    ) -> URLRequest {
+        var components = URLComponents(url: url, resolvingAgainstBaseURL: false)
+        var queryItems = components?.queryItems ?? []
+        queryItems.removeAll { $0.name == "_sift_revalidate" }
+        queryItems.append(URLQueryItem(name: "_sift_revalidate", value: cacheBuster))
+        components?.queryItems = queryItems
+
+        var request = URLRequest(
+            url: components?.url ?? url,
+            cachePolicy: .reloadIgnoringLocalCacheData
+        )
+        request.setValue("no-cache, max-age=0", forHTTPHeaderField: "Cache-Control")
+        if let etag {
+            request.setValue(etag, forHTTPHeaderField: "If-None-Match")
+        }
+        return request
     }
 
     private func resolveArtifacts(

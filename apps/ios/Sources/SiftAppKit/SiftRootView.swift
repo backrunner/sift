@@ -298,7 +298,10 @@ private struct ModelPickerView: View {
                             dismiss()
                         }
                     }
-                    .disabled(model.isSwitchingModelVariant || model.isTransformerDownloadActive)
+                    .disabled(
+                        model.isSwitchingModelVariant
+                            || (model.isTransformerDownloadActive && variant == .classic)
+                    )
                     .frame(maxWidth: .infinity)
                 }
 
@@ -569,6 +572,7 @@ private struct ModelVariantCard: View {
 
 private struct TransformerModelDetailView: View {
     @Bindable var model: SiftAppModel
+    @Environment(\.openURL) private var openURL
 
     var body: some View {
         ScrollView {
@@ -599,6 +603,17 @@ private struct TransformerModelDetailView: View {
         .background(AtmosphericBackground())
         .navigationTitle(String(localized: "模型详情"))
         .toolbarTitleDisplayMode(.inline)
+        .alert(
+            String(localized: "请先更新 Sift"),
+            isPresented: $model.isShowingTransformerAppUpdatePrompt
+        ) {
+            Button(String(localized: "前往 App Store")) {
+                openURL(model.appStoreURL)
+            }
+            Button(String(localized: "取消"), role: .cancel) {}
+        } message: {
+            Text(String(localized: "最新的 Sift Signal 需要新版 App。更新 App 后即可继续下载模型。"))
+        }
     }
 
     private func modelDetailRow(_ title: String, value: String) -> some View {
@@ -632,10 +647,14 @@ private struct TransformerModelDetailView: View {
             .buttonStyle(.borderedProminent)
             .controlSize(.large)
         } else if case .requiresAppUpdate = model.transformerUpdateState {
-            Label(String(localized: "需要更新 App 后使用"), systemImage: "exclamationmark.triangle.fill")
-                .foregroundStyle(Color.siftAmber)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 12)
+            Button {
+                model.downloadTransformerUpdate()
+            } label: {
+                Label(String(localized: "更新 App"), systemImage: "arrow.up.circle.fill")
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.borderedProminent)
+            .controlSize(.large)
         } else {
             Label(String(localized: "已是最新版本"), systemImage: "checkmark.circle.fill")
                 .foregroundStyle(Color.siftMint)

@@ -458,6 +458,15 @@
           }
         },
         {
+          "id": "government.reminder",
+          "title": "生活提醒",
+          "titles": {
+            "zh": "生活提醒",
+            "en": "Civic Reminders",
+            "ja": "暮らしのお知らせ"
+          }
+        },
+        {
           "id": "government.traffic",
           "title": "交管",
           "titles": {

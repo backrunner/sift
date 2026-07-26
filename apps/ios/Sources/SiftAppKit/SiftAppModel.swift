@@ -196,6 +196,7 @@ public final class SiftAppModel {
     public private(set) var pendingTransformerDownloadPlan: TransformerModelDownloadPlan?
     public private(set) var transformerUpdateState: TransformerUpdateState = .unknown
     public var isShowingMeteredTransformerDownloadConfirmation: Bool = false
+    public var isShowingTransformerAppUpdatePrompt: Bool = false
     public var submissionDestination: SubmissionDestination = .local
     public var testBody: String = ""
     public var submissionText: String = "" {
@@ -585,10 +586,12 @@ public final class SiftAppModel {
 
     public var transformerUpdateStatusText: String? {
         switch transformerUpdateState {
-        case .unknown, .checking, .current, .requiresAppUpdate, .incompatible, .failed:
+        case .unknown, .checking, .current, .incompatible, .failed:
             return nil
         case .updateAvailable:
             return String(localized: "有新版本可下载")
+        case .requiresAppUpdate:
+            return String(localized: "需要更新 App")
         }
     }
 
@@ -602,6 +605,7 @@ public final class SiftAppModel {
         let lastCheck = appDefaults.object(forKey: Self.transformerUpdateLastCheckKey) as? Date
         if
             !force,
+            transformerUpdateState != .unknown,
             let lastCheck,
             Date().timeIntervalSince(lastCheck) < Self.transformerUpdateCheckInterval
         {
@@ -624,10 +628,17 @@ public final class SiftAppModel {
             showTransformerUnsupportedMessage()
             return
         }
-        guard hasCompatibleTransformerUpdate, premium.isUnlocked else {
+        guard premium.isUnlocked else {
             return
         }
-        beginTransformerDownloadAndSwitch(allowMeteredNetwork: false)
+        switch transformerUpdateState {
+        case .updateAvailable where hasCompatibleTransformerUpdate:
+            beginTransformerDownloadAndSwitch(allowMeteredNetwork: false)
+        case .requiresAppUpdate:
+            isShowingTransformerAppUpdatePrompt = true
+        case .unknown, .checking, .current, .updateAvailable, .incompatible, .failed:
+            break
+        }
     }
 
     public func applicationDidBecomeActive() {
@@ -1093,6 +1104,12 @@ public final class SiftAppModel {
     }
 
     private func handleTransformerDownloadFailure(_ error: Error) {
+        if error as? TransformerModelDownloadError == .appUpdateRequired {
+            transformerDownloadPhase = isTransformerModelAvailable ? .ready : .notDownloaded
+            transformerDownloadTask = nil
+            isShowingTransformerAppUpdatePrompt = true
+            return
+        }
         let message = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
         transformerDownloadPhase = .failed(message)
         transformerDownloadTask = nil
@@ -1119,6 +1136,7 @@ public final class SiftAppModel {
             let lastCheck,
             !force,
             !mustReconnectBackgroundSession,
+            transformerUpdateState != .unknown,
             Date().timeIntervalSince(lastCheck) < Self.transformerUpdateCheckInterval
         {
             return
@@ -1368,6 +1386,10 @@ public final class SiftAppModel {
 
     public var termsOfServiceURL: URL {
         Self.configuredTermsOfServiceURL()
+    }
+
+    public var appStoreURL: URL {
+        Self.configuredAppStoreURL()
     }
 
     public var shouldShowSanitizedPreview: Bool {
@@ -2313,6 +2335,21 @@ public final class SiftAppModel {
             return url
         }
         return URL(string: "https://sift.alkinum.io/terms")!
+    }
+
+    private static func configuredAppStoreURL() -> URL {
+        let keys = ["SiftAppStoreURL", "SIFT_APP_STORE_URL"]
+        for key in keys {
+            guard
+                let value = Bundle.main.object(forInfoDictionaryKey: key) as? String,
+                let url = URL(string: value),
+                url.scheme == "https"
+            else {
+                continue
+            }
+            return url
+        }
+        return URL(string: "https://apps.apple.com/app/id6788805739")!
     }
 
     private func remoteSubmissionErrorMessage(for error: Error) -> String {

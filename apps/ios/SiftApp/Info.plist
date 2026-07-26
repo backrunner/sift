@@ -52,6 +52,8 @@
 	<string>https://sift.alkinum.io/privacy</string>
 	<key>SiftTermsOfServiceURL</key>
 	<string>https://sift.alkinum.io/terms</string>
+	<key>SiftAppStoreURL</key>
+	<string>$(SIFT_APP_STORE_URL)</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

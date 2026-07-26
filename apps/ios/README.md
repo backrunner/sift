@@ -56,6 +56,10 @@ For local Simulator or device testing, set the Debug scheme environment
 variable `SIFT_DEBUG_PREMIUM_UNLOCKED=1`. This selects an unlocked in-process
 Premium backend only in `DEBUG`; Release builds always use StoreKit.
 
+Simulator-only Signal download and switching checks can additionally set
+`SIFT_DEBUG_TRANSFORMER_SUPPORTED=1`. This bypasses the hardware-family gate in
+Debug builds only; production builds and physical-device checks are unchanged.
+
 Release builds must inject the raw Ed25519 public key used to verify the signed
 model channel and immutable release manifest:
 

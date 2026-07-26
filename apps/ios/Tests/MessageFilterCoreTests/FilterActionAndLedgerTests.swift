@@ -189,6 +189,7 @@ private let expectedSystemMappings: [ExpectedSystemMapping] = [
     .init(labelID: "carrier.promotion", action: .promotion, subAction: .promotionalOffers),
     .init(labelID: "carrier.other", action: .transaction, subAction: .transactionalCarrier),
     .init(labelID: "government.notice", action: .transaction, subAction: .transactionalPublicServices),
+    .init(labelID: "government.reminder", action: .transaction, subAction: .transactionalPublicServices),
     .init(labelID: "government.traffic", action: .transaction, subAction: .transactionalPublicServices),
     .init(labelID: "government.tax", action: .transaction, subAction: .transactionalPublicServices),
     .init(labelID: "government.social_security", action: .transaction, subAction: .transactionalPublicServices),

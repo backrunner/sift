@@ -2,6 +2,8 @@ import type { RequestHandler } from './$types';
 
 const MANIFEST_CACHE_CONTROL = 'public, max-age=300, must-revalidate';
 const ARTIFACT_CACHE_CONTROL = 'public, max-age=31536000, immutable';
+const MANIFEST_EDGE_CACHE_CONTROL = 'public, s-maxage=300, must-revalidate';
+const ARTIFACT_EDGE_CACHE_CONTROL = 'public, s-maxage=31536000, immutable';
 
 interface ByteRange {
   offset: number;
@@ -79,19 +81,24 @@ async function serveModel(path: string, request: Request, platform: App.Platform
 }
 
 function modelHeaders(object: ModelMetadata, key: string): Headers {
-  const headers = new Headers();
-  object.writeHttpMetadata(headers);
+    const headers = new Headers();
+    const isMetadata = key.endsWith('.manifest.json') || key.endsWith('.channel.json');
+    object.writeHttpMetadata(headers);
   headers.set('etag', object.httpEtag);
   headers.set('content-length', String(object.size));
   headers.set('accept-ranges', 'bytes');
   headers.set('x-content-type-options', 'nosniff');
-  if (!headers.has('cache-control')) {
+    if (!headers.has('cache-control')) {
+        headers.set(
+            'cache-control',
+            isMetadata ? MANIFEST_CACHE_CONTROL : ARTIFACT_CACHE_CONTROL
+        );
+    }
     headers.set(
-      'cache-control',
-      key.endsWith('.manifest.json') ? MANIFEST_CACHE_CONTROL : ARTIFACT_CACHE_CONTROL
+        'cloudflare-cdn-cache-control',
+        isMetadata ? MANIFEST_EDGE_CACHE_CONTROL : ARTIFACT_EDGE_CACHE_CONTROL
     );
-  }
-  return headers;
+    return headers;
 }
 
 function etagMatches(ifNoneMatch: string | null, object: ModelMetadata): boolean {

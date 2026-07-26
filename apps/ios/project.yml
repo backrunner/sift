@@ -8,7 +8,7 @@ settings:
   SWIFT_VERSION: "6.0"
   GENERATE_INFOPLIST_FILE: YES
   MARKETING_VERSION: "1.0"
-  CURRENT_PROJECT_VERSION: "10"
+  CURRENT_PROJECT_VERSION: "16"
   SUPPORTED_PLATFORMS: "iphoneos iphonesimulator"
   TARGETED_DEVICE_FAMILY: "1"
   SUPPORTS_MACCATALYST: NO
@@ -99,6 +99,7 @@ targets:
       SIFT_SIGNAL_MODEL_CHANNEL_URL: https://sift.alkinum.io/models/channels/v2/SiftSignalModel.channel.json
       SIFT_SIGNAL_MODEL_PUBLIC_KEY_ID: release-2026
       SIFT_SIGNAL_MODEL_PUBLIC_KEY: "EWT4wUWJG73N72DqkoNZ8MoDZYlYWPN7YrkL6QgjQKY="
+      SIFT_APP_STORE_URL: https://apps.apple.com/app/id6788805739
   MessageFilterExtension:
     type: app-extension
     platform: iOS

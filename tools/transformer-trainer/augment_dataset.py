@@ -97,12 +97,14 @@ def augment(
 ) -> tuple[list[dict[str, str]], dict[str, Any]]:
     validate_config(config, valid_labels)
     exact_to_label: dict[str, str] = {}
-    used_near: set[tuple[str, str]] = set()
-    used_templates: set[tuple[str, str]] = set()
+    exact_to_index: dict[str, int] = {}
+    near_to_label: dict[str, str] = {}
+    template_to_label: dict[str, str] = {}
     output: list[dict[str, str]] = []
     rejected: Counter[str] = Counter()
     augmented_by_label: Counter[str] = Counter()
     augmented_by_family: Counter[str] = Counter()
+    promoted_boundary_by_family: Counter[str] = Counter()
 
     def retain(
         text: str,
@@ -125,11 +127,21 @@ def augment(
         if existing_label is not None and existing_label != label:
             rejected[f"{family}:cross-label-conflict"] += 1
             return False
-        if (label, near) in used_near:
-            rejected[f"{family}:near-duplicate"] += 1
+        if existing_label == label and family.startswith("boundary:"):
+            existing = output[exact_to_index[exact]]
+            existing["source"] = f"augmentation:{family}"
+            existing["language"] = detect_language(text)
+            promoted_boundary_by_family[family] += 1
             return False
-        if template and (label, template) in used_templates:
-            rejected[f"{family}:template-duplicate"] += 1
+        existing_near_label = near_to_label.get(near)
+        if existing_near_label is not None:
+            reason = "near-duplicate" if existing_near_label == label else "cross-label-near-conflict"
+            rejected[f"{family}:{reason}"] += 1
+            return False
+        existing_template_label = template_to_label.get(template) if template else None
+        if existing_template_label is not None:
+            reason = "template-duplicate" if existing_template_label == label else "cross-label-template-conflict"
+            rejected[f"{family}:{reason}"] += 1
             return False
         output_row = {"text": text, "label": label}
         if is_base and metadata is not None:
@@ -141,9 +153,10 @@ def augment(
             output_row["language"] = detect_language(text)
         output.append(output_row)
         exact_to_label[exact] = label
-        used_near.add((label, near))
+        exact_to_index[exact] = len(output) - 1
+        near_to_label[near] = label
         if template:
-            used_templates.add((label, template))
+            template_to_label[template] = label
         if not is_base:
             augmented_by_label[label] += 1
             augmented_by_family[family] += 1
@@ -200,6 +213,8 @@ def augment(
         "augmentedCount": sum(augmented_by_label.values()),
         "augmentedByLabel": dict(sorted(augmented_by_label.items())),
         "augmentedByFamily": dict(sorted(augmented_by_family.items())),
+        "promotedBoundaryCount": sum(promoted_boundary_by_family.values()),
+        "promotedBoundaryByFamily": dict(sorted(promoted_boundary_by_family.items())),
         "rejected": dict(sorted(rejected.items())),
         "maxAugmentedPerLabel": max_augmented_per_label,
         "maxVariantsPerRow": max_variants_per_row,

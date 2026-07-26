@@ -112,6 +112,54 @@ public struct HeuristicClassifier: MessageClassifier {
             return (label, 0.95)
         }
 
+        let cloudResourceMarkers = [
+            "云数据库", "云服务器", "云资源", "实例id", "对象存储",
+            "cloud database", "managed database", "cloud server", "cloud resource",
+            "virtual machine", "object storage", "クラウドdb", "クラウドデータベース",
+            "仮想サーバー", "オブジェクトストレージ", "インスタンスid"
+        ]
+        let cloudExpiryRiskMarkers = [
+            "到期", "停止服务", "停机", "资源将会被释放", "数据不可恢复", "续费",
+            "expires", "expiry", "renew", "suspended", "purged", "deleted", "data loss",
+            "利用期限", "契約がまもなく終了", "停止", "削除", "消去", "更新してください"
+        ]
+        if
+            cloudResourceMarkers.contains(where: body.contains),
+            cloudExpiryRiskMarkers.contains(where: body.contains),
+            let label = SiftTaxonomy.leaf(id: "work.alert")
+        {
+            return (label, 0.96)
+        }
+
+        let governmentSources = [
+            "公安", "政府", "政务", "应急管理", "消防", "卫健", "卫生健康", "疾控",
+            "教育局", "教育部门", "市场监管", "社区", "街道办", "反诈中心", "水务",
+            "消费者权益保护", "police", "public health", "health department", "fire department",
+            "fire and rescue service", "emergency management", "education department",
+            "food safety authority", "fraud prevention office", "consumer protection office",
+            "community", "water authority", "警察", "消防", "消防本部", "保健当局", "保健所",
+            "防災当局", "教育委員会", "食品安全当局", "詐欺対策", "消費生活センター", "自治体", "水道局"
+        ]
+        let civicReminderSignals = [
+            "提示", "提醒", "温馨提醒", "倡议", "请勿", "预防", "防范", "注意安全",
+            "远离", "守护", "安全监护", "remind", "advise", "urge", "asks residents",
+            "safety message", "avoid", "stay safe", "からのお知らせ", "からのお願い",
+            "からの注意", "よう呼びかけ", "よう案内"
+        ]
+        let specializedGovernmentSignals = [
+            "税务", "退税", "社保", "医保", "公积金", "法院", "司法", "违章", "驾驶证",
+            "政策", "新规", "条例", "tax", "social insurance", "court", "licence renewal",
+            "policy", "regulation", "税務", "社会保険", "裁判所", "免許更新", "政策", "制度"
+        ]
+        if
+            governmentSources.contains(where: body.contains),
+            civicReminderSignals.contains(where: body.contains),
+            !specializedGovernmentSignals.contains(where: body.contains),
+            let label = SiftTaxonomy.leaf(id: "government.reminder")
+        {
+            return (label, 0.94)
+        }
+
         let rules: [(labelID: String, keywords: [String], confidence: Double)] = [
             ("verification", ["验证码", "动态码", "校验码", "verification code", "security code", "otp", "passcode", "認証コード", "確認コード", "ワンタイム"], 0.99),
             ("spam", ["刷单", "贷款秒批", "无视征信", "先交保证金", "安全账户", "涉嫌洗钱", "代办证件", "彩票内幕", "中奖通知", "点击链接完成认证", "you won", "winner", "claim your prize", "your account will be frozen", "guaranteed returns", "no credit check", "pay a deposit", "審査なし即日融資", "保証金", "当選しました", "至急ご確認ください"], 0.95),

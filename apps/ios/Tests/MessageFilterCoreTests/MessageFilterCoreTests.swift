@@ -125,6 +125,45 @@ func merchantPromotionWithUnsubscribeRemainsPromotion() {
     #expect(decision.systemAction == .promotion)
 }
 
+@Test
+func governmentDailySafetyMessageClassifiesAsCivicReminder() {
+    let decision = HeuristicClassifier().classify(
+        sender: nil,
+        body: "公安部治安管理局提示您：做好未成年人暑期安全监护，切勿到公开水域野泳，远离溺水风险。"
+    )
+
+    #expect(decision.labelID == "government.reminder")
+    #expect(decision.systemAction == .transaction)
+    #expect(decision.confidence > 0.9)
+}
+
+@Test(arguments: [
+    "County police remind residents to keep children within sight near public swimming areas.",
+    "City fire and rescue services advise replacing damaged extension leads before use.",
+    "The consumer protection office advises checking a contractor's licence before paying a deposit.",
+    "保健所からのお知らせです。調理済みの食品は早めに冷蔵してください。",
+    "消費生活センターから、訪問販売の契約条件を確認するよう案内しています。"
+])
+func governmentReminderAuthorityVariantsClassifyAsCivicReminder(body: String) {
+    let decision = HeuristicClassifier().classify(sender: nil, body: body)
+
+    #expect(decision.labelID == "government.reminder")
+    #expect(decision.systemAction == .transaction)
+    #expect(decision.confidence > 0.9)
+}
+
+@Test
+func expiringCloudResourceClassifiesAsWorkAlertInsteadOfVerification() {
+    let decision = HeuristicClassifier().classify(
+        sender: "CloudHost",
+        body: "账号ID 568001 的云数据库实例 db-river7 即将到期；未续费将停止服务并删除备份，数据不可恢复。"
+    )
+
+    #expect(decision.labelID == "work.alert")
+    #expect(decision.systemAction == .transaction)
+    #expect(decision.confidence > 0.9)
+}
+
 private struct SubmissionSimilarityCase: Sendable {
     let first: String
     let second: String

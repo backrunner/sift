@@ -677,6 +677,99 @@ func transformerChannelManifestRequiresValidEd25519Signature() throws {
 }
 
 @Test
+func transformerCompatibilityCatalogRequiresSignedCompleteReleaseList() throws {
+    let privateKey = Curve25519.Signing.PrivateKey()
+    let keyID = "release-2026"
+    let verifier = TransformerManifestVerifier(publicKeys: [
+        keyID: privateKey.publicKey.rawRepresentation.base64EncodedString()
+    ])
+
+    func signedRelease(sequence: Int, minimumAppBuild: Int, maximumAppBuild: Int) throws
+        -> TransformerChannelManifestV2
+    {
+        let unsigned = TransformerChannelManifestV2(
+            releaseSequence: sequence,
+            releaseID: "signal-v\(sequence)",
+            releaseManifestURL: "https://example.com/releases/signal-v\(sequence)/manifest.json",
+            releaseManifestSHA256: String(repeating: String(sequence), count: 64),
+            modelABI: "sift-signal-v1",
+            minimumAppBuild: minimumAppBuild,
+            maximumAppBuild: maximumAppBuild,
+            minimumOSVersion: "18.0",
+            keyID: keyID
+        )
+        return TransformerChannelManifestV2(
+            releaseSequence: unsigned.releaseSequence,
+            releaseID: unsigned.releaseID,
+            releaseManifestURL: unsigned.releaseManifestURL,
+            releaseManifestSHA256: unsigned.releaseManifestSHA256,
+            modelABI: unsigned.modelABI,
+            minimumAppBuild: unsigned.minimumAppBuild,
+            maximumAppBuild: unsigned.maximumAppBuild,
+            minimumOSVersion: unsigned.minimumOSVersion,
+            keyID: unsigned.keyID,
+            signature: try privateKey.signature(for: unsigned.canonicalPayload()).base64EncodedString()
+        )
+    }
+
+    let release2 = try signedRelease(sequence: 2, minimumAppBuild: 10, maximumAppBuild: 15)
+    let release3 = try signedRelease(sequence: 3, minimumAppBuild: 16, maximumAppBuild: .max)
+    let unsignedCatalog = TransformerChannelManifestV2(
+        releaseSequence: release2.releaseSequence,
+        releaseID: release2.releaseID,
+        releaseManifestURL: release2.releaseManifestURL,
+        releaseManifestSHA256: release2.releaseManifestSHA256,
+        modelABI: release2.modelABI,
+        minimumAppBuild: release2.minimumAppBuild,
+        maximumAppBuild: release2.maximumAppBuild,
+        minimumOSVersion: release2.minimumOSVersion,
+        keyID: release2.keyID,
+        signature: release2.signature,
+        compatibleReleases: [release2, release3],
+        catalogKeyID: keyID
+    )
+    let catalogPayload = try #require(unsignedCatalog.canonicalCatalogPayload())
+    let catalog = TransformerChannelManifestV2(
+        releaseSequence: release2.releaseSequence,
+        releaseID: release2.releaseID,
+        releaseManifestURL: release2.releaseManifestURL,
+        releaseManifestSHA256: release2.releaseManifestSHA256,
+        modelABI: release2.modelABI,
+        minimumAppBuild: release2.minimumAppBuild,
+        maximumAppBuild: release2.maximumAppBuild,
+        minimumOSVersion: release2.minimumOSVersion,
+        keyID: release2.keyID,
+        signature: release2.signature,
+        compatibleReleases: [release2, release3],
+        catalogKeyID: keyID,
+        catalogSignature: try privateKey.signature(for: catalogPayload).base64EncodedString()
+    )
+
+    let encodedCatalog = try JSONEncoder().encode(catalog)
+    let decodedCatalog = try JSONDecoder().decode(TransformerChannelManifestV2.self, from: encodedCatalog)
+    #expect(try verifier.verifiedReleases(in: decodedCatalog) == [release2, release3])
+
+    let truncated = TransformerChannelManifestV2(
+        releaseSequence: release2.releaseSequence,
+        releaseID: release2.releaseID,
+        releaseManifestURL: release2.releaseManifestURL,
+        releaseManifestSHA256: release2.releaseManifestSHA256,
+        modelABI: release2.modelABI,
+        minimumAppBuild: release2.minimumAppBuild,
+        maximumAppBuild: release2.maximumAppBuild,
+        minimumOSVersion: release2.minimumOSVersion,
+        keyID: release2.keyID,
+        signature: release2.signature,
+        compatibleReleases: [release2],
+        catalogKeyID: keyID,
+        catalogSignature: catalog.catalogSignature
+    )
+    #expect(throws: ManifestVerificationError.invalidSignature) {
+        try verifier.verifiedReleases(in: truncated)
+    }
+}
+
+@Test
 func pythonOpenSSLManifestV2SignaturesVerifyInSwift() throws {
     let repositoryRoot = URL(fileURLWithPath: #filePath)
         .deletingLastPathComponent()
@@ -740,6 +833,42 @@ func transformerChannelCompatibilityChecksBuildOSABIAndRollback() {
         appBuild: 7,
         operatingSystemVersion: OperatingSystemVersion(majorVersion: 18, minorVersion: 1, patchVersion: 0),
         currentReleaseSequence: 10
+    ) == .releaseRollback)
+}
+
+@Test
+func governmentReminderSignalReleaseRequiresBuild16AndSequence3() {
+    let verifier = TransformerManifestVerifier(publicKeys: [:])
+    let channel = TransformerChannelManifestV2(
+        releaseSequence: 3,
+        releaseID: "signal-v2-boundary-v16",
+        releaseManifestURL: "https://sift.alkinum.io/models/releases/signal-v2-boundary-v16/SiftSignalModel.manifest.json",
+        releaseManifestSHA256: String(repeating: "a", count: 64),
+        modelABI: "sift-signal-v1",
+        minimumAppBuild: 16,
+        maximumAppBuild: .max,
+        minimumOSVersion: "18.0",
+        keyID: "release-2026"
+    )
+    let iOS18 = OperatingSystemVersion(majorVersion: 18, minorVersion: 0, patchVersion: 0)
+
+    #expect(verifier.compatibility(
+        of: channel,
+        appBuild: 15,
+        operatingSystemVersion: iOS18,
+        currentReleaseSequence: 2
+    ) == .appBuildTooOld)
+    #expect(verifier.compatibility(
+        of: channel,
+        appBuild: 16,
+        operatingSystemVersion: iOS18,
+        currentReleaseSequence: 2
+    ) == .compatible)
+    #expect(verifier.compatibility(
+        of: channel,
+        appBuild: 16,
+        operatingSystemVersion: iOS18,
+        currentReleaseSequence: 4
     ) == .releaseRollback)
 }
 
