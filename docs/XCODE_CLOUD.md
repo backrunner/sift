@@ -63,7 +63,7 @@ workflow selected a different project path or is building an older commit.
 
 ## Version and Build Numbers
 
-`MARKETING_VERSION` is the user-facing App Store version (`1.0` in the current
+`MARKETING_VERSION` is the user-facing App Store version (`1.1` in the current
 release). `CURRENT_PROJECT_VERSION` is the integer build number (`CFBundleVersion`);
 it must be unique and higher than the last uploaded build for the same marketing
 version.
@@ -71,8 +71,8 @@ version.
 Xcode Cloud owns its build-number counter. Set the initial or next value in App
 Store Connect under **App page > Xcode Cloud > Settings > Build Number > Edit
 Next Build Number**. For example, when `1.0 (12)` is already uploaded, set the
-next Cloud build number to `13`. Leave `MARKETING_VERSION` at `1.0` until the
-next user-facing release (for example, `1.1`). Do not change `project.yml` for
+next Cloud build number to `13`. Leave `MARKETING_VERSION` at `1.1` until the
+next user-facing release (for example, `1.2`). Do not change `project.yml` for
 each Xcode Cloud build; Cloud overrides the repository default with its managed
 number.
 
