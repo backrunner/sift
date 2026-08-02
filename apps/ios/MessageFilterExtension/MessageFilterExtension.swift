@@ -26,9 +26,10 @@ final class MessageFilterExtension: ILMessageFilterExtension, ILMessageFilterQue
         let startedAt = clock.now
         Task { [engine, diagnostics] in
             let result = await engine.classify(request, configuration: configuration)
+            let route = MessageFilterActionMapper.extensionRoute(for: result)
             let didComplete = gate.complete((
-                MessageFilterActionMapper.filterAction(for: result.systemAction),
-                MessageFilterActionMapper.filterSubAction(for: result.systemSubAction)
+                MessageFilterActionMapper.filterAction(for: route.action),
+                MessageFilterActionMapper.filterSubAction(for: route.subAction)
             ))
             if didComplete {
                 diagnostics.record(MessageFilterDiagnosticEvent(

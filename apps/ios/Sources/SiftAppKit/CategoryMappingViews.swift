@@ -1,3 +1,4 @@
+import Foundation
 import MessageFilterCore
 import SwiftUI
 
@@ -76,20 +77,21 @@ private struct CategoryMappingView: View {
         SiftTaxonomy.groups.filter { !matchingLeaves(in: $0).isEmpty }
     }
 
+    private var normalizedSearchText: String {
+        searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
     private func matchingLeaves(in group: LabelGroup) -> [LeafLabel] {
-        let eligibleLeaves = group.leaves.filter {
-            CategoryMappingPolicy.isEligibleSource(labelID: $0.id)
+        guard !normalizedSearchText.isEmpty else {
+            return group.leaves
         }
-        guard !searchText.isEmpty else {
-            return eligibleLeaves
-        }
-        return eligibleLeaves.filter(matchesSearch)
+        return group.leaves.filter(matchesSearch)
     }
 
     private func matchesSearch(_ leaf: LeafLabel) -> Bool {
-        leaf.title.localizedCaseInsensitiveContains(searchText)
-            || leaf.groupTitle.localizedCaseInsensitiveContains(searchText)
-            || leaf.id.localizedCaseInsensitiveContains(searchText)
+        leaf.title.localizedCaseInsensitiveContains(normalizedSearchText)
+            || leaf.groupTitle.localizedCaseInsensitiveContains(normalizedSearchText)
+            || leaf.id.localizedCaseInsensitiveContains(normalizedSearchText)
     }
 }
 
@@ -187,6 +189,14 @@ private struct CategoryMappingRow: View {
         model.categoryMapping(for: leaf.id)
     }
 
+    private var defaultTarget: CategoryMappingTarget? {
+        MessageFilterRouting.defaultMappingTarget(for: leaf)
+    }
+
+    private var displayedTarget: CategoryMappingTarget? {
+        selection ?? defaultTarget
+    }
+
     var body: some View {
         HStack(spacing: 12) {
             Text(leaf.title)
@@ -195,15 +205,33 @@ private struct CategoryMappingRow: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
 
             Menu {
-                mappingButton(target: nil)
+                mappingButton(target: .junk)
                 Divider()
-                ForEach(CategoryMappingTarget.allCases) { target in
-                    mappingButton(target: target)
+
+                if !promotionalTargets.isEmpty {
+                    Menu {
+                        ForEach(promotionalTargets) { target in
+                            mappingButton(target: target)
+                        }
+                    } label: {
+                        Label(String(localized: "推广信息"), systemImage: "megaphone.fill")
+                    }
+                }
+
+                if !transactionalTargets.isEmpty {
+                    Menu {
+                        ForEach(transactionalTargets) { target in
+                            mappingButton(target: target)
+                        }
+                    } label: {
+                        Label(String(localized: "交易信息"), systemImage: "tray.full.fill")
+                    }
                 }
             } label: {
                 HStack(spacing: 5) {
-                    Image(systemName: selection?.symbol ?? "arrow.uturn.backward.circle")
-                    Text(selection?.title ?? String(localized: "系统默认"))
+                    Image(systemName: displayedTarget?.symbol ?? "arrow.uturn.backward.circle")
+                    Text(displayedTarget?.title ?? String(localized: "系统默认"))
+                        .minimumScaleFactor(0.82)
                     Image(systemName: "chevron.up.chevron.down")
                         .font(.caption2.weight(.bold))
                         .foregroundStyle(.tertiary)
@@ -216,6 +244,7 @@ private struct CategoryMappingRow: View {
                 .background(selectionTint.opacity(0.11), in: Capsule())
             }
             .accessibilityLabel(String(localized: "\(leaf.title) 的映射"))
+            .accessibilityValue(accessibilitySelectionValue)
         }
         .frame(maxWidth: .infinity, minHeight: 46, alignment: .leading)
         .padding(.horizontal, 14)
@@ -228,13 +257,30 @@ private struct CategoryMappingRow: View {
         .sensoryFeedback(.selection, trigger: selection)
     }
 
+    private var promotionalTargets: [CategoryMappingTarget] {
+        CategoryMappingTarget.promotionalTargets
+    }
+
+    private var transactionalTargets: [CategoryMappingTarget] {
+        CategoryMappingTarget.transactionalTargets
+    }
+
+    private var accessibilitySelectionValue: String {
+        displayedTarget?.title ?? String(localized: "系统默认")
+    }
+
     private var selectionTint: Color {
-        switch selection {
+        guard selection != nil, let displayedTarget else {
+            return .secondary
+        }
+        switch displayedTarget.systemAction {
         case .promotion:
             return .siftAmber
         case .junk:
             return .red
-        case nil:
+        case .transaction:
+            return .siftMint
+        case .none:
             return .secondary
         }
     }
@@ -248,14 +294,14 @@ private struct CategoryMappingRow: View {
     }
 
     @ViewBuilder
-    private func mappingButton(target: CategoryMappingTarget?) -> some View {
-        let isSelected = selection == target
+    private func mappingButton(target: CategoryMappingTarget) -> some View {
+        let isSelected = displayedTarget == target
         Button {
-            model.setCategoryMapping(target, for: leaf.id)
+            model.setCategoryMapping(target == defaultTarget ? nil : target, for: leaf.id)
         } label: {
             Label(
-                target?.title ?? String(localized: "系统默认"),
-                systemImage: isSelected ? "checkmark" : (target?.symbol ?? "arrow.uturn.backward")
+                target.menuTitle,
+                systemImage: isSelected ? "checkmark" : target.symbol
             )
         }
     }
