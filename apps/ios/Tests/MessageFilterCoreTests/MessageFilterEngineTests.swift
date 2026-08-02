@@ -1,6 +1,7 @@
 #if canImport(Testing)
 import Foundation
 @testable import MessageFilterCore
+import MessageFilterExtensionKit
 import Testing
 
 private struct FixedClassifier: MessageClassifier {
@@ -60,15 +61,61 @@ private struct RecordingRuntimeLoader: TransformerRuntimeLoading {
 
 private func transformerSnapshot(
     identity: ModelArtifactIdentity,
-    rules: [CustomRule] = []
+    rules: [CustomRule] = [],
+    categoryMappings: [String: CategoryMappingTarget] = [:]
 ) -> FilterConfigurationSnapshot {
     FilterConfigurationSnapshot(
         generation: UInt64(identity.releaseSequence),
         selectedVariant: .transformer,
         modelArtifactIdentity: identity,
         rules: rules,
-        categoryMappings: [:]
+        categoryMappings: categoryMappings
     )
+}
+
+@Test
+func modelCategoryMappingsReachEveryExtensionDestination() async {
+    let recorder = RuntimeLoadRecorder()
+    let identity = ModelArtifactIdentity(
+        variant: .transformer,
+        modelABI: "sift-signal-v1",
+        releaseSequence: 1,
+        sha256: "release-1"
+    )
+    let engine = MessageFilterEngine(
+        classicClassifier: FixedClassifier(labelID: "finance.bank"),
+        transformerLoader: RecordingRuntimeLoader(recorder: recorder),
+        transformerDeviceSupport: .supported
+    )
+
+    for target in CategoryMappingTarget.allCases {
+        let classicResult = await engine.classify(
+            MessageFilterRequest(sender: nil, body: "classic"),
+            configuration: FilterConfigurationSnapshot(
+                generation: 1,
+                selectedVariant: .classic,
+                modelArtifactIdentity: .classic,
+                rules: [],
+                categoryMappings: ["finance.bank": target]
+            )
+        )
+        let transformerResult = await engine.classify(
+            MessageFilterRequest(sender: nil, body: "signal"),
+            configuration: transformerSnapshot(
+                identity: identity,
+                categoryMappings: ["promotion": target]
+            )
+        )
+        let expectedRoute = MessageFilterExtensionRoute(
+            action: target.systemAction,
+            subAction: target.systemSubAction
+        )
+
+        #expect(classicResult.decision.categoryMappingTarget == target)
+        #expect(transformerResult.decision.categoryMappingTarget == target)
+        #expect(MessageFilterActionMapper.extensionRoute(for: classicResult) == expectedRoute)
+        #expect(MessageFilterActionMapper.extensionRoute(for: transformerResult) == expectedRoute)
+    }
 }
 
 @Test

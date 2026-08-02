@@ -119,44 +119,162 @@ public enum SharedRuleStore {
 /// after classification, so they work for both model decisions and custom
 /// rules without changing taxonomy IDs or retraining the model.
 public enum CategoryMappingTarget: String, CaseIterable, Codable, Sendable, Identifiable {
-    case promotion
     case junk
+    case promotionalOthers
+    case promotionalOffers
+    case promotionalCoupons
+    case transactionalOthers
+    case transactionalFinance
+    case transactionalOrders
+    case transactionalReminders
+    case transactionalHealth
+    case transactionalWeather
+    case transactionalCarrier
+    case transactionalRewards
+    case transactionalPublicServices
+
+    public static let promotionalTargets: [CategoryMappingTarget] = [
+        .promotionalOthers,
+        .promotionalOffers,
+        .promotionalCoupons
+    ]
+
+    public static let transactionalTargets: [CategoryMappingTarget] = [
+        .transactionalOthers,
+        .transactionalFinance,
+        .transactionalOrders,
+        .transactionalReminders,
+        .transactionalHealth,
+        .transactionalWeather,
+        .transactionalCarrier,
+        .transactionalRewards,
+        .transactionalPublicServices
+    ]
 
     public var id: String { rawValue }
 
-    public var title: String {
+    public var menuTitle: String {
         switch self {
-        case .promotion:
-            return String(localized: "推广信息")
         case .junk:
             return String(localized: "垃圾信息")
+        case .promotionalOthers:
+            return String(localized: "其他")
+        case .promotionalOffers:
+            return String(localized: "优惠")
+        case .promotionalCoupons:
+            return String(localized: "优惠券")
+        case .transactionalOthers:
+            return String(localized: "其他")
+        case .transactionalFinance:
+            return String(localized: "财务")
+        case .transactionalOrders:
+            return String(localized: "订单")
+        case .transactionalReminders:
+            return String(localized: "提醒")
+        case .transactionalHealth:
+            return String(localized: "健康")
+        case .transactionalWeather:
+            return String(localized: "天气")
+        case .transactionalCarrier:
+            return String(localized: "运营商")
+        case .transactionalRewards:
+            return String(localized: "奖励")
+        case .transactionalPublicServices:
+            return String(localized: "公共服务")
+        }
+    }
+
+    public var title: String {
+        switch systemAction {
+        case .promotion:
+            return String(localized: "推广信息") + " - " + menuTitle
+        case .transaction:
+            return String(localized: "交易信息") + " - " + menuTitle
+        case .junk, .none:
+            return menuTitle
         }
     }
 
     public var symbol: String {
         switch self {
-        case .promotion:
-            return "megaphone.fill"
         case .junk:
             return "trash.fill"
+        case .promotionalOthers:
+            return "megaphone.fill"
+        case .promotionalOffers:
+            return "tag.fill"
+        case .promotionalCoupons:
+            return "ticket.fill"
+        case .transactionalOthers:
+            return "tray.full.fill"
+        case .transactionalFinance:
+            return "banknote.fill"
+        case .transactionalOrders:
+            return "shippingbox.fill"
+        case .transactionalReminders:
+            return "bell.fill"
+        case .transactionalHealth:
+            return "cross.case.fill"
+        case .transactionalWeather:
+            return "cloud.sun.fill"
+        case .transactionalCarrier:
+            return "antenna.radiowaves.left.and.right"
+        case .transactionalRewards:
+            return "gift.fill"
+        case .transactionalPublicServices:
+            return "building.columns.fill"
         }
     }
 
     public var systemAction: SystemAction {
         switch self {
-        case .promotion:
-            return .promotion
         case .junk:
             return .junk
+        case .promotionalOthers, .promotionalOffers, .promotionalCoupons:
+            return .promotion
+        case .transactionalOthers, .transactionalFinance, .transactionalOrders,
+             .transactionalReminders, .transactionalHealth, .transactionalWeather,
+             .transactionalCarrier, .transactionalRewards, .transactionalPublicServices:
+            return .transaction
         }
     }
+
+    public var systemSubAction: SystemSubAction {
+        switch self {
+        case .junk:
+            return .none
+        case .promotionalOthers:
+            return .promotionalOthers
+        case .promotionalOffers:
+            return .promotionalOffers
+        case .promotionalCoupons:
+            return .promotionalCoupons
+        case .transactionalOthers:
+            return .transactionalOthers
+        case .transactionalFinance:
+            return .transactionalFinance
+        case .transactionalOrders:
+            return .transactionalOrders
+        case .transactionalReminders:
+            return .transactionalReminders
+        case .transactionalHealth:
+            return .transactionalHealth
+        case .transactionalWeather:
+            return .transactionalWeather
+        case .transactionalCarrier:
+            return .transactionalCarrier
+        case .transactionalRewards:
+            return .transactionalRewards
+        case .transactionalPublicServices:
+            return .transactionalPublicServices
+        }
+    }
+
 }
 
 public enum CategoryMappingPolicy {
-    public static let targetLabelIDs: Set<String> = ["promotion", "spam"]
-
     public static func isEligibleSource(labelID: String) -> Bool {
-        SiftTaxonomy.leaf(id: labelID) != nil && !targetLabelIDs.contains(labelID)
+        SiftTaxonomy.leaf(id: labelID) != nil
     }
 }
 

@@ -15,6 +15,7 @@ public struct ClassificationDecision: Codable, Hashable, Sendable {
     public let confidence: Double
     public let systemAction: SystemAction
     public let source: ClassificationSource
+    public let categoryMappingTarget: CategoryMappingTarget?
 
     public init(
         labelID: String,
@@ -23,7 +24,8 @@ public struct ClassificationDecision: Codable, Hashable, Sendable {
         groupTitle: String,
         confidence: Double,
         systemAction: SystemAction,
-        source: ClassificationSource
+        source: ClassificationSource,
+        categoryMappingTarget: CategoryMappingTarget? = nil
     ) {
         self.labelID = labelID
         self.labelTitle = labelTitle
@@ -32,6 +34,7 @@ public struct ClassificationDecision: Codable, Hashable, Sendable {
         self.confidence = confidence
         self.systemAction = systemAction
         self.source = source
+        self.categoryMappingTarget = categoryMappingTarget
     }
 
     public func applying(categoryMappings: [String: CategoryMappingTarget]) -> ClassificationDecision {
@@ -49,7 +52,8 @@ public struct ClassificationDecision: Codable, Hashable, Sendable {
             groupTitle: groupTitle,
             confidence: confidence,
             systemAction: target.systemAction,
-            source: source
+            source: source,
+            categoryMappingTarget: target
         )
     }
 }

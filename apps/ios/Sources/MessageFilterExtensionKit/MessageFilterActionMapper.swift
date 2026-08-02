@@ -5,6 +5,16 @@ import MessageFilterCore
 import IdentityLookup
 #endif
 
+public struct MessageFilterExtensionRoute: Equatable, Sendable {
+    public let action: SystemAction
+    public let subAction: SystemSubAction
+
+    public init(action: SystemAction, subAction: SystemSubAction) {
+        self.action = action
+        self.subAction = subAction
+    }
+}
+
 public enum MessageFilterActionMapper {
     public static let supportedTransactionalSubActions: [SystemSubAction] = [
         .transactionalFinance,
@@ -19,6 +29,7 @@ public enum MessageFilterActionMapper {
     ]
 
     public static let supportedPromotionalSubActions: [SystemSubAction] = [
+        .promotionalCoupons,
         .promotionalOffers,
         .promotionalOthers
     ]
@@ -29,6 +40,13 @@ public enum MessageFilterActionMapper {
 
     public static func systemSubAction(for decision: ClassificationDecision) -> SystemSubAction {
         MessageFilterRouting.systemSubAction(for: decision)
+    }
+
+    public static func extensionRoute(for result: MessageFilterResult) -> MessageFilterExtensionRoute {
+        MessageFilterExtensionRoute(
+            action: result.systemAction,
+            subAction: result.systemSubAction
+        )
     }
 
     #if canImport(IdentityLookup) && os(iOS)

@@ -268,13 +268,85 @@ func carrierPromotionIsPromotionEvenWhenStoredUnderCarrierGroup() throws {
 }
 
 @Test
+func everyCategoryMappingTargetPreservesItsExactSystemDestination() throws {
+    #expect(CategoryMappingTarget.allCases.count == 13)
+    #expect(CategoryMappingTarget.promotionalTargets == [
+        .promotionalOthers,
+        .promotionalOffers,
+        .promotionalCoupons
+    ])
+    #expect(CategoryMappingTarget.transactionalTargets == [
+        .transactionalOthers,
+        .transactionalFinance,
+        .transactionalOrders,
+        .transactionalReminders,
+        .transactionalHealth,
+        .transactionalWeather,
+        .transactionalCarrier,
+        .transactionalRewards,
+        .transactionalPublicServices
+    ])
+
+    for target in CategoryMappingTarget.allCases {
+        let mapped = try taxonomyDecision(labelID: "finance.bank", confidence: 0.2)
+            .applying(categoryMappings: ["finance.bank": target])
+
+        #expect(mapped.categoryMappingTarget == target)
+        #expect(MessageFilterActionMapper.systemAction(for: mapped) == target.systemAction)
+        #expect(MessageFilterActionMapper.systemSubAction(for: mapped) == target.systemSubAction)
+        if target != .junk {
+            #expect(target.systemSubAction != .none)
+        }
+    }
+}
+
+@Test
+func everyKnownCategoryDefaultMatchesRuntimeRouting() throws {
+    for leaf in SiftTaxonomy.leaves {
+        let target = try #require(MessageFilterRouting.defaultMappingTarget(for: leaf))
+        let decision = ClassificationDecision(
+            labelID: leaf.id,
+            labelTitle: leaf.title,
+            groupID: leaf.groupId,
+            groupTitle: leaf.groupTitle,
+            confidence: 1,
+            systemAction: leaf.systemAction,
+            source: .model
+        )
+
+        #expect(MessageFilterRouting.systemAction(for: decision) == target.systemAction)
+        #expect(MessageFilterRouting.systemSubAction(for: decision) == target.systemSubAction)
+    }
+}
+
+@Test
+func capabilitiesAdvertiseEverySupportedSystemSubAction() {
+    #expect(Set(MessageFilterActionMapper.supportedTransactionalSubActions) == Set([
+        .transactionalOthers,
+        .transactionalFinance,
+        .transactionalOrders,
+        .transactionalReminders,
+        .transactionalHealth,
+        .transactionalWeather,
+        .transactionalCarrier,
+        .transactionalRewards,
+        .transactionalPublicServices
+    ]))
+    #expect(Set(MessageFilterActionMapper.supportedPromotionalSubActions) == Set([
+        .promotionalOthers,
+        .promotionalOffers,
+        .promotionalCoupons
+    ]))
+}
+
+@Test
 func categoryMappingPersistsAndOverridesFinalSystemAction() throws {
     let suiteName = "SiftTests.categoryMapping.\(UUID().uuidString)"
     let defaults = try #require(UserDefaults(suiteName: suiteName))
     defer { defaults.removePersistentDomain(forName: suiteName) }
     let mappings: [String: CategoryMappingTarget] = [
-        "finance.bank": .junk,
-        "life.express": .promotion
+        "finance.bank": .transactionalOrders,
+        "life.express": .promotionalCoupons
     ]
 
     SharedCategoryMappingStore.save(mappings, defaults: defaults)
@@ -285,21 +357,22 @@ func categoryMappingPersistsAndOverridesFinalSystemAction() throws {
         .applying(categoryMappings: loaded)
 
     #expect(loaded == mappings)
-    #expect(MessageFilterActionMapper.systemAction(for: bank) == .junk)
-    #expect(MessageFilterActionMapper.systemSubAction(for: bank) == .none)
+    #expect(MessageFilterActionMapper.systemAction(for: bank) == .transaction)
+    #expect(MessageFilterActionMapper.systemSubAction(for: bank) == .transactionalOrders)
     #expect(MessageFilterActionMapper.systemAction(for: express) == .promotion)
-    #expect(MessageFilterActionMapper.systemSubAction(for: express) == .promotionalOthers)
+    #expect(MessageFilterActionMapper.systemSubAction(for: express) == .promotionalCoupons)
 }
 
 @Test
-func categoryMappingTargetsCannotBeMappingSources() throws {
+func everyKnownCategoryCanBeMappedAndUnknownIDsAreDiscarded() throws {
     let suiteName = "SiftTests.categoryMappingTargets.\(UUID().uuidString)"
     let defaults = try #require(UserDefaults(suiteName: suiteName))
     defer { defaults.removePersistentDomain(forName: suiteName) }
     let mappings: [String: CategoryMappingTarget] = [
         "promotion": .junk,
-        "spam": .promotion,
-        "carrier.promotion": .junk
+        "spam": .promotionalOthers,
+        "carrier.promotion": .transactionalCarrier,
+        "unknown": .junk
     ]
 
     SharedCategoryMappingStore.save(mappings, defaults: defaults)
@@ -309,12 +382,17 @@ func categoryMappingTargetsCannotBeMappingSources() throws {
     let spam = try taxonomyDecision(labelID: "spam")
         .applying(categoryMappings: mappings)
 
-    #expect(!CategoryMappingPolicy.isEligibleSource(labelID: "promotion"))
-    #expect(!CategoryMappingPolicy.isEligibleSource(labelID: "spam"))
+    #expect(CategoryMappingPolicy.isEligibleSource(labelID: "promotion"))
+    #expect(CategoryMappingPolicy.isEligibleSource(labelID: "spam"))
     #expect(CategoryMappingPolicy.isEligibleSource(labelID: "carrier.promotion"))
-    #expect(loaded == ["carrier.promotion": .junk])
-    #expect(promotion.systemAction == .promotion)
-    #expect(spam.systemAction == .junk)
+    #expect(!CategoryMappingPolicy.isEligibleSource(labelID: "unknown"))
+    #expect(loaded == [
+        "promotion": .junk,
+        "spam": .promotionalOthers,
+        "carrier.promotion": .transactionalCarrier
+    ])
+    #expect(promotion.systemAction == .junk)
+    #expect(spam.systemAction == .promotion)
 }
 
 // MARK: - SubmissionLedger

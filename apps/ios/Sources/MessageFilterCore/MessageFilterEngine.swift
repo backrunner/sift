@@ -207,7 +207,24 @@ public struct MessageFilterResult: Codable, Hashable, Sendable {
 }
 
 public enum MessageFilterRouting {
+    public static func defaultMappingTarget(for leaf: LeafLabel) -> CategoryMappingTarget? {
+        switch leaf.systemAction {
+        case .junk:
+            return .junk
+        case .promotion:
+            return ["carrier.promotion", "promotion"].contains(leaf.id)
+                ? .promotionalOffers : .promotionalOthers
+        case .transaction:
+            return transactionalTarget(for: leaf.id)
+        case .none:
+            return nil
+        }
+    }
+
     public static func systemAction(for decision: ClassificationDecision) -> SystemAction {
+        if let categoryMappingTarget = decision.categoryMappingTarget {
+            return categoryMappingTarget.systemAction
+        }
         if decision.labelID == "carrier.promotion" {
             return .promotion
         }
@@ -224,18 +241,21 @@ public enum MessageFilterRouting {
     }
 
     public static func systemSubAction(for decision: ClassificationDecision) -> SystemSubAction {
+        if let categoryMappingTarget = decision.categoryMappingTarget {
+            return categoryMappingTarget.systemSubAction
+        }
         switch systemAction(for: decision) {
         case .promotion:
             return ["carrier.promotion", "promotion"].contains(decision.labelID)
                 ? .promotionalOffers : .promotionalOthers
         case .transaction:
-            return transactionalSubAction(for: decision.labelID)
+            return transactionalTarget(for: decision.labelID).systemSubAction
         case .junk, .none:
             return .none
         }
     }
 
-    private static func transactionalSubAction(for labelID: String) -> SystemSubAction {
+    private static func transactionalTarget(for labelID: String) -> CategoryMappingTarget {
         switch labelID {
         case let value where value.hasPrefix("finance."):
             return .transactionalFinance
