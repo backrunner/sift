@@ -34,15 +34,22 @@ public enum PremiumPurchaseOutcome: Sendable {
     case failed(String)
 }
 
+public enum PremiumEntitlementStatus: Equatable, Sendable {
+    case entitled
+    case notPurchased
+    case revoked
+    case unverified
+}
+
 /// Backend seam so unit tests never touch StoreKit.
 public protocol PremiumPurchasing: Sendable {
     func loadProduct(identifier: String) async throws -> PremiumProductInfo?
     func purchase(identifier: String) async -> PremiumPurchaseOutcome
-    func isEntitled(identifier: String) async -> Bool
+    func entitlementStatus(identifier: String) async -> PremiumEntitlementStatus
     /// Restores purchases (StoreKit `AppStore.sync`) and re-checks entitlement.
-    func restore(identifier: String) async throws -> Bool
+    func restore(identifier: String) async throws -> PremiumEntitlementStatus
     /// Long-lived stream of entitlement changes (purchases, refunds).
-    func entitlementUpdates(identifier: String) -> AsyncStream<Bool>
+    func entitlementUpdates(identifier: String) -> AsyncStream<PremiumEntitlementStatus>
 }
 
 public enum PremiumProductState: Sendable {
@@ -57,10 +64,14 @@ public enum PremiumProductState: Sendable {
 @Observable
 public final class PremiumStore {
     public static let defaultProductIdentifier = "com.alkinum.sift.premium"
+    static let entitlementValidationInterval: TimeInterval = 24 * 60 * 60
+    static let cachedEntitlementKey = "Sift.premiumEntitlement.v1"
+    static let entitlementLastValidatedAtKey = "Sift.premiumEntitlementLastValidatedAt.v1"
 
     public private(set) var productState: PremiumProductState = .loading
     public private(set) var isUnlocked: Bool = false
     public private(set) var isEntitlementResolved: Bool = false
+    public private(set) var isValidatingEntitlement: Bool = false
     public private(set) var isPurchasing: Bool = false
     public private(set) var isRestoring: Bool = false
 
@@ -71,12 +82,13 @@ public final class PremiumStore {
 
     public let productIdentifier: String
 
-    /// Fired on entitlement transitions (purchase / restore / refund) so the
-    /// app model can react (e.g. revert the Transformer selection on refund).
+    /// Fired only for authoritative StoreKit results (purchase / restore /
+    /// verified entitlement lookup / refund). Cached state and unverified
+    /// transactions never trigger a model-selection change.
     @ObservationIgnored
     public var onEntitlementChange: ((Bool) -> Void)? {
         didSet {
-            if isEntitlementResolved {
+            if hasAuthoritativeEntitlementResultThisSession {
                 onEntitlementChange?(isUnlocked)
             }
         }
@@ -88,10 +100,30 @@ public final class PremiumStore {
     @ObservationIgnored
     private var updatesTask: Task<Void, Never>?
 
+    @ObservationIgnored
+    private var productRefreshTask: Task<Void, Never>?
+
+    @ObservationIgnored
+    private var entitlementValidationTask: Task<Void, Never>?
+
+    @ObservationIgnored
+    private var entitlementValidationRequestID: UUID?
+
+    @ObservationIgnored
+    private let entitlementDefaults: UserDefaults?
+
+    @ObservationIgnored
+    private var lastEntitlementValidationDate: Date?
+
+    @ObservationIgnored
+    private var hasAuthoritativeEntitlementResultThisSession = false
+
     public init(
         backend: (any PremiumPurchasing)? = nil,
         productIdentifier: String? = nil,
-        bundle: Bundle = .main
+        bundle: Bundle = .main,
+        defaults: UserDefaults? = nil,
+        assumeUnlocked: Bool = false
     ) {
         self.productIdentifier = productIdentifier
             ?? (bundle.object(forInfoDictionaryKey: "SiftPremiumProductIdentifier") as? String)
@@ -99,30 +131,104 @@ public final class PremiumStore {
         let promo = bundle.object(forInfoDictionaryKey: "SiftPremiumPromoText") as? String
         self.promoText = (promo?.isEmpty == false) ? promo : nil
         self.backend = Self.resolveBackend(backend)
+        self.entitlementDefaults = defaults
+        self.lastEntitlementValidationDate = defaults?.object(
+            forKey: Self.entitlementLastValidatedAtKey
+        ) as? Date
 
-        refresh()
+        let hasCachedEntitlement = defaults?.object(forKey: Self.cachedEntitlementKey) != nil
+        let cachedUnlock = defaults?.bool(forKey: Self.cachedEntitlementKey) == true
+        let shouldMigrateUnlock = assumeUnlocked && !hasCachedEntitlement
+        let initialUnlock = cachedUnlock || assumeUnlocked
+        self.isUnlocked = initialUnlock
+        self.isEntitlementResolved = initialUnlock || hasCachedEntitlement
+        if shouldMigrateUnlock {
+            defaults?.set(true, forKey: Self.cachedEntitlementKey)
+        }
+
+        // A persisted Signal selection wins for the first frame. If it
+        // conflicts with a cached negative, require a fresh StoreKit result
+        // this launch before changing the shared model selection.
+        let requiresFreshValidation = assumeUnlocked && hasCachedEntitlement && !cachedUnlock
+        refresh(forceEntitlementValidation: requiresFreshValidation)
         observeEntitlementUpdates()
     }
 
     deinit {
         updatesTask?.cancel()
+        productRefreshTask?.cancel()
+        entitlementValidationTask?.cancel()
     }
 
-    public func refresh() {
+    public func refresh(forceEntitlementValidation: Bool = false) {
+        refreshEntitlementIfNeeded(force: forceEntitlementValidation)
+        refreshProduct()
+    }
+
+    public func refreshEntitlementIfNeeded(force: Bool = false) {
+        guard entitlementValidationTask == nil else {
+            return
+        }
+        let now = Date()
+        if
+            !force,
+            let lastEntitlementValidationDate,
+            now.timeIntervalSince(lastEntitlementValidationDate) < Self.entitlementValidationInterval
+        {
+            return
+        }
+
+        let backend = backend
+        let identifier = productIdentifier
+        let requestID = UUID()
+        entitlementValidationRequestID = requestID
+        isValidatingEntitlement = true
+        entitlementValidationTask = Task { [weak self] in
+            let status = await backend.entitlementStatus(identifier: identifier)
+            guard
+                let self,
+                !Task.isCancelled,
+                self.entitlementValidationRequestID == requestID
+            else {
+                return
+            }
+            self.entitlementValidationTask = nil
+            self.entitlementValidationRequestID = nil
+            self.isValidatingEntitlement = false
+            self.recordEntitlementValidation(at: Date())
+
+            switch status {
+            case .entitled:
+                self.persistAndPublishUnlocked(true, authoritative: true)
+            case .notPurchased, .revoked:
+                self.persistAndPublishUnlocked(false, authoritative: true)
+            case .unverified:
+                break
+            }
+        }
+    }
+
+    private func refreshProduct() {
+        guard productRefreshTask == nil else {
+            return
+        }
         let backend = backend
         let identifier = productIdentifier
         productState = .loading
-        Task {
-            setUnlocked(await backend.isEntitled(identifier: identifier))
+        productRefreshTask = Task { [weak self] in
+            let state: PremiumProductState
             do {
                 if let product = try await backend.loadProduct(identifier: identifier) {
-                    productState = .available(product)
+                    state = .available(product)
                 } else {
-                    productState = .unavailable(Self.priceUnavailableMessage)
+                    state = .unavailable(Self.priceUnavailableMessage)
                 }
             } catch {
-                productState = .unavailable(Self.priceUnavailableMessage)
+                state = .unavailable(Self.priceUnavailableMessage)
             }
+            guard let self, !Task.isCancelled else { return }
+            self.productRefreshTask = nil
+            self.productState = state
         }
     }
 
@@ -137,7 +243,7 @@ public final class PremiumStore {
 
         switch await backend.purchase(identifier: productIdentifier) {
         case .purchased:
-            setUnlocked(true)
+            applyAuthoritativeEntitlement(.entitled)
             return (.success, String(localized: "高级版已解锁，感谢支持！"))
         case .cancelled:
             return nil
@@ -156,11 +262,17 @@ public final class PremiumStore {
         defer { isRestoring = false }
 
         do {
-            let restored = try await backend.restore(identifier: productIdentifier)
-            setUnlocked(restored)
-            return restored
-                ? (.success, String(localized: "已恢复高级版购买"))
-                : (.info, String(localized: "此 Apple 账户下没有可恢复的购买"))
+            let status = try await backend.restore(identifier: productIdentifier)
+            switch status {
+            case .entitled:
+                applyAuthoritativeEntitlement(.entitled)
+                return (.success, String(localized: "已恢复高级版购买"))
+            case .notPurchased, .revoked:
+                applyAuthoritativeEntitlement(status)
+                return (.info, String(localized: "此 Apple 账户下没有可恢复的购买"))
+            case .unverified:
+                return (.error, String(localized: "购买凭证暂时无法验证，请稍后再试"))
+            }
         } catch {
             return (.error, String(localized: "恢复购买失败：\(Self.storefrontErrorMessage(for: error))"))
         }
@@ -170,20 +282,52 @@ public final class PremiumStore {
         let backend = backend
         let identifier = productIdentifier
         updatesTask = Task { [weak self] in
-            for await entitled in backend.entitlementUpdates(identifier: identifier) {
+            for await status in backend.entitlementUpdates(identifier: identifier) {
                 guard let self else { return }
-                self.setUnlocked(entitled)
+                self.applyAuthoritativeEntitlement(status)
             }
         }
     }
 
-    private func setUnlocked(_ unlocked: Bool) {
-        let shouldNotify = unlocked != isUnlocked || !isEntitlementResolved
+    private func applyAuthoritativeEntitlement(_ status: PremiumEntitlementStatus) {
+        guard status != .unverified else {
+            return
+        }
+        entitlementValidationTask?.cancel()
+        entitlementValidationTask = nil
+        entitlementValidationRequestID = nil
+        isValidatingEntitlement = false
+        recordEntitlementValidation(at: Date())
+        switch status {
+        case .entitled:
+            persistAndPublishUnlocked(true, authoritative: true)
+        case .notPurchased, .revoked:
+            persistAndPublishUnlocked(false, authoritative: true)
+        case .unverified:
+            break
+        }
+    }
+
+    private func persistAndPublishUnlocked(_ unlocked: Bool, authoritative: Bool) {
+        entitlementDefaults?.set(unlocked, forKey: Self.cachedEntitlementKey)
+        publishUnlocked(unlocked, authoritative: authoritative)
+    }
+
+    private func publishUnlocked(_ unlocked: Bool, authoritative: Bool) {
+        let shouldNotify = authoritative || unlocked != isUnlocked || !isEntitlementResolved
+        if authoritative {
+            hasAuthoritativeEntitlementResultThisSession = true
+        }
         isUnlocked = unlocked
         isEntitlementResolved = true
         if shouldNotify {
             onEntitlementChange?(unlocked)
         }
+    }
+
+    private func recordEntitlementValidation(at date: Date) {
+        lastEntitlementValidationDate = date
+        entitlementDefaults?.set(date, forKey: Self.entitlementLastValidatedAtKey)
     }
 
     private static func resolveBackend(
@@ -266,29 +410,37 @@ struct StoreKitPremiumBackend: PremiumPurchasing {
         }
     }
 
-    func isEntitled(identifier: String) async -> Bool {
-        for await entitlement in Transaction.currentEntitlements {
-            if case .verified(let transaction) = entitlement,
-               transaction.productID == identifier,
-               transaction.revocationDate == nil {
-                return true
-            }
+    func entitlementStatus(identifier: String) async -> PremiumEntitlementStatus {
+        guard let result = await Transaction.latest(for: identifier) else {
+            // `nil` is StoreKit's explicit "no transaction for this product"
+            // result. Verification failures remain a separate fail-open state.
+            return .notPurchased
         }
-        return false
+        switch result {
+        case .verified(let transaction):
+            return transaction.revocationDate == nil ? .entitled : .revoked
+        case .unverified:
+            return .unverified
+        }
     }
 
-    func restore(identifier: String) async throws -> Bool {
+    func restore(identifier: String) async throws -> PremiumEntitlementStatus {
         try await AppStore.sync()
-        return await isEntitled(identifier: identifier)
+        return await entitlementStatus(identifier: identifier)
     }
 
-    func entitlementUpdates(identifier: String) -> AsyncStream<Bool> {
+    func entitlementUpdates(identifier: String) -> AsyncStream<PremiumEntitlementStatus> {
         AsyncStream { continuation in
             let task = Task {
                 for await update in Transaction.updates {
-                    if case .verified(let transaction) = update, transaction.productID == identifier {
+                    switch update {
+                    case .verified(let transaction) where transaction.productID == identifier:
                         await transaction.finish()
-                        continuation.yield(transaction.revocationDate == nil)
+                        continuation.yield(transaction.revocationDate == nil ? .entitled : .revoked)
+                    case .unverified(let transaction, _) where transaction.productID == identifier:
+                        continuation.yield(.unverified)
+                    case .verified, .unverified:
+                        break
                     }
                 }
                 continuation.finish()
@@ -313,9 +465,9 @@ private struct DebugUnlockedPremiumBackend: PremiumPurchasing {
     }
 
     func purchase(identifier: String) async -> PremiumPurchaseOutcome { .purchased }
-    func isEntitled(identifier: String) async -> Bool { true }
-    func restore(identifier: String) async throws -> Bool { true }
-    func entitlementUpdates(identifier: String) -> AsyncStream<Bool> {
+    func entitlementStatus(identifier: String) async -> PremiumEntitlementStatus { .entitled }
+    func restore(identifier: String) async throws -> PremiumEntitlementStatus { .entitled }
+    func entitlementUpdates(identifier: String) -> AsyncStream<PremiumEntitlementStatus> {
         AsyncStream { continuation in
             continuation.finish()
         }
@@ -327,9 +479,9 @@ private struct DebugUnlockedPremiumBackend: PremiumPurchasing {
 struct UnavailablePremiumBackend: PremiumPurchasing {
     func loadProduct(identifier: String) async throws -> PremiumProductInfo? { nil }
     func purchase(identifier: String) async -> PremiumPurchaseOutcome { .failed(String(localized: "此平台不支持内购")) }
-    func isEntitled(identifier: String) async -> Bool { false }
-    func restore(identifier: String) async throws -> Bool { false }
-    func entitlementUpdates(identifier: String) -> AsyncStream<Bool> {
+    func entitlementStatus(identifier: String) async -> PremiumEntitlementStatus { .unverified }
+    func restore(identifier: String) async throws -> PremiumEntitlementStatus { .unverified }
+    func entitlementUpdates(identifier: String) -> AsyncStream<PremiumEntitlementStatus> {
         AsyncStream { $0.finish() }
     }
 }
