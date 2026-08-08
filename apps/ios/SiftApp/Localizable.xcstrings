@@ -3877,6 +3877,23 @@
         }
       }
     },
+    "购买凭证暂时无法验证，请稍后再试" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The purchase could not be verified right now. Try again later."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "購入を現在確認できません。しばらくしてからもう一度お試しください。"
+          }
+        }
+      }
+    },
     "购买失败：%@" : {
       "extractionState" : "stale",
       "localizations" : {

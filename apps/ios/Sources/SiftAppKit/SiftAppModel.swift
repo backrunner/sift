@@ -327,9 +327,6 @@ public final class SiftAppModel {
     private var modelSwitchRequestID: UUID?
 
     @ObservationIgnored
-    private var modelVariantToRestoreAfterEntitlement: ModelVariant?
-
-    @ObservationIgnored
     private let modelSelectionDefaults: UserDefaults?
 
     @ObservationIgnored
@@ -399,6 +396,7 @@ public final class SiftAppModel {
         sampleStore: LocalSampleStore? = nil
     ) {
         let resolvedAppDefaults = appDefaults ?? .standard
+        let storedVariant = ModelSelectionStore.load(defaults: modelSelectionDefaults)
         self.appDefaults = resolvedAppDefaults
         self.hasAcceptedRemoteSamplePrivacy = resolvedAppDefaults.bool(forKey: Self.remoteSamplePrivacyConsentKey)
         self.hasConfirmedFilterSetup = resolvedAppDefaults.bool(forKey: Self.filterSetupConfirmationKey)
@@ -418,7 +416,11 @@ public final class SiftAppModel {
         self.modelClassifierLoader = modelClassifierLoader
         let resolvedTransformerDeviceSupport = transformerDeviceSupportOverride ?? .current()
         self.transformerDeviceSupport = resolvedTransformerDeviceSupport
-        self.premium = PremiumStore(backend: premiumBackend)
+        self.premium = PremiumStore(
+            backend: premiumBackend,
+            defaults: appDefaults,
+            assumeUnlocked: storedVariant == .transformer
+        )
 
         let installedTransformer = TransformerClassifierLoader.installedModel(validateChecksums: false)
         self.installedTransformerVersion = installedTransformer?.manifest.version
@@ -430,19 +432,17 @@ public final class SiftAppModel {
         self.isTransformerModelDownloaded = transformerDownloaded
         self.isTransformerModelAvailable = transformerAvailable
         self.transformerDownloadPhase = transformerAvailable ? .ready : .notDownloaded
-        let storedVariant = ModelSelectionStore.load(defaults: modelSelectionDefaults)
         let shouldRestoreTransformer = storedVariant == .transformer
             && transformerAvailable
             && resolvedTransformerDeviceSupport.isSupported
-        if shouldRestoreTransformer {
-            self.modelVariantToRestoreAfterEntitlement = .transformer
-        } else if storedVariant == .transformer {
+        if storedVariant == .transformer, !shouldRestoreTransformer {
             ModelSelectionStore.save(.classic, defaults: modelSelectionDefaults)
         }
         let placeholder = HeuristicClassifier()
         // Keep the persisted choice visible while the initial classifier load
         // runs, avoiding a misleading classic-model flash on launch.
         self.selectedModelVariant = shouldRestoreTransformer ? .transformer : .classic
+        self.submissionDestination = shouldRestoreTransformer ? .remote : .local
         self.isRestoringInitialModelVariant = true
         self.baseClassifier = placeholder
         self.pipeline = ClassificationPipeline(classifier: placeholder)
@@ -468,58 +468,29 @@ public final class SiftAppModel {
 
         self.submittedSampleCount = SubmissionLedger.count(defaults: ledgerDefaults)
 
-        // 首次授权解析后恢复选择；退款/撤销时取消工作并回退经典模型。
+        // 启动恢复与异步授权校验解耦；退款/撤销仍会取消高级模型工作。
         premium.onEntitlementChange = { [weak self] unlocked in
             guard let self else {
                 return
             }
             if unlocked {
                 if self.selectedModelVariant == .transformer {
-                    self.scheduleAutomaticTransformerUpdateIfEligible(force: true)
+                    if !self.isRestoringInitialModelVariant {
+                        self.scheduleAutomaticTransformerUpdateIfEligible(force: true)
+                    }
                 } else {
                     self.checkForTransformerUpdate()
                 }
-                guard self.modelVariantToRestoreAfterEntitlement == .transformer else {
-                    return
-                }
-                self.modelVariantToRestoreAfterEntitlement = nil
-                self.switchToModelVariant(
-                    .transformer,
-                    showsSuccessToast: false,
-                    priority: .utility
-                ) { [weak self] didSwitch in
-                    guard let self else { return }
-                    guard !didSwitch else {
-                        self.isRestoringInitialModelVariant = false
-                        return
-                    }
-                    self.switchToModelVariant(
-                        .classic,
-                        showsSuccessToast: false,
-                        priority: .utility
-                    ) { [weak self] _ in
-                        self?.isRestoringInitialModelVariant = false
-                    }
-                }
                 return
             }
-            let wasWaitingToRestoreTransformer = self.modelVariantToRestoreAfterEntitlement == .transformer
-            self.modelVariantToRestoreAfterEntitlement = nil
+            // StoreKit has now returned an authoritative negative result. Save
+            // Classic first so the Message Filter extension stops requesting
+            // Signal even while the main-app classifier switch is in flight.
+            ModelSelectionStore.save(.classic, defaults: self.modelSelectionDefaults)
             self.cancelAutomaticTransformerUpdate()
             self.cancelPendingTransformerDownload()
             if self.modelVariantBeingLoaded == .transformer {
                 self.cancelModelSwitch()
-            }
-            if wasWaitingToRestoreTransformer {
-                ModelSelectionStore.save(.classic, defaults: self.modelSelectionDefaults)
-                self.switchToModelVariant(
-                    .classic,
-                    showsSuccessToast: false,
-                    priority: .utility
-                ) { [weak self] _ in
-                    self?.isRestoringInitialModelVariant = false
-                }
-                return
             }
             guard self.selectedModelVariant == .transformer else {
                 return
@@ -540,14 +511,12 @@ public final class SiftAppModel {
             remoteAccountStatus = .available
         }
 
-        if !shouldRestoreTransformer {
-            switchToModelVariant(
-                .classic,
-                showsSuccessToast: false,
-                priority: .utility
-            ) { [weak self] _ in
-                self?.isRestoringInitialModelVariant = false
-            }
+        switchToModelVariant(
+            shouldRestoreTransformer ? .transformer : .classic,
+            showsSuccessToast: false,
+            priority: .utility
+        ) { [weak self] _ in
+            self?.isRestoringInitialModelVariant = false
         }
     }
 
@@ -642,6 +611,7 @@ public final class SiftAppModel {
     }
 
     public func applicationDidBecomeActive() {
+        premium.refreshEntitlementIfNeeded()
         if selectedModelVariant == .transformer {
             scheduleAutomaticTransformerUpdateIfEligible(
                 force: hasPendingTransformerBackgroundDownloadEvents

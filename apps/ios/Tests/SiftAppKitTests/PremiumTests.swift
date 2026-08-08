@@ -6,6 +6,18 @@ import Testing
 
 // MARK: - Premium gating
 
+private actor PremiumEntitlementRecorder {
+    private var count = 0
+
+    func record() {
+        count += 1
+    }
+
+    func callCount() -> Int {
+        count
+    }
+}
+
 private struct MockPremiumBackend: PremiumPurchasing {
     let entitled: Bool
     let outcome: PremiumPurchaseOutcome
@@ -16,6 +28,8 @@ private struct MockPremiumBackend: PremiumPurchasing {
         price: 18
     )
     var loadError: (any Error & Sendable)?
+    var entitlementRecorder: PremiumEntitlementRecorder?
+    var entitlementStatusOverride: PremiumEntitlementStatus?
 
     func loadProduct(identifier: String) async throws -> PremiumProductInfo? {
         if let loadError {
@@ -28,15 +42,64 @@ private struct MockPremiumBackend: PremiumPurchasing {
         outcome
     }
 
-    func isEntitled(identifier: String) async -> Bool {
-        entitled
+    func entitlementStatus(identifier: String) async -> PremiumEntitlementStatus {
+        if let entitlementRecorder {
+            await entitlementRecorder.record()
+        }
+        return entitlementStatusOverride ?? (entitled ? .entitled : .notPurchased)
     }
 
-    func restore(identifier: String) async throws -> Bool {
-        entitled
+    func restore(identifier: String) async throws -> PremiumEntitlementStatus {
+        entitlementStatusOverride ?? (entitled ? .entitled : .notPurchased)
     }
 
-    func entitlementUpdates(identifier: String) -> AsyncStream<Bool> {
+    func entitlementUpdates(identifier: String) -> AsyncStream<PremiumEntitlementStatus> {
+        AsyncStream { $0.finish() }
+    }
+}
+
+private actor SuspendedPremiumEntitlementGate {
+    private var requestCount = 0
+    private var continuation: CheckedContinuation<PremiumEntitlementStatus, Never>?
+
+    func entitlementStatus() async -> PremiumEntitlementStatus {
+        requestCount += 1
+        return await withCheckedContinuation { continuation in
+            self.continuation = continuation
+        }
+    }
+
+    func resolve(_ status: PremiumEntitlementStatus) {
+        continuation?.resume(returning: status)
+        continuation = nil
+    }
+
+    func count() -> Int {
+        requestCount
+    }
+}
+
+private struct SuspendedPremiumBackend: PremiumPurchasing {
+    let gate: SuspendedPremiumEntitlementGate
+
+    func loadProduct(identifier: String) async throws -> PremiumProductInfo? {
+        PremiumProductInfo(
+            identifier: identifier,
+            displayName: "高级版",
+            displayPrice: "¥18.00",
+            price: 18
+        )
+    }
+
+    func purchase(identifier: String) async -> PremiumPurchaseOutcome { .cancelled }
+
+    func entitlementStatus(identifier: String) async -> PremiumEntitlementStatus {
+        await gate.entitlementStatus()
+    }
+
+    func restore(identifier: String) async throws -> PremiumEntitlementStatus { .notPurchased }
+
+    func entitlementUpdates(identifier: String) -> AsyncStream<PremiumEntitlementStatus> {
         AsyncStream { $0.finish() }
     }
 }
@@ -209,6 +272,28 @@ private struct RecordingModelClassifierLoader: SiftModelClassifierLoading {
     @concurrent
     func classifier(for variant: ModelVariant) async -> (any MessageClassifier)? {
         await recorder.record(variant)
+        return HeuristicClassifier()
+    }
+}
+
+private actor MessageFilterRuntimeRecorder {
+    private var identities: [ModelArtifactIdentity] = []
+
+    func record(_ identity: ModelArtifactIdentity) {
+        identities.append(identity)
+    }
+
+    func recordedIdentities() -> [ModelArtifactIdentity] {
+        identities
+    }
+}
+
+private struct RecordingMessageFilterRuntimeLoader: TransformerRuntimeLoading {
+    let recorder: MessageFilterRuntimeRecorder
+
+    @concurrent
+    func loadTransformer(identity: ModelArtifactIdentity) async -> (any MessageClassifier)? {
+        await recorder.record(identity)
         return HeuristicClassifier()
     }
 }
@@ -389,6 +474,182 @@ func unlockedTransformerDoesNotDownloadUntilUserSelectsIt() async throws {
     let counts = await recorder.counts()
     #expect(counts.prepare == 0)
     #expect(counts.download == 0)
+}
+
+@MainActor
+@Test
+func purchasedEntitlementRestoresSynchronouslyAndSkipsRecentValidation() async throws {
+    let suiteName = "SiftTests.premium.cache.\(UUID().uuidString)"
+    let defaults = try #require(UserDefaults(suiteName: suiteName))
+    defer { defaults.removePersistentDomain(forName: suiteName) }
+
+    let purchasedStore = PremiumStore(
+        backend: MockPremiumBackend(entitled: false, outcome: .purchased),
+        defaults: defaults
+    )
+    let feedback = await purchasedStore.purchase()
+    #expect(feedback?.kind == .success)
+    #expect(purchasedStore.isUnlocked)
+
+    let recorder = PremiumEntitlementRecorder()
+    let relaunchedStore = PremiumStore(
+        backend: MockPremiumBackend(
+            entitled: false,
+            outcome: .cancelled,
+            entitlementRecorder: recorder
+        ),
+        defaults: defaults
+    )
+
+    #expect(relaunchedStore.isUnlocked)
+    #expect(relaunchedStore.isEntitlementResolved)
+    relaunchedStore.refreshEntitlementIfNeeded()
+    await Task.yield()
+    #expect(await recorder.callCount() == 0)
+}
+
+@MainActor
+@Test
+func explicitNotPurchasedClearsCachedPremiumUnlock() async throws {
+    let suiteName = "SiftTests.premium.validation.notPurchased.\(UUID().uuidString)"
+    let defaults = try #require(UserDefaults(suiteName: suiteName))
+    defer { defaults.removePersistentDomain(forName: suiteName) }
+    defaults.set(true, forKey: PremiumStore.cachedEntitlementKey)
+    defaults.set(
+        Date().addingTimeInterval(-PremiumStore.entitlementValidationInterval - 1),
+        forKey: PremiumStore.entitlementLastValidatedAtKey
+    )
+
+    let recorder = PremiumEntitlementRecorder()
+    let store = PremiumStore(
+        backend: MockPremiumBackend(
+            entitled: false,
+            outcome: .cancelled,
+            entitlementRecorder: recorder
+        ),
+        defaults: defaults
+    )
+
+    #expect(store.isUnlocked)
+    try await waitForPremiumEntitlementCheck(recorder, count: 1)
+    try await waitFor { store.isValidatingEntitlement == false }
+    #expect(store.isUnlocked == false)
+    #expect(defaults.bool(forKey: PremiumStore.cachedEntitlementKey) == false)
+}
+
+@MainActor
+@Test
+func unverifiedValidationPreservesCachedPremiumUnlock() async throws {
+    let suiteName = "SiftTests.premium.validation.unverified.\(UUID().uuidString)"
+    let defaults = try #require(UserDefaults(suiteName: suiteName))
+    defer { defaults.removePersistentDomain(forName: suiteName) }
+    defaults.set(true, forKey: PremiumStore.cachedEntitlementKey)
+    defaults.set(
+        Date().addingTimeInterval(-PremiumStore.entitlementValidationInterval - 1),
+        forKey: PremiumStore.entitlementLastValidatedAtKey
+    )
+
+    let store = PremiumStore(
+        backend: MockPremiumBackend(
+            entitled: false,
+            outcome: .cancelled,
+            entitlementStatusOverride: .unverified
+        ),
+        defaults: defaults
+    )
+
+    #expect(store.isUnlocked)
+    try await waitFor { store.isValidatingEntitlement == false }
+    #expect(store.isUnlocked)
+    #expect(defaults.bool(forKey: PremiumStore.cachedEntitlementKey))
+}
+
+@MainActor
+@Test
+func unverifiedRestoreDoesNotRevokeCachedPremiumUnlock() async throws {
+    let suiteName = "SiftTests.premium.restore.unverified.\(UUID().uuidString)"
+    let defaults = try #require(UserDefaults(suiteName: suiteName))
+    defer { defaults.removePersistentDomain(forName: suiteName) }
+    defaults.set(true, forKey: PremiumStore.cachedEntitlementKey)
+    defaults.set(Date(), forKey: PremiumStore.entitlementLastValidatedAtKey)
+
+    let store = PremiumStore(
+        backend: MockPremiumBackend(
+            entitled: false,
+            outcome: .cancelled,
+            entitlementStatusOverride: .unverified
+        ),
+        defaults: defaults
+    )
+
+    let feedback = await store.restorePurchases()
+
+    #expect(feedback.kind == .error)
+    #expect(store.isUnlocked)
+    #expect(defaults.bool(forKey: PremiumStore.cachedEntitlementKey))
+}
+
+@MainActor
+@Test
+func explicitRevocationClearsCachedPremiumUnlock() async throws {
+    let suiteName = "SiftTests.premium.validation.revoked.\(UUID().uuidString)"
+    let defaults = try #require(UserDefaults(suiteName: suiteName))
+    defer { defaults.removePersistentDomain(forName: suiteName) }
+    defaults.set(true, forKey: PremiumStore.cachedEntitlementKey)
+    defaults.set(
+        Date().addingTimeInterval(-PremiumStore.entitlementValidationInterval - 1),
+        forKey: PremiumStore.entitlementLastValidatedAtKey
+    )
+
+    let store = PremiumStore(
+        backend: MockPremiumBackend(
+            entitled: false,
+            outcome: .cancelled,
+            entitlementStatusOverride: .revoked
+        ),
+        defaults: defaults
+    )
+
+    #expect(store.isUnlocked)
+    try await waitFor { store.isValidatingEntitlement == false }
+    #expect(store.isUnlocked == false)
+    #expect(defaults.bool(forKey: PremiumStore.cachedEntitlementKey) == false)
+}
+
+@MainActor
+@Test
+func cachedNegativeWaitsForFreshRevocationBeforeStoredTransformerFallsBack() async throws {
+    let suiteName = "SiftTests.modelSelection.entitlement.revoked.\(UUID().uuidString)"
+    let defaults = try #require(UserDefaults(suiteName: suiteName))
+    defer { defaults.removePersistentDomain(forName: suiteName) }
+    ModelSelectionStore.save(.transformer, defaults: defaults)
+    defaults.set(false, forKey: PremiumStore.cachedEntitlementKey)
+    defaults.set(Date(), forKey: PremiumStore.entitlementLastValidatedAtKey)
+
+    let model = SiftAppModel(
+        premiumBackend: MockPremiumBackend(
+            entitled: false,
+            outcome: .cancelled,
+            entitlementStatusOverride: .revoked
+        ),
+        transformerAvailabilityOverride: true,
+        transformerDownloadedOverride: true,
+        transformerDownloader: nil,
+        modelClassifierLoader: MockSiftModelClassifierLoader(),
+        modelSelectionDefaults: defaults,
+        appDefaults: defaults
+    )
+
+    #expect(model.selectedModelVariant == .transformer)
+    #expect(model.submissionDestination == .remote)
+    #expect(ModelSelectionStore.load(defaults: defaults) == .transformer)
+    #expect(model.premium.isValidatingEntitlement)
+    try await waitFor { model.premium.isValidatingEntitlement == false }
+    #expect(model.premium.isEntitlementResolved)
+    #expect(model.premium.isUnlocked == false)
+    try await waitFor { model.isSwitchingModelVariant == false }
+    #expect(model.selectedModelVariant == .classic)
+    #expect(ModelSelectionStore.load(defaults: defaults) == .classic)
 }
 
 @MainActor
@@ -1058,7 +1319,8 @@ func storedTransformerStartupLoadsOnlyTransformer() async throws {
         transformerDownloadedOverride: true,
         transformerDownloader: nil,
         modelClassifierLoader: RecordingModelClassifierLoader(recorder: recorder),
-        modelSelectionDefaults: defaults
+        modelSelectionDefaults: defaults,
+        appDefaults: defaults
     )
 
     #expect(model.selectedModelVariant == .transformer)
@@ -1067,6 +1329,7 @@ func storedTransformerStartupLoadsOnlyTransformer() async throws {
     #expect(model.selectedModelVariant == .transformer)
     #expect(!model.isRestoringInitialModelVariant)
     #expect(await recorder.recordedVariants() == [.transformer])
+    #expect(defaults.bool(forKey: PremiumStore.cachedEntitlementKey))
 }
 
 @MainActor
@@ -1136,28 +1399,99 @@ func transformerCleanupFailureKeepsDownloadedStateAndShowsError() async throws {
 
 @MainActor
 @Test
-func unresolvedStoredTransformerFallsBackWhenInitialEntitlementIsMissing() async throws {
+func storedTransformerAndMessageFilterRemainSignalUntilExplicitNotPurchased() async throws {
     let suiteName = "SiftTests.modelSelection.entitlement.\(UUID().uuidString)"
+    let defaults = try #require(UserDefaults(suiteName: suiteName))
+    defer { defaults.removePersistentDomain(forName: suiteName) }
+    let identity = ModelArtifactIdentity(
+        variant: .transformer,
+        modelABI: "sift-signal-v1",
+        releaseSequence: 2,
+        sha256: "signal-test"
+    )
+    ModelSelectionStore.save(.transformer, defaults: defaults, artifactIdentity: identity)
+
+    let gate = SuspendedPremiumEntitlementGate()
+    let model = SiftAppModel(
+        premiumBackend: SuspendedPremiumBackend(gate: gate),
+        transformerAvailabilityOverride: true,
+        transformerDownloadedOverride: true,
+        transformerDownloader: nil,
+        modelClassifierLoader: SlowTransformerClassifierLoader(delay: .seconds(1)),
+        modelSelectionDefaults: defaults,
+        appDefaults: defaults
+    )
+
+    #expect(model.selectedModelVariant == .transformer)
+    #expect(model.submissionDestination == .remote)
+    #expect(!model.supportsLocalPersonalization)
+    #expect(model.isRestoringInitialModelVariant)
+    #expect(model.premium.isUnlocked)
+    #expect(model.premium.isValidatingEntitlement)
+    try await waitForSuspendedPremiumEntitlement(gate, count: 1)
+
+    let snapshotDuringValidation = FilterConfigurationSnapshotStore.load(defaults: defaults)
+    #expect(snapshotDuringValidation.selectedVariant == .transformer)
+    #expect(snapshotDuringValidation.modelArtifactIdentity == identity)
+
+    let runtimeRecorder = MessageFilterRuntimeRecorder()
+    let engine = MessageFilterEngine(
+        classicClassifier: HeuristicClassifier(),
+        transformerLoader: RecordingMessageFilterRuntimeLoader(recorder: runtimeRecorder),
+        transformerDeviceSupport: .supported
+    )
+    let filterResult = await engine.classify(
+        MessageFilterRequest(sender: "10690000", body: "限时优惠"),
+        configuration: snapshotDuringValidation
+    )
+    #expect(filterResult.modelArtifactIdentity == identity)
+    #expect(await runtimeRecorder.recordedIdentities() == [identity])
+    #expect(model.selectedModelVariant == .transformer)
+    #expect(ModelSelectionStore.load(defaults: defaults) == .transformer)
+
+    await gate.resolve(.notPurchased)
+    try await waitFor {
+        model.premium.isValidatingEntitlement == false
+            && model.isSwitchingModelVariant == false
+            && model.selectedModelVariant == .classic
+    }
+    #expect(model.premium.isUnlocked == false)
+    #expect(ModelSelectionStore.load(defaults: defaults) == .classic)
+    #expect(FilterConfigurationSnapshotStore.load(defaults: defaults).selectedVariant == .classic)
+}
+
+@MainActor
+@Test
+func unverifiedEntitlementKeepsStoredSignalSelectionAndSubmissionUI() async throws {
+    let suiteName = "SiftTests.modelSelection.entitlement.unverified.\(UUID().uuidString)"
     let defaults = try #require(UserDefaults(suiteName: suiteName))
     defer { defaults.removePersistentDomain(forName: suiteName) }
     ModelSelectionStore.save(.transformer, defaults: defaults)
 
     let model = SiftAppModel(
-        premiumBackend: MockPremiumBackend(entitled: false, outcome: .cancelled),
+        premiumBackend: MockPremiumBackend(
+            entitled: false,
+            outcome: .cancelled,
+            entitlementStatusOverride: .unverified
+        ),
         transformerAvailabilityOverride: true,
         transformerDownloadedOverride: true,
         transformerDownloader: nil,
         modelClassifierLoader: MockSiftModelClassifierLoader(),
-        modelSelectionDefaults: defaults
+        modelSelectionDefaults: defaults,
+        appDefaults: defaults
     )
 
     #expect(model.selectedModelVariant == .transformer)
-    #expect(model.isRestoringInitialModelVariant)
-    try await waitFor { model.premium.isEntitlementResolved && !model.isSwitchingModelVariant }
-    #expect(model.premium.isUnlocked == false)
-    #expect(model.selectedModelVariant == .classic)
-    #expect(!model.isRestoringInitialModelVariant)
-    #expect(ModelSelectionStore.load(defaults: defaults) == .classic)
+    #expect(model.submissionDestination == .remote)
+    #expect(!model.supportsLocalPersonalization)
+    try await waitFor {
+        model.premium.isValidatingEntitlement == false && model.isSwitchingModelVariant == false
+    }
+    #expect(model.premium.isUnlocked)
+    #expect(model.selectedModelVariant == .transformer)
+    #expect(model.submissionDestination == .remote)
+    #expect(ModelSelectionStore.load(defaults: defaults) == .transformer)
 }
 
 @MainActor
@@ -1299,6 +1633,32 @@ private func waitForNetworkConditionCheck(
         try await Task.sleep(nanoseconds: 10_000_000)
     }
     Issue.record("Timed out waiting for network condition check")
+}
+
+private func waitForPremiumEntitlementCheck(
+    _ recorder: PremiumEntitlementRecorder,
+    count: Int
+) async throws {
+    for _ in 0..<100 {
+        if await recorder.callCount() >= count {
+            return
+        }
+        try await Task.sleep(nanoseconds: 10_000_000)
+    }
+    Issue.record("Timed out waiting for premium entitlement check")
+}
+
+private func waitForSuspendedPremiumEntitlement(
+    _ gate: SuspendedPremiumEntitlementGate,
+    count: Int
+) async throws {
+    for _ in 0..<100 {
+        if await gate.count() >= count {
+            return
+        }
+        try await Task.sleep(nanoseconds: 10_000_000)
+    }
+    Issue.record("Timed out waiting for suspended premium entitlement check")
 }
 
 // MARK: - Submission history paging

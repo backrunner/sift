@@ -30,11 +30,11 @@ private struct ScreenshotPremiumBackend: PremiumPurchasing {
 
     func purchase(identifier: String) async -> PremiumPurchaseOutcome { .cancelled }
 
-    func isEntitled(identifier: String) async -> Bool { false }
+    func entitlementStatus(identifier: String) async -> PremiumEntitlementStatus { .notPurchased }
 
-    func restore(identifier: String) async throws -> Bool { false }
+    func restore(identifier: String) async throws -> PremiumEntitlementStatus { .notPurchased }
 
-    func entitlementUpdates(identifier: String) -> AsyncStream<Bool> {
+    func entitlementUpdates(identifier: String) -> AsyncStream<PremiumEntitlementStatus> {
         AsyncStream { continuation in
             continuation.finish()
         }
@@ -90,12 +90,15 @@ struct SiftApp: App {
             return
         }
         if ProcessInfo.processInfo.environment["SIFT_DEBUG_TRANSFORMER_SUPPORTED"] == "1" {
-            _model = State(initialValue: SiftAppModel(transformerDeviceSupportOverride: .supported))
+            _model = State(initialValue: SiftAppModel(
+                transformerDeviceSupportOverride: .supported,
+                appDefaults: .standard
+            ))
             return
         }
         #endif
 
-        _model = State(initialValue: SiftAppModel())
+        _model = State(initialValue: SiftAppModel(appDefaults: .standard))
     }
 
     var body: some Scene {
