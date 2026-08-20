@@ -79,6 +79,7 @@ def candidate_failures(report: dict[str, Any], fp16: dict[str, Any]) -> list[str
         if not condition:
             failures.append(name)
 
+    require(report.get("releaseEligible", True) is True, "releaseEligible")
     require(metrics.get("fixedAccuracy", 0) >= 0.99, "fixedAccuracy")
     require(metrics.get("promotionAccuracy", 0) >= 0.98, "promotionAccuracy")
     require(metrics.get("billingAccuracy", 0) >= 0.90, "billingAccuracy")
@@ -197,6 +198,7 @@ def select_candidate(profiles: dict[str, dict[str, Any]], reports: list[dict[str
 
     eligible = within_five_percent(eligible, lambda item: item["deviceMetrics"]["peakPhysicalFootprintIncreaseBytes"])
     eligible = within_five_percent(eligible, lambda item: item["downloadBytes"])
+    eligible = within_five_percent(eligible, lambda item: item["deviceMetrics"]["extensionColdP95Milliseconds"])
     eligible = within_five_percent(eligible, lambda item: item["deviceMetrics"]["p95LatencyMilliseconds"])
     eligible.sort(key=lambda item: (-item["metrics"]["promotionAccuracy"], item["profileID"]))
     winner = eligible[0]

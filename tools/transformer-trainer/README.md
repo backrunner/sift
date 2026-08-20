@@ -35,6 +35,35 @@ block-16/block-32 profiles. Unsupported activation-quantized combinations are
 not generated. A W4 QAT profile is only enabled when its PTQ predecessor fails
 the quality gates.
 
+The 256k mmBERT vocabulary is the largest remaining structural size lever. A
+64k retained vocabulary would remove about 73.7 MB from the W8 embedding before
+accounting for tokenizer savings. Treat vocabulary pruning as a new trained
+checkpoint, not a post-export rewrite: retain special and byte-fallback tokens,
+select tokens only from the leak-free training corpus, remap embedding rows,
+fine-tune, and run the full external holdout and device tournament. Compare 96k
+and 64k before trading away encoder depth with `--truncate-layers`.
+
+For a lower-risk intermediate experiment, the explicit-only
+`w8a16-channel-embedding-w4-block16-ptq` profile quantizes just the 256k x 384
+token embedding to W4 while leaving the encoder at W8. Request it with
+`--profile-id`; it is deliberately ineligible for release until the production
+Swift holdouts and physical-iPhone cold-start, memory, and stress gates have all
+been recorded. This isolates most of the size reduction of full W4 without
+quantizing the attention and MLP weights that previously failed quality gates.
+On macOS 27, Core ML Tools can return non-finite output for this iOS-targeted
+graph with `CPU_ONLY` even when `ALL` is finite. This does not predict or replace
+physical-iPhone CPU-only evidence. `--allow-experimental-macos-cpu-smoke-failure`
+exists only for an explicit set of release-ineligible profiles; it still
+requires the macOS `ALL` smoke, production Swift holdouts, and the physical-iPhone
+gate. By itself it cannot be used for a release-eligible profile.
+
+For a quality-only tournament whose complete output must remain unpublished,
+combine that switch with `--experimental-release-ineligible-run`. Every report
+then records `releaseEligible: false`, and the candidate selector rejects it
+even if device metrics are later added. This permits same-holdout comparison on
+a macOS/Core ML combination with a known CPU-only backend failure without
+turning the exception into a release bypass.
+
 Every quantized candidate also runs the production Swift MessageFilter artifact
 suite with the versioned trilingual readable cases. A readable-case mismatch
 fails the tournament before device metrics or candidate selection can proceed.
@@ -55,7 +84,66 @@ The FP16 source package targets iOS 18. Generate only quantization profiles
 that Core ML can execute for this graph. The current tournament keeps W8A16
 per-channel and W4A16 per-block candidates; unsupported activation-quantized
 combinations are not generated. Candidate reuse binds the Core ML Tools
-version, profile, tokenizer, calibration sample set, and max sequence length.
+version, profile, tokenizer, calibration sample set, max sequence length, and
+the exact FP16 source manifest. Quantization preserves the source training
+algorithm and distillation provenance; it records a separate `quantizedAt`
+timestamp instead of rewriting `trainedAt`.
+
+## Distilled student experiment
+
+The production Signal checkpoint can be used as a frozen teacher for a smaller,
+structurally truncated student. This entry point is opt-in and never installs
+or publishes the student by itself:
+
+```bash
+uv run distill_mmbert.py \
+  --input ../../build/pipeline/train.ndjson \
+  --teacher-checkpoint ../../build/pipeline/transformer-model/checkpoint \
+  --out ../../build/pipeline/signal-distilled-12l \
+  --version signal-distilled-12l \
+  --truncate-layers 12 \
+  --temperature 2 --distill-alpha 0.7 \
+  --num-epochs 3 --batch-size 8 --learning-rate 2e-5 \
+  --test-input ../../tools/apple-trainer/Evaluation/promotion-regressions.ndjson
+```
+
+The teacher, corpus, and selected taxonomy must have exactly the same output
+contract (taxonomy leaves plus `__sift_abstain__`). `--taxonomy` defaults to the
+current repository taxonomy. A legacy teacher experiment must pass the exact
+historical taxonomy explicitly; this keeps the emitted taxonomy hash truthful
+and prevents an old output head from masquerading as a current release.
+
+Run the resulting FP16 package through the normal quantization tournament with
+the fixed, promotion, billing/card, and conversation holdouts. Compare the
+student report with the teacher report using an absolute two-point gate:
+
+```bash
+python3 check_distillation_gate.py \
+  --teacher-report /path/to/teacher/w8a16-channel-ptq.report.json \
+  --student-report /path/to/student/w8a16-channel-ptq.report.json \
+  --max-loss 0.02 \
+  --out /path/to/student/distillation-gate.json
+```
+
+The student is release-ineligible until this gate, the existing Swift artifact
+suite, and fresh physical-iPhone cold-start/memory evidence all pass. The
+teacher checkpoint hash, student depth, temperature, and distillation weight
+are recorded in the student's manifest for auditability.
+The two-point student gate is absolute and applies independently to fixed,
+promotion, billing/card, conversation, production action, and per-language
+metrics. Passing an aggregate average cannot hide a loss greater than two
+points on one boundary, and zero benign-to-junk actions remains mandatory.
+
+The 2026-08-18 v15 teacher experiment found W4 block 32 to be the only
+quantized 12-layer student that passed the absolute two-point gate. It reduced
+download size from 260,548,289 bytes (FP16) to 85,948,562 bytes while matching
+the teacher's fixed, promotion, billing/card, and conversation raw accuracy;
+fixed action accuracy lost 0.21 points. It remains permanently ineligible for
+release because it has the legacy 52-output contract (51 leaves plus
+abstention), omits `government.reminder`, has no physical-iPhone evidence, and
+produces non-finite `CPU_ONLY` output on the tested macOS 27/Core ML Tools 9.0
+host. A publishable student must be retrained with the current 53-output
+contract and pass the full device tournament again.
 
 Complete each candidate report with evidence from the physical iPhone that is
 available for the release. Do not invent a separate A12 result when no A12
@@ -76,20 +164,26 @@ python3 record_device_metrics.py \
 
 The device script never bundles the Premium model. It installs the signed host
 app, copies the candidate to an App Group staging directory with `devicectl`,
-then the hosted XCTest validates hashes, compiles on the iPhone, runs the
-trilingual smoke cases, activates the release, and exports the runtime JSON.
+then uses separate XCTest processes to compile and activate the model, run one
+final-path prediction prime, and measure the next process's model load. The
+exported `installation-prime.json` is the unprimed final-path cost;
+`runtime-benchmark.json` is the post-prime cross-process cost. Process IDs are
+included so a same-process cache hit cannot be mistaken for extension startup.
 The same run drives the production `MessageFilterEngine` through 30 fresh
 engine loads and 10,000 warm queries. It exports
 `message-filter-snapshot.json`, a content-free aggregate grouped by requested
 artifact identity with latency buckets, fallback/error counts, watchdogs and
 physical-footprint drift, but never sender or body.
 
-The runtime benchmark records the process baseline before model load, then
+The runtime benchmark records model initialization, the first real inference,
+their combined cold path, and the process baseline before model load, then
 reports average and peak physical-footprint increases. Do not treat the XCTest
 host's absolute footprint as model memory. Positive memory growth is gated;
 memory reclaimed by the runtime remains a signed negative change and is not
 misreported as a leak. `MLComputePlan` inspection is recorded separately from
-the inference peak.
+the inference peak. Candidate selection uses the production IdentityLookup
+cold-start P95 before steady-state inference latency when size and memory are
+otherwise comparable.
 
 Convert the device aggregate into the release-evidence schema:
 
@@ -272,6 +366,13 @@ uv run train_mmbert.py --input more.ndjson \
   --resume-from ../../build/transformer-model/checkpoint     # continue training
 uv run train_mmbert.py --input train.ndjson --save-checkpoint off
 ```
+
+For a narrow output-row recalibration, keep the encoder and every unrelated
+classifier row frozen with `--train-label-rows`. Because every other corpus
+row is still a useful hard negative, `--selected-label-loss-weight` balances
+the selected labels' positive rows without discarding those negatives. The
+positive and `augmentation:boundary:*` multipliers are applied
+multiplicatively and recorded in the exported manifest.
 
 ## Usage
 

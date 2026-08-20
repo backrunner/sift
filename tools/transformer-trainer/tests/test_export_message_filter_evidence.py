@@ -35,7 +35,7 @@ def snapshot(*, at_least_one_second: int = 0) -> dict:
         "fallbackCounts": {"none": 10_030},
         "errorCounts": {},
     }
-    return {"schemaVersion": 1, "releases": {"release": release}}
+    return {"schemaVersion": 2, "releases": {"release": release}}
 
 
 class ExportMessageFilterEvidenceTests(unittest.TestCase):
@@ -75,6 +75,10 @@ class ExportMessageFilterEvidenceTests(unittest.TestCase):
                 low_power_passed=True,
                 memory_pressure_passed=True,
             )
+
+    def test_rejects_new_slow_latency_buckets(self) -> None:
+        with self.assertRaises(SystemExit):
+            MODULE.validate_buckets({"under2000Milliseconds": 1}, "cold evidence")
 
     def test_rejects_missing_stress_signoff(self) -> None:
         with self.assertRaises(SystemExit):

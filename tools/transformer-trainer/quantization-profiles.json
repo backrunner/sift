@@ -18,6 +18,24 @@
       "granularity": "per-channel"
     },
     {
+      "id": "w8a16-channel-embedding-w4-block16-ptq",
+      "eligibleForRelease": false,
+      "enabledByDefault": false,
+      "method": "ptq",
+      "weightBits": 8,
+      "activationBits": 16,
+      "granularity": "per-channel",
+      "weightOverrides": [
+        {
+          "role": "tokenEmbedding",
+          "opNameContains": "embeddings_tok_embeddings_weight",
+          "weightBits": 4,
+          "granularity": "per-block",
+          "blockSize": 16
+        }
+      ]
+    },
+    {
       "id": "w4a16-block16-ptq",
       "eligibleForRelease": true,
       "method": "ptq",

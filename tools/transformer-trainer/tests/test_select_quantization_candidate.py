@@ -8,7 +8,15 @@ from pathlib import Path
 from select_quantization_candidate import candidate_failures, has_quality_failure, load_profiles, select_candidate
 
 
-def report(profile_id: str, *, footprint: int, download: int, latency: float, promotion: float = 0.98) -> dict:
+def report(
+    profile_id: str,
+    *,
+    footprint: int,
+    download: int,
+    latency: float,
+    cold_latency: float = 700,
+    promotion: float = 0.98,
+) -> dict:
     return {
         "profileID": profile_id,
         "artifactSHA256": f"sha-{profile_id}",
@@ -47,7 +55,7 @@ def report(profile_id: str, *, footprint: int, download: int, latency: float, pr
             "averagePhysicalFootprintIncreaseBytes": footprint,
             "p95LatencyMilliseconds": latency,
             "p99LatencyMilliseconds": min(latency * 1.5, 240),
-            "extensionColdP95Milliseconds": 700,
+            "extensionColdP95Milliseconds": cold_latency,
             "extensionColdP99Milliseconds": 850,
             "extensionColdMaximumMilliseconds": 950,
             "extensionWarmP95Milliseconds": 120,
@@ -99,6 +107,27 @@ class QuantizationCandidateSelectionTests(unittest.TestCase):
         self.assertEqual(selected["profileID"], "w4a16-block16-qat")
         self.assertIn("promotionAccuracy", selected["rejectedCandidates"]["w4a16-block16-ptq"])
 
+    def test_prefers_faster_cold_start_when_size_and_memory_are_equivalent(self) -> None:
+        baseline = report("fp16-baseline", footprint=200, download=300, latency=20)
+        int8 = report(
+            "w8a16-channel-ptq",
+            footprint=100,
+            download=100,
+            latency=10,
+            cold_latency=600,
+        )
+        int4 = report(
+            "w4a16-block16-ptq",
+            footprint=100,
+            download=100,
+            latency=10,
+            cold_latency=700,
+        )
+
+        selected = select_candidate(self.profiles, self.attach_report_paths([baseline, int8, int4]))
+
+        self.assertEqual(selected["profileID"], "w8a16-channel-ptq")
+
     def test_promotion_gate_requires_at_least_ninety_eight_percent(self) -> None:
         baseline = report("fp16-baseline", footprint=200, download=300, latency=20)
         candidate = report("w8a16-channel-ptq", footprint=100, download=100, latency=10, promotion=0.979)
@@ -106,6 +135,15 @@ class QuantizationCandidateSelectionTests(unittest.TestCase):
         failures = candidate_failures(candidate, baseline)
 
         self.assertIn("promotionAccuracy", failures)
+
+    def test_release_ineligible_experiment_cannot_be_selected(self) -> None:
+        baseline = report("fp16-baseline", footprint=200, download=300, latency=20)
+        candidate = report("w8a16-channel-ptq", footprint=100, download=100, latency=10)
+        candidate["releaseEligible"] = False
+
+        failures = candidate_failures(candidate, baseline)
+
+        self.assertIn("releaseEligible", failures)
 
     def test_billing_gate_rejects_a_boundary_regression(self) -> None:
         baseline = report("fp16-baseline", footprint=200, download=300, latency=20)

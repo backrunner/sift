@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "minimumSemanticChange": 0.03,
+  "replacementRules": [
+    {"id":"bank-context","labels":["finance.bank"],"languages":["zh","en","ja"],"replacements":[["账户","银行账户"],["account","bank account"],["口座","銀行口座"]]},
+    {"id":"refund-wording","labels":["finance.refund"],"languages":["zh","en","ja"],"replacements":[["退款","退费"],["refund","credit back"],["返金","払い戻し"]]},
+    {"id":"card-due-wording","labels":["finance.credit_card"],"languages":["zh","en","ja"],"replacements":[["最低还款","最低应缴"],["minimum","required"],["最低支払","最低引落"]]},
+    {"id":"card-purchase-wording","labels":["finance.consumption"],"languages":["zh","en","ja"],"replacements":[["消费","刷卡消费"],["purchase","retail purchase"],["決済","カード決済"]]},
+    {"id":"carrier-bill-wording","labels":["carrier.billing"],"languages":["zh","en","ja"],"replacements":[["账单","月度账单"],["bill","service invoice"],["請求","利用請求"]]},
+    {"id":"carrier-service-wording","labels":["carrier.service"],"languages":["zh","en","ja"],"replacements":[["平台","系统"],["platform","service system"],["基盤","設備"]]},
+    {"id":"medical-wording","labels":["life.medical"],"languages":["zh","en","ja"],"replacements":[["实验室","检验中心"],["lab","clinic lab"],["検査室","検査センター"]]},
+    {"id":"logistics-wording","labels":["life.logistics"],"languages":["zh","en","ja"],"replacements":[["集装箱","货柜"],["container","cargo unit"],["コンテナ","貨物ユニット"]]},
+    {"id":"pickup-wording","labels":["life.pickup_code"],"languages":["zh","en","ja"],"replacements":[["取货码","提取码"],["code","PIN"],["受取番号","引取コード"]]},
+    {"id":"court-wording","labels":["government.court"],"languages":["zh","en","ja"],"replacements":[["法院","法庭"],["court","tribunal"],["裁判所","司法機関"]]},
+    {"id":"reminder-wording","labels":["government.reminder"],"languages":["zh","en","ja"],"replacements":[["提示","提醒"],["officials","authorities"],["防災","防災当局"]]},
+    {"id":"social-wording","labels":["government.social_security"],"languages":["zh","en","ja"],"replacements":[["津贴","补助"],["benefit","allowance"],["給付","手当"]]},
+    {"id":"alert-wording","labels":["work.alert"],"languages":["zh","en","ja"],"replacements":[["生产","线上生产"],["production","live production"],["本番","本番運用"]]},
+    {"id":"approval-wording","labels":["work.approval"],"languages":["zh","en","ja"],"replacements":[["申请","表单"],["request","form"],["申請","申請書"]]},
+    {"id":"attendance-wording","labels":["work.attendance"],"languages":["zh","en","ja"],"replacements":[["考勤","出勤记录"],["attendance","timekeeping"],["勤怠","出勤記録"]]},
+    {"id":"security-wording","labels":["transaction.account_security"],"languages":["zh","en","ja"],"replacements":[["恢复","找回"],["recovery","account recovery"],["復旧","アカウント復旧"]]},
+    {"id":"order-wording","labels":["transaction.order"],"languages":["zh","en","ja"],"replacements":[["订单","商品订单"],["order","purchase order"],["注文","商品注文"]]},
+    {"id":"ticket-wording","labels":["travel.ticketing"],"languages":["zh","en","ja"],"replacements":[["电子票","电子乘车票"],["e-ticket","electronic ticket"],["電子票","電子乗車券"]]},
+    {"id":"transport-wording","labels":["travel.transport"],"languages":["zh","en","ja"],"replacements":[["换乘","改乘"],["transfer","change vehicles"],["乗り換え","乗継"]]},
+    {"id":"promotion-wording","labels":["promotion"],"languages":["zh","en","ja"],"replacements":[["优惠","特惠"],["offer","member offer"],["キャンペーン","会員企画"]]},
+    {"id":"spam-wording","labels":["spam"],"languages":["zh","en","ja"],"replacements":[["要求","索要"],["demands","insists on"],["要求し","要求して"]]},
+    {"id":"abstain-wording","labels":["__sift_abstain__"],"languages":["zh","en","ja"],"replacements":[["我","我这边"],["I ","I just "],["私","こちら"]]}
+  ],
+  "boundaryRows": []
+}

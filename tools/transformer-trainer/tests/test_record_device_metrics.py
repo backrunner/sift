@@ -45,6 +45,10 @@ class RecordDeviceMetricsTests(unittest.TestCase):
             "peakPhysicalFootprintBytes": 100,
             "averagePhysicalFootprintBytes": 90,
             "baselinePhysicalFootprintBytes": 40,
+            "tokenizerInitializationMilliseconds": 2,
+            "coldLoadMilliseconds": 250,
+            "firstInferenceMilliseconds": 80,
+            "coldPathMilliseconds": 332,
             "p50LatencyMilliseconds": 50,
             "p95LatencyMilliseconds": 100,
             "p99LatencyMilliseconds": 150,
@@ -78,6 +82,10 @@ class RecordDeviceMetricsTests(unittest.TestCase):
         self.assertEqual(result["deviceMetrics"]["deviceModel"], "release-iPhone")
         self.assertEqual(result["deviceMetrics"]["averagePhysicalFootprintIncreaseBytes"], 50)
         self.assertEqual(result["deviceMetrics"]["peakPhysicalFootprintIncreaseBytes"], 60)
+        self.assertEqual(result["deviceMetrics"]["tokenizerInitializationMilliseconds"], 2)
+        self.assertEqual(result["deviceMetrics"]["coldModelLoadMilliseconds"], 250)
+        self.assertEqual(result["deviceMetrics"]["firstInferenceMilliseconds"], 80)
+        self.assertEqual(result["deviceMetrics"]["coldRuntimePathMilliseconds"], 332)
 
     def test_cpu_only_plan_is_valid_runtime_evidence_without_accelerator_trace(self) -> None:
         benchmark = {

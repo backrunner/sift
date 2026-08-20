@@ -73,6 +73,9 @@ def device_metrics(benchmark: dict, extension: dict) -> dict:
     baseline_footprint = benchmark.get("baselinePhysicalFootprintBytes", 0)
     average_footprint = benchmark.get("averagePhysicalFootprintBytes", 0)
     peak_footprint = benchmark.get("peakPhysicalFootprintBytes", 0)
+    tokenizer_initialization = benchmark.get("tokenizerInitializationMilliseconds", 0)
+    cold_model_load = benchmark.get("coldLoadMilliseconds", 0)
+    first_inference = benchmark.get("firstInferenceMilliseconds", 0)
     return {
         "runtimeExecutionVerified": acceleration_verified or cpu_plan_verified,
         "accelerationVerified": acceleration_verified,
@@ -105,7 +108,13 @@ def device_metrics(benchmark: dict, extension: dict) -> dict:
             "peakPhysicalFootprintIncreaseBytes", max(0, peak_footprint - baseline_footprint)
         ),
         "finalPhysicalFootprintBytes": benchmark.get("finalPhysicalFootprintBytes", 0),
-        "coldModelLoadMilliseconds": benchmark.get("coldLoadMilliseconds", 0),
+        "tokenizerInitializationMilliseconds": tokenizer_initialization,
+        "coldModelLoadMilliseconds": cold_model_load,
+        "firstInferenceMilliseconds": first_inference,
+        "coldRuntimePathMilliseconds": benchmark.get(
+            "coldPathMilliseconds",
+            tokenizer_initialization + cold_model_load + first_inference,
+        ),
         "p50LatencyMilliseconds": benchmark.get("p50LatencyMilliseconds", 0),
         "p95LatencyMilliseconds": benchmark.get("p95LatencyMilliseconds", 0),
         "p99LatencyMilliseconds": benchmark.get("p99LatencyMilliseconds", 0),

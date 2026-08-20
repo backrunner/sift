@@ -6,7 +6,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from train_mmbert import added_label_ids, evaluate_model, label_row_transfers
+from train_mmbert import added_label_ids, evaluate_model, label_row_transfers, row_loss_weight
 
 
 class TrainMMBertTests(unittest.TestCase):
@@ -48,6 +48,28 @@ class TrainMMBertTests(unittest.TestCase):
                 {"alpha": 0, "beta": 1, "gamma": 2, "delta": 3},
             ),
             [1, 3],
+        )
+
+    def test_selected_label_and_boundary_weights_are_multiplicative(self) -> None:
+        self.assertEqual(
+            row_loss_weight(
+                label_id=4,
+                source="augmentation:boundary:reviewed",
+                boundary_loss_weight=3,
+                selected_label_ids={4, 8},
+                selected_label_loss_weight=7,
+            ),
+            21,
+        )
+        self.assertEqual(
+            row_loss_weight(
+                label_id=2,
+                source="synthetic:en",
+                boundary_loss_weight=3,
+                selected_label_ids={4, 8},
+                selected_label_loss_weight=7,
+            ),
+            1,
         )
 
 

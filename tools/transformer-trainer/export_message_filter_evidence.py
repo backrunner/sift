@@ -19,8 +19,19 @@ BOUNDED_BUCKETS: tuple[tuple[str, float], ...] = (
     ("under750Milliseconds", 750.0),
     ("under900Milliseconds", 900.0),
     ("under1000Milliseconds", 1000.0),
+    ("under2000Milliseconds", 2000.0),
+    ("under3000Milliseconds", 3000.0),
+    ("under5000Milliseconds", 5000.0),
+    ("under6000Milliseconds", 6000.0),
 )
-UNBOUNDED_BUCKET = "atLeast1000Milliseconds"
+UNBOUNDED_BUCKETS = ("atLeast1000Milliseconds", "atLeast6000Milliseconds")
+SLOW_BUCKETS = {
+    "under2000Milliseconds",
+    "under3000Milliseconds",
+    "under5000Milliseconds",
+    "under6000Milliseconds",
+    *UNBOUNDED_BUCKETS,
+}
 
 
 def parse_arguments() -> argparse.Namespace:
@@ -66,14 +77,14 @@ def select_release(snapshot: dict[str, Any], release_sequence: int | None) -> di
 
 
 def validate_buckets(buckets: dict[str, Any], name: str) -> dict[str, int]:
-    known = {bucket for bucket, _ in BOUNDED_BUCKETS} | {UNBOUNDED_BUCKET}
+    known = {bucket for bucket, _ in BOUNDED_BUCKETS} | set(UNBOUNDED_BUCKETS)
     unknown = sorted(set(buckets) - known)
     if unknown:
         raise SystemExit(f"error: {name} contains unknown latency buckets: {', '.join(unknown)}")
     normalized = {bucket: int(buckets.get(bucket, 0)) for bucket in known}
     if any(count < 0 for count in normalized.values()):
         raise SystemExit(f"error: {name} contains a negative bucket count")
-    if normalized[UNBOUNDED_BUCKET] > 0:
+    if any(normalized[bucket] > 0 for bucket in SLOW_BUCKETS):
         raise SystemExit(f"error: {name} contains one or more MessageFilter queries at or above 1 second")
     return normalized
 
@@ -112,7 +123,7 @@ def build_evidence(
     memory_pressure_passed: bool,
     runtime_benchmark: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
-    if snapshot.get("schemaVersion") != 1:
+    if snapshot.get("schemaVersion") not in (1, 2):
         raise SystemExit("error: unsupported MessageFilter evidence snapshot schema")
     release = select_release(snapshot, release_sequence)
     cold_count = int(release.get("coldRunCount", 0))
