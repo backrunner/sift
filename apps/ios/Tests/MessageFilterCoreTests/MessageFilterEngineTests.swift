@@ -21,6 +21,35 @@ private struct FixedClassifier: MessageClassifier {
     }
 }
 
+private struct ResultReportingClassifier: FailureReportingMessageClassifier {
+    let result: Result<ClassificationDecision, MessageClassifierInferenceFailure>
+
+    func classify(sender: String?, body: String) -> ClassificationDecision {
+        switch result {
+        case let .success(decision):
+            return decision
+        case .failure:
+            return ModelOutputContract.abstentionDecision(confidence: 0)
+        }
+    }
+
+    func classificationResult(
+        sender: String?,
+        body: String
+    ) -> Result<ClassificationDecision, MessageClassifierInferenceFailure> {
+        result
+    }
+}
+
+private struct StaticRuntimeLoader: TransformerRuntimeLoading {
+    let classifier: any MessageClassifier
+
+    @concurrent
+    func loadTransformer(identity: ModelArtifactIdentity) async -> TransformerRuntimeLoadResult {
+        TransformerRuntimeLoadResult(classifier: classifier)
+    }
+}
+
 private actor RuntimeLoadRecorder {
     private var identities: [ModelArtifactIdentity] = []
 
@@ -30,6 +59,46 @@ private actor RuntimeLoadRecorder {
 
     func values() -> [ModelArtifactIdentity] {
         identities
+    }
+}
+
+private final class SignalCacheReleaseRecorder: @unchecked Sendable {
+    private let lock = NSLock()
+    private var recordedEvents: [SignalModelCacheReleaseEvent] = []
+
+    func record(_ event: SignalModelCacheReleaseEvent) {
+        lock.lock()
+        recordedEvents.append(event)
+        lock.unlock()
+    }
+
+    func events() -> [SignalModelCacheReleaseEvent] {
+        lock.lock()
+        defer { lock.unlock() }
+        return recordedEvents
+    }
+}
+
+private final class ClassificationRecorder: MessageClassifier, @unchecked Sendable {
+    private let lock = NSLock()
+    private var bodies: [String] = []
+    private let classifier: FixedClassifier
+
+    init(labelID: String) {
+        self.classifier = FixedClassifier(labelID: labelID)
+    }
+
+    func classify(sender: String?, body: String) -> ClassificationDecision {
+        lock.lock()
+        bodies.append(body)
+        lock.unlock()
+        return classifier.classify(sender: sender, body: body)
+    }
+
+    func recordedBodies() -> [String] {
+        lock.lock()
+        defer { lock.unlock() }
+        return bodies
     }
 }
 
@@ -47,15 +116,17 @@ private struct RecordingRuntimeLoader: TransformerRuntimeLoading {
     var unavailable = false
 
     @concurrent
-    func loadTransformer(identity: ModelArtifactIdentity) async -> (any MessageClassifier)? {
+    func loadTransformer(identity: ModelArtifactIdentity) async -> TransformerRuntimeLoadResult {
         await recorder.record(identity)
         if delay > .zero {
             try? await Task.sleep(for: delay)
         }
         guard !unavailable else {
-            return nil
+            return TransformerRuntimeLoadResult(classifier: nil)
         }
-        return FixedClassifier(labelID: identity.sha256 == "release-2" ? "spam" : "promotion")
+        return TransformerRuntimeLoadResult(
+            classifier: FixedClassifier(labelID: identity.sha256 == "release-2" ? "spam" : "promotion")
+        )
     }
 }
 
@@ -71,6 +142,14 @@ private func transformerSnapshot(
         rules: rules,
         categoryMappings: categoryMappings
     )
+}
+
+@Test
+func messageFilterTimingPolicyAllowsColdSignalStartup() {
+    #expect(MessageFilterTimingPolicy.signalAttemptBudget == .seconds(5))
+    #expect(MessageFilterEngine.defaultTransformerBudget == .seconds(5))
+    #expect(MessageFilterTimingPolicy.handlerWatchdog == .seconds(6))
+    #expect(MessageFilterTimingPolicy.signalIdleRetention == .seconds(15))
 }
 
 @Test
@@ -221,6 +300,103 @@ func messageFilterReloadsWhenTransformerArtifactIdentityChanges() async {
 }
 
 @Test
+func persistedSignalConfigurationExecutesTheSelectedSignalArtifact() async throws {
+    let suiteName = "SiftTests.signalConfiguration.\(UUID().uuidString)"
+    let defaults = try #require(UserDefaults(suiteName: suiteName))
+    defer { defaults.removePersistentDomain(forName: suiteName) }
+    let recorder = RuntimeLoadRecorder()
+    let identity = ModelArtifactIdentity(
+        variant: .transformer,
+        modelABI: "sift-signal-v1",
+        releaseSequence: 3,
+        sha256: "signal-release-3"
+    )
+    ModelSelectionStore.save(
+        .transformer,
+        defaults: defaults,
+        artifactIdentity: identity
+    )
+    let configuration = FilterConfigurationSnapshotStore.load(defaults: defaults)
+    let engine = MessageFilterEngine(
+        classicClassifier: FixedClassifier(labelID: "transaction.message"),
+        transformerLoader: RecordingRuntimeLoader(recorder: recorder),
+        transformerDeviceSupport: .supported
+    )
+
+    let result = await engine.classify(
+        MessageFilterRequest(sender: nil, body: "limited offer"),
+        configuration: configuration
+    )
+
+    #expect(configuration.selectedVariant == .transformer)
+    #expect(configuration.modelArtifactIdentity == identity)
+    #expect(result.executionPath == .signal)
+    #expect(result.modelArtifactIdentity == identity)
+    #expect(result.fallbackReason == .none)
+    #expect(await recorder.values() == [identity])
+}
+
+@Test
+func inconsistentSignalConfigurationFallsBackWithoutLoadingSignal() async {
+    let recorder = RuntimeLoadRecorder()
+    let engine = MessageFilterEngine(
+        classicClassifier: FixedClassifier(labelID: "transaction.message"),
+        transformerLoader: RecordingRuntimeLoader(recorder: recorder),
+        transformerDeviceSupport: .supported
+    )
+    let configuration = FilterConfigurationSnapshot(
+        generation: 8,
+        selectedVariant: .transformer,
+        modelArtifactIdentity: .classic,
+        rules: [],
+        categoryMappings: [:]
+    )
+
+    let result = await engine.classify(
+        MessageFilterRequest(sender: nil, body: "ordinary update"),
+        configuration: configuration
+    )
+
+    #expect(result.executionPath == .classic)
+    #expect(result.modelArtifactIdentity == .classic)
+    #expect(result.fallbackReason == .configurationMismatch)
+    #expect(await recorder.values().isEmpty)
+}
+
+@Test
+func inconsistentClassicConfigurationIsReportedWhileRunningClassic() async {
+    let recorder = RuntimeLoadRecorder()
+    let engine = MessageFilterEngine(
+        classicClassifier: FixedClassifier(labelID: "transaction.message"),
+        transformerLoader: RecordingRuntimeLoader(recorder: recorder),
+        transformerDeviceSupport: .supported
+    )
+    let signalIdentity = ModelArtifactIdentity(
+        variant: .transformer,
+        modelABI: "sift-signal-v1",
+        releaseSequence: 3,
+        sha256: "signal-release-3"
+    )
+    let configuration = FilterConfigurationSnapshot(
+        generation: 9,
+        selectedVariant: .classic,
+        modelArtifactIdentity: signalIdentity,
+        rules: [],
+        categoryMappings: [:]
+    )
+
+    let result = await engine.classify(
+        MessageFilterRequest(sender: nil, body: "ordinary update"),
+        configuration: configuration
+    )
+
+    #expect(result.executionPath == .classic)
+    #expect(result.modelArtifactIdentity == .classic)
+    #expect(result.fallbackReason == .configurationMismatch)
+    #expect(await recorder.values().isEmpty)
+}
+
+@Test
 func messageFilterFallsBackToClassicWhenTransformerExceedsBudget() async {
     let recorder = RuntimeLoadRecorder()
     let engine = MessageFilterEngine(
@@ -245,7 +421,118 @@ func messageFilterFallsBackToClassicWhenTransformerExceedsBudget() async {
     #expect(startedAt.duration(to: clock.now) < .milliseconds(500))
     #expect(result.modelArtifactIdentity == .classic)
     #expect(result.fallbackReason == .transformerTimedOut)
+    #expect(result.executionPath == .classic)
     #expect(result.systemAction == .transaction)
+}
+
+@Test
+func defaultBudgetDoesNotTreatTheFormer500MillisecondBoundaryAsFailure() async {
+    let recorder = RuntimeLoadRecorder()
+    let engine = MessageFilterEngine(
+        classicClassifier: FixedClassifier(labelID: "transaction.message"),
+        transformerLoader: RecordingRuntimeLoader(recorder: recorder, delay: .milliseconds(650)),
+        transformerDeviceSupport: .supported
+    )
+    let identity = ModelArtifactIdentity(
+        variant: .transformer,
+        modelABI: "sift-signal-v1",
+        releaseSequence: 1,
+        sha256: "release-1"
+    )
+
+    let result = await engine.classify(
+        MessageFilterRequest(sender: nil, body: "ordinary update"),
+        configuration: transformerSnapshot(identity: identity)
+    )
+
+    #expect(result.executionPath == .signal)
+    #expect(result.modelArtifactIdentity == identity)
+    #expect(result.fallbackReason == .none)
+}
+
+@Test
+func explicitSignalInferenceFailureImmediatelyFallsBackToClassic() async {
+    let engine = MessageFilterEngine(
+        classicClassifier: FixedClassifier(labelID: "transaction.message"),
+        transformerLoader: StaticRuntimeLoader(classifier: ResultReportingClassifier(
+            result: .failure(.predictionFailed)
+        )),
+        transformerDeviceSupport: .supported
+    )
+    let identity = ModelArtifactIdentity(
+        variant: .transformer,
+        modelABI: "sift-signal-v1",
+        releaseSequence: 1,
+        sha256: "release-1"
+    )
+
+    let result = await engine.classify(
+        MessageFilterRequest(sender: nil, body: "ordinary update"),
+        configuration: transformerSnapshot(identity: identity)
+    )
+
+    #expect(result.executionPath == .classic)
+    #expect(result.modelArtifactIdentity == .classic)
+    #expect(result.fallbackReason == .transformerInferenceFailed)
+    #expect(result.errorCode == "signal_predictionFailed")
+}
+
+@Test
+func signalAbstentionIsACompletedSignalResultInsteadOfClassicFallback() async {
+    let abstention = ModelOutputContract.abstentionDecision(confidence: 0.41)
+    let engine = MessageFilterEngine(
+        classicClassifier: FixedClassifier(labelID: "transaction.message"),
+        transformerLoader: StaticRuntimeLoader(classifier: ResultReportingClassifier(
+            result: .success(abstention)
+        )),
+        transformerDeviceSupport: .supported
+    )
+    let identity = ModelArtifactIdentity(
+        variant: .transformer,
+        modelABI: "sift-signal-v1",
+        releaseSequence: 1,
+        sha256: "release-1"
+    )
+
+    let result = await engine.classify(
+        MessageFilterRequest(sender: nil, body: "ordinary update"),
+        configuration: transformerSnapshot(identity: identity)
+    )
+
+    #expect(result.executionPath == .signal)
+    #expect(result.modelArtifactIdentity == identity)
+    #expect(result.fallbackReason == .none)
+    #expect(result.decision.labelID == ModelOutputContract.abstainLabel)
+    #expect(result.decision.source == .fallback)
+}
+
+@Test
+func signalCalibrationPreservesSignalExecutionIdentity() async {
+    let engine = MessageFilterEngine(
+        classicClassifier: FixedClassifier(labelID: "transaction.message"),
+        transformerLoader: StaticRuntimeLoader(classifier: FixedClassifier(labelID: "spam")),
+        transformerDeviceSupport: .supported
+    )
+    let identity = ModelArtifactIdentity(
+        variant: .transformer,
+        modelABI: "sift-signal-v1",
+        releaseSequence: 3,
+        sha256: "signal-calibration"
+    )
+
+    let result = await engine.classify(
+        MessageFilterRequest(
+            sender: nil,
+            body: "You have a missed call from 010-8821 and the caller left no voicemail."
+        ),
+        configuration: transformerSnapshot(identity: identity)
+    )
+
+    #expect(result.decision.labelID == "carrier.call_reminder")
+    #expect(result.systemAction == .transaction)
+    #expect(result.executionPath == .signal)
+    #expect(result.modelArtifactIdentity == identity)
+    #expect(result.fallbackReason == .none)
 }
 
 @Test
@@ -278,6 +565,37 @@ func unsupportedDeviceNeverLoadsTransformerInMessageFilter() async {
 }
 
 @Test
+func consecutiveSignalQueriesReportColdLoadThenCacheHit() async {
+    let recorder = RuntimeLoadRecorder()
+    let engine = MessageFilterEngine(
+        classicClassifier: FixedClassifier(labelID: "transaction.message"),
+        transformerLoader: RecordingRuntimeLoader(recorder: recorder),
+        transformerDeviceSupport: .supported
+    )
+    let identity = ModelArtifactIdentity(
+        variant: .transformer,
+        modelABI: "sift-signal-v1",
+        releaseSequence: 1,
+        sha256: "release-1"
+    )
+    let configuration = transformerSnapshot(identity: identity)
+
+    let first = await engine.classify(
+        MessageFilterRequest(sender: nil, body: "first"),
+        configuration: configuration
+    )
+    let second = await engine.classify(
+        MessageFilterRequest(sender: nil, body: "second"),
+        configuration: configuration
+    )
+
+    #expect(first.signalTiming?.accessKind == .coldLoad)
+    #expect(second.signalTiming?.accessKind == .cacheHit)
+    #expect(first.signalTiming?.idleRetentionMilliseconds == 15_000)
+    #expect(await recorder.values() == [identity])
+}
+
+@Test
 func concurrentColdQueriesCoalesceOneTransformerLoad() async {
     let recorder = RuntimeLoadRecorder()
     let engine = MessageFilterEngine(
@@ -303,7 +621,144 @@ func concurrentColdQueriesCoalesceOneTransformerLoad() async {
     let results = await [first, second]
 
     #expect(results.allSatisfy { $0.modelArtifactIdentity == identity })
+    let accessKinds = Set(results.compactMap { $0.signalTiming?.accessKind })
+    #expect(accessKinds == Set<SignalModelAccessKind>([.coldLoad, .joinedInFlightLoad]))
     #expect(await recorder.values() == [identity])
+}
+
+@Test
+func memoryPressureReleasesSignalAndTheNextQueryColdLoadsAgain() async {
+    let loadRecorder = RuntimeLoadRecorder()
+    let releaseRecorder = SignalCacheReleaseRecorder()
+    let engine = MessageFilterEngine(
+        classicClassifier: FixedClassifier(labelID: "transaction.message"),
+        transformerLoader: RecordingRuntimeLoader(recorder: loadRecorder),
+        transformerDeviceSupport: .supported,
+        transformerCacheReleaseHandler: { releaseRecorder.record($0) }
+    )
+    let identity = ModelArtifactIdentity(
+        variant: .transformer,
+        modelABI: "sift-signal-v1",
+        releaseSequence: 1,
+        sha256: "release-1"
+    )
+    let configuration = transformerSnapshot(identity: identity)
+
+    let first = await engine.classify(
+        MessageFilterRequest(sender: nil, body: "first"),
+        configuration: configuration
+    )
+    await engine.handleSignalMemoryPressure()
+    let second = await engine.classify(
+        MessageFilterRequest(sender: nil, body: "second"),
+        configuration: configuration
+    )
+
+    #expect(first.signalTiming?.accessKind == .coldLoad)
+    #expect(second.signalTiming?.accessKind == .coldLoad)
+    #expect(await loadRecorder.values() == [identity, identity])
+    #expect(releaseRecorder.events().contains { $0.reason == .memoryPressure })
+}
+
+@Test(.timeLimit(.minutes(1)))
+func aLoadCompletingAfterTimeoutIsReleasedAndReportsItsLoadDuration() async throws {
+    let loadRecorder = RuntimeLoadRecorder()
+    let (releaseEvents, releaseContinuation) = AsyncStream<SignalModelCacheReleaseEvent>.makeStream(
+        bufferingPolicy: .bufferingNewest(1)
+    )
+    let engine = MessageFilterEngine(
+        classicClassifier: FixedClassifier(labelID: "transaction.message"),
+        transformerLoader: RecordingRuntimeLoader(recorder: loadRecorder, delay: .milliseconds(50)),
+        transformerDeviceSupport: .supported,
+        transformerCacheReleaseHandler: { releaseContinuation.yield($0) }
+    )
+    let identity = ModelArtifactIdentity(
+        variant: .transformer,
+        modelABI: "sift-signal-v1",
+        releaseSequence: 1,
+        sha256: "release-1"
+    )
+    var iterator = releaseEvents.makeAsyncIterator()
+
+    let result = await engine.classify(
+        MessageFilterRequest(sender: nil, body: "slow cold start"),
+        configuration: transformerSnapshot(identity: identity),
+        transformerBudget: .milliseconds(1)
+    )
+    let releaseEvent = try #require(await iterator.next())
+    releaseContinuation.finish()
+
+    #expect(result.executionPath == .classic)
+    #expect(result.fallbackReason == .transformerTimedOut)
+    #expect(releaseEvent.reason == .attemptTimedOut)
+    #expect(releaseEvent.artifactIdentity == identity)
+    #expect(releaseEvent.totalLoadMilliseconds > 0)
+    #expect(await loadRecorder.values() == [identity])
+}
+
+@Test(.timeLimit(.minutes(1)))
+func idleRetentionReleasesSignalAndEmitsLifecycleEvent() async throws {
+    let loadRecorder = RuntimeLoadRecorder()
+    let (releaseEvents, releaseContinuation) = AsyncStream<SignalModelCacheReleaseEvent>.makeStream(
+        bufferingPolicy: .bufferingNewest(1)
+    )
+    let engine = MessageFilterEngine(
+        classicClassifier: FixedClassifier(labelID: "transaction.message"),
+        transformerLoader: RecordingRuntimeLoader(recorder: loadRecorder),
+        transformerDeviceSupport: .supported,
+        transformerIdleRetention: .milliseconds(1),
+        transformerCacheReleaseHandler: { releaseContinuation.yield($0) }
+    )
+    let identity = ModelArtifactIdentity(
+        variant: .transformer,
+        modelABI: "sift-signal-v1",
+        releaseSequence: 1,
+        sha256: "release-1"
+    )
+    let configuration = transformerSnapshot(identity: identity)
+    var iterator = releaseEvents.makeAsyncIterator()
+
+    let first = await engine.classify(
+        MessageFilterRequest(sender: nil, body: "first"),
+        configuration: configuration
+    )
+    let releaseEvent = try #require(await iterator.next())
+    let second = await engine.classify(
+        MessageFilterRequest(sender: nil, body: "second"),
+        configuration: configuration
+    )
+    releaseContinuation.finish()
+
+    #expect(first.signalTiming?.accessKind == .coldLoad)
+    #expect(releaseEvent.artifactIdentity == identity)
+    #expect(releaseEvent.reason == .idleTimeout)
+    #expect(second.signalTiming?.accessKind == .coldLoad)
+    #expect(await loadRecorder.values() == [identity, identity])
+}
+
+@Test
+func firstSignalQueryRunsExactlyOnePredictionForTheRealMessage() async {
+    let classifier = ClassificationRecorder(labelID: "promotion")
+    let engine = MessageFilterEngine(
+        classicClassifier: FixedClassifier(labelID: "transaction.message"),
+        transformerLoader: StaticRuntimeLoader(classifier: classifier),
+        transformerDeviceSupport: .supported
+    )
+    let identity = ModelArtifactIdentity(
+        variant: .transformer,
+        modelABI: "sift-signal-v1",
+        releaseSequence: 1,
+        sha256: "release-1"
+    )
+    let configuration = transformerSnapshot(identity: identity)
+
+    let result = await engine.classify(
+        MessageFilterRequest(sender: nil, body: "first real message"),
+        configuration: configuration
+    )
+
+    #expect(result.executionPath == .signal)
+    #expect(classifier.recordedBodies() == ["first real message"])
 }
 
 @Test

@@ -292,9 +292,9 @@ private struct RecordingMessageFilterRuntimeLoader: TransformerRuntimeLoading {
     let recorder: MessageFilterRuntimeRecorder
 
     @concurrent
-    func loadTransformer(identity: ModelArtifactIdentity) async -> (any MessageClassifier)? {
+    func loadTransformer(identity: ModelArtifactIdentity) async -> TransformerRuntimeLoadResult {
         await recorder.record(identity)
-        return HeuristicClassifier()
+        return TransformerRuntimeLoadResult(classifier: HeuristicClassifier())
     }
 }
 

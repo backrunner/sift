@@ -41,6 +41,18 @@ private enum VehiclePlatePatterns {
     static let genericContext = #"(?:license plate(?: number)?|license tag|vehicle tag|plate number|number plate|vehicle plate|registration mark|vehicle registration(?: number)?|车牌号|車牌號|车辆号牌|車輛號牌|车牌|車牌|号牌|號牌|ナンバープレート|車両番号|自動車登録番号|車両登録番号)"#
 }
 
+private enum ContextualPIIPatterns {
+    // These patterns require an explicit account/social label.  A bare QQ
+    // number, SKU, build identifier, or short username remains classifier
+    // evidence and is intentionally not redacted.
+    static let accountID = #"(?:账号(?:[ \t]*(?:id|编号|号码))?|账户(?:[ \t]*(?:id|编号|号码))?|用户账号|客户账号|account[ \t]+(?:id|number|no\.?)|user[ \t]+(?:id|number|no\.?)|customer[ \t]+(?:id|number|no\.?)|アカウント(?:[ \t]*(?:ID|番号))?|ユーザー(?:[ \t]*(?:ID|番号))|顧客番号|(?:account|user|customer)(?=[ \t]*[:：=#]))[ \t]*[:：=#]?[ \t]*((?:[A-Za-z0-9][A-Za-z0-9_*.-]{2,}|[*#][A-Za-z0-9_*.-]{2,}))(?![A-Za-z0-9_*.-])"#
+    static let accountSuffix = #"(?:账户|账号|银行卡|信用卡)[ \t]*尾号[ \t]*([0-9]{4,8})(?!\d)"#
+    static let resourceID = #"(?:实例[ \t]*(?:ID|编号)|资源[ \t]*(?:ID|编号)|项目[ \t]*(?:ID|编号)|云数据库实例|database[ \t]+instance|instance[ \t]+id|resource[ \t]+id|project[ \t]+id|インスタンス[ \t]*ID|リソース[ \t]*ID|プロジェクト[ \t]*ID)[ \t]*[:：=#]?[ \t]*([A-Za-z][A-Za-z0-9_-]{3,})(?![A-Za-z0-9_-])"#
+    static let socialAccount = #"(?:QQ(?:[ \t]*(?:号|号码|番号|账号|帐号|ID|number|account)|[ \t]*[:：=])|微信(?:[ \t]*(?:号|号码|账号|帐号|ID)|[ \t]*[:：=])|微博(?:[ \t]*(?:号|号码|账号|帐号|ID)|[ \t]*[:：=])|小红书(?:[ \t]*(?:号|号码|账号|帐号|ID)|[ \t]*[:：=])|抖音(?:[ \t]*(?:号|号码|账号|帐号|ID)|[ \t]*[:：=])|快手(?:[ \t]*(?:号|号码|账号|帐号|ID)|[ \t]*[:：=])|知乎(?:[ \t]*(?:号|号码|账号|帐号|ID)|[ \t]*[:：=])|WeChat(?:[ \t]*(?:ID|account|username))?|(?:LINE|Telegram|Discord|WhatsApp|Facebook|Instagram|TikTok|Twitter)[ \t]*(?:ID|账号|帐号|username|handle|tag|account)|X[ \t]*(?:ID|username|handle))[ \t]*(?:是|为|：|:|=|#)?[ \t]*(@?(?:[A-Za-z0-9][A-Za-z0-9_*#._-]{4,31}|[*#][A-Za-z0-9_*#._-]{4,31}))(?![A-Za-z0-9_*#._-])"#
+    static let nickname = #"(?:(?:昵称|用户名|显示名|称呼|ニックネーム|ユーザー名|表示名)[ \t]*[:：=]?|(?:nickname|username|display[ \t]+name)[ \t]*[:：=])[ \t]*([^,，、。；;：:\n()（）]{1,40})"#
+    static let explicitURL = #"(?<![A-Za-z0-9])https?://[^\s<>"'（）()\[\]{},，。！？；：、]+"#
+}
+
 public struct Redaction: Hashable, Sendable {
     public let token: String
     public let range: Range<String.Index>
@@ -113,12 +125,19 @@ public struct PrivacySanitizer {
                         redactions.append(Redaction(token: "{{PHONE}}", range: range))
                     }
                 case .link:
-                    redactions.append(Redaction(token: "{{URL}}", range: range))
+                    if let redaction = trimmedURLRedaction(range, in: text) {
+                        redactions.append(redaction)
+                    }
                 default:
                     break
                 }
             }
         }
+
+        // NSDataDetector is unavailable in some extension/test runtimes and
+        // can miss URLs adjacent to CJK punctuation, so keep a deterministic
+        // fallback with punctuation trimming.
+        redactions.append(contentsOf: explicitURLRedactions(in: text))
 
         redactions.append(contentsOf: regexRedactions(in: text, pattern: #"\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b"#, token: "{{EMAIL}}"))
         // 中国居民身份证：18 位（含尾部校验位 X）与 15 位旧式，均要求出生日期段合法。
@@ -161,6 +180,36 @@ public struct PrivacySanitizer {
             token: "{{ORDER_ID}}",
             captureGroup: 1
         ))
+        redactions.append(contentsOf: contextualRegexRedactions(
+            in: text,
+            pattern: ContextualPIIPatterns.accountID,
+            token: "{{ID}}",
+            captureGroup: 1
+        ))
+        redactions.append(contentsOf: regexRedactions(
+            in: text,
+            pattern: ContextualPIIPatterns.accountSuffix,
+            token: "{{ID}}",
+            captureGroup: 1
+        ))
+        redactions.append(contentsOf: regexRedactions(
+            in: text,
+            pattern: ContextualPIIPatterns.resourceID,
+            token: "{{ID}}",
+            captureGroup: 1
+        ))
+        redactions.append(contentsOf: contextualRegexRedactions(
+            in: text,
+            pattern: ContextualPIIPatterns.socialAccount,
+            token: "{{ID}}",
+            captureGroup: 1
+        ))
+        redactions.append(contentsOf: contextualRegexRedactions(
+            in: text,
+            pattern: ContextualPIIPatterns.nickname,
+            token: "{{NAME}}",
+            captureGroup: 1
+        ))
         redactions.append(contentsOf: plateRedactions(in: text))
         redactions.append(contentsOf: cardRedactions(in: text))
 
@@ -176,6 +225,42 @@ public struct PrivacySanitizer {
         }
 
         return mergeRedactions(redactions, in: text)
+    }
+
+    private func explicitURLRedactions(in text: String) -> [Redaction] {
+        let candidates = regexRedactions(
+            in: text,
+            pattern: ContextualPIIPatterns.explicitURL,
+            token: "{{URL}}"
+        )
+        return candidates.compactMap { candidate in
+            trimmedURLRedaction(candidate.range, in: text)
+        }
+    }
+
+    private func trimmedURLRedaction(_ range: Range<String.Index>, in text: String) -> Redaction? {
+            var end = range.upperBound
+            let punctuation: Set<Character> = [
+                ".", ",", "!", "?", ";", ":", "，", "。", "！", "？", "；", "：", "、", ")", "]", "}", ">"
+            ]
+            // NSDataDetector can include a following CJK clause in a link
+            // match. Cut at the first sentence delimiter before trimming the
+            // final ASCII closer/punctuation.
+            var cursor = range.lowerBound
+            while cursor < end {
+                if let character = text[cursor...].first, ["，", "。", "！", "？", "；", "：", "、"].contains(character) {
+                    end = cursor
+                    break
+                }
+                cursor = text.index(after: cursor)
+            }
+            while end > range.lowerBound {
+                let previous = text.index(before: end)
+                guard punctuation.contains(text[previous]) else { break }
+                end = previous
+            }
+            guard end > range.lowerBound else { return nil }
+            return Redaction(token: "{{URL}}", range: range.lowerBound..<end)
     }
 
     private func regexRedactions(
@@ -200,6 +285,28 @@ public struct PrivacySanitizer {
             redactions.append(Redaction(token: token, range: stringRange))
         }
         return redactions
+    }
+
+    private func contextualRegexRedactions(
+        in text: String,
+        pattern: String,
+        token: String,
+        captureGroup: Int
+    ) -> [Redaction] {
+        regexRedactions(in: text, pattern: pattern, token: token, captureGroup: captureGroup)
+            .filter { isPlausibleContextualValue(String(text[$0.range])) }
+    }
+
+    private func isPlausibleContextualValue(_ value: String) -> Bool {
+        let normalized = value.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        let stopwords: Set<String> = [
+            "account", "active", "available", "online", "offline", "pending", "status",
+            "number", "username", "handle", "music", "version", "is", "are", "none",
+            "null", "已绑定", "已认证", "已登录", "状态", "可用", "在线", "离线"
+        ]
+        return !normalized.isEmpty
+            && !stopwords.contains(normalized)
+            && normalized.contains(where: { $0.isLetter || $0.isNumber })
     }
 
     private func plateRedactions(in text: String) -> [Redaction] {

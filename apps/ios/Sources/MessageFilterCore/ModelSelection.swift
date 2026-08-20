@@ -86,6 +86,13 @@ public enum ModelSelectionStore {
     static func sharedDefaults() -> UserDefaults {
         UserDefaults(suiteName: appGroupIdentifier) ?? .standard
     }
+
+    /// The shared container is the runtime entitlement check used by both
+    /// model loading and diagnostics. On iOS, Apple returns `nil` when the
+    /// group identifier is invalid or missing from the signed entitlements.
+    public static func sharedContainerURL(fileManager: FileManager = .default) -> URL? {
+        fileManager.containerURL(forSecurityApplicationGroupIdentifier: appGroupIdentifier)
+    }
 }
 
 /// Persists custom rules in the shared app-group defaults so the app and the

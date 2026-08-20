@@ -17,7 +17,13 @@ public enum MessageFilterLatencyBucket: String, Codable, Hashable, Sendable {
     case under750Milliseconds
     case under900Milliseconds
     case under1000Milliseconds
+    case under2000Milliseconds
+    case under3000Milliseconds
+    case under5000Milliseconds
+    case under6000Milliseconds
+    /// Retained so previously persisted schema-v1 evidence remains decodable.
     case atLeast1000Milliseconds
+    case atLeast6000Milliseconds
 
     public init(elapsed: Duration) {
         if elapsed < .milliseconds(150) {
@@ -34,8 +40,16 @@ public enum MessageFilterLatencyBucket: String, Codable, Hashable, Sendable {
             self = .under900Milliseconds
         } else if elapsed < .seconds(1) {
             self = .under1000Milliseconds
+        } else if elapsed < .seconds(2) {
+            self = .under2000Milliseconds
+        } else if elapsed < .seconds(3) {
+            self = .under3000Milliseconds
+        } else if elapsed < .seconds(5) {
+            self = .under5000Milliseconds
+        } else if elapsed < .seconds(6) {
+            self = .under6000Milliseconds
         } else {
-            self = .atLeast1000Milliseconds
+            self = .atLeast6000Milliseconds
         }
     }
 }
@@ -47,7 +61,18 @@ public struct MessageFilterDiagnosticEvent: Codable, Hashable, Sendable {
     public let fallbackReason: MessageFilterFallbackReason
     public let errorCode: String?
     public let isColdStart: Bool
+    public let physicalFootprintBeforeBytes: UInt64
     public let physicalFootprintBytes: UInt64
+    public let signalTiming: SignalModelTimingMetrics?
+    public let selectedVariant: ModelVariant
+    public let configurationGeneration: UInt64
+    public let executionPath: MessageFilterExecutionPath
+    public let decisionLabelID: String?
+    public let decisionConfidence: Double?
+    public let decisionSource: ClassificationSource?
+    public let systemAction: SystemAction?
+    public let systemSubAction: SystemSubAction?
+    public let appGroupContainerAvailable: Bool
 
     public init(
         artifactIdentity: ModelArtifactIdentity,
@@ -56,15 +81,39 @@ public struct MessageFilterDiagnosticEvent: Codable, Hashable, Sendable {
         errorCode: String? = nil,
         requestedArtifactIdentity: ModelArtifactIdentity? = nil,
         isColdStart: Bool = false,
-        physicalFootprintBytes: UInt64 = 0
+        physicalFootprintBeforeBytes: UInt64 = 0,
+        physicalFootprintBytes: UInt64 = 0,
+        signalTiming: SignalModelTimingMetrics? = nil,
+        selectedVariant: ModelVariant? = nil,
+        configurationGeneration: UInt64 = 0,
+        executionPath: MessageFilterExecutionPath? = nil,
+        decisionLabelID: String? = nil,
+        decisionConfidence: Double? = nil,
+        decisionSource: ClassificationSource? = nil,
+        systemAction: SystemAction? = nil,
+        systemSubAction: SystemSubAction? = nil,
+        appGroupContainerAvailable: Bool = true
     ) {
-        self.requestedArtifactIdentity = requestedArtifactIdentity ?? artifactIdentity
+        let requestedArtifactIdentity = requestedArtifactIdentity ?? artifactIdentity
+        self.requestedArtifactIdentity = requestedArtifactIdentity
         self.artifactIdentity = artifactIdentity
         self.latencyBucket = latencyBucket
         self.fallbackReason = fallbackReason
         self.errorCode = errorCode
         self.isColdStart = isColdStart
+        self.physicalFootprintBeforeBytes = physicalFootprintBeforeBytes
         self.physicalFootprintBytes = physicalFootprintBytes
+        self.signalTiming = signalTiming
+        self.selectedVariant = selectedVariant ?? requestedArtifactIdentity.variant
+        self.configurationGeneration = configurationGeneration
+        self.executionPath = executionPath
+            ?? (artifactIdentity.variant == .transformer ? .signal : .classic)
+        self.decisionLabelID = decisionLabelID
+        self.decisionConfidence = decisionConfidence
+        self.decisionSource = decisionSource
+        self.systemAction = systemAction
+        self.systemSubAction = systemSubAction
+        self.appGroupContainerAvailable = appGroupContainerAvailable
     }
 }
 
@@ -84,12 +133,14 @@ public final class MessageFilterSessionTracker: @unchecked Sendable {
 }
 
 public struct MessageFilterReleasePerformanceEvidence: Codable, Hashable, Sendable {
+    public let requestedVariant: ModelVariant
     public let requestedArtifactIdentity: ModelArtifactIdentity
     public var coldRunCount: Int
     public var warmQueryCount: Int
     public var coldLatencyBuckets: [String: Int]
     public var warmLatencyBuckets: [String: Int]
     public var actualArtifactCounts: [String: Int]
+    public var executionPathCounts: [String: Int]
     public var fallbackCounts: [String: Int]
     public var errorCounts: [String: Int]
     public var watchdogCount: Int
@@ -101,13 +152,18 @@ public struct MessageFilterReleasePerformanceEvidence: Codable, Hashable, Sendab
         Self.signedDifference(latestPhysicalFootprintBytes, firstPhysicalFootprintBytes)
     }
 
-    public init(requestedArtifactIdentity: ModelArtifactIdentity) {
+    public init(
+        requestedVariant: ModelVariant,
+        requestedArtifactIdentity: ModelArtifactIdentity
+    ) {
+        self.requestedVariant = requestedVariant
         self.requestedArtifactIdentity = requestedArtifactIdentity
         self.coldRunCount = 0
         self.warmQueryCount = 0
         self.coldLatencyBuckets = [:]
         self.warmLatencyBuckets = [:]
         self.actualArtifactCounts = [:]
+        self.executionPathCounts = [:]
         self.fallbackCounts = [:]
         self.errorCounts = [:]
         self.watchdogCount = 0
@@ -124,7 +180,10 @@ public struct MessageFilterReleasePerformanceEvidence: Codable, Hashable, Sendab
             warmQueryCount += 1
             warmLatencyBuckets[event.latencyBucket.rawValue, default: 0] += 1
         }
-        actualArtifactCounts[Self.identityKey(event.artifactIdentity), default: 0] += 1
+        executionPathCounts[event.executionPath.rawValue, default: 0] += 1
+        if event.executionPath == .classic || event.executionPath == .signal {
+            actualArtifactCounts[Self.identityKey(event.artifactIdentity), default: 0] += 1
+        }
         fallbackCounts[event.fallbackReason.rawValue, default: 0] += 1
         if let errorCode = event.errorCode {
             errorCounts[errorCode, default: 0] += 1
@@ -160,17 +219,20 @@ public struct MessageFilterReleasePerformanceEvidence: Codable, Hashable, Sendab
 }
 
 public struct MessageFilterPerformanceEvidenceSnapshot: Codable, Hashable, Sendable {
-    public static let currentSchemaVersion = 1
+    public static let currentSchemaVersion = 2
 
     public let schemaVersion: Int
     public var releases: [String: MessageFilterReleasePerformanceEvidence]
+    public var latestEvent: MessageFilterDiagnosticEvent?
 
     public init(
         schemaVersion: Int = MessageFilterPerformanceEvidenceSnapshot.currentSchemaVersion,
-        releases: [String: MessageFilterReleasePerformanceEvidence] = [:]
+        releases: [String: MessageFilterReleasePerformanceEvidence] = [:],
+        latestEvent: MessageFilterDiagnosticEvent? = nil
     ) {
         self.schemaVersion = schemaVersion
         self.releases = releases
+        self.latestEvent = latestEvent
     }
 }
 
@@ -190,11 +252,18 @@ public final class MessageFilterPerformanceEvidenceStore: @unchecked Sendable {
         lock.lock()
         defer { lock.unlock() }
         var snapshot = loadUnlocked()
-        let key = MessageFilterReleasePerformanceEvidence.identityKey(event.requestedArtifactIdentity)
+        let key = [
+            event.selectedVariant.rawValue,
+            MessageFilterReleasePerformanceEvidence.identityKey(event.requestedArtifactIdentity),
+        ].joined(separator: "|")
         var release = snapshot.releases[key]
-            ?? MessageFilterReleasePerformanceEvidence(requestedArtifactIdentity: event.requestedArtifactIdentity)
+            ?? MessageFilterReleasePerformanceEvidence(
+                requestedVariant: event.selectedVariant,
+                requestedArtifactIdentity: event.requestedArtifactIdentity
+            )
         release.record(event)
         snapshot.releases[key] = release
+        snapshot.latestEvent = event
         guard let data = try? JSONEncoder().encode(snapshot) else {
             return
         }
@@ -251,16 +320,45 @@ public struct MessageFilterOSLogDiagnosticsRecorder: MessageFilterDiagnosticsRec
     private let logger = Logger(subsystem: "com.alkinum.sift.MessageFilterExtension", category: "filter")
     #endif
     private let performanceStore: MessageFilterPerformanceEvidenceStore
+    private let diagnosticLogStore: MessageFilterDiagnosticLogStore
 
-    public init(performanceStore: MessageFilterPerformanceEvidenceStore = MessageFilterPerformanceEvidenceStore()) {
+    public init(
+        performanceStore: MessageFilterPerformanceEvidenceStore = MessageFilterPerformanceEvidenceStore(),
+        diagnosticLogStore: MessageFilterDiagnosticLogStore = MessageFilterDiagnosticLogStore()
+    ) {
         self.performanceStore = performanceStore
+        self.diagnosticLogStore = diagnosticLogStore
     }
 
     public func record(_ event: MessageFilterDiagnosticEvent) {
         performanceStore.record(event)
+        let detailedLoggingEnabled = DeveloperModeStore.isEnabled()
+        diagnosticLogStore.record(event, includesDetails: detailedLoggingEnabled)
+        #if canImport(OSLog)
+        if detailedLoggingEnabled {
+            let actualArtifactIdentity: ModelArtifactIdentity? = switch event.executionPath {
+            case .classic, .signal:
+                event.artifactIdentity
+            case .rule, .noDecision:
+                nil
+            }
+            logger.notice(
+                "selected=\(event.selectedVariant.rawValue, privacy: .public) path=\(event.executionPath.rawValue, privacy: .public) requested_abi=\(event.requestedArtifactIdentity.modelABI, privacy: .public) requested_sequence=\(event.requestedArtifactIdentity.releaseSequence) requested_sha=\(event.requestedArtifactIdentity.sha256, privacy: .public) actual_abi=\(actualArtifactIdentity?.modelABI ?? "none", privacy: .public) actual_sequence=\(actualArtifactIdentity?.releaseSequence ?? -1) actual_sha=\(actualArtifactIdentity?.sha256 ?? "none", privacy: .public) generation=\(event.configurationGeneration) label=\(event.decisionLabelID ?? "none", privacy: .public) confidence=\(event.decisionConfidence ?? -1) source=\(event.decisionSource?.rawValue ?? "none", privacy: .public) action=\(event.systemAction?.rawValue ?? "none", privacy: .public) sub_action=\(event.systemSubAction?.rawValue ?? "none", privacy: .public) latency=\(event.latencyBucket.rawValue, privacy: .public) cold=\(event.isColdStart) signal_access=\(event.signalTiming?.accessKind.rawValue ?? "none", privacy: .public) signal_load_ms=\(event.signalTiming?.totalLoadMilliseconds ?? -1) signal_wait_ms=\(event.signalTiming?.queryWaitMilliseconds ?? -1) signal_inference_ms=\(event.signalTiming?.inferenceMilliseconds ?? -1) artifact_ms=\(event.signalTiming?.loadPhases?.artifactResolutionMilliseconds ?? -1) tokenizer_ms=\(event.signalTiming?.loadPhases?.tokenizerMilliseconds ?? -1) model_init_ms=\(event.signalTiming?.loadPhases?.modelInitializationMilliseconds ?? -1) first_prediction=\(event.signalTiming?.loadPhases?.firstPredictionStrategy.rawValue ?? "none", privacy: .public) fallback=\(event.fallbackReason.rawValue, privacy: .public) error=\(event.errorCode ?? "none", privacy: .public) footprint_before=\(event.physicalFootprintBeforeBytes) footprint_after=\(event.physicalFootprintBytes) app_group=\(event.appGroupContainerAvailable)"
+            )
+        } else {
+            logger.notice(
+                "selected=\(event.selectedVariant.rawValue, privacy: .public) path=\(event.executionPath.rawValue, privacy: .public) latency=\(event.latencyBucket.rawValue, privacy: .public) cold=\(event.isColdStart) signal_access=\(event.signalTiming?.accessKind.rawValue ?? "none", privacy: .public) signal_load_ms=\(event.signalTiming?.totalLoadMilliseconds ?? -1) signal_wait_ms=\(event.signalTiming?.queryWaitMilliseconds ?? -1) signal_inference_ms=\(event.signalTiming?.inferenceMilliseconds ?? -1) fallback=\(event.fallbackReason.rawValue, privacy: .public) error=\(event.errorCode ?? "none", privacy: .public) app_group=\(event.appGroupContainerAvailable)"
+            )
+        }
+        #endif
+    }
+
+    public func record(_ event: SignalModelCacheReleaseEvent) {
+        let footprint = MessageFilterProcessMetrics.currentPhysicalFootprintBytes()
+        diagnosticLogStore.record(event, physicalFootprintBytes: footprint)
         #if canImport(OSLog)
         logger.notice(
-            "requested_sequence=\(event.requestedArtifactIdentity.releaseSequence) variant=\(event.artifactIdentity.variant.rawValue, privacy: .public) abi=\(event.artifactIdentity.modelABI, privacy: .public) sequence=\(event.artifactIdentity.releaseSequence) sha=\(event.artifactIdentity.sha256, privacy: .public) latency=\(event.latencyBucket.rawValue, privacy: .public) cold=\(event.isColdStart) fallback=\(event.fallbackReason.rawValue, privacy: .public) error=\(event.errorCode ?? "none", privacy: .public)"
+            "signal_cache_release reason=\(event.reason.rawValue, privacy: .public) abi=\(event.artifactIdentity.modelABI, privacy: .public) sequence=\(event.artifactIdentity.releaseSequence) residency_ms=\(event.residencyMilliseconds) signal_load_ms=\(event.totalLoadMilliseconds) artifact_ms=\(event.loadPhases?.artifactResolutionMilliseconds ?? -1) tokenizer_ms=\(event.loadPhases?.tokenizerMilliseconds ?? -1) model_init_ms=\(event.loadPhases?.modelInitializationMilliseconds ?? -1) first_prediction=\(event.loadPhases?.firstPredictionStrategy.rawValue ?? "none", privacy: .public) footprint=\(footprint)"
         )
         #endif
     }

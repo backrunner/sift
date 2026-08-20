@@ -31,6 +31,8 @@ public struct TransformerRuntimeProfile: Codable, Hashable, Sendable {
 
     public let computeUnits: String
     public let modelType: String
+    /// Warm inference target used to qualify a release artifact. MessageFilter
+    /// runtime fallback timing is controlled separately by MessageFilterTimingPolicy.
     public let inferenceBudgetMilliseconds: Int
 
     public init(
@@ -426,6 +428,37 @@ public enum TransformerUpdateState: Hashable, Sendable {
     case failed(String)
 }
 
+struct TransformerClassifierLoadAttempt: Sendable {
+    let classifier: (any MessageClassifier)?
+    let tokenizerMilliseconds: Int
+    let modelInitializationMilliseconds: Int
+}
+
+public struct SignalModelInstallationPrimeMetrics: Codable, Hashable, Sendable {
+    public let artifactIdentity: ModelArtifactIdentity
+    public let succeeded: Bool
+    public let totalMilliseconds: Int
+    public let tokenizerMilliseconds: Int
+    public let modelInitializationMilliseconds: Int
+    public let inferenceMilliseconds: Int
+
+    public init(
+        artifactIdentity: ModelArtifactIdentity,
+        succeeded: Bool,
+        totalMilliseconds: Int,
+        tokenizerMilliseconds: Int,
+        modelInitializationMilliseconds: Int,
+        inferenceMilliseconds: Int
+    ) {
+        self.artifactIdentity = artifactIdentity
+        self.succeeded = succeeded
+        self.totalMilliseconds = totalMilliseconds
+        self.tokenizerMilliseconds = tokenizerMilliseconds
+        self.modelInitializationMilliseconds = modelInitializationMilliseconds
+        self.inferenceMilliseconds = inferenceMilliseconds
+    }
+}
+
 public enum TransformerClassifierLoader {
     public static let defaultResourceName = "SiftSignalModel"
     public static let legacyResourceNames = ["SiftTransformerClassifier"]
@@ -439,6 +472,14 @@ public enum TransformerClassifierLoader {
         fileManager: FileManager = .default,
         validateChecksums: Bool = true
     ) -> InstalledTransformerModel? {
+        #if os(iOS)
+        // Never accept the per-process Application Support fallback on iOS.
+        // The app and extension can share Signal only through the entitled
+        // App Group container.
+        guard ModelSelectionStore.sharedContainerURL(fileManager: fileManager) != nil else {
+            return nil
+        }
+        #endif
         let resourceNames = resourceName == defaultResourceName
             ? compatibleResourceNames
             : [resourceName]
@@ -483,35 +524,144 @@ public enum TransformerClassifierLoader {
         resourceName: String = defaultResourceName,
         confidenceThreshold: Double = 0.5
     ) -> (any MessageClassifier)? {
+        guard let installed = installedModel(
+            resourceName: resourceName,
+            fileManager: .default,
+            validateChecksums: false
+        ) else {
+            return nil
+        }
+        return downloaded(
+            installed: installed,
+            fallbackResourceName: resourceName,
+            confidenceThreshold: confidenceThreshold
+        )
+    }
+
+    static func downloaded(
+        installed: InstalledTransformerModel,
+        fallbackResourceName: String = defaultResourceName,
+        confidenceThreshold: Double = 0.5
+    ) -> (any MessageClassifier)? {
+        loadDownloaded(
+            installed: installed,
+            fallbackResourceName: fallbackResourceName,
+            confidenceThreshold: confidenceThreshold
+        ).classifier
+    }
+
+    /// Loads the already validated model from its final active URL and runs one
+    /// synthetic prediction so Core ML can persist path-specific specialization
+    /// artifacts before the MessageFilter extension is launched. The classifier
+    /// is released before this method returns; message handling never repeats
+    /// this installation-time prime.
+    @discardableResult
+    public static func primeInstalledModel(
+        resourceName: String = defaultResourceName,
+        fileManager: FileManager = .default
+    ) -> SignalModelInstallationPrimeMetrics? {
+        #if canImport(CoreML)
+        let clock = ContinuousClock()
+        let startedAt = clock.now
+        guard let installed = installedModel(
+            resourceName: resourceName,
+            fileManager: fileManager,
+            validateChecksums: false
+        ) else {
+            return nil
+        }
+        return autoreleasepool {
+            let attempt = loadDownloaded(
+                installed: installed,
+                fallbackResourceName: resourceName
+            )
+            guard let classifier = attempt.classifier as? any FailureReportingMessageClassifier else {
+                return SignalModelInstallationPrimeMetrics(
+                    artifactIdentity: installed.manifest.artifactIdentity,
+                    succeeded: false,
+                    totalMilliseconds: messageFilterMilliseconds(startedAt.duration(to: clock.now)),
+                    tokenizerMilliseconds: attempt.tokenizerMilliseconds,
+                    modelInitializationMilliseconds: attempt.modelInitializationMilliseconds,
+                    inferenceMilliseconds: 0
+                )
+            }
+            let inferenceStartedAt = clock.now
+            let succeeded = switch classifier.classificationResult(
+                sender: nil,
+                body: "验证码 482913"
+            ) {
+            case .success:
+                true
+            case .failure:
+                false
+            }
+            return SignalModelInstallationPrimeMetrics(
+                artifactIdentity: installed.manifest.artifactIdentity,
+                succeeded: succeeded,
+                totalMilliseconds: messageFilterMilliseconds(startedAt.duration(to: clock.now)),
+                tokenizerMilliseconds: attempt.tokenizerMilliseconds,
+                modelInitializationMilliseconds: attempt.modelInitializationMilliseconds,
+                inferenceMilliseconds: messageFilterMilliseconds(inferenceStartedAt.duration(to: clock.now))
+            )
+        }
+        #else
+        return nil
+        #endif
+    }
+
+    static func loadDownloaded(
+        installed: InstalledTransformerModel,
+        fallbackResourceName: String = defaultResourceName,
+        confidenceThreshold: Double = 0.5
+    ) -> TransformerClassifierLoadAttempt {
         #if canImport(CoreML)
         guard
-            let installed = installedModel(
-                resourceName: resourceName,
-                fileManager: .default,
-                validateChecksums: false
-            ),
             installed.manifest.tokenizerKind == "bpe",
             installed.tokenizerURL.pathExtension == "siftbpe"
         else {
-            return nil
+            return TransformerClassifierLoadAttempt(
+                classifier: nil,
+                tokenizerMilliseconds: 0,
+                modelInitializationMilliseconds: 0
+            )
         }
 
-        do {
-            let tokenizer = try makeTokenizer(manifest: installed.manifest, tokenizerURL: installed.tokenizerURL)
-            let compiledURL: URL
-            if installed.modelURL.pathExtension == "mlmodelc" {
-                compiledURL = installed.modelURL
-            } else {
-                let cachedURL = TransformerModelStore.compiledModelURL(
-                    resourceName: installedResourceName(for: installed, fallback: resourceName),
-                    in: installed.directoryURL
+        let compiledURL: URL
+        if installed.modelURL.pathExtension == "mlmodelc" {
+            compiledURL = installed.modelURL
+        } else {
+            let cachedURL = TransformerModelStore.compiledModelURL(
+                resourceName: installedResourceName(for: installed, fallback: fallbackResourceName),
+                in: installed.directoryURL
+            )
+            guard FileManager.default.fileExists(atPath: cachedURL.path) else {
+                return TransformerClassifierLoadAttempt(
+                    classifier: nil,
+                    tokenizerMilliseconds: 0,
+                    modelInitializationMilliseconds: 0
                 )
-                guard FileManager.default.fileExists(atPath: cachedURL.path) else {
-                    return nil
-                }
-                compiledURL = cachedURL
             }
-            return try TransformerTextClassifier(
+            compiledURL = cachedURL
+        }
+
+        let clock = ContinuousClock()
+        let tokenizerStartedAt = clock.now
+        let tokenizer: any TextTokenizing
+        do {
+            tokenizer = try makeTokenizer(manifest: installed.manifest, tokenizerURL: installed.tokenizerURL)
+        } catch {
+            return TransformerClassifierLoadAttempt(
+                classifier: nil,
+                tokenizerMilliseconds: messageFilterMilliseconds(tokenizerStartedAt.duration(to: clock.now)),
+                modelInitializationMilliseconds: 0
+            )
+        }
+        let tokenizerMilliseconds = messageFilterMilliseconds(tokenizerStartedAt.duration(to: clock.now))
+
+        let modelStartedAt = clock.now
+        let classifier: TransformerTextClassifier
+        do {
+            classifier = try TransformerTextClassifier(
                 modelURL: compiledURL,
                 tokenizer: tokenizer,
                 labels: installed.manifest.labels,
@@ -519,10 +669,26 @@ public enum TransformerClassifierLoader {
                 computeUnits: installed.manifest.runtimeProfile.computeUnits
             )
         } catch {
-            return nil
+            return TransformerClassifierLoadAttempt(
+                classifier: nil,
+                tokenizerMilliseconds: tokenizerMilliseconds,
+                modelInitializationMilliseconds: messageFilterMilliseconds(
+                    modelStartedAt.duration(to: clock.now)
+                )
+            )
         }
+        let modelInitializationMilliseconds = messageFilterMilliseconds(modelStartedAt.duration(to: clock.now))
+        return TransformerClassifierLoadAttempt(
+            classifier: classifier,
+            tokenizerMilliseconds: tokenizerMilliseconds,
+            modelInitializationMilliseconds: modelInitializationMilliseconds
+        )
         #else
-        return nil
+        return TransformerClassifierLoadAttempt(
+            classifier: nil,
+            tokenizerMilliseconds: 0,
+            modelInitializationMilliseconds: 0
+        )
         #endif
     }
 
@@ -688,7 +854,7 @@ public enum TransformerModelContract {
 /// of shape `[1, maxSequenceLength]` and is exported either as a Core ML
 /// classifier (predicted label + probability dictionary) or as a plain
 /// `probabilities` tensor matched against the manifest's label order.
-public final class TransformerTextClassifier: MessageClassifier, @unchecked Sendable {
+public final class TransformerTextClassifier: FailureReportingMessageClassifier, @unchecked Sendable {
     private let model: MLModel
     private let tokenizer: any TextTokenizing
     private let labels: [String]
@@ -708,6 +874,7 @@ public final class TransformerTextClassifier: MessageClassifier, @unchecked Send
             throw CocoaError(.featureUnsupported)
         }
         configuration.computeUnits = resolvedComputeUnits
+        configuration.modelDisplayName = "Sift Signal"
         self.model = try MLModel(contentsOf: modelURL, configuration: configuration)
         self.tokenizer = tokenizer
         self.labels = labels
@@ -729,6 +896,18 @@ public final class TransformerTextClassifier: MessageClassifier, @unchecked Send
     }
 
     public func classify(sender: String?, body: String) -> ClassificationDecision {
+        switch classificationResult(sender: sender, body: body) {
+        case let .success(decision):
+            return decision
+        case .failure:
+            return fallbackDecision(confidence: 0)
+        }
+    }
+
+    public func classificationResult(
+        sender: String?,
+        body: String
+    ) -> Result<ClassificationDecision, MessageClassifierInferenceFailure> {
         do {
             let encoded = tokenizer.tokenizeText(body)
             var features: [String: MLFeatureValue] = [
@@ -740,21 +919,24 @@ public final class TransformerTextClassifier: MessageClassifier, @unchecked Send
 
             let output = try model.prediction(from: MLDictionaryFeatureProvider(dictionary: features))
             guard let best = bestPrediction(from: output) else {
-                return fallbackDecision(confidence: 0)
+                return .failure(.invalidOutput)
+            }
+            guard best.confidence.isFinite, (0...1).contains(best.confidence) else {
+                return .failure(.invalidOutput)
             }
 
             if TransformerModelContract.isAbstainLabel(best.label) {
-                return ModelOutputContract.abstentionDecision(confidence: best.confidence)
+                return .success(ModelOutputContract.abstentionDecision(confidence: best.confidence))
             }
 
-            guard
-                let leaf = SiftTaxonomy.leaf(id: best.label),
-                best.confidence >= confidenceThreshold
-            else {
-                return fallbackDecision(confidence: best.confidence)
+            guard let leaf = SiftTaxonomy.leaf(id: best.label) else {
+                return .failure(.invalidOutput)
+            }
+            guard best.confidence >= confidenceThreshold else {
+                return .success(fallbackDecision(confidence: best.confidence))
             }
 
-            return ClassificationDecision(
+            return .success(ClassificationDecision(
                 labelID: leaf.id,
                 labelTitle: leaf.title,
                 groupID: leaf.groupId,
@@ -762,9 +944,9 @@ public final class TransformerTextClassifier: MessageClassifier, @unchecked Send
                 confidence: best.confidence,
                 systemAction: leaf.systemAction,
                 source: .model
-            )
+            ))
         } catch {
-            return fallbackDecision(confidence: 0)
+            return .failure(.predictionFailed)
         }
     }
 
