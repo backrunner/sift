@@ -28,16 +28,23 @@ import hashlib
 import json
 import os
 import random
+import re
 import shutil
 from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Any
 
 os.environ.setdefault("PYTORCH_ENABLE_MPS_FALLBACK", "1")
 
 TAGS = ["O", "PHONE", "URL", "EMAIL", "ADDRESS", "CARD", "ID", "ORDER_ID", "AMOUNT", "CODE", "NAME"]
 DEFAULT_BACKBONE = "distilbert-base-multilingual-cased"
 DEFAULT_CLEAN_TEST = Path(__file__).resolve().parent / "Evaluation/clean-negatives.ndjson"
+DEFAULT_REDACTION_REGRESSIONS = Path(__file__).resolve().parent / "Evaluation/redaction-regressions.ndjson"
+PLACEHOLDER_PATTERN = re.compile(
+    r"\{\{(?:PHONE|URL|EMAIL|ADDRESS|CARD|ID|ORDER_ID|AMOUNT|CODE|PLATE|NAME)\}\}"
+)
+ANY_PLACEHOLDER_PATTERN = re.compile(r"\{\{[^{}\n]{1,64}\}\}")
 
 
 def parse_arguments() -> argparse.Namespace:
@@ -50,6 +57,14 @@ def parse_arguments() -> argparse.Namespace:
     parser.add_argument("--max-length", type=int, default=96)
     parser.add_argument("--samples", type=int, default=20000, help="synthetic training sentences to generate")
     parser.add_argument("--clean-fraction", type=float, default=0.5, help="fraction of clean negative sentences")
+    parser.add_argument(
+        "--contextual-redaction-samples",
+        type=int,
+        default=2000,
+        help="additional synthetic account/resource/social-handle hard examples",
+    )
+    parser.add_argument("--contextual-redaction-clean-fraction", type=float, default=0.25)
+    parser.add_argument("--redaction-regression-repeat", type=int, default=8)
     parser.add_argument("--epochs", type=int, default=2)
     parser.add_argument("--batch-size", type=int, default=32)
     parser.add_argument("--learning-rate", type=float, default=5e-5)
@@ -63,7 +78,15 @@ def parse_arguments() -> argparse.Namespace:
     parser.add_argument("--minimum-pii-f1", type=float, default=0.90)
     parser.add_argument("--maximum-clean-fpr", type=float, default=0.02)
     parser.add_argument("--clean-test-input", type=Path, default=DEFAULT_CLEAN_TEST)
+    parser.add_argument(
+        "--redaction-regressions",
+        type=Path,
+        default=DEFAULT_REDACTION_REGRESSIONS,
+        help="fixed synthetic contextual-PII regression set (never contains user text)",
+    )
     parser.add_argument("--inference-threshold", type=float, default=0.85)
+    parser.add_argument("--minimum-redaction-f1", type=float, default=0.90)
+    parser.add_argument("--maximum-redaction-clean-fpr", type=float, default=0.02)
     return parser.parse_args()
 
 
@@ -205,6 +228,113 @@ def ordinary_grouped_number_negative(rng: random.Random) -> str:
     return rng.choice(templates)
 
 
+def _render_span_parts(parts: list[str | tuple[str, str]]) -> dict:
+    text_parts: list[str] = []
+    spans: list[list[int | str]] = []
+    cursor = 0
+    for part in parts:
+        if isinstance(part, tuple):
+            value, tag = part
+            text_parts.append(value)
+            spans.append([cursor, cursor + len(value), tag])
+            cursor += len(value)
+        else:
+            text_parts.append(part)
+            cursor += len(part)
+    return {"text": "".join(text_parts), "spans": spans}
+
+
+def synthesize_contextual_redaction_examples(
+    count: int,
+    rng: random.Random,
+    clean_fraction: float = 0.25,
+) -> list[dict]:
+    """Generate safe account/social/resource examples plus matched negatives."""
+    if count < 0:
+        raise SystemExit("error: --contextual-redaction-samples must be >= 0")
+    if not 0 <= clean_fraction < 1:
+        raise SystemExit("error: --contextual-redaction-clean-fraction must be >= 0 and < 1")
+
+    examples: list[dict] = []
+    zh_names = ["测试用户", "演示客服", "样例账户", "虚构会员"]
+    ja_names = ["テスト利用者", "サンプル担当", "評価ユーザー", "架空会員"]
+    en_names = ["Test User", "Sample Agent", "Demo Account", "Evaluation User"]
+    social_platforms = ["微博", "小红书", "抖音", "快手", "知乎"]
+    en_platforms = ["Telegram", "Discord", "WhatsApp", "Instagram", "TikTok", "Twitter"]
+
+    for index in range(count):
+        if rng.random() < clean_fraction:
+            examples.append({
+                "text": rng.choice([
+                    f"QQ音乐版本 {rng.randint(10, 20)}.{rng.randint(0, 9)} 已发布，活动编号 {rng.randint(100000, 999999)} 保持可见。",
+                    f"微信支付功能说明已更新，产品代码 WX-{rng.randint(1000, 9999)} 仅为目录标识。",
+                    f"微信支付说明已更新，版本号wxid_demo_{rng.randint(100, 9999)}仅为文档示例，不含账号字段。",
+                    f"微博热搜活动编号 {rng.randint(100000, 999999)} 已发布，没有用户账号字段。",
+                    f"Build wxid_demo_{rng.randint(10, 9999)} passed; product code SKU-{rng.randint(1000, 9999)} is active.",
+                    f"Product model demo_user_{rng.randint(10, 9999)} is listed in the catalog; no social handle is referenced.",
+                    f"Catalog item demo_tag_{rng.randint(10, 9999)} is a product code, not a social account.",
+                    f"TikTok app version {rng.randint(10, 20)}.{rng.randint(0, 9)} is available in the catalog.",
+                    f"The event has {rng.randint(1_000, 99_999):,} participants and no social handle field.",
+                    f"QQ音楽アプリのバージョン{rng.randint(10, 20)}.{rng.randint(0, 9)}を公開しました。商品コードはSKU-{rng.randint(1000, 9999)}です。",
+                    f"ビルドwxid_demo_{rng.randint(10, 9999)}は検査に合格し、アカウント情報は含みません。",
+                ]),
+                "spans": [],
+            })
+            continue
+
+        language = ("zh", "en", "ja")[index % 3]
+        qq = str(rng.randint(100000, 9_999_999_999))
+        if rng.random() < 0.25:
+            qq = qq[:3] + "*" * max(4, len(qq) - 3)
+        handle = rng.choice(["wxid_demo_", "safe_user_", "demo_tag_"]) + str(rng.randint(10, 9999))
+        # Explicitly labelled international handles commonly carry an @
+        # prefix. Keep this in the synthetic hard set so the detector learns
+        # the prefix as part of the account span without weakening bare-ID
+        # negatives.
+        if language == "en" and rng.random() < 0.35:
+            handle = "@" + handle
+        account = rng.choice(["acct-demo-", "user-safe-", "customer-eval-"]) + str(rng.randint(10, 9999))
+        if rng.random() < 0.15:
+            account = "****" + account
+        resource = rng.choice(["db-demo-", "res-safe-", "proj-eval-"]) + str(rng.randint(10, 9999))
+
+        if language == "zh":
+            template = rng.randint(0, 4)
+            if template == 0:
+                parts: list[str | tuple[str, str]] = ["客服QQ号：", (qq, "ID"), "，请勿公开。"]
+            elif template == 1:
+                parts = ["微信号：", (handle, "ID"), "，已绑定到测试账户。"]
+            elif template == 2:
+                parts = [rng.choice(social_platforms) + "ID：", (handle, "ID"), "，仅供合成训练。"]
+            elif template == 3:
+                parts = ["云服务账号ID：", (account, "ID"), "，实例ID：", (resource, "ID"), "，即将到期。"]
+            else:
+                parts = ["昵称：", (rng.choice(zh_names), "NAME"), "，项目ID：", (resource, "ID"), "，状态已更新。"]
+        elif language == "en":
+            template = rng.randint(0, 3)
+            if template == 0:
+                parts = ["WeChat ID: ", (handle, "ID"), "; keep this synthetic handle private."]
+            elif template == 1:
+                parts = [rng.choice(en_platforms) + " username: ", (handle, "ID"), " is linked to the test profile."]
+            elif template == 2:
+                parts = ["Cloud account ID: ", (account, "ID"), "; resource ID: ", (resource, "ID"), " expires soon."]
+            else:
+                parts = ["Display name: ", (rng.choice(en_names), "NAME"), "; project ID: ", (resource, "ID"), "."]
+        else:
+            template = rng.randint(0, 3)
+            if template == 0:
+                parts = ["WeChat ID：", (handle, "ID"), "、アカウントID：", (account, "ID"), "。"]
+            elif template == 1:
+                parts = ["表示名：", (rng.choice(ja_names), "NAME"), "、インスタンスID：", (resource, "ID"), "。"]
+            elif template == 2:
+                parts = ["QQ番号：", (qq, "ID"), "はテスト用の連絡先です。"]
+            else:
+                parts = ["Telegram username: ", (handle, "ID"), "、プロジェクトID：", (resource, "ID"), "。"]
+        examples.append(_render_span_parts(parts))
+
+    return examples
+
+
 def load_carriers(path: Path, limit: int, rng: random.Random) -> list[str]:
     carriers: list[str] = []
     with path.open(encoding="utf-8") as handle:
@@ -232,10 +362,71 @@ def load_clean_test(path: Path) -> list[dict]:
             text = str(json.loads(line).get("text", "")).strip()
             if not text:
                 raise SystemExit(f"error: missing text at {path}:{number}")
+            if ANY_PLACEHOLDER_PATTERN.search(text):
+                raise SystemExit(f"error: placeholder marker in clean regression at {path}:{number}")
             examples.append({"text": text, "spans": []})
     if not examples:
         raise SystemExit(f"error: clean regression set is empty: {path}")
     return examples
+
+
+def load_redaction_regressions(path: Path) -> list[dict[str, Any]]:
+    """Load synthetic contextual-PII examples with character-level spans.
+
+    This file is deliberately independent of CloudKit.  It is the reviewed
+    feedback set for missed account/social/resource values, so no production
+    user text can accidentally become a training example.  The loader rejects
+    placeholders: they are an intermediate export representation and must be
+    reverse-redacted before model training/evaluation.
+    """
+    resolved = path.expanduser().resolve()
+    if not resolved.exists():
+        raise SystemExit(f"error: redaction regression set missing: {resolved}")
+
+    examples: list[dict[str, Any]] = []
+    with resolved.open(encoding="utf-8") as handle:
+        for number, line in enumerate(handle, 1):
+            if not line.strip():
+                continue
+            record = json.loads(line)
+            text = str(record.get("text", "")).strip()
+            if not text:
+                raise SystemExit(f"error: missing text at {resolved}:{number}")
+            if ANY_PLACEHOLDER_PATTERN.search(text):
+                raise SystemExit(f"error: placeholder marker in redaction regression at {resolved}:{number}")
+            raw_spans = record.get("spans", [])
+            if not isinstance(raw_spans, list):
+                raise SystemExit(f"error: spans must be a list at {resolved}:{number}")
+            spans: list[list[Any]] = []
+            for span in raw_spans:
+                if not isinstance(span, list) or len(span) != 3:
+                    raise SystemExit(f"error: invalid span at {resolved}:{number}")
+                start, end, tag = span
+                if (
+                    not isinstance(start, int)
+                    or not isinstance(end, int)
+                    or not 0 <= start < end <= len(text)
+                    or not isinstance(tag, str)
+                    or tag not in TAGS[1:]
+                ):
+                    raise SystemExit(f"error: invalid span values at {resolved}:{number}")
+                spans.append([start, end, tag])
+            split = str(record.get("split", "eval")).strip().lower()
+            if split not in {"train", "eval"}:
+                raise SystemExit(f"error: split must be train/eval at {resolved}:{number}")
+            examples.append({"text": text, "spans": spans, "split": split})
+
+    if not examples:
+        raise SystemExit(f"error: redaction regression set is empty: {resolved}")
+    return examples
+
+
+def assert_no_placeholder_examples(examples: list[dict], context: str) -> None:
+    """Fail closed if an intermediate sanitizer token reaches the trainer."""
+    for index, example in enumerate(examples, 1):
+        text = str(example.get("text", ""))
+        if ANY_PLACEHOLDER_PATTERN.search(text):
+            raise SystemExit(f"error: placeholder marker in {context} example {index}")
 
 
 def synthesize(carriers: list[str], rng: random.Random, clean_fraction: float = 0.5) -> list[dict]:
@@ -330,6 +521,86 @@ def threshold_predictions(logits, threshold: float):
     outside_probabilities = probabilities[..., 0]
     keep = (predictions != 0) & (best_probabilities >= threshold) & (best_probabilities > outside_probabilities)
     return torch.where(keep, predictions, torch.zeros_like(predictions))
+
+
+def evaluate_examples(
+    model,
+    examples: list[dict],
+    tokenizer,
+    max_length: int,
+    batch_size: int,
+    device: str,
+    threshold: float,
+) -> dict[str, float | int]:
+    """Evaluate token and sentence-level PII metrics for a fixed example set."""
+    import torch
+
+    if not examples:
+        return {
+            "count": 0,
+            "truePositives": 0,
+            "falsePositives": 0,
+            "falseNegatives": 0,
+            "piiMicroPrecision": 0.0,
+            "piiMicroRecall": 0.0,
+            "piiMicroF1": 0.0,
+            "cleanSentenceCount": 0,
+            "cleanSentenceFalsePositives": 0,
+            "cleanSentenceFalsePositiveRate": 0.0,
+        }
+
+    ids, masks, labels = encode_examples(examples, tokenizer, max_length)
+    true_positives = 0
+    false_positives = 0
+    false_negatives = 0
+    clean_sentence_count = 0
+    clean_sentence_false_positives = 0
+    model.eval()
+    with torch.no_grad():
+        for start in range(0, len(ids), batch_size):
+            stop = start + batch_size
+            logits = model(
+                input_ids=ids[start:stop].to(device),
+                attention_mask=masks[start:stop].to(device),
+            ).logits
+            predictions = threshold_predictions(logits, threshold).cpu()
+            gold = labels[start:stop]
+            for row_predictions, row_gold, example in zip(predictions, gold, examples[start:stop]):
+                sentence_has_false_positive = False
+                for predicted, expected in zip(row_predictions.tolist(), row_gold.tolist()):
+                    if expected == -100:
+                        continue
+                    expected_is_pii = expected != 0
+                    predicted_is_pii = predicted != 0
+                    if expected_is_pii:
+                        if predicted == expected:
+                            true_positives += 1
+                        else:
+                            false_negatives += 1
+                            false_positives += int(predicted_is_pii)
+                    elif predicted_is_pii:
+                        false_positives += 1
+                        sentence_has_false_positive = True
+                if not example["spans"]:
+                    clean_sentence_count += 1
+                    clean_sentence_false_positives += int(sentence_has_false_positive)
+
+    precision = true_positives / max(true_positives + false_positives, 1)
+    recall = true_positives / max(true_positives + false_negatives, 1)
+    f1 = 2 * precision * recall / max(precision + recall, 1e-12)
+    clean_fpr = clean_sentence_false_positives / max(clean_sentence_count, 1)
+    return {
+        "count": len(examples),
+        "truePositives": true_positives,
+        "falsePositives": false_positives,
+        "falseNegatives": false_negatives,
+        "piiMicroPrecision": precision,
+        "piiMicroRecall": recall,
+        "piiMicroF1": f1,
+        "cleanSentenceCount": clean_sentence_count,
+        "cleanSentenceFalsePositives": clean_sentence_false_positives,
+        "cleanSentenceFalsePositiveRate": clean_fpr,
+    }
 
 
 # --- Model surgery -------------------------------------------------------------
@@ -428,9 +699,35 @@ def main() -> None:
     if not 0 <= arguments.clean_fraction < 1:
         raise SystemExit("error: --clean-fraction must be >= 0 and < 1")
     examples = synthesize(carriers, rng, arguments.clean_fraction)
+    contextual_examples = synthesize_contextual_redaction_examples(
+        arguments.contextual_redaction_samples,
+        rng,
+        arguments.contextual_redaction_clean_fraction,
+    )
+    redaction_regressions = load_redaction_regressions(arguments.redaction_regressions)
+    redaction_train = [example for example in redaction_regressions if example["split"] == "train"]
+    redaction_eval = [example for example in redaction_regressions if example["split"] == "eval"]
+    if not redaction_train or not redaction_eval:
+        raise SystemExit("error: redaction regressions need both train and eval rows")
+    if arguments.redaction_regression_repeat < 1:
+        raise SystemExit("error: --redaction-regression-repeat must be >= 1")
+    assert_no_placeholder_examples(examples, "synthetic")
+    assert_no_placeholder_examples(contextual_examples, "contextual-redaction")
+    assert_no_placeholder_examples(redaction_train, "redaction-train")
+    assert_no_placeholder_examples(redaction_eval, "redaction-eval")
     holdout = max(len(examples) // 20, 50)
-    train_examples, eval_examples = examples[holdout:], examples[:holdout]
-    print(f"synthetic examples: {len(train_examples)} train, {len(eval_examples)} eval")
+    train_examples = (
+        examples[holdout:]
+        + contextual_examples
+        + redaction_train * arguments.redaction_regression_repeat
+    )
+    eval_examples = examples[:holdout]
+    print(
+        f"synthetic examples: {len(train_examples)} train, {len(eval_examples)} eval; "
+        f"contextual hard examples: {len(contextual_examples)}; "
+        f"fixed redaction regressions: {len(redaction_train)} train x "
+        f"{arguments.redaction_regression_repeat}, {len(redaction_eval)} eval"
+    )
 
     model = AutoModelForTokenClassification.from_pretrained(
         arguments.backbone,
@@ -548,7 +845,28 @@ def main() -> None:
         f"{clean_test_fpr:.4f} ({clean_test_false_positives}/{len(clean_test_examples)})"
     )
 
+    redaction_metrics = evaluate_examples(
+        model,
+        redaction_eval,
+        tokenizer,
+        arguments.max_length,
+        arguments.batch_size,
+        device,
+        arguments.inference_threshold,
+    )
+    redaction_f1 = float(redaction_metrics["piiMicroF1"])
+    redaction_clean_fpr = float(redaction_metrics["cleanSentenceFalsePositiveRate"])
+    print(
+        "fixed contextual-redaction regression: "
+        f"F1 {redaction_f1:.4f}, clean FPR {redaction_clean_fpr:.4f} "
+        f"({redaction_metrics['cleanSentenceFalsePositives']}/{redaction_metrics['cleanSentenceCount']})"
+    )
+
     effective_clean_fpr = max(clean_fpr, clean_test_fpr)
+    redaction_regression_passed = (
+        redaction_f1 >= arguments.minimum_redaction_f1
+        and redaction_clean_fpr <= arguments.maximum_redaction_clean_fpr
+    )
     out.mkdir(parents=True, exist_ok=True)
     quality_report_path = out / "quality-report.json"
     quality_report_path.write_text(json.dumps({
@@ -557,27 +875,37 @@ def main() -> None:
         "piiMicroF1": pii_f1,
         "cleanSentenceFalsePositiveRate": clean_fpr,
         "cleanRegressionFalsePositiveRate": clean_test_fpr,
+        "contextualSyntheticTrainingCount": len(contextual_examples),
+        "fixedRedactionTrainingCount": len(redaction_train) * arguments.redaction_regression_repeat,
+        "redactionRegression": redaction_metrics,
+        "redactionRegressionPassed": redaction_regression_passed,
         "inferenceThreshold": arguments.inference_threshold,
         "passed": (
             pii_f1 >= arguments.minimum_pii_f1
             and effective_clean_fpr <= arguments.maximum_clean_fpr
+            and redaction_regression_passed
         ),
     }, indent=2) + "\n", encoding="utf-8")
     print(f"quality report: {quality_report_path}")
     if arguments.install_ios and (
         pii_f1 < arguments.minimum_pii_f1
         or effective_clean_fpr > arguments.maximum_clean_fpr
+        or not redaction_regression_passed
     ):
         raise SystemExit(
             "error: refusing --install-ios because PII quality gate failed: "
             f"F1 {pii_f1:.4f} (minimum {arguments.minimum_pii_f1:.4f}), "
-            f"clean FPR {effective_clean_fpr:.4f} (maximum {arguments.maximum_clean_fpr:.4f})"
+            f"clean FPR {effective_clean_fpr:.4f} (maximum {arguments.maximum_clean_fpr:.4f}), "
+            f"contextual regression F1 {redaction_f1:.4f} "
+            f"(minimum {arguments.minimum_redaction_f1:.4f}), "
+            f"contextual clean FPR {redaction_clean_fpr:.4f} "
+            f"(maximum {arguments.maximum_redaction_clean_fpr:.4f})"
         )
 
     # Export (CPU-only from here).
     model.to("cpu").eval()
     if arguments.prune_vocab:
-        tokens = prune_vocabulary(model, tokenizer, [example["text"] for example in examples])
+        tokens = prune_vocabulary(model, tokenizer, [example["text"] for example in train_examples])
     else:
         vocab = tokenizer.get_vocab()
         tokens = [token for token, _ in sorted(vocab.items(), key=lambda item: item[1])]
@@ -635,6 +963,12 @@ def main() -> None:
         "modelArtifact": package_path.name,
         "sha256": directory_sha256(package_path),
         "taxonomyHash": None,
+        "redactionTraining": {
+            "contextualSyntheticCount": len(contextual_examples),
+            "fixedRegressionTrainCount": len(redaction_train),
+            "fixedRegressionRepeat": arguments.redaction_regression_repeat,
+            "placeholderMarkersAllowed": False,
+        },
         "evaluation": {
             "count": len(eval_examples),
             "piiMicroPrecision": precision,
@@ -644,6 +978,8 @@ def main() -> None:
             "cleanSentenceCount": clean_sentence_count,
             "cleanRegressionFalsePositiveRate": clean_test_fpr,
             "cleanRegressionCount": len(clean_test_examples),
+            "redactionRegression": redaction_metrics,
+            "redactionRegressionPassed": redaction_regression_passed,
             "inferenceThreshold": arguments.inference_threshold,
         },
     }

@@ -1,0 +1,21 @@
+{"text":"云服务账号ID：acct-demo-4821，昵称：测试用户，实例ID:db-demo-2048，请访问 https://example.invalid/r/demo。","spans":[[8,22,"ID"],[26,30,"NAME"],[36,48,"ID"],[53,83,"URL"]],"split":"train"}
+{"text":"客服QQ号：123456789，微信号：demo_user_7，请勿公开。","spans":[[6,15,"ID"],[20,31,"ID"]],"split":"train"}
+{"text":"Cloud account ID: acct-synthetic-77; WeChat ID: demo_handle_8; resource ID: db-safe-991.","spans":[[18,35,"ID"],[48,61,"ID"],[76,87,"ID"]],"split":"train"}
+{"text":"クラウドのアカウントID：acct-demo-31、表示名：テスト利用者、インスタンスID：db-demo-31。","spans":[[13,25,"ID"],[30,36,"NAME"],[46,56,"ID"]],"split":"train"}
+{"text":"QQ号：12345****，请联系管理员。","spans":[[4,13,"ID"]],"split":"train"}
+{"text":"抖音号：@demo_douyin_7，请勿公开。","spans":[[4,18,"ID"]],"split":"train"}
+{"text":"Telegram username: safe_user_77 is shown only to the support team.","spans":[[19,31,"ID"]],"split":"train"}
+{"text":"微信支付说明已更新，版本号wxid_demo_42仅为文档示例，不含账号字段。","spans":[],"split":"train"}
+{"text":"Product model demo_user_42 is listed in the catalog; no social handle is referenced.","spans":[],"split":"train"}
+{"text":"Catalog item demo_tag_42 is a product code, not a social account.","spans":[],"split":"train"}
+{"text":"银行卡尾号4821已完成验证，用户名：演示账户。","spans":[[5,9,"ID"],[19,23,"NAME"]],"split":"train"}
+{"text":"LINE handle: demo_line_42 is linked to resource ID res-demo-8.","spans":[[13,25,"ID"],[51,61,"ID"]],"split":"train"}
+{"text":"云平台账户：acct-eval-77，微信号：eval_user_9，资源ID：db-eval-42。","spans":[[6,18,"ID"],[23,34,"ID"],[40,50,"ID"]],"split":"eval"}
+{"text":"Cloud account ID acct-eval-18 uses QQ number 987654321 and URL https://example.invalid/eval.","spans":[[17,29,"ID"],[45,54,"ID"],[63,91,"URL"]],"split":"eval"}
+{"text":"表示名：評価ユーザー、アカウントID：acct-ja-55、WeChat ID：ja_demo_5。","spans":[[4,10,"NAME"],[19,29,"ID"],[40,49,"ID"]],"split":"eval"}
+{"text":"QQ音乐版本 12.4 已发布，产品代码 SKU-4821 保持可见。","spans":[],"split":"eval"}
+{"text":"Build wxid_demo_7 passed the release check; product code SKU-4821 is active.","spans":[],"split":"eval"}
+{"text":"本次活动共有2,345名参与者，积分余额为12,345分。","spans":[],"split":"eval"}
+{"text":"Discord tag: demo_tag_44，请联系昵称：演示客服。","spans":[[13,24,"ID"],[31,35,"NAME"]],"split":"eval"}
+{"text":"X username: @demo_x_42; Telegram handle: @tele_demo_8.","spans":[[12,22,"ID"],[41,53,"ID"]],"split":"eval"}
+{"text":"云资源账号：****acct-safe-31，昵称：合成用户，访问 https://example.invalid/safe。","spans":[[6,22,"ID"],[26,30,"NAME"],[34,62,"URL"]],"split":"eval"}

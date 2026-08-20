@@ -27,6 +27,7 @@ from curate_dataset import (  # noqa: E402
     normalize,
     normalize_language_hint,
     load_rows,
+    rejection_record,
     rehydrate_placeholders,
     stable_rng,
     template_signature,
@@ -253,6 +254,69 @@ class RuleTierTests(unittest.TestCase):
 
         self.assertEqual(len(kept), 1)
         self.assertRegex(kept[0].text, r"(?:品川|練馬|横浜|大阪|神戸) \d{3} [ぁ-ん] \d{2}-\d{2}")
+
+    def test_social_placeholders_are_rehydrated_to_synthetic_values(self):
+        report = Report()
+        rejected: list[dict] = []
+        arguments = SimpleNamespace(min_length=8, max_length=500)
+        row = Row(
+            text="客服QQ号：{{ID}}，微信号：{{ID}}，请在应用内确认。",
+            label="test.label",
+            source="cloudkit:production",
+            language="zh",
+        )
+
+        kept = apply_rule_tier([row], {"test.label"}, {"zh"}, arguments, report, rejected)
+
+        self.assertEqual(len(kept), 1)
+        self.assertNotIn("{{", kept[0].text)
+        self.assertNotIn("{{ID}}", kept[0].text)
+        self.assertRegex(kept[0].text, r"QQ号：\d{6,10}")
+        self.assertRegex(kept[0].text, r"微信号：(?:wxid_|demo_user_)")
+
+    def test_cloudkit_rows_are_redacted_then_reverse_redacted_before_keep(self):
+        report = Report()
+        rejected: list[dict] = []
+        arguments = SimpleNamespace(min_length=8, max_length=500)
+        raw = (
+            "云服务账号ID：acct-cloud-4821，昵称：合成用户，实例ID:db-cloud-2048，"
+            "微信号：cloud_user_7，详情 https://example.invalid/cloud。"
+        )
+        row = Row(text=raw, label="work.alert", source="cloudkit:production", language="zh")
+
+        kept = apply_rule_tier([row], {"work.alert"}, {"zh"}, arguments, report, rejected)
+
+        self.assertEqual(len(kept), 1)
+        self.assertGreaterEqual(report.redacted_rows, 1)
+        self.assertNotIn("acct-cloud-4821", kept[0].text)
+        self.assertNotIn("db-cloud-2048", kept[0].text)
+        self.assertNotIn("cloud_user_7", kept[0].text)
+        self.assertNotIn("https://example.invalid/cloud", kept[0].text)
+        self.assertNotIn("{{", kept[0].text)
+
+    def test_remote_rejections_never_include_text(self):
+        row = Row(text="用户账号：acct-demo-4821", label="unknown.label", source="cloudkit:production")
+        record = rejection_record(row, "unknown-label")
+
+        self.assertNotIn("text", record)
+        self.assertEqual(record["source"], "cloudkit:production")
+        self.assertEqual(record["textLength"], len(row.text))
+
+        legacy_row = Row(text="QQ号：123456789", label="unknown.label", source="remote-training.ndjson")
+        legacy_record = rejection_record(legacy_row, "unknown-label")
+        self.assertNotIn("text", legacy_record)
+        self.assertEqual(legacy_record["textLength"], len(legacy_row.text))
+
+    def test_unknown_placeholder_cannot_reach_training(self):
+        report = Report()
+        rejected: list[dict] = []
+        arguments = SimpleNamespace(min_length=8, max_length=500)
+        row = Row(text="Cloud alert {{SOCIAL_HANDLE}} is pending.", label="test.label", source="cloudkit:production")
+
+        kept = apply_rule_tier([row], {"test.label"}, {"en"}, arguments, report, rejected)
+
+        self.assertEqual(kept, [])
+        self.assertEqual(report.rejected["unrehydrated-placeholder"], 1)
 
     def test_external_holdout_exact_and_digit_variants_are_rejected(self):
         report = Report()

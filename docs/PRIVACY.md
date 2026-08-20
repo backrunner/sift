@@ -21,6 +21,15 @@ app's CloudKit **public database** containing only:
 - a coarse detected text language and source marker (`ios`);
 - a client timestamp used for incremental exports.
 
+Sanitization is defense in depth. Before a sample is submitted, the on-device
+rules/model remove URLs, contact and payment values, identity numbers, cloud
+account/resource identifiers, nicknames, and explicitly labelled social
+handles such as QQ, WeChat, Weibo, Douyin, and other explicitly labelled social
+IDs. Export tooling applies a second conservative
+pass to catch partially masked values. Ordinary product, build, order, and
+quantity identifiers are retained when the surrounding context does not mark
+them as an account, so classification signal is not unnecessarily removed.
+
 The payload carries no sender, account ID, device ID, phone, email, contact,
 name, IDFA, or IDFV fields. Submission requires an iCloud session on the
 device (a CloudKit platform requirement); CloudKit internally associates the

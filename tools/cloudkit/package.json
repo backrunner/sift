@@ -8,7 +8,7 @@
     "export": "tsx export-training-set.ts",
     "typecheck": "tsc --noEmit",
     "build": "tsc --noEmit",
-    "test": "tsx --test tests/signing.test.ts"
+    "test": "tsx --test tests/*.test.ts"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",

@@ -27,15 +27,28 @@ pnpm export:training -- --env production \
   --since 2026-06-01T00:00:00Z \
   --out ../../build/remote-training.ndjson
 
-# keep metadata columns (locale, modelVersion, createdAt, recordName)
+# keep metadata columns (locale, modelVersion, createdAt, recordNameHash)
 pnpm export:training -- --env production --raw --out ../../build/remote-raw.ndjson
 ```
 
-Rows contain `text`, `label`, optional device-detected `textLanguage`, and the
+Rows contain `text`, `label`, a source marker (`cloudkit:development` or
+`cloudkit:production`), optional device-detected `textLanguage`, and the
 non-identifying assessment fields `predictedLabel`, `predictedConfidence`,
-`agreement`, `modelVersion`, and `schemaVersion`. Curation validates and
-downsamples high-confidence disagreements before emitting training-only
-`text`/`label` rows.
+`agreement`, `modelVersion`, and `schemaVersion`. Every export runs a
+dependency-free second redaction pass for URLs, contact values, identity and
+payment values, cloud account/resource IDs, nicknames, and contextual QQ,
+WeChat, Weibo, Xiaohongshu, Douyin, Kuaishou, Zhihu, LINE, Telegram, Discord,
+WhatsApp, Facebook, Instagram, TikTok, and Twitter/X handles. The exporter never
+writes a raw record name; `--raw` contains only a one-way `recordNameHash`.
+
+Rows that still contain a detector hit after the second pass are dropped. The
+export may contain `{{...}}` tokens from an earlier on-device sanitizer; those
+tokens are an intermediate representation only. Curation must reverse-redact
+them with deterministic synthetic values and rejects any output that still
+contains a token before model training. Rejected remote rows contain only a
+hash and length, never their text. Curation validates and downsamples
+high-confidence disagreements before emitting training-only `text`/`label`
+rows.
 They are validated against `packages/taxonomy/taxonomy.json`, deduplicated on
 `label + text`, and length-filtered (8–500 characters) so the file can feed the
 curation pipeline directly:
@@ -46,4 +59,5 @@ swift run SiftAppleTrainer --input ../../build/remote-training.ndjson --out ../.
 ```
 
 `--raw` adds the remaining curation metadata, including locale, model version,
-agreement, timestamps, and the CloudKit record name.
+agreement, timestamps, and `recordNameHash` for audit correlation. It never
+includes creator identity or the raw CloudKit record name.
