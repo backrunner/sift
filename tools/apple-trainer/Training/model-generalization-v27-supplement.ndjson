@@ -1,0 +1,120 @@
+{"text":"【云上商城】会员预售开启，智能手表下单立减180元并赠一年延保。","label":"promotion","source":"augmentation:boundary:model-generalization-v27"}
+{"text":"【星河书城】暑期会员购书满200减40，今日下单再送阅读券。","label":"promotion","source":"augmentation:boundary:model-generalization-v27"}
+{"text":"【好邻居超市】周末会员专场，冷冻食品第二件半价，指定商品可叠加优惠券。","label":"promotion","source":"augmentation:boundary:model-generalization-v27"}
+{"text":"【安心保险】车险续保活动开启，提前办理可享道路救援和洗车权益。","label":"promotion","source":"augmentation:boundary:model-generalization-v27"}
+{"text":"【南方航空】会员夏季出行优惠，指定往返航线折扣并额外赠送里程。","label":"promotion","source":"augmentation:boundary:model-generalization-v27"}
+{"text":"【海湾公寓】科技园附近新房源开放预约，本周签约减免半月服务费。","label":"promotion","source":"augmentation:boundary:model-generalization-v27"}
+{"text":"【云课堂】暑期编程课开放试听，提前报名赠送项目辅导和资料包。","label":"promotion","source":"augmentation:boundary:model-generalization-v27"}
+{"text":"本行消费贷客户可查看阶段性优惠年利率，完整费用请在手机银行核对。","label":"promotion","source":"augmentation:boundary:model-generalization-v27"}
+{"text":"【武库交易行】周末寄售活动开启，限定装备上架免手续费并可获交易券。","label":"promotion","source":"augmentation:boundary:model-generalization-v27"}
+{"text":"【城市影院】会员重映周开票，双人套票立减30元，数量有限。","label":"promotion","source":"augmentation:boundary:model-generalization-v27"}
+{"text":"【云上商城】Members can pre-order the new watch today and save 25 dollars with free extended cover.","label":"promotion","source":"augmentation:boundary:model-generalization-v27"}
+{"text":"River Books summer member offer: spend 40 dollars and receive a reading voucher.","label":"promotion","source":"augmentation:boundary:model-generalization-v27"}
+{"text":"Neighbour Market weekend sale: the second frozen item is half price for members.","label":"promotion","source":"augmentation:boundary:model-generalization-v27"}
+{"text":"SafeRide insurance renewal week includes roadside assistance for policies renewed early.","label":"promotion","source":"augmentation:boundary:model-generalization-v27"}
+{"text":"Southern Air member fares are discounted on selected return routes and include bonus miles.","label":"promotion","source":"augmentation:boundary:model-generalization-v27"}
+{"text":"Bayview Apartments has new homes near Tech Park; leases signed this week waive half the service fee.","label":"promotion","source":"augmentation:boundary:model-generalization-v27"}
+{"text":"CloudClass summer coding courses offer a free trial and a project workshop for early sign-ups.","label":"promotion","source":"augmentation:boundary:model-generalization-v27"}
+{"text":"Eligible bank customers can review a temporary personal-loan rate offer and its full fees in the app.","label":"promotion","source":"augmentation:boundary:model-generalization-v27"}
+{"text":"The Armory Exchange weekend event removes listing fees for featured gear and adds trade credits.","label":"promotion","source":"augmentation:boundary:model-generalization-v27"}
+{"text":"City Cinema member week has opened double tickets at a thirty-dollar discount.","label":"promotion","source":"augmentation:boundary:model-generalization-v27"}
+{"text":"クラウドモールの新型ウォッチ先行予約。今週は割引価格と延長保証が付きます。","label":"promotion","source":"augmentation:boundary:model-generalization-v27"}
+{"text":"リバーブックス夏の会員企画。対象商品を購入すると読書クーポンを進呈します。","label":"promotion","source":"augmentation:boundary:model-generalization-v27"}
+{"text":"ネイバーマート週末セール。会員は冷凍食品の2点目が半額です。","label":"promotion","source":"augmentation:boundary:model-generalization-v27"}
+{"text":"セーフライド保険の更新キャンペーン。早期更新でロードサービス特典が付きます。","label":"promotion","source":"augmentation:boundary:model-generalization-v27"}
+{"text":"サザン航空の会員向け夏運賃。対象往復便を割引し、追加マイルを進呈します。","label":"promotion","source":"augmentation:boundary:model-generalization-v27"}
+{"text":"テックパーク近くのベイビュー新着物件。今週の契約は管理手数料が半額です。","label":"promotion","source":"augmentation:boundary:model-generalization-v27"}
+{"text":"クラウドクラス夏期講座の無料体験受付中。早期申込で制作ワークショップを追加します。","label":"promotion","source":"augmentation:boundary:model-generalization-v27"}
+{"text":"対象のお客様はアプリで個人ローンの期間金利優遇と総費用を確認できます。","label":"promotion","source":"augmentation:boundary:model-generalization-v27"}
+{"text":"アーモリー取引所の週末企画。注目装備の出品手数料無料、取引クーポンも進呈します。","label":"promotion","source":"augmentation:boundary:model-generalization-v27"}
+{"text":"シティシネマ会員週間が開幕。ペア券を通常より30ドル安く購入できます。","label":"promotion","source":"augmentation:boundary:model-generalization-v27"}
+{"text":"中国电信会员专区推出流量兑换活动，兑换指定积分可得周末流量包。","label":"carrier.promotion","source":"augmentation:boundary:model-generalization-v27"}
+{"text":"移动老用户办理家庭套餐，额外赠送流量和视频会员权益。","label":"carrier.promotion","source":"augmentation:boundary:model-generalization-v27"}
+{"text":"Carrier rewards members can exchange points for an airtime voucher this week.","label":"carrier.promotion","source":"augmentation:boundary:model-generalization-v27"}
+{"text":"Upgrade the family mobile plan to receive bonus data and six months of streaming.","label":"carrier.promotion","source":"augmentation:boundary:model-generalization-v27"}
+{"text":"通信ポイント会員限定。対象プランへの変更でデータ特典を追加します。","label":"carrier.promotion","source":"augmentation:boundary:model-generalization-v27"}
+{"text":"キャリアのポイント交換週間。料金券やデータ商品を特別条件で交換できます。","label":"carrier.promotion","source":"augmentation:boundary:model-generalization-v27"}
+{"text":"本次刷卡获得760积分，当前可用积分余额为11840分。","label":"transaction.points","source":"augmentation:boundary:model-generalization-v27"}
+{"text":"积分礼品兑换已确认，预计三个工作日后寄出。","label":"transaction.points","source":"augmentation:boundary:model-generalization-v27"}
+{"text":"You earned 760 reward points on this purchase; your available balance is 11,840.","label":"transaction.points","source":"augmentation:boundary:model-generalization-v27"}
+{"text":"Your points redemption is confirmed and will ship in three business days.","label":"transaction.points","source":"augmentation:boundary:model-generalization-v27"}
+{"text":"今回のカード利用で760ポイントを獲得しました。利用可能残高は11840ポイントです。","label":"transaction.points","source":"augmentation:boundary:model-generalization-v27"}
+{"text":"ポイント景品の交換申請を確認しました。3営業日以内に発送します。","label":"transaction.points","source":"augmentation:boundary:model-generalization-v27"}
+{"text":"您的游戏材料订单GM77420已支付，卖家正在准备交付。","label":"transaction.order","source":"augmentation:boundary:model-generalization-v27"}
+{"text":"订单中的限定坐骑已发放到绑定的角色仓库。","label":"transaction.order","source":"augmentation:boundary:model-generalization-v27"}
+{"text":"Your game item order GM77420 is paid and the seller is preparing delivery.","label":"transaction.order","source":"augmentation:boundary:model-generalization-v27"}
+{"text":"The limited mount from your order has been delivered to the linked character inventory.","label":"transaction.order","source":"augmentation:boundary:model-generalization-v27"}
+{"text":"ゲーム素材の注文GM77420は支払い済みで、出品者が引き渡しを準備中です。","label":"transaction.order","source":"augmentation:boundary:model-generalization-v27"}
+{"text":"注文した限定マウントを連携キャラクターの倉庫へ配布しました。","label":"transaction.order","source":"augmentation:boundary:model-generalization-v27"}
+{"text":"游戏客户端例行更新完成，本次修复了组队连接和语音稳定性问题。","label":"transaction.message","source":"augmentation:boundary:model-generalization-v27"}
+{"text":"Game client maintenance is complete; this update fixes party connections and voice stability.","label":"transaction.message","source":"augmentation:boundary:model-generalization-v27"}
+{"text":"ゲームクライアントの定期メンテナンスが完了し、接続と音声の安定性を改善しました。","label":"transaction.message","source":"augmentation:boundary:model-generalization-v27"}
+{"text":"账户尾号7391今日消费268元，交易地点为滨江便利店。","label":"finance.bank","source":"augmentation:boundary:model-generalization-v27"}
+{"text":"Account ending 7391 was charged 38 dollars today at Riverside Market.","label":"finance.bank","source":"augmentation:boundary:model-generalization-v27"}
+{"text":"口座末尾7391から本日2680円をコンビニで引き落としました。","label":"finance.bank","source":"augmentation:boundary:model-generalization-v27"}
+{"text":"您的分期订单已支付首期款，商户将按计划发货。","label":"finance.consumption","source":"augmentation:boundary:model-generalization-v27"}
+{"text":"Your installment purchase payment was completed and the merchant will ship as scheduled.","label":"finance.consumption","source":"augmentation:boundary:model-generalization-v27"}
+{"text":"分割購入の初回支払いを確認しました。販売店が発送を進めます。","label":"finance.consumption","source":"augmentation:boundary:model-generalization-v27"}
+{"text":"【星河支付】退款86.40元已原路退回，预计到账时间以银行处理为准。","label":"finance.refund","source":"augmentation:boundary:model-generalization-v27"}
+{"text":"A refund of 86.40 dollars has been sent back to the original payment method.","label":"finance.refund","source":"augmentation:boundary:model-generalization-v27"}
+{"text":"決済の返金86.40円を元のお支払い方法へ戻しました。","label":"finance.refund","source":"augmentation:boundary:model-generalization-v27"}
+{"text":"【海湾邮轮】您的船票行程已确认，请携带有效证件提前到港办理值机。","label":"travel.ticketing","source":"augmentation:boundary:model-generalization-v27"}
+{"text":"【Bay Harbor Ferry】Your ticket is confirmed. Bring the matching travel document and check in before departure.","label":"travel.ticketing","source":"augmentation:boundary:model-generalization-v27"}
+{"text":"ベイハーバーの乗船券を確認しました。出航前に有効な身分証を持ってチェックインしてください。","label":"travel.ticketing","source":"augmentation:boundary:model-generalization-v27"}
+{"text":"市应急管理部门提醒：强降雨期间请远离临河道路和低洼区域，遇到积水及时绕行。","label":"government.reminder","source":"augmentation:boundary:model-generalization-v27"}
+{"text":"The city safety office reminds residents to avoid flooded roads and low areas during heavy rain.","label":"government.reminder","source":"augmentation:boundary:model-generalization-v27"}
+{"text":"自治体からのお知らせです。大雨の際は低い場所や河川沿いを避け、安全な道を通ってください。","label":"government.reminder","source":"augmentation:boundary:model-generalization-v27"}
+{"text":"云平台告警：托管数据库 db-summit 将于周五到期，未续费会暂停访问并清理备份。","label":"work.alert","source":"augmentation:boundary:model-generalization-v27"}
+{"text":"Cloud platform alert: managed database db-summit expires Friday; access and backups are removed after the retention window.","label":"work.alert","source":"augmentation:boundary:model-generalization-v27"}
+{"text":"クラウドサービス db-summit の契約は金曜に終了します。更新しない場合は接続を停止し、バックアップを削除します。","label":"work.alert","source":"augmentation:boundary:model-generalization-v27"}
+{"text":"无需审核的装修贷当天放款，但要先缴纳保证金，请联系专员。","label":"spam","source":"augmentation:boundary:model-generalization-v27"}
+{"text":"No-review home loan pays today, but send a security deposit first and message our agent.","label":"spam","source":"augmentation:boundary:model-generalization-v27"}
+{"text":"審査なしの住宅ローンです。先に保証金を振り込み、担当者へ連絡してください。","label":"spam","source":"augmentation:boundary:model-generalization-v27"}
+{"text":"免审核借款可快速放款，请先支付账户解冻费用后等待入账。","label":"spam","source":"augmentation:boundary:model-generalization-v27"}
+{"text":"No-review cash advance releases funds after you pay the account-unlock charge first.","label":"spam","source":"augmentation:boundary:model-generalization-v27"}
+{"text":"無審査の融資で即日入金。先に口座解除費用を支払ってください。","label":"spam","source":"augmentation:boundary:model-generalization-v27"}
+{"text":"云缓存服务 cache-lake 将于周三到期，续期前会暂停写入，保留期后删除数据。","label":"work.alert","source":"augmentation:boundary:model-generalization-v27"}
+{"text":"Cloud cache service cache-lake expires Wednesday; writes pause at expiry and retained data is removed later.","label":"work.alert","source":"augmentation:boundary:model-generalization-v27"}
+{"text":"クラウドキャッシュ cache-lake の契約は水曜に終了します。更新しない場合は書き込みを停止します。","label":"work.alert","source":"augmentation:boundary:model-generalization-v27"}
+{"text":"应用客户端更新完成，新增通知偏好设置并修复连接问题。","label":"transaction.message","source":"augmentation:boundary:model-generalization-v27"}
+{"text":"The application client update is complete and adds notification preferences.","label":"transaction.message","source":"augmentation:boundary:model-generalization-v27"}
+{"text":"アプリのクライアント更新が完了し、通知の設定項目を追加しました。","label":"transaction.message","source":"augmentation:boundary:model-generalization-v27"}
+{"text":"【湾区客运】您的船票已出票，请提前到港领取纸票并完成值船。","label":"travel.ticketing","source":"augmentation:boundary:model-generalization-v27"}
+{"text":"Bay Passenger Service issued your ferry ticket; arrive early to collect the paper ticket and check in.","label":"travel.ticketing","source":"augmentation:boundary:model-generalization-v27"}
+{"text":"湾岸旅客サービスの乗船券を発行しました。早めに港で紙のチケットを受け取り、乗船手続きをしてください。","label":"travel.ticketing","source":"augmentation:boundary:model-generalization-v27"}
+{"text":"信用卡8月账单已生成，本期应还2480元，最低还款额248元。","label":"finance.credit_card","source":"augmentation:boundary:model-generalization-v27"}
+{"text":"尾号6308信用卡还款1800元已入账，当前应还余额为0元。","label":"finance.credit_card","source":"augmentation:boundary:model-generalization-v27"}
+{"text":"信用卡自动还款成功，本次扣款960元，请在账单页面查看明细。","label":"finance.credit_card","source":"augmentation:boundary:model-generalization-v27"}
+{"text":"Your August credit card statement is ready; 480 dollars is due and the minimum payment is 48 dollars.","label":"finance.credit_card","source":"augmentation:boundary:model-generalization-v27"}
+{"text":"A credit card repayment of 300 dollars was posted; the remaining amount due is zero.","label":"finance.credit_card","source":"augmentation:boundary:model-generalization-v27"}
+{"text":"Automatic card repayment succeeded for 160 dollars. Review the statement for details.","label":"finance.credit_card","source":"augmentation:boundary:model-generalization-v27"}
+{"text":"8月分のクレジットカード請求書が確定しました。支払額は48,000円、最低支払額は4,800円です。","label":"finance.credit_card","source":"augmentation:boundary:model-generalization-v27"}
+{"text":"クレジットカードの返済30,000円を受け付け、現在の請求残高は0円です。","label":"finance.credit_card","source":"augmentation:boundary:model-generalization-v27"}
+{"text":"カードの自動返済16,000円が完了しました。請求書で明細をご確認ください。","label":"finance.credit_card","source":"augmentation:boundary:model-generalization-v27"}
+{"text":"通信账户8月账单已出，本期应缴72.60元，缴费截止日为9月6日。","label":"carrier.billing","source":"augmentation:boundary:model-generalization-v27"}
+{"text":"话费充值80元已到账，当前移动账户余额为96.20元。","label":"carrier.billing","source":"augmentation:boundary:model-generalization-v27"}
+{"text":"Your mobile bill is ready; 72.60 dollars is due by September 6.","label":"carrier.billing","source":"augmentation:boundary:model-generalization-v27"}
+{"text":"Mobile payment received: 80 dollars was added and the airtime balance is now 96.20 dollars.","label":"carrier.billing","source":"augmentation:boundary:model-generalization-v27"}
+{"text":"8月分の通信料金7,260円は9月6日までにお支払いください。","label":"carrier.billing","source":"augmentation:boundary:model-generalization-v27"}
+{"text":"携帯料金8,000円の支払いを受け付け、現在の残高は9,620円です。","label":"carrier.billing","source":"augmentation:boundary:model-generalization-v27"}
+{"text":"账户尾号5173今日在城市超市扣款196元，当前可用余额为3280元。","label":"finance.bank","source":"augmentation:boundary:model-generalization-v27"}
+{"text":"Account ending 5173 was debited 42 dollars today at City Market; the available balance is 680 dollars.","label":"finance.bank","source":"augmentation:boundary:model-generalization-v27"}
+{"text":"口座末尾5173から本日4,200円をスーパーで引き落とし、利用可能残高は68,000円です。","label":"finance.bank","source":"augmentation:boundary:model-generalization-v27"}
+{"text":"新服务器周五开放，登录即可领取限定角色和1000宝石。","label":"promotion","source":"augmentation:boundary:model-generalization-v27"}
+{"text":"City Fashion seasonal clearance: buy two coats and save 35 percent this weekend.","label":"promotion","source":"augmentation:boundary:model-generalization-v27"}
+{"text":"新款智能手表今日首发，预订可减200元并获赠延长保修。","label":"promotion","source":"augmentation:boundary:model-generalization-v27"}
+{"text":"Limited game summon bundle returns tonight with bonus character shards on every ten-pull.","label":"promotion","source":"augmentation:boundary:model-generalization-v27"}
+{"text":"Foldable phone launch offer includes extra trade-in credit and complimentary screen cover.","label":"promotion","source":"augmentation:boundary:model-generalization-v27"}
+{"text":"Inactive members who sign in this month can claim three no-minimum coupons.","label":"promotion","source":"augmentation:boundary:model-generalization-v27"}
+{"text":"キッチン改装の期間企画。収納プランを契約すると金具を無料でアップグレードします。","label":"promotion","source":"augmentation:boundary:model-generalization-v27"}
+{"text":"銀行のリフォームローン期間優遇。年率と手数料は公式アプリで確認できます。","label":"promotion","source":"augmentation:boundary:model-generalization-v27"}
+{"text":"Bank rewards mall weekend event: exchange points for a kitchen appliance at a reduced rate.","label":"promotion","source":"augmentation:boundary:model-generalization-v27"}
+{"text":"您的积分礼品兑换已提交，系统将于下周安排寄送。","label":"transaction.points","source":"augmentation:boundary:model-generalization-v27"}
+{"text":"Points-gift redemption submitted; shipment is scheduled for next week.","label":"transaction.points","source":"augmentation:boundary:model-generalization-v27"}
+{"text":"ポイント景品の交換を申請しました。発送は来週の予定です。","label":"transaction.points","source":"augmentation:boundary:model-generalization-v27"}
+{"text":"Account ending 7391 was charged 68 dollars today at Riverside Convenience Store.","label":"finance.bank","source":"augmentation:boundary:model-generalization-v27"}
+{"text":"口座末尾7391から本日6800円をコンビニで引き落としました。","label":"finance.bank","source":"augmentation:boundary:model-generalization-v27"}
+{"text":"AirLink Mobile received your 50-dollar payment; airtime balance is now 63.40 dollars.","label":"carrier.billing","source":"augmentation:boundary:model-generalization-v27"}
+{"text":"モバイルワンへの料金5,000円の支払いを受け付けました。残高は6,340円です。","label":"carrier.billing","source":"augmentation:boundary:model-generalization-v27"}
+{"text":"Official message: your approval request is waiting for a response.","label":"transaction.message","source":"augmentation:boundary:model-generalization-v27"}
+{"text":"正式通知：申請の承認を待っています。内容をご確認ください。","label":"transaction.message","source":"augmentation:boundary:model-generalization-v27"}

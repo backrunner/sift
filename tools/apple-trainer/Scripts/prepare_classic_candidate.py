@@ -23,7 +23,13 @@ from pathlib import Path
 def parse_arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--base", type=Path, required=True)
-    parser.add_argument("--supplement", type=Path, required=True)
+    parser.add_argument(
+        "--supplement",
+        type=Path,
+        action="append",
+        required=True,
+        help="supplement NDJSON; repeat for independently reviewed boundary sets",
+    )
     parser.add_argument("--holdout", type=Path, action="append", required=True)
     parser.add_argument("--labels", default="promotion,carrier.promotion,transaction.message,spam")
     parser.add_argument(
@@ -119,33 +125,36 @@ def main() -> None:
     template_to_label: dict[str, str] = {}
     rejected = Counter()
 
-    def retain(row: dict[str, str], source: str) -> None:
+    def retain(row: dict[str, str], origin: str) -> None:
         exact = row["text"].lower()
         signature = near_duplicate_signature(row["text"])
         template = template_signature(row["text"])
         if exact in holdout_exact:
-            rejected[f"{source}:holdout-exact"] += 1
+            rejected[f"{origin}:holdout-exact"] += 1
             return
         if signature in holdout_near:
-            rejected[f"{source}:holdout-near"] += 1
+            rejected[f"{origin}:holdout-near"] += 1
             return
         if exact in exact_to_label and exact_to_label[exact] != row["label"]:
-            rejected[f"{source}:cross-label-conflict"] += 1
+            rejected[f"{origin}:cross-label-conflict"] += 1
             return
         if exact in exact_to_label:
-            rejected[f"{source}:duplicate"] += 1
+            rejected[f"{origin}:duplicate"] += 1
             return
         existing_near_label = near_to_label.get(signature)
         if existing_near_label is not None:
             reason = "near-duplicate" if existing_near_label == row["label"] else "cross-label-near-conflict"
-            rejected[f"{source}:{reason}"] += 1
+            rejected[f"{origin}:{reason}"] += 1
             return
         existing_template_label = template_to_label.get(template) if template else None
         if existing_template_label is not None:
             reason = "template-duplicate" if existing_template_label == row["label"] else "cross-label-template-conflict"
-            rejected[f"{source}:{reason}"] += 1
+            rejected[f"{origin}:{reason}"] += 1
             return
-        retained.append({"text": row["text"], "label": row["label"]})
+        retained_row = {"text": row["text"], "label": row["label"]}
+        if row["source"]:
+            retained_row["source"] = row["source"]
+        retained.append(retained_row)
         exact_to_label[exact] = row["label"]
         near_to_label[signature] = row["label"]
         if template:
@@ -155,7 +164,11 @@ def main() -> None:
     for row in base_rows:
         retain(row, "base")
 
-    supplement_rows = load_rows(arguments.supplement)
+    supplement_rows = [
+        row
+        for supplement_path in arguments.supplement
+        for row in load_rows(supplement_path)
+    ]
     selected_supplement = [
         row for row in supplement_rows
         if row["label"] in selected_labels
@@ -186,12 +199,17 @@ def main() -> None:
     report = {
         "baseCount": len(base_rows),
         "supplementCount": len(supplement_rows),
+        "supplementPaths": [str(path) for path in arguments.supplement],
         "selectedSupplementCount": len(selected_supplement),
         "supplementSourcePrefixes": arguments.supplement_source_prefix,
         "holdoutCount": len(holdout_rows),
         "outputCount": len(retained),
         "outputLabelCounts": dict(sorted(counts.items())),
         "rejected": dict(sorted(rejected.items())),
+        "boundaryWeightedCount": sum(
+            row.get("source", "").startswith("augmentation:boundary:")
+            for row in retained
+        ),
         "nearDuplicateMethod": "NFC + lowercase + digit collapse + alnum-only + first 80 characters",
     }
     arguments.report.parent.mkdir(parents=True, exist_ok=True)

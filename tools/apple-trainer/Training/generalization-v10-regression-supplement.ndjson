@@ -1,0 +1,120 @@
+{"text":"商户撤销已确认，465元将在两个结算日内退回原支付账户。","label":"finance.refund","source":"augmentation:boundary:generalization-v10-regression"}
+{"text":"The merchant reversal is confirmed; $465 returns to the original payment account within two settlement days.","label":"finance.refund","source":"augmentation:boundary:generalization-v10-regression"}
+{"text":"加盟店の取消処理が確定し、465円を2決済日以内に元の支払口座へ戻します。","label":"finance.refund","source":"augmentation:boundary:generalization-v10-regression"}
+{"text":"白金信用卡本期最低还款额为780元，自动还款日是下周二。","label":"finance.credit_card","source":"augmentation:boundary:generalization-v10-regression"}
+{"text":"The minimum payment on your platinum card is $780, with autopay scheduled next Tuesday.","label":"finance.credit_card","source":"augmentation:boundary:generalization-v10-regression"}
+{"text":"プラチナカードの最低支払額は780円で、自動引落日は来週火曜です。","label":"finance.credit_card","source":"augmentation:boundary:generalization-v10-regression"}
+{"text":"尾号3810卡完成一笔地铁闸机支付，金额6元。","label":"finance.consumption","source":"augmentation:boundary:generalization-v10-regression"}
+{"text":"A $6 transit-gate purchase completed on the card ending 3810.","label":"finance.consumption","source":"augmentation:boundary:generalization-v10-regression"}
+{"text":"末尾3810のカードで地下鉄改札の6円決済が完了しました。","label":"finance.consumption","source":"augmentation:boundary:generalization-v10-regression"}
+{"text":"国际漫游月结单为286元，费用将在28日从通信账户扣缴。","label":"carrier.billing","source":"augmentation:boundary:generalization-v10-regression"}
+{"text":"Your international-roaming statement is $286 and will debit the telecom account on the 28th.","label":"carrier.billing","source":"augmentation:boundary:generalization-v10-regression"}
+{"text":"国際ローミングの月額請求は286円で、28日に通信口座から引き落とします。","label":"carrier.billing","source":"augmentation:boundary:generalization-v10-regression"}
+{"text":"运营商今晚迁移SIM配置平台，期间补卡服务暂停四十分钟。","label":"carrier.service","source":"augmentation:boundary:generalization-v10-regression"}
+{"text":"The carrier migrates its SIM provisioning platform tonight; replacement service pauses for forty minutes.","label":"carrier.service","source":"augmentation:boundary:generalization-v10-regression"}
+{"text":"通信会社は今夜SIM設定基盤を移行し、再発行サービスを40分停止します。","label":"carrier.service","source":"augmentation:boundary:generalization-v10-regression"}
+{"text":"供水公司发布煮沸提醒，西区管网冲洗完成前请勿直接饮用。","label":"life.utility","source":"augmentation:boundary:generalization-v10-regression"}
+{"text":"The water utility issued a boil notice for the west district until network flushing is complete.","label":"life.utility","source":"augmentation:boundary:generalization-v10-regression"}
+{"text":"水道局は西地区の管洗浄が終わるまで煮沸して飲むよう案内しています。","label":"life.utility","source":"augmentation:boundary:generalization-v10-regression"}
+{"text":"快件因站点关闭改由青湖网点派送，预计明日上午送达。","label":"life.express","source":"augmentation:boundary:generalization-v10-regression"}
+{"text":"Your parcel was rerouted after a depot closure and should arrive tomorrow morning.","label":"life.express","source":"augmentation:boundary:generalization-v10-regression"}
+{"text":"営業所閉鎖のため荷物を青湖拠点へ迂回し、明朝配達する予定です。","label":"life.express","source":"augmentation:boundary:generalization-v10-regression"}
+{"text":"冷藏包裹已存入生鲜柜B7，取货码为6314，请于今晚前领取。","label":"life.pickup_code","source":"augmentation:boundary:generalization-v10-regression"}
+{"text":"A chilled parcel is in fresh-food locker B7; collect it tonight with code 6314.","label":"life.pickup_code","source":"augmentation:boundary:generalization-v10-regression"}
+{"text":"冷蔵荷物を生鮮ロッカーB7に保管しました。受取コード6314で今夜までにお受け取りください。","label":"life.pickup_code","source":"augmentation:boundary:generalization-v10-regression"}
+{"text":"放射科已上传影像复核结论，可在患者门户查看医生批注。","label":"life.medical","source":"augmentation:boundary:generalization-v10-regression"}
+{"text":"Radiology uploaded the imaging review; the clinician's notes are in the patient portal.","label":"life.medical","source":"augmentation:boundary:generalization-v10-regression"}
+{"text":"放射線科が画像再確認結果を登録し、患者ポータルで医師の注記を確認できます。","label":"life.medical","source":"augmentation:boundary:generalization-v10-regression"}
+{"text":"法院调解平台已收取答辩材料，线上会议时间将在排期后通知。","label":"government.court","source":"augmentation:boundary:generalization-v10-regression"}
+{"text":"The court mediation portal received the response filing and will send the online-session time after scheduling.","label":"government.court","source":"augmentation:boundary:generalization-v10-regression"}
+{"text":"裁判所の調停ポータルが答弁書を受領し、オンライン期日は日程確定後に通知します。","label":"government.court","source":"augmentation:boundary:generalization-v10-regression"}
+{"text":"交警部门通知：山海隧道周六清晨封闭检测，请大型车辆改走外环。","label":"government.traffic","source":"augmentation:boundary:generalization-v10-regression"}
+{"text":"Traffic police will close Shanhai Tunnel early Saturday for inspection; heavy vehicles should use the ring road.","label":"government.traffic","source":"augmentation:boundary:generalization-v10-regression"}
+{"text":"交通警察は土曜早朝に山海トンネルを点検閉鎖し、大型車を環状線へ迂回させます。","label":"government.traffic","source":"augmentation:boundary:generalization-v10-regression"}
+{"text":"应急部门提醒：社区疏散演练鸣笛时请沿绿色标识前往东广场。","label":"government.reminder","source":"augmentation:boundary:generalization-v10-regression"}
+{"text":"Emergency services ask residents to follow green signs to the east square when the evacuation-drill siren sounds.","label":"government.reminder","source":"augmentation:boundary:generalization-v10-regression"}
+{"text":"防災当局は避難訓練のサイレン後、緑の表示に沿って東広場へ移動するよう案内しています。","label":"government.reminder","source":"augmentation:boundary:generalization-v10-regression"}
+{"text":"生产消息队列剩余容量低于一小时，若未扩容将暂停接收订单事件。","label":"work.alert","source":"augmentation:boundary:generalization-v10-regression"}
+{"text":"The production message queue has under one hour of capacity and may stop accepting order events.","label":"work.alert","source":"augmentation:boundary:generalization-v10-regression"}
+{"text":"本番メッセージキューの残り容量は1時間未満で、未拡張の場合は注文イベントを停止します。","label":"work.alert","source":"augmentation:boundary:generalization-v10-regression"}
+{"text":"采购申请PR-418已到财务复核节点，请确认成本中心后审批。","label":"work.approval","source":"augmentation:boundary:generalization-v10-regression"}
+{"text":"Purchase request PR-418 reached finance review; approve it after confirming the cost center.","label":"work.approval","source":"augmentation:boundary:generalization-v10-regression"}
+{"text":"購買申請PR-418が財務確認に進みました。原価部門を確認して承認してください。","label":"work.approval","source":"augmentation:boundary:generalization-v10-regression"}
+{"text":"跨区站会改到周四十点，原会议室已释放并更新视频入口。","label":"work.meeting","source":"augmentation:boundary:generalization-v10-regression"}
+{"text":"The cross-region stand-up moved to Thursday at ten; the room was released and the video link updated.","label":"work.meeting","source":"augmentation:boundary:generalization-v10-regression"}
+{"text":"地域横断の朝会は木曜10時へ変更され、会議室を解放して動画リンクを更新しました。","label":"work.meeting","source":"augmentation:boundary:generalization-v10-regression"}
+{"text":"账户已撤销遗失安全密钥，下一次登录需使用新通行密钥。","label":"transaction.account_security","source":"augmentation:boundary:generalization-v10-regression"}
+{"text":"The lost security key was revoked; your next sign-in requires the new passkey.","label":"transaction.account_security","source":"augmentation:boundary:generalization-v10-regression"}
+{"text":"紛失したセキュリティキーを無効にし、次回ログインでは新しいパスキーが必要です。","label":"transaction.account_security","source":"augmentation:boundary:generalization-v10-regression"}
+{"text":"预售咖啡机订单已完成尾款支付，仓库将在上市日按顺序发货。","label":"transaction.order","source":"augmentation:boundary:generalization-v10-regression"}
+{"text":"The preorder balance for your coffee machine is paid; the warehouse ships in launch-day order.","label":"transaction.order","source":"augmentation:boundary:generalization-v10-regression"}
+{"text":"予約購入したコーヒーマシンの残金決済が完了し、発売日に倉庫から順次発送します。","label":"transaction.order","source":"augmentation:boundary:generalization-v10-regression"}
+{"text":"跨海轮渡电子票已出票，车辆请从3号口核验二维码进港。","label":"travel.ticketing","source":"augmentation:boundary:generalization-v10-regression"}
+{"text":"Your cross-bay ferry e-ticket is issued; vehicles enter gate 3 for QR verification.","label":"travel.ticketing","source":"augmentation:boundary:generalization-v10-regression"}
+{"text":"湾横断フェリーの電子乗船券を発行しました。車両は3番口でQRを確認して入港してください。","label":"travel.ticketing","source":"augmentation:boundary:generalization-v10-regression"}
+{"text":"家庭网络安全险限时试算，完成报价可领取路由器延保券。","label":"promotion","source":"augmentation:boundary:generalization-v10-regression"}
+{"text":"Limited home cyber-insurance quote offer includes an extended router-warranty voucher.","label":"promotion","source":"augmentation:boundary:generalization-v10-regression"}
+{"text":"家庭向けサイバー保険の期間限定見積で、ルーター延長保証券が付きます。","label":"promotion","source":"augmentation:boundary:generalization-v10-regression"}
+{"text":"冒充法院调解员的人要求先转保全费到个人账户，否则立即冻结资产。","label":"spam","source":"augmentation:boundary:generalization-v10-regression"}
+{"text":"Someone posing as a court mediator demands a preservation fee to a personal account or threatens an immediate asset freeze.","label":"spam","source":"augmentation:boundary:generalization-v10-regression"}
+{"text":"裁判所の調停員を装い、資産凍結を避けるため個人口座へ保全費を送るよう要求しています。","label":"spam","source":"augmentation:boundary:generalization-v10-regression"}
+{"text":"酒店押金解冻完成，920元退款将在周五前退至原付款方式。","label":"finance.refund","source":"augmentation:boundary:generalization-v10-variant"}
+{"text":"The canceled hotel deposit was released; the $920 refund returns to the original payment method by Friday.","label":"finance.refund","source":"augmentation:boundary:generalization-v10-variant"}
+{"text":"ホテル保証金の取消が完了し、920円を金曜までに元の決済方法へ返金します。","label":"finance.refund","source":"augmentation:boundary:generalization-v10-variant"}
+{"text":"商务信用卡月结单已出，最低应还款1460元，扣款安排在本月26日。","label":"finance.credit_card","source":"augmentation:boundary:generalization-v10-variant"}
+{"text":"Your business-card statement is available; the $1,460 minimum due will be collected on the 26th.","label":"finance.credit_card","source":"augmentation:boundary:generalization-v10-variant"}
+{"text":"法人カードの月次請求が確定し、最低支払額1,460円を26日に引き落とします。","label":"finance.credit_card","source":"augmentation:boundary:generalization-v10-variant"}
+{"text":"尾号9042卡在海滨停车场完成18元无感支付。","label":"finance.consumption","source":"augmentation:boundary:generalization-v10-variant"}
+{"text":"An $18 contactless charge at Harbor Parking posted to the card ending 9042.","label":"finance.consumption","source":"augmentation:boundary:generalization-v10-variant"}
+{"text":"末尾9042のカードで港駐車場の18円タッチ決済が記録されました。","label":"finance.consumption","source":"augmentation:boundary:generalization-v10-variant"}
+{"text":"家庭共享套餐账期费用为319元，将于本周六从通信余额自动扣除。","label":"carrier.billing","source":"augmentation:boundary:generalization-v10-variant"}
+{"text":"The family mobile-plan invoice is $319 and will be deducted from the telecom balance Saturday.","label":"carrier.billing","source":"augmentation:boundary:generalization-v10-variant"}
+{"text":"家族向け通信プランの請求額は319円で、土曜に通信残高から自動決済します。","label":"carrier.billing","source":"augmentation:boundary:generalization-v10-variant"}
+{"text":"eSIM签发系统周三凌晨维护，期间新号码暂时无法激活。","label":"carrier.service","source":"augmentation:boundary:generalization-v10-variant"}
+{"text":"The eSIM issuance system has maintenance Wednesday morning; new lines cannot activate during the window.","label":"carrier.service","source":"augmentation:boundary:generalization-v10-variant"}
+{"text":"eSIM発行システムを水曜未明に保守し、その間は新規回線を有効化できません。","label":"carrier.service","source":"augmentation:boundary:generalization-v10-variant"}
+{"text":"电力公司通知：南岸变电站检修，周日上午部分街区暂停供电。","label":"life.utility","source":"augmentation:boundary:generalization-v10-variant"}
+{"text":"The power utility will service the Southbank substation, interrupting electricity in several blocks Sunday morning.","label":"life.utility","source":"augmentation:boundary:generalization-v10-variant"}
+{"text":"電力会社は南岸変電所を点検するため、日曜午前に一部地域を停電します。","label":"life.utility","source":"augmentation:boundary:generalization-v10-variant"}
+{"text":"包裹因暴雨跳过河西中转点，已改由北城站派送，预计明晚送达。","label":"life.express","source":"augmentation:boundary:generalization-v10-variant"}
+{"text":"Heavy rain diverted your parcel around the west depot; North City station expects delivery tomorrow evening.","label":"life.express","source":"augmentation:boundary:generalization-v10-variant"}
+{"text":"大雨のため荷物は西中継所を迂回し、北営業所から明晩配達する予定です。","label":"life.express","source":"augmentation:boundary:generalization-v10-variant"}
+{"text":"恒温药品已放入医院自提柜C12，请凭取件码8459在六小时内领取。","label":"life.pickup_code","source":"augmentation:boundary:generalization-v10-variant"}
+{"text":"Temperature-controlled medicine is in hospital locker C12; collect it within six hours using code 8459.","label":"life.pickup_code","source":"augmentation:boundary:generalization-v10-variant"}
+{"text":"定温医薬品を病院ロッカーC12に保管しました。受取コード8459で6時間以内にお受け取りください。","label":"life.pickup_code","source":"augmentation:boundary:generalization-v10-variant"}
+{"text":"病理科复核报告已完成，主治医生的解释已同步到就诊账户。","label":"life.medical","source":"augmentation:boundary:generalization-v10-variant"}
+{"text":"The pathology review is complete and the attending physician's explanation is in your patient account.","label":"life.medical","source":"augmentation:boundary:generalization-v10-variant"}
+{"text":"病理再検査の報告が完了し、担当医の説明を患者アカウントへ掲載しました。","label":"life.medical","source":"augmentation:boundary:generalization-v10-variant"}
+{"text":"互联网法院已接收管辖权异议，审查结果将通过案件中心送达。","label":"government.court","source":"augmentation:boundary:generalization-v10-variant"}
+{"text":"The online court accepted the jurisdiction objection; its review result will arrive through the case center.","label":"government.court","source":"augmentation:boundary:generalization-v10-variant"}
+{"text":"インターネット裁判所が管轄異議を受理し、審査結果を事件センターから送達します。","label":"government.court","source":"augmentation:boundary:generalization-v10-variant"}
+{"text":"交通管理部门提示：滨江桥周日晚封闭养护，公交车辆改走东侧辅路。","label":"government.traffic","source":"augmentation:boundary:generalization-v10-variant"}
+{"text":"The transport authority closes Riverside Bridge Sunday night for maintenance; buses divert to the east service road.","label":"government.traffic","source":"augmentation:boundary:generalization-v10-variant"}
+{"text":"交通当局は日曜夜に川岸橋を保守閉鎖し、バスを東側道路へ迂回させます。","label":"government.traffic","source":"augmentation:boundary:generalization-v10-variant"}
+{"text":"防汛部门提醒：周六开展高地转移演练，警报响起后请前往北侧集合点。","label":"government.reminder","source":"augmentation:boundary:generalization-v10-variant"}
+{"text":"Flood-control officials remind residents that Saturday's evacuation exercise moves uphill after the alarm.","label":"government.reminder","source":"augmentation:boundary:generalization-v10-variant"}
+{"text":"防災機関は土曜の高台避難演習で、警報後に北側集合所へ移動するよう案内しています。","label":"government.reminder","source":"augmentation:boundary:generalization-v10-variant"}
+{"text":"生产数据库副本磁盘仅剩12%，未清理归档会停止同步订单记录。","label":"work.alert","source":"augmentation:boundary:generalization-v10-variant"}
+{"text":"The production database replica has 12% disk left and will stop syncing orders unless archives are cleared.","label":"work.alert","source":"augmentation:boundary:generalization-v10-variant"}
+{"text":"本番データベース複製の空き容量は12%で、整理しない場合は注文同期が停止します。","label":"work.alert","source":"augmentation:boundary:generalization-v10-variant"}
+{"text":"差旅报销EX-730已进入税务复核，请确认发票归属后完成审批。","label":"work.approval","source":"augmentation:boundary:generalization-v10-variant"}
+{"text":"Expense claim EX-730 reached tax review; approve it after confirming invoice ownership.","label":"work.approval","source":"augmentation:boundary:generalization-v10-variant"}
+{"text":"経費精算EX-730が税務確認へ進みました。請求書の所属を確認して承認してください。","label":"work.approval","source":"augmentation:boundary:generalization-v10-variant"}
+{"text":"事故复盘会调整到周五下午，原线上房间关闭并生成了新入口。","label":"work.meeting","source":"augmentation:boundary:generalization-v10-variant"}
+{"text":"The incident review moved to Friday afternoon; the old online room closed and a new link was created.","label":"work.meeting","source":"augmentation:boundary:generalization-v10-variant"}
+{"text":"障害振り返り会を金曜午後へ変更し、旧会議室を閉じて新しい入口を発行しました。","label":"work.meeting","source":"augmentation:boundary:generalization-v10-variant"}
+{"text":"账户恢复邮箱已更换，旧邮箱撤销授权，其他登录会话保持有效。","label":"transaction.account_security","source":"augmentation:boundary:generalization-v10-variant"}
+{"text":"Your recovery email changed and the previous address was revoked; existing signed-in sessions remain active.","label":"transaction.account_security","source":"augmentation:boundary:generalization-v10-variant"}
+{"text":"アカウント復旧用メールを変更し、旧アドレスの権限を解除しました。既存セッションは有効です。","label":"transaction.account_security","source":"augmentation:boundary:generalization-v10-variant"}
+{"text":"电动自行车订单尾款已结清，工厂完成装箱后将按预订顺序发运。","label":"transaction.order","source":"augmentation:boundary:generalization-v10-variant"}
+{"text":"The final balance on your e-bike order is paid; the factory ships after packing in preorder sequence.","label":"transaction.order","source":"augmentation:boundary:generalization-v10-variant"}
+{"text":"電動自転車注文の残金決済が完了し、工場で梱包後に予約順で発送します。","label":"transaction.order","source":"augmentation:boundary:generalization-v10-variant"}
+{"text":"夜行巴士电子乘车凭证已签发，请在5号站台出示二维码验票。","label":"travel.ticketing","source":"augmentation:boundary:generalization-v10-variant"}
+{"text":"Your overnight-bus e-ticket was issued; show its QR code at platform 5 for boarding.","label":"travel.ticketing","source":"augmentation:boundary:generalization-v10-variant"}
+{"text":"夜行バスの電子乗車券を発行しました。5番乗り場でQRコードをご提示ください。","label":"travel.ticketing","source":"augmentation:boundary:generalization-v10-variant"}
+{"text":"宠物医疗险本周提供免费保费测算，提交报价可获一次线上问诊券。","label":"promotion","source":"augmentation:boundary:generalization-v10-variant"}
+{"text":"This week's pet-health insurance quote offer includes a complimentary online consultation voucher.","label":"promotion","source":"augmentation:boundary:generalization-v10-variant"}
+{"text":"ペット医療保険の今週限定見積で、オンライン診療券を受け取れます。","label":"promotion","source":"augmentation:boundary:generalization-v10-variant"}
+{"text":"自称执行法官的人要求把案件解冻费转入个人数字钱包，否则今晚查封住房。","label":"spam","source":"augmentation:boundary:generalization-v10-variant"}
+{"text":"A supposed enforcement judge demands an unfreezing fee to a personal crypto wallet or threatens to seize your home tonight.","label":"spam","source":"augmentation:boundary:generalization-v10-variant"}
+{"text":"執行裁判官を名乗る人物が、今夜の住宅差押えを避けるため個人暗号資産口座へ解除料を求めています。","label":"spam","source":"augmentation:boundary:generalization-v10-variant"}

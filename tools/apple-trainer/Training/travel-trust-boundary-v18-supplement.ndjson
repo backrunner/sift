@@ -1,0 +1,48 @@
+{"text":"【云际航空】行程审核异常，需在外部页面上传护照照片并输入银行应用动态码才能保留座位。","label":"spam","source":"augmentation:boundary:travel-trust-v18"}
+{"text":"自称铁路退票专员称赔款被冻结，要求回复网银登录密码和卡片安全码。","label":"spam","source":"augmentation:boundary:travel-trust-v18"}
+{"text":"所谓酒店升房客服让您安装远程控制软件并共享屏幕，由其代为完成订单验证。","label":"spam","source":"augmentation:boundary:travel-trust-v18"}
+{"text":"陌生客运平台称大巴座位即将失效，要求购买礼品卡并发送兑换码作为改签费。","label":"spam","source":"augmentation:boundary:travel-trust-v18"}
+{"text":"假冒邮轮行李服务要求提交数字钱包恢复短语，声称用于领取遗失物赔偿。","label":"spam","source":"augmentation:boundary:travel-trust-v18"}
+{"text":"轮渡退款代理要求提供银行卡密码和网银口令，称验证后才能原路退款。","label":"spam","source":"augmentation:boundary:travel-trust-v18"}
+{"text":"机场接送订单被暂停，所谓客服要求把解锁保证金转到个人收款账户。","label":"spam","source":"augmentation:boundary:travel-trust-v18"}
+{"text":"旅行保险理赔页面同时索取短信验证码和银行卡背面安全数字，请勿提交。","label":"spam","source":"augmentation:boundary:travel-trust-v18"}
+{"text":"云际航空已将您的航班改签到明早，电子登机牌已更新至官方应用，无需重新验证付款。","label":"travel.ticketing","source":"augmentation:boundary:travel-trust-v18"}
+{"text":"高铁订单座位调整完成，车次和票价不变，新座位可在官方订单中查看。","label":"travel.ticketing","source":"augmentation:boundary:travel-trust-v18"}
+{"text":"轮渡登船口改至东侧三号闸口，原电子船票继续有效，请按新时间检票。","label":"travel.ticketing","source":"augmentation:boundary:travel-trust-v18"}
+{"text":"您的邮轮客舱升级已确认，差价收据已存入官方行程中心。","label":"travel.ticketing","source":"augmentation:boundary:travel-trust-v18"}
+{"text":"国际联运旅客请在机场柜台领取纸质票联，再凭护照原件办理托运。","label":"travel.ticketing","source":"augmentation:boundary:travel-trust-v18"}
+{"text":"城际列车电子票已签发，检票二维码可在官方客户端离线打开。","label":"travel.ticketing","source":"augmentation:boundary:travel-trust-v18"}
+{"text":"夜班客车改签办理完成，原付款方式不会再次扣款，新发车时间见订单详情。","label":"travel.ticketing","source":"augmentation:boundary:travel-trust-v18"}
+{"text":"海岛航线值船手续已完成，请携带购票证件原件到人工柜台领取登船牌。","label":"travel.ticketing","source":"augmentation:boundary:travel-trust-v18"}
+{"text":"A visa-check portal says your flight seat will be released unless you upload a passport scan and enter a banking approval code.","label":"spam","source":"augmentation:boundary:travel-trust-v18"}
+{"text":"A caller posing as rail refunds asks for your online-banking login and card PIN before sending delay compensation.","label":"spam","source":"augmentation:boundary:travel-trust-v18"}
+{"text":"Fake resort support asks you to install a remote-desktop app and share the screen so it can verify the reservation.","label":"spam","source":"augmentation:boundary:travel-trust-v18"}
+{"text":"An airport-shuttle notice demands prepaid voucher numbers to stop a paid seat from being cancelled.","label":"spam","source":"augmentation:boundary:travel-trust-v18"}
+{"text":"A cruise baggage agent requests the recovery phrase for a digital wallet before releasing compensation.","label":"spam","source":"augmentation:boundary:travel-trust-v18"}
+{"text":"An alleged airline reissue desk wants a transfer to a personal account plus the SMS login code.","label":"spam","source":"augmentation:boundary:travel-trust-v18"}
+{"text":"A ferry health certificate message directs you to install screen-control software for a remote inspection.","label":"spam","source":"augmentation:boundary:travel-trust-v18"}
+{"text":"A booking agent asks you to reply with the card password and security digits to unlock a fare refund.","label":"spam","source":"augmentation:boundary:travel-trust-v18"}
+{"text":"Your flight was rebooked for tomorrow morning. The boarding pass is updated in the official app with no payment re-verification.","label":"travel.ticketing","source":"augmentation:boundary:travel-trust-v18"}
+{"text":"The rail seat change is complete; the train and fare are unchanged, and the new seat appears in the official booking.","label":"travel.ticketing","source":"augmentation:boundary:travel-trust-v18"}
+{"text":"Ferry boarding now uses east gate three. Your existing e-ticket remains valid for the revised check-in time.","label":"travel.ticketing","source":"augmentation:boundary:travel-trust-v18"}
+{"text":"Your cruise cabin upgrade is confirmed and the fare-difference receipt is stored in the official trip center.","label":"travel.ticketing","source":"augmentation:boundary:travel-trust-v18"}
+{"text":"Connecting passengers should collect the printed ticket coupon at the airport counter and present the original passport.","label":"travel.ticketing","source":"augmentation:boundary:travel-trust-v18"}
+{"text":"The intercity rail e-ticket has been issued; its gate QR code is available offline in the official client.","label":"travel.ticketing","source":"augmentation:boundary:travel-trust-v18"}
+{"text":"Your overnight coach rebooking is complete. The original payment method will not be charged again.","label":"travel.ticketing","source":"augmentation:boundary:travel-trust-v18"}
+{"text":"Island ferry check-in is complete. Bring the original booking document to the staffed counter for the boarding pass.","label":"travel.ticketing","source":"augmentation:boundary:travel-trust-v18"}
+{"text":"航空券の審査異常を理由に、外部ページへ旅券画像を送り銀行アプリの承認コードを入力するよう求めています。","label":"spam","source":"augmentation:boundary:travel-trust-v18"}
+{"text":"鉄道の返金担当を名乗る相手が、遅延補償のためネット銀行のパスワードとカード暗証番号を要求しています。","label":"spam","source":"augmentation:boundary:travel-trust-v18"}
+{"text":"偽の宿泊予約窓口が遠隔操作アプリを導入させ、画面共有で予約確認を代行すると案内しています。","label":"spam","source":"augmentation:boundary:travel-trust-v18"}
+{"text":"空港シャトルの座席維持費としてプリペイドカードを購入し、引換番号を送るよう迫る通知です。","label":"spam","source":"augmentation:boundary:travel-trust-v18"}
+{"text":"クルーズの手荷物補償を装い、デジタルウォレットの復元フレーズを送信するよう求めています。","label":"spam","source":"augmentation:boundary:travel-trust-v18"}
+{"text":"航空券再発行の担当者を装い、個人口座への振込とSMSログインコードの返信を要求しています。","label":"spam","source":"augmentation:boundary:travel-trust-v18"}
+{"text":"フェリーの健康証明を名目に画面操作ソフトを入れさせ、遠隔で検査すると案内する内容です。","label":"spam","source":"augmentation:boundary:travel-trust-v18"}
+{"text":"旅行予約の返金解除にカードのパスワードとセキュリティ番号が必要だという偽の連絡です。","label":"spam","source":"augmentation:boundary:travel-trust-v18"}
+{"text":"明朝便への変更が完了し、公式アプリの搭乗券も更新されました。決済の再認証は不要です。","label":"travel.ticketing","source":"augmentation:boundary:travel-trust-v18"}
+{"text":"列車の座席変更が完了しました。列車と運賃は変わらず、新しい座席は公式予約で確認できます。","label":"travel.ticketing","source":"augmentation:boundary:travel-trust-v18"}
+{"text":"フェリーの乗船口は東側三番へ変更されました。現在の電子乗船券はそのまま有効です。","label":"travel.ticketing","source":"augmentation:boundary:travel-trust-v18"}
+{"text":"クルーズ客室のアップグレードが確定し、差額の領収書を公式旅程センターへ保存しました。","label":"travel.ticketing","source":"augmentation:boundary:travel-trust-v18"}
+{"text":"国際線の乗継客は空港窓口で紙の券片を受け取り、旅券原本を提示して手荷物を預けてください。","label":"travel.ticketing","source":"augmentation:boundary:travel-trust-v18"}
+{"text":"都市間列車の電子乗車券を発行しました。改札用QRは公式アプリでオフライン表示できます。","label":"travel.ticketing","source":"augmentation:boundary:travel-trust-v18"}
+{"text":"夜行バスの予約変更が完了しました。元の決済方法へ追加請求は行われません。","label":"travel.ticketing","source":"augmentation:boundary:travel-trust-v18"}
+{"text":"離島フェリーの乗船手続が完了しました。有人窓口で予約証明の原本を提示し乗船券をお受け取りください。","label":"travel.ticketing","source":"augmentation:boundary:travel-trust-v18"}

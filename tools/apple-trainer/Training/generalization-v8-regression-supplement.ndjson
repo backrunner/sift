@@ -1,0 +1,36 @@
+{"text":"账户安全中心终止旧平板的授权，并注销该设备上的所有会话。","label":"transaction.account_security","source":"augmentation:boundary:generalization-v8"}
+{"text":"旧浏览器访问权限已撤销，下次进入账户时需要重新登录。","label":"transaction.account_security","source":"augmentation:boundary:generalization-v8"}
+{"text":"安全设置结束了闲置设备的访问，关联令牌已失效。","label":"transaction.account_security","source":"augmentation:boundary:generalization-v8"}
+{"text":"账户保护功能已注销旧手机会话，并取消它的资料访问权限。","label":"transaction.account_security","source":"augmentation:boundary:generalization-v8"}
+{"text":"Account security ended authorization for an old tablet and signed out every session on it.","label":"transaction.account_security","source":"augmentation:boundary:generalization-v8"}
+{"text":"The old browser lost account access and must sign in again on its next visit.","label":"transaction.account_security","source":"augmentation:boundary:generalization-v8"}
+{"text":"Security settings disabled an unused device token and revoked its profile permissions.","label":"transaction.account_security","source":"augmentation:boundary:generalization-v8"}
+{"text":"Account protection closed the retired phone sessions and removed their access rights.","label":"transaction.account_security","source":"augmentation:boundary:generalization-v8"}
+{"text":"アカウント保護機能が古いタブレットの権限を終了し、すべてのセッションをログアウトしました。","label":"transaction.account_security","source":"augmentation:boundary:generalization-v8"}
+{"text":"以前のブラウザはアクセス権を失い、次回利用時に再ログインが必要です。","label":"transaction.account_security","source":"augmentation:boundary:generalization-v8"}
+{"text":"利用していない端末の認証トークンを無効にし、プロフィール権限を取り消しました。","label":"transaction.account_security","source":"augmentation:boundary:generalization-v8"}
+{"text":"古いスマホのセッションを終了し、アカウントへのアクセスを停止しました。","label":"transaction.account_security","source":"augmentation:boundary:generalization-v8"}
+{"text":"运营商语音信箱新增一条留言，可在手机应用中回听。","label":"carrier.call_reminder","source":"augmentation:boundary:generalization-v8"}
+{"text":"语音信箱收到来自0755-2281的新留言，点击运营商应用即可播放。","label":"carrier.call_reminder","source":"augmentation:boundary:generalization-v8"}
+{"text":"通信服务提醒：未接来电已转入语音信箱并留下消息。","label":"carrier.call_reminder","source":"augmentation:boundary:generalization-v8"}
+{"text":"您的号码收到新的语音留言，回拨信息已保存在运营商应用。","label":"carrier.call_reminder","source":"augmentation:boundary:generalization-v8"}
+{"text":"A new carrier voicemail is ready to replay in the mobile application.","label":"carrier.call_reminder","source":"augmentation:boundary:generalization-v8"}
+{"text":"Voicemail received a new message from 020-6614; listen through your carrier app.","label":"carrier.call_reminder","source":"augmentation:boundary:generalization-v8"}
+{"text":"Carrier service notice: a missed call left a message in your voicemail inbox.","label":"carrier.call_reminder","source":"augmentation:boundary:generalization-v8"}
+{"text":"Your number has a fresh voice message with callback details saved in the mobile app.","label":"carrier.call_reminder","source":"augmentation:boundary:generalization-v8"}
+{"text":"通信会社の留守番電話に新しいメッセージがあり、携帯アプリで再生できます。","label":"carrier.call_reminder","source":"augmentation:boundary:generalization-v8"}
+{"text":"03-6614から留守番電話の新着メッセージがあります。通信アプリで確認してください。","label":"carrier.call_reminder","source":"augmentation:boundary:generalization-v8"}
+{"text":"不在着信が留守番電話へ転送され、相手がメッセージを残しました。","label":"carrier.call_reminder","source":"augmentation:boundary:generalization-v8"}
+{"text":"携帯番号に新しい音声メッセージが届き、折り返し情報がアプリに保存されました。","label":"carrier.call_reminder","source":"augmentation:boundary:generalization-v8"}
+{"text":"运营商积分兑换开放，可换取五日流量包。","label":"carrier.promotion","source":"augmentation:boundary:generalization-v8"}
+{"text":"通信积分商城上新，使用积分可领取国际漫游日包。","label":"carrier.promotion","source":"augmentation:boundary:generalization-v8"}
+{"text":"话费积分限时兑换，8000积分可换15GB流量。","label":"carrier.promotion","source":"augmentation:boundary:generalization-v8"}
+{"text":"移动奖励积分可在本周兑换通话分钟和流量权益。","label":"carrier.promotion","source":"augmentation:boundary:generalization-v8"}
+{"text":"Carrier points redemption is open for a five-day data pass.","label":"carrier.promotion","source":"augmentation:boundary:generalization-v8"}
+{"text":"The mobile rewards mall lets members exchange points for an international roaming day pass.","label":"carrier.promotion","source":"augmentation:boundary:generalization-v8"}
+{"text":"Redeem 8,000 carrier points for 15GB of bonus data this week.","label":"carrier.promotion","source":"augmentation:boundary:generalization-v8"}
+{"text":"Wireless reward points can be exchanged for calling minutes and mobile-data benefits.","label":"carrier.promotion","source":"augmentation:boundary:generalization-v8"}
+{"text":"キャリアポイントの交換受付が始まり、5日分のデータパックを選べます。","label":"carrier.promotion","source":"augmentation:boundary:generalization-v8"}
+{"text":"通信ポイントモールで国際ローミングの1日券に交換できます。","label":"carrier.promotion","source":"augmentation:boundary:generalization-v8"}
+{"text":"8,000キャリアポイントを15GBの特典データに交換する期間限定企画です。","label":"carrier.promotion","source":"augmentation:boundary:generalization-v8"}
+{"text":"モバイル特典ポイントを通話時間とデータ容量に交換できます。","label":"carrier.promotion","source":"augmentation:boundary:generalization-v8"}

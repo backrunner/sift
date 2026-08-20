@@ -1,0 +1,14 @@
+{"text":"【飞猪】退款成功：订单10045679901551，总金额1440元，您可点击https://a.feizhu.com/3HAAev","label":"finance.refund","source":"reviewed:feizhu-boundary-v1"}
+{"text":"【飞猪】退款成功：订单10045679901552，总金额99.00元，您可点击https://a.feizhu.com/9ZxK31","label":"finance.refund","source":"reviewed:feizhu-boundary-v1"}
+{"text":"飞猪提醒：订单10045679901553退款已原路返回，金额1280元，详情https://a.feizhu.com/4QpM8c","label":"finance.refund","source":"reviewed:feizhu-boundary-v1"}
+{"text":"【飞猪】订单10045679901554退款已完成，退款金额560.50元，请查看https://a.feizhu.com/7LmN2r","label":"finance.refund","source":"reviewed:feizhu-boundary-v1"}
+{"text":"飞猪售后通知：订单10045679901555的机票退款已到账，金额760元。","label":"finance.refund","source":"reviewed:feizhu-boundary-v1"}
+{"text":"【飞猪】退款待处理，请点击https://a.feizhu.com/verify/10045679901556重新验证身份，否则账户将被冻结","label":"spam","source":"reviewed:feizhu-boundary-v1"}
+{"text":"飞猪客服：您的订单退款失败，点击https://a.feizhu.com/claim/10045679901557领取补偿并支付手续费","label":"spam","source":"reviewed:feizhu-boundary-v1"}
+{"text":"【飞猪】10004611770551订单已出票，防诈提醒及出票信息和乘机指南https://a.feizhu.com/077F5F","label":"travel.ticketing","source":"reviewed:feizhu-boundary-v1"}
+{"text":"【飞猪】10004611770552订单已出票，航班信息及乘机指南请查看https://a.feizhu.com/2AbC91","label":"travel.ticketing","source":"reviewed:feizhu-boundary-v1"}
+{"text":"飞猪出票通知：订单10004611770553已出票，防诈骗提示和乘机指南见https://a.feizhu.com/8QwE20","label":"travel.ticketing","source":"reviewed:feizhu-boundary-v1"}
+{"text":"【飞猪】订单10004611770554出票完成，请查看航班与乘机信息https://a.feizhu.com/5RtY73","label":"travel.ticketing","source":"reviewed:feizhu-boundary-v1"}
+{"text":"飞猪提醒：订单10004611770555已出票，点击https://a.feizhu.com/6UvP42查看防诈提醒和乘机指南","label":"travel.ticketing","source":"reviewed:feizhu-boundary-v1"}
+{"text":"【飞猪】您的订单10004611770556异常，请点击https://a.feizhu.com/security/10045679901558补填身份证信息后重新出票","label":"spam","source":"reviewed:feizhu-boundary-v1"}
+{"text":"飞猪机票低价补贴限时领取，订单用户点击https://a.feizhu.com/promo/10045679901559领取优惠券","label":"promotion","source":"reviewed:feizhu-boundary-v1"}

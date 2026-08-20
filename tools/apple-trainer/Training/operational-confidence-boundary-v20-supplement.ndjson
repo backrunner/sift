@@ -1,0 +1,45 @@
+{"text":"跨境数据留存例外已通过安全审查，正在等待合规负责人批准保留周期。","label":"work.approval","source":"augmentation:boundary:operational-confidence-v20"}
+{"text":"生产报表导出申请已完成隐私复核，平台主管尚未批准下载有效期。","label":"work.approval","source":"augmentation:boundary:operational-confidence-v20"}
+{"text":"供应商访问期限变更已通过法务检查，等待业务所有者最终审批。","label":"work.approval","source":"augmentation:boundary:operational-confidence-v20"}
+{"text":"预约跨行转账已于上午九点执行至尾号3816账户，银行电子回单已生成。","label":"finance.bank","source":"augmentation:boundary:operational-confidence-v20"}
+{"text":"定时汇款已发送到收款账户尾号7204，可在交易历史下载回执。","label":"finance.bank","source":"augmentation:boundary:operational-confidence-v20"}
+{"text":"托管余额已划入尾号4931结算账户，银行流水中可查看到账凭证。","label":"finance.bank","source":"augmentation:boundary:operational-confidence-v20"}
+{"text":"远洋卫星数据包已使用69%，本航次剩余1.2GB可用流量。","label":"carrier.data_reminder","source":"augmentation:boundary:operational-confidence-v20"}
+{"text":"机上联网套餐已消耗4.1GB，落地前还可使用900MB。","label":"carrier.data_reminder","source":"augmentation:boundary:operational-confidence-v20"}
+{"text":"邮轮通信计划剩余540MB，有效期至本次航程结束。","label":"carrier.data_reminder","source":"augmentation:boundary:operational-confidence-v20"}
+{"text":"书柜订单BK5917已完成检验并安排配送，附赠券仅供下次下单使用。","label":"transaction.order","source":"augmentation:boundary:operational-confidence-v20"}
+{"text":"家电订单AP8046已打包出库，随箱积分券将在后续购物时生效。","label":"transaction.order","source":"augmentation:boundary:operational-confidence-v20"}
+{"text":"定制灯具订单LT2675通过质检并进入发运队列，下次购买优惠已记入账户。","label":"transaction.order","source":"augmentation:boundary:operational-confidence-v20"}
+{"text":"对象存储访问证书将在20小时后失效，未更新会中断夜间备份。","label":"work.alert","source":"augmentation:boundary:operational-confidence-v20"}
+{"text":"归档服务签名密钥明日到期，若不轮换，自动保留任务将停止。","label":"work.alert","source":"augmentation:boundary:operational-confidence-v20"}
+{"text":"备份仓库加密证书即将过期，需在今晚前更新以避免快照失败。","label":"work.alert","source":"augmentation:boundary:operational-confidence-v20"}
+{"text":"The cross-border retention exception passed security review and awaits the compliance owner's approval of its duration.","label":"work.approval","source":"augmentation:boundary:operational-confidence-v20"}
+{"text":"The production-report export cleared privacy review and is pending the platform lead's approval of download access.","label":"work.approval","source":"augmentation:boundary:operational-confidence-v20"}
+{"text":"The supplier-access extension passed legal review and awaits final approval from the service owner.","label":"work.approval","source":"augmentation:boundary:operational-confidence-v20"}
+{"text":"The scheduled interbank wire ran at 09:00 to account ending 3816, and its bank receipt is ready.","label":"finance.bank","source":"augmentation:boundary:operational-confidence-v20"}
+{"text":"The timed transfer reached the beneficiary account ending 7204; download the receipt from transaction history.","label":"finance.bank","source":"augmentation:boundary:operational-confidence-v20"}
+{"text":"The escrow balance moved to settlement account ending 4931, with a bank credit record now available.","label":"finance.bank","source":"augmentation:boundary:operational-confidence-v20"}
+{"text":"The ocean satellite data pack is 69 percent used, with 1.2 GB remaining for this voyage.","label":"carrier.data_reminder","source":"augmentation:boundary:operational-confidence-v20"}
+{"text":"The in-flight connectivity plan has used 4.1 GB and has 900 MB left until landing.","label":"carrier.data_reminder","source":"augmentation:boundary:operational-confidence-v20"}
+{"text":"Your cruise communications plan has 540 MB remaining and expires at the end of this sailing.","label":"carrier.data_reminder","source":"augmentation:boundary:operational-confidence-v20"}
+{"text":"Bookcase order BK5917 passed inspection and is scheduled for delivery; the enclosed voucher is for a future order.","label":"transaction.order","source":"augmentation:boundary:operational-confidence-v20"}
+{"text":"Appliance order AP8046 was packed and dispatched; its bonus-points coupon applies to a later purchase.","label":"transaction.order","source":"augmentation:boundary:operational-confidence-v20"}
+{"text":"Custom-light order LT2675 cleared quality control and entered shipping; a future-purchase offer was added to the account.","label":"transaction.order","source":"augmentation:boundary:operational-confidence-v20"}
+{"text":"The object-storage access certificate expires in 20 hours; without renewal, nightly backups will stop.","label":"work.alert","source":"augmentation:boundary:operational-confidence-v20"}
+{"text":"The archive service signing key expires tomorrow, and automated retention jobs will stop unless it is rotated.","label":"work.alert","source":"augmentation:boundary:operational-confidence-v20"}
+{"text":"The backup-vault encryption certificate is nearing expiry; update it tonight to prevent snapshot failures.","label":"work.alert","source":"augmentation:boundary:operational-confidence-v20"}
+{"text":"越境データ保持の例外は安全審査を通過し、保持期間について法令遵守責任者の承認待ちです。","label":"work.approval","source":"augmentation:boundary:operational-confidence-v20"}
+{"text":"本番帳票の書き出し申請はプライバシー審査済みで、ダウンロード期限について基盤責任者の承認待ちです。","label":"work.approval","source":"augmentation:boundary:operational-confidence-v20"}
+{"text":"取引先アクセス期間の延長は法務確認を終え、サービス責任者の最終承認を待っています。","label":"work.approval","source":"augmentation:boundary:operational-confidence-v20"}
+{"text":"予約した銀行振込は9時に末尾3816の口座へ実行され、電子振込明細を発行しました。","label":"finance.bank","source":"augmentation:boundary:operational-confidence-v20"}
+{"text":"定時送金は受取口座末尾7204へ到着し、取引履歴から銀行の受領書を取得できます。","label":"finance.bank","source":"augmentation:boundary:operational-confidence-v20"}
+{"text":"預託残高を末尾4931の決済口座へ振り替え、銀行の入金記録を公開しました。","label":"finance.bank","source":"augmentation:boundary:operational-confidence-v20"}
+{"text":"外洋衛星データパックは69%使用済みで、今航海中の残量は1.2GBです。","label":"carrier.data_reminder","source":"augmentation:boundary:operational-confidence-v20"}
+{"text":"機内通信プランは4.1GB利用済みで、着陸まで使える残量は900MBです。","label":"carrier.data_reminder","source":"augmentation:boundary:operational-confidence-v20"}
+{"text":"クルーズ通信プランの残量は540MBで、今回の航海終了まで有効です。","label":"carrier.data_reminder","source":"augmentation:boundary:operational-confidence-v20"}
+{"text":"書棚注文BK5917は検品を終えて配送予定です。同封の特典券は次回注文で利用できます。","label":"transaction.order","source":"augmentation:boundary:operational-confidence-v20"}
+{"text":"家電注文AP8046は梱包と出荷を完了し、ポイント券は次回購入時に適用されます。","label":"transaction.order","source":"augmentation:boundary:operational-confidence-v20"}
+{"text":"特注照明注文LT2675は品質確認を通過して発送待ちとなり、次回購入特典を口座へ追加しました。","label":"transaction.order","source":"augmentation:boundary:operational-confidence-v20"}
+{"text":"オブジェクト保管庫のアクセス証明書は20時間後に失効し、未更新の場合は夜間バックアップが停止します。","label":"work.alert","source":"augmentation:boundary:operational-confidence-v20"}
+{"text":"アーカイブサービスの署名鍵は明日期限を迎え、未更新なら自動保持処理が停止します。","label":"work.alert","source":"augmentation:boundary:operational-confidence-v20"}
+{"text":"バックアップ保管庫の暗号証明書がまもなく失効します。スナップショット失敗を防ぐため今夜更新してください。","label":"work.alert","source":"augmentation:boundary:operational-confidence-v20"}

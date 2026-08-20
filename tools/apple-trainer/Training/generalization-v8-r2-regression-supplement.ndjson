@@ -1,0 +1,54 @@
+{"text":"共享相册恢复页面声称必须提交加密钱包助记词才能找回照片。","label":"spam","source":"augmentation:boundary:generalization-v8-r2"}
+{"text":"网盘客服要求填写十二个钱包恢复单词以解除文件冻结。","label":"spam","source":"augmentation:boundary:generalization-v8-r2"}
+{"text":"照片备份解锁表单要求发送数字钱包种子短语。","label":"spam","source":"augmentation:boundary:generalization-v8-r2"}
+{"text":"云端文件迁移页面索要钱包恢复短语才允许继续。","label":"spam","source":"augmentation:boundary:generalization-v8-r2"}
+{"text":"相册空间续期链接让您粘贴助记词来验证所有权。","label":"spam","source":"augmentation:boundary:generalization-v8-r2"}
+{"text":"云文档修复工具要求输入加密资产钱包的种子词。","label":"spam","source":"augmentation:boundary:generalization-v8-r2"}
+{"text":"A shared-album recovery page demands a crypto-wallet seed phrase before restoring photos.","label":"spam","source":"augmentation:boundary:generalization-v8-r2"}
+{"text":"Cloud-drive support asks for all wallet recovery words to unfreeze your files.","label":"spam","source":"augmentation:boundary:generalization-v8-r2"}
+{"text":"A photo-backup unlock form requests the seed phrase from your digital wallet.","label":"spam","source":"augmentation:boundary:generalization-v8-r2"}
+{"text":"The cloud migration page says to provide a wallet recovery phrase before continuing.","label":"spam","source":"augmentation:boundary:generalization-v8-r2"}
+{"text":"An album-renewal link asks you to paste secret wallet words as ownership proof.","label":"spam","source":"augmentation:boundary:generalization-v8-r2"}
+{"text":"A cloud-document repair tool requests the seed words for a crypto wallet.","label":"spam","source":"augmentation:boundary:generalization-v8-r2"}
+{"text":"共有アルバムの復旧ページが、写真を戻すためにウォレットのシードフレーズを求めています。","label":"spam","source":"augmentation:boundary:generalization-v8-r2"}
+{"text":"クラウドドライブのサポートが、凍結解除のためウォレットの復元フレーズ入力を要求しています。","label":"spam","source":"augmentation:boundary:generalization-v8-r2"}
+{"text":"写真バックアップの解除フォームが暗号資産ウォレットの秘密の単語を求めています。","label":"spam","source":"augmentation:boundary:generalization-v8-r2"}
+{"text":"クラウド移行画面が続行条件としてウォレットのリカバリーフレーズを入力させます。","label":"spam","source":"augmentation:boundary:generalization-v8-r2"}
+{"text":"アルバム容量の更新リンクが本人確認としてウォレットのシードフレーズを要求します。","label":"spam","source":"augmentation:boundary:generalization-v8-r2"}
+{"text":"クラウド文書の修復ツールが暗号資産ウォレットの復元語を求めています。","label":"spam","source":"augmentation:boundary:generalization-v8-r2"}
+{"text":"钱包应用提醒：恢复短语只能离线保管，官方不会通过云相册索取。","label":"transaction.account_security","source":"augmentation:boundary:generalization-v8-r2"}
+{"text":"账户安全通知：已阻止索取助记词的云盘登录页面并注销该会话。","label":"transaction.account_security","source":"augmentation:boundary:generalization-v8-r2"}
+{"text":"Wallet security notice: keep recovery words offline; official support never asks for them in a cloud album.","label":"transaction.account_security","source":"augmentation:boundary:generalization-v8-r2"}
+{"text":"Account security blocked a cloud-drive page that requested a seed phrase and signed out that session.","label":"transaction.account_security","source":"augmentation:boundary:generalization-v8-r2"}
+{"text":"ウォレットの安全通知：復元フレーズはオフラインで保管し、クラウドアルバムには入力しないでください。","label":"transaction.account_security","source":"augmentation:boundary:generalization-v8-r2"}
+{"text":"アカウント保護機能がシードフレーズを求めるクラウド画面を遮断し、そのセッションを終了しました。","label":"transaction.account_security","source":"augmentation:boundary:generalization-v8-r2"}
+{"text":"客运港通知：纸质登船证须在窗口核验订票证件后领取。","label":"travel.ticketing","source":"augmentation:boundary:generalization-v8-r2"}
+{"text":"码头提醒：电子订单需在人工柜台验证身份后换取乘船牌。","label":"travel.ticketing","source":"augmentation:boundary:generalization-v8-r2"}
+{"text":"Port terminal notice: collect the boarding pass at a staffed counter after identity-document verification.","label":"travel.ticketing","source":"augmentation:boundary:generalization-v8-r2"}
+{"text":"The ferry terminal issues boarding certificates only after booking and ID checks at the counter.","label":"travel.ticketing","source":"augmentation:boundary:generalization-v8-r2"}
+{"text":"旅客ターミナルでは有人窓口で予約と本人確認を行った後に乗船証を発行します。","label":"travel.ticketing","source":"augmentation:boundary:generalization-v8-r2"}
+{"text":"港の案内です。乗船券は窓口で身分証を確認してから受け取ってください。","label":"travel.ticketing","source":"augmentation:boundary:generalization-v8-r2"}
+{"text":"交管通知：滨河路周日施工封闭，请经湖西路绕行。","label":"government.traffic","source":"augmentation:boundary:generalization-v8-r2"}
+{"text":"道路管理部门将封闭东桥匝道检修，车辆请按标志改道。","label":"government.traffic","source":"augmentation:boundary:generalization-v8-r2"}
+{"text":"Traffic authority notice: Riverside Road closes Sunday for works; use the Lakeside detour.","label":"government.traffic","source":"augmentation:boundary:generalization-v8-r2"}
+{"text":"The road agency will close the east bridge ramp for repairs and redirect vehicles.","label":"government.traffic","source":"augmentation:boundary:generalization-v8-r2"}
+{"text":"交通管理から、川沿い通りは日曜の工事中に通行止めとなるため迂回してください。","label":"government.traffic","source":"augmentation:boundary:generalization-v8-r2"}
+{"text":"道路局は東橋ランプを補修のため閉鎖し、車両を別経路へ案内します。","label":"government.traffic","source":"augmentation:boundary:generalization-v8-r2"}
+{"text":"家庭医疗险本月试算优惠，完成报价可领取体检券。","label":"promotion","source":"augmentation:boundary:generalization-v8-r2"}
+{"text":"旅行保险限时活动，在线报价享八折并赠行李保障。","label":"promotion","source":"augmentation:boundary:generalization-v8-r2"}
+{"text":"Family health-insurance offer includes a coupon after an online quote this month.","label":"promotion","source":"augmentation:boundary:generalization-v8-r2"}
+{"text":"A limited travel-insurance campaign discounts online quotes and adds baggage cover.","label":"promotion","source":"augmentation:boundary:generalization-v8-r2"}
+{"text":"家族医療保険のキャンペーンで、オンライン見積後に健診クーポンが付きます。","label":"promotion","source":"augmentation:boundary:generalization-v8-r2"}
+{"text":"旅行保険の期間限定割引。オンライン見積で手荷物特典を追加します。","label":"promotion","source":"augmentation:boundary:generalization-v8-r2"}
+{"text":"中国移动积分专区开放，积分可兑换周末流量加油包。","label":"carrier.promotion","source":"augmentation:boundary:generalization-v8-r2"}
+{"text":"联通积分商城上新，可用通信积分换取国际漫游券。","label":"carrier.promotion","source":"augmentation:boundary:generalization-v8-r2"}
+{"text":"Mobile carrier rewards can now be redeemed for a weekend data booster.","label":"carrier.promotion","source":"augmentation:boundary:generalization-v8-r2"}
+{"text":"Telecom points are redeemable for an international-roaming voucher in the rewards store.","label":"carrier.promotion","source":"augmentation:boundary:generalization-v8-r2"}
+{"text":"キャリアポイントを週末用データ追加パックへ交換できます。","label":"carrier.promotion","source":"augmentation:boundary:generalization-v8-r2"}
+{"text":"通信ポイントモールで海外ローミング券の交換受付が始まりました。","label":"carrier.promotion","source":"augmentation:boundary:generalization-v8-r2"}
+{"text":"松林药房会员日全场八五折，满额再赠护理券。","label":"promotion","source":"augmentation:boundary:generalization-v8-r2"}
+{"text":"社区药店新品促销，周末购买家庭药箱可享满减。","label":"promotion","source":"augmentation:boundary:generalization-v8-r2"}
+{"text":"Pine Pharmacy member day offers 15% off storewide plus a care voucher.","label":"promotion","source":"augmentation:boundary:generalization-v8-r2"}
+{"text":"The neighborhood drugstore has a weekend deal on family first-aid kits.","label":"promotion","source":"augmentation:boundary:generalization-v8-r2"}
+{"text":"松林薬局の会員セールで店内商品が15%割引になり、ケア券も付きます。","label":"promotion","source":"augmentation:boundary:generalization-v8-r2"}
+{"text":"地域のドラッグストアで家庭用救急セットの週末キャンペーンを実施します。","label":"promotion","source":"augmentation:boundary:generalization-v8-r2"}

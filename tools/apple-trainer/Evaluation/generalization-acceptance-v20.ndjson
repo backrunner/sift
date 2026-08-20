@@ -1,0 +1,30 @@
+{"text":"分析数据延长保留申请已通过信息安全复核，等待审计负责人批准期限。","label":"work.approval"}
+{"text":"客户资料导出权限完成隐私审查，仍需产品所有者批准有效时长。","label":"work.approval"}
+{"text":"计划汇款已于07:35转入尾号6148账户，银行回单已存入交易明细。","label":"finance.bank"}
+{"text":"保证金余额结算至尾号9027账户，电子入账凭证现可下载。","label":"finance.bank"}
+{"text":"极地航线卫星流量已用82%，返港前剩余430MB。","label":"carrier.data_reminder"}
+{"text":"国际列车无线套餐还剩760MB，有效期至终点站。","label":"carrier.data_reminder"}
+{"text":"餐桌订单TB4162检验合格并交付承运商，账户中的折扣券供下次订单使用。","label":"transaction.order"}
+{"text":"咖啡机订单CM7305已完成包装并发出，随货会员券不影响本次订单状态。","label":"transaction.order"}
+{"text":"冷备份服务令牌将在16小时后过期，未更换将停止增量快照。","label":"work.alert"}
+{"text":"日志归档签名证书周五失效，如未轮换，合规归档会中断。","label":"work.alert"}
+{"text":"The analytics-data retention extension cleared information-security review and awaits the audit owner's duration approval.","label":"work.approval"}
+{"text":"Customer-record export access passed privacy review but still needs the product owner's approval of its validity period.","label":"work.approval"}
+{"text":"The planned remittance reached account ending 6148 at 07:35, and the bank receipt is stored in transaction details.","label":"finance.bank"}
+{"text":"The deposit balance settled into account ending 9027; its electronic bank-credit proof is ready to download.","label":"finance.bank"}
+{"text":"The polar-route satellite allowance is 82 percent used, with 430 MB remaining before return to port.","label":"carrier.data_reminder"}
+{"text":"The international-train wireless plan has 760 MB left and remains valid through the final station.","label":"carrier.data_reminder"}
+{"text":"Dining-table order TB4162 passed inspection and was handed to the carrier; its account voucher is for the next order.","label":"transaction.order"}
+{"text":"Coffee-machine order CM7305 was packed and dispatched; the enclosed member voucher does not change this order's status.","label":"transaction.order"}
+{"text":"The cold-backup service token expires in 16 hours; incremental snapshots will stop unless it is replaced.","label":"work.alert"}
+{"text":"The log-archive signing certificate expires Friday, and compliance archiving will be interrupted without rotation.","label":"work.alert"}
+{"text":"分析データの保持延長は情報安全審査を通過し、期間について監査責任者の承認待ちです。","label":"work.approval"}
+{"text":"顧客記録の書き出し権限は個人情報審査済みですが、有効期間について製品責任者の承認が必要です。","label":"work.approval"}
+{"text":"予定送金は7時35分に末尾6148の口座へ到着し、銀行明細を取引詳細へ保存しました。","label":"finance.bank"}
+{"text":"保証金残高を末尾9027の口座へ精算し、電子入金証明をダウンロードできます。","label":"finance.bank"}
+{"text":"極地航路の衛星通信量は82%使用済みで、帰港までの残量は430MBです。","label":"carrier.data_reminder"}
+{"text":"国際列車の無線プランは760MB残っており、終着駅まで有効です。","label":"carrier.data_reminder"}
+{"text":"食卓注文TB4162は検品合格後に運送会社へ渡され、口座の割引券は次回注文用です。","label":"transaction.order"}
+{"text":"コーヒーマシン注文CM7305は梱包して発送済みです。同封の会員券は今回の注文状態に影響しません。","label":"transaction.order"}
+{"text":"低温バックアップサービスのトークンは16時間後に失効し、未交換なら増分スナップショットが停止します。","label":"work.alert"}
+{"text":"ログ保管の署名証明書は金曜に失効し、未更新の場合は法令アーカイブが中断します。","label":"work.alert"}

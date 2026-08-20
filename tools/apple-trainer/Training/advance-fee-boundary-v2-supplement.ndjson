@@ -1,0 +1,60 @@
+{"text":"急用资金无需查询征信，额度已经锁定，先交认证服务费才能提现。","label":"spam","source":"augmentation:boundary:advance-fee-v2"}
+{"text":"私人放款承诺零审核当天到账，放款前需转入开户保证金。","label":"spam","source":"augmentation:boundary:advance-fee-v2"}
+{"text":"您的周转额度待领取，请预付通道验证金，到账后会全额返还。","label":"spam","source":"augmentation:boundary:advance-fee-v2"}
+{"text":"无抵押借款已秒批，先支付账户激活费用即可释放款项。","label":"spam","source":"augmentation:boundary:advance-fee-v2"}
+{"text":"贷款专员称审批完成，但必须先缴解冻金才可把资金转入银行卡。","label":"spam","source":"augmentation:boundary:advance-fee-v2"}
+{"text":"备用金名额已为您保留，先付制卡工本费，五分钟内安排放款。","label":"spam","source":"augmentation:boundary:advance-fee-v2"}
+{"text":"小额融资无需面签，入账前请把保险费转给客服指定账户。","label":"spam","source":"augmentation:boundary:advance-fee-v2"}
+{"text":"现金垫款审核通过，开通付费会员后才能提取已批准的额度。","label":"spam","source":"augmentation:boundary:advance-fee-v2"}
+{"text":"【海城银行】个人消费贷推出阶段性利率优惠，申请条件与全部费用可在官方应用查看。","label":"promotion","source":"augmentation:boundary:advance-fee-v2"}
+{"text":"本行住房贷款客户可预约利率方案咨询，办理过程不收取任何前置放款费用。","label":"promotion","source":"augmentation:boundary:advance-fee-v2"}
+{"text":"【安信金融】小微经营贷开放线上测额，年化利率和服务条款以官网展示为准。","label":"promotion","source":"augmentation:boundary:advance-fee-v2"}
+{"text":"手机银行本周提供装修贷款优惠券，提交申请前可先查看还款计划和总成本。","label":"promotion","source":"augmentation:boundary:advance-fee-v2"}
+{"text":"新装家庭宽带的账户激活服务费18元已计入本月通信账单，缴费日为9月20日。","label":"carrier.billing","source":"augmentation:boundary:advance-fee-v2"}
+{"text":"您的移动副卡开通费已随主账户月结单出账，可在运营商应用核对费用明细。","label":"carrier.billing","source":"augmentation:boundary:advance-fee-v2"}
+{"text":"企业专线本期账单含一次性开户调测费120元，应付总额386元。","label":"carrier.billing","source":"augmentation:boundary:advance-fee-v2"}
+{"text":"您申请的消费贷款已审批，款项32,000元已存入尾号8046的账户，无需另行转账。","label":"finance.bank","source":"augmentation:boundary:advance-fee-v2"}
+{"text":"住房贷款放款完成，本次入账680,000元，还款计划可在手机银行查询。","label":"finance.bank","source":"augmentation:boundary:advance-fee-v2"}
+{"text":"小微经营贷款合同已生效，首笔资金今日汇入企业结算账户。","label":"finance.bank","source":"augmentation:boundary:advance-fee-v2"}
+{"text":"我看了两家银行的贷款利率，周末见面时再一起算每月要还多少。","label":"__sift_abstain__","source":"augmentation:boundary:advance-fee-v2"}
+{"text":"先别替我交任何贷款费用，我明天自己去银行柜台确认。","label":"__sift_abstain__","source":"augmentation:boundary:advance-fee-v2"}
+{"text":"Emergency cash with no credit inquiry is ready; pay a verification service charge before withdrawal.","label":"spam","source":"augmentation:boundary:advance-fee-v2"}
+{"text":"A private lender promises same-day funds without review but requires an opening deposit first.","label":"spam","source":"augmentation:boundary:advance-fee-v2"}
+{"text":"Your revolving credit is waiting. Prepay the channel validation deposit and it will be refunded after release.","label":"spam","source":"augmentation:boundary:advance-fee-v2"}
+{"text":"The unsecured loan was instantly approved; an account activation fee must be paid to unlock the funds.","label":"spam","source":"augmentation:boundary:advance-fee-v2"}
+{"text":"The loan agent says approval is complete, but a thawing charge is required before transfer to your bank card.","label":"spam","source":"augmentation:boundary:advance-fee-v2"}
+{"text":"A reserve credit slot is being held for you. Send the card-production fee for payout within five minutes.","label":"spam","source":"augmentation:boundary:advance-fee-v2"}
+{"text":"Small-business financing needs no interview, but the insurance charge must go to the agent's account first.","label":"spam","source":"augmentation:boundary:advance-fee-v2"}
+{"text":"Your cash advance passed review; purchase a paid membership before the approved limit can be withdrawn.","label":"spam","source":"augmentation:boundary:advance-fee-v2"}
+{"text":"Harbor Bank is offering a temporary personal-loan rate; eligibility and all charges are listed in its official app.","label":"promotion","source":"augmentation:boundary:advance-fee-v2"}
+{"text":"Existing mortgage customers can book a rate consultation, and the bank charges no fee before disbursement.","label":"promotion","source":"augmentation:boundary:advance-fee-v2"}
+{"text":"Trust Finance has opened online estimates for small-business loans; rates and terms are published on its website.","label":"promotion","source":"augmentation:boundary:advance-fee-v2"}
+{"text":"This week's home-improvement loan offer includes a voucher and a full repayment-cost preview in mobile banking.","label":"promotion","source":"augmentation:boundary:advance-fee-v2"}
+{"text":"The 18-dollar activation charge for your new home broadband is included in this month's carrier bill due September 20.","label":"carrier.billing","source":"augmentation:boundary:advance-fee-v2"}
+{"text":"Your additional mobile line setup charge appears on the primary account statement; details are in the carrier app.","label":"carrier.billing","source":"augmentation:boundary:advance-fee-v2"}
+{"text":"This business-line invoice includes a one-time 120-dollar setup and testing charge, for 386 dollars total.","label":"carrier.billing","source":"augmentation:boundary:advance-fee-v2"}
+{"text":"Your approved personal loan of 32,000 dollars was credited to account ending 8046; no separate transfer is required.","label":"finance.bank","source":"augmentation:boundary:advance-fee-v2"}
+{"text":"Mortgage disbursement is complete and 680,000 dollars was posted; the repayment schedule is in mobile banking.","label":"finance.bank","source":"augmentation:boundary:advance-fee-v2"}
+{"text":"The small-business loan agreement is active, and the first draw was deposited into the company settlement account today.","label":"finance.bank","source":"augmentation:boundary:advance-fee-v2"}
+{"text":"I compared loan rates at two banks. Let us work out the monthly payments when we meet this weekend.","label":"__sift_abstain__","source":"augmentation:boundary:advance-fee-v2"}
+{"text":"Please do not pay any loan charge for me. I will verify everything at the bank tomorrow.","label":"__sift_abstain__","source":"augmentation:boundary:advance-fee-v2"}
+{"text":"信用情報の確認なしで緊急資金を用意しました。出金前に認証サービス料を支払ってください。","label":"spam","source":"augmentation:boundary:advance-fee-v2"}
+{"text":"個人融資で審査なしの即日入金を約束し、先に口座開設保証金を要求しています。","label":"spam","source":"augmentation:boundary:advance-fee-v2"}
+{"text":"利用可能な融資枠があります。先に送金経路の確認金を払い、入金後に返金すると案内しています。","label":"spam","source":"augmentation:boundary:advance-fee-v2"}
+{"text":"無担保ローンは即時承認済みです。資金の解除には口座有効化料金が必要です。","label":"spam","source":"augmentation:boundary:advance-fee-v2"}
+{"text":"融資担当者が審査完了と伝え、銀行口座への送金前に凍結解除金を求めています。","label":"spam","source":"augmentation:boundary:advance-fee-v2"}
+{"text":"予備融資の枠を確保しました。カード発行費を先払いすれば5分で入金します。","label":"spam","source":"augmentation:boundary:advance-fee-v2"}
+{"text":"面談不要の事業融資ですが、入金前に保険料を担当者の指定口座へ送る必要があります。","label":"spam","source":"augmentation:boundary:advance-fee-v2"}
+{"text":"キャッシング審査に通過しました。有料会員へ登録すると承認済みの枠を引き出せます。","label":"spam","source":"augmentation:boundary:advance-fee-v2"}
+{"text":"ハーバー銀行の個人ローン期間金利優遇。条件とすべての費用は公式アプリで確認できます。","label":"promotion","source":"augmentation:boundary:advance-fee-v2"}
+{"text":"住宅ローン利用者向けの金利相談を受付中です。融資実行前の手数料はかかりません。","label":"promotion","source":"augmentation:boundary:advance-fee-v2"}
+{"text":"トラスト金融の事業ローンはオンラインで試算できます。金利と規約は公式サイトに掲載しています。","label":"promotion","source":"augmentation:boundary:advance-fee-v2"}
+{"text":"今週のリフォームローン優待は、公式アプリで返済計画と総費用を確認してから申し込めます。","label":"promotion","source":"augmentation:boundary:advance-fee-v2"}
+{"text":"新規光回線の口座有効化料金1,800円を今月の通信請求に計上しました。支払期限は9月20日です。","label":"carrier.billing","source":"augmentation:boundary:advance-fee-v2"}
+{"text":"追加した携帯回線の開通費は主回線の月額請求に含まれています。通信会社アプリで明細を確認できます。","label":"carrier.billing","source":"augmentation:boundary:advance-fee-v2"}
+{"text":"法人回線の請求には初回設定・試験費12,000円が含まれ、合計38,600円です。","label":"carrier.billing","source":"augmentation:boundary:advance-fee-v2"}
+{"text":"承認された個人ローン320万円を口座末尾8046へ入金しました。別途送金する必要はありません。","label":"finance.bank","source":"augmentation:boundary:advance-fee-v2"}
+{"text":"住宅ローン68,000,000円の融資実行が完了しました。返済予定は銀行アプリで確認できます。","label":"finance.bank","source":"augmentation:boundary:advance-fee-v2"}
+{"text":"事業融資契約が有効となり、本日最初の資金を法人決済口座へ入金しました。","label":"finance.bank","source":"augmentation:boundary:advance-fee-v2"}
+{"text":"二つの銀行のローン金利を比べてみたよ。週末に会ったら毎月の返済額を一緒に計算しよう。","label":"__sift_abstain__","source":"augmentation:boundary:advance-fee-v2"}
+{"text":"私の代わりに融資費用を払わないでね。明日、自分で銀行の窓口に確認します。","label":"__sift_abstain__","source":"augmentation:boundary:advance-fee-v2"}

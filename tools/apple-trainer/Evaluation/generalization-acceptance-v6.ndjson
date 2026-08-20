@@ -1,0 +1,60 @@
+{"text":"您的家庭会员升级申请已通过，新等级和权益将在下个账期生效。","label":"transaction.member","source":"acceptance:generalization-v6"}
+{"text":"音乐家庭方案体验活动开放，首月折扣并赠送两张离线下载券。","label":"promotion","source":"acceptance:generalization-v6"}
+{"text":"您已从账户中移除设备“客厅平板”，该设备不能再访问个人资料。","label":"transaction.account_security","source":"acceptance:generalization-v6"}
+{"text":"所谓云盘扩容页面要求输入钱包助记词才能保留文件，这是窃取账户的行为。","label":"spam","source":"acceptance:generalization-v6"}
+{"text":"您持有的北辰能源已派发现金红利，税后金额已计入证券资金账户。","label":"finance.stock","source":"acceptance:generalization-v6"}
+{"text":"稳盈90天产品今日到期，本金和收益已转回理财结算账户。","label":"finance.wealth","source":"acceptance:generalization-v6"}
+{"text":"假投资顾问以锁定内部席位为由收取预约费，并要求安装远程控制软件。","label":"spam","source":"acceptance:generalization-v6"}
+{"text":"失业保险待遇资格复核已通过，下期发放计划可在社保服务平台查询。","label":"government.social_security","source":"acceptance:generalization-v6"}
+{"text":"税务登记地址变更申请已办结，电子回执已存入企业办税账户。","label":"government.tax","source":"acceptance:generalization-v6"}
+{"text":"冒充税务稽查人员称可用预付卡取消检查，并要求回传卡号和密码。","label":"spam","source":"acceptance:generalization-v6"}
+{"text":"餐厅已接单并开始制作，骑手到店后会更新预计送达时间。","label":"life.takeaway","source":"acceptance:generalization-v6"}
+{"text":"货物已完成海关放行，下一站将转入港区保税仓等待分拨。","label":"life.logistics","source":"acceptance:generalization-v6"}
+{"text":"语音信箱收到一条新留言，来电号码为0755-8831，可在运营商应用收听。","label":"carrier.call_reminder","source":"acceptance:generalization-v6"}
+{"text":"行政公告：下周起办公楼东门仅供访客通行，员工请使用北门闸机。","label":"work.announcement","source":"acceptance:generalization-v6"}
+{"text":"年度隐私合规课程需在本月28日前完成，学习记录将同步到员工档案。","label":"work.training","source":"acceptance:generalization-v6"}
+{"text":"机场接驳巴士因道路施工改在6号站台上客，发车时间不变。","label":"travel.transport","source":"acceptance:generalization-v6"}
+{"text":"气象部门发布霜冻蓝色预警，夜间低洼地区最低温度可能降至零度。","label":"life.weather","source":"acceptance:generalization-v6"}
+{"text":"应急管理部门提醒家庭检查逃生通道，并与儿童约定火灾集合地点。","label":"government.reminder","source":"acceptance:generalization-v6"}
+{"text":"检验中心通知：您本周提交的血液检查报告已生成，可在医院应用查看。","label":"life.medical","source":"acceptance:generalization-v6"}
+{"text":"我把充电器装进蓝色布袋了，周末见面时带给你。","label":"__sift_abstain__","source":"acceptance:generalization-v6"}
+{"text":"Your household membership upgrade was approved; the new tier and benefits begin next billing cycle.","label":"transaction.member","source":"acceptance:generalization-v6"}
+{"text":"The music family-plan trial includes a first-month discount and two offline-download passes.","label":"promotion","source":"acceptance:generalization-v6"}
+{"text":"You removed “Living Room Tablet” from the account, so it can no longer access your profile.","label":"transaction.account_security","source":"acceptance:generalization-v6"}
+{"text":"A supposed cloud-storage upgrade page asks for your wallet recovery phrase to preserve files.","label":"spam","source":"acceptance:generalization-v6"}
+{"text":"Northstar Energy paid a cash dividend, and the after-tax amount is now in your brokerage cash account.","label":"finance.stock","source":"acceptance:generalization-v6"}
+{"text":"The 90-day Balanced Return product matured today; principal and earnings returned to the settlement account.","label":"finance.wealth","source":"acceptance:generalization-v6"}
+{"text":"A fake investment adviser charges a reservation fee for an insider seat and asks you to install remote-control software.","label":"spam","source":"acceptance:generalization-v6"}
+{"text":"Your unemployment-benefit eligibility review passed; the next payment schedule is on the social-insurance portal.","label":"government.social_security","source":"acceptance:generalization-v6"}
+{"text":"The business tax-address change is complete, and its electronic receipt is stored in the company tax account.","label":"government.tax","source":"acceptance:generalization-v6"}
+{"text":"Someone posing as a tax inspector says prepaid cards can cancel an audit and asks for their numbers and PINs.","label":"spam","source":"acceptance:generalization-v6"}
+{"text":"The restaurant accepted your order and started cooking; delivery time updates after a courier arrives.","label":"life.takeaway","source":"acceptance:generalization-v6"}
+{"text":"The consignment cleared customs and is heading to the port's bonded warehouse for regional sorting.","label":"life.logistics","source":"acceptance:generalization-v6"}
+{"text":"Your voicemail has a new message from 020-7784; listen to it in the carrier app.","label":"carrier.call_reminder","source":"acceptance:generalization-v6"}
+{"text":"Administration notice: from next week, staff must use the north entrance while the east gate serves visitors.","label":"work.announcement","source":"acceptance:generalization-v6"}
+{"text":"Complete the annual privacy-compliance course by the 28th; completion is recorded in your employee file.","label":"work.training","source":"acceptance:generalization-v6"}
+{"text":"Road works moved the airport shuttle pickup to stand 6, while its departure time remains unchanged.","label":"travel.transport","source":"acceptance:generalization-v6"}
+{"text":"The weather office issued a frost advisory, with overnight temperatures near freezing in low-lying areas.","label":"life.weather","source":"acceptance:generalization-v6"}
+{"text":"Emergency management advises households to clear escape routes and agree on a fire meeting point with children.","label":"government.reminder","source":"acceptance:generalization-v6"}
+{"text":"The laboratory report for this week's blood test is ready in the hospital app.","label":"life.medical","source":"acceptance:generalization-v6"}
+{"text":"I put the charger in the blue cloth bag and will bring it when we meet this weekend.","label":"__sift_abstain__","source":"acceptance:generalization-v6"}
+{"text":"ファミリー会員のランク変更が承認され、新しい特典は次回の請求期間から有効になります。","label":"transaction.member","source":"acceptance:generalization-v6"}
+{"text":"音楽ファミリープラン体験では、初月割引とオフライン保存券2枚が付きます。","label":"promotion","source":"acceptance:generalization-v6"}
+{"text":"アカウントから「リビングのタブレット」を削除したため、この端末からプロフィールへアクセスできません。","label":"transaction.account_security","source":"acceptance:generalization-v6"}
+{"text":"クラウド容量を増やすという不審なページが、ファイル保存のためにウォレット復元語を要求しています。","label":"spam","source":"acceptance:generalization-v6"}
+{"text":"保有するノーススターエナジーの現金配当が支払われ、税引後金額が証券口座に反映されました。","label":"finance.stock","source":"acceptance:generalization-v6"}
+{"text":"90日型の安定運用商品が本日満期となり、元本と収益を決済口座へ戻しました。","label":"finance.wealth","source":"acceptance:generalization-v6"}
+{"text":"偽の投資助言者が内部枠の予約料を請求し、遠隔操作ソフトの導入を求めています。","label":"spam","source":"acceptance:generalization-v6"}
+{"text":"失業給付の受給資格確認が完了しました。次回の支給予定は社会保険ポータルで確認できます。","label":"government.social_security","source":"acceptance:generalization-v6"}
+{"text":"事業所の税務登録住所変更が完了し、電子受付票を法人税務アカウントへ保存しました。","label":"government.tax","source":"acceptance:generalization-v6"}
+{"text":"税務調査員を装い、検査を取り消すためプリペイドカードを購入して番号と暗証情報を送るよう求めています。","label":"spam","source":"acceptance:generalization-v6"}
+{"text":"レストランが注文を受け付けて調理を開始しました。配達員の到着後に予定時刻を更新します。","label":"life.takeaway","source":"acceptance:generalization-v6"}
+{"text":"貨物は通関を終え、地域仕分けのため港湾保税倉庫へ移動しています。","label":"life.logistics","source":"acceptance:generalization-v6"}
+{"text":"留守番電話に03-7712から新しいメッセージがあります。通信会社のアプリで再生できます。","label":"carrier.call_reminder","source":"acceptance:generalization-v6"}
+{"text":"総務からのお知らせ：来週から東口は来訪者専用となり、社員は北口ゲートを利用してください。","label":"work.announcement","source":"acceptance:generalization-v6"}
+{"text":"年次プライバシー研修を28日までに修了してください。受講記録は社員台帳に反映されます。","label":"work.training","source":"acceptance:generalization-v6"}
+{"text":"道路工事のため空港連絡バスの乗り場は6番へ変更されます。出発時刻は変わりません。","label":"travel.transport","source":"acceptance:generalization-v6"}
+{"text":"気象台は霜注意報を発表し、夜間は低地で気温が氷点近くまで下がる見込みです。","label":"life.weather","source":"acceptance:generalization-v6"}
+{"text":"防災当局は避難経路を整理し、子どもと火災時の集合場所を決めるよう呼びかけています。","label":"government.reminder","source":"acceptance:generalization-v6"}
+{"text":"今週受けた血液検査の報告書が完成し、病院アプリで確認できるようになりました。","label":"life.medical","source":"acceptance:generalization-v6"}
+{"text":"充電器は青い布袋に入れたよ。週末に会うとき持っていくね。","label":"__sift_abstain__","source":"acceptance:generalization-v6"}

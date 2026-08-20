@@ -1,0 +1,36 @@
+{"text":"对象存储项目 media-archive 将于周二到期，保留期结束后未续费的文件和历史版本会被删除。","label":"work.alert","source":"augmentation:boundary:cloud-expiry-v2"}
+{"text":"托管 PostgreSQL 实例 pg-orders 剩余五天服务期，逾期将停止连接并清理自动备份。","label":"work.alert","source":"augmentation:boundary:cloud-expiry-v2"}
+{"text":"云主机预留资源 vm-batch 本月底失效，未延期的实例会关机并进入回收流程。","label":"work.alert","source":"augmentation:boundary:cloud-expiry-v2"}
+{"text":"CDN 项目证书将在72小时后过期，届时边缘节点无法建立安全连接，请安排更新。","label":"work.alert","source":"augmentation:boundary:cloud-expiry-v2"}
+{"text":"消息队列实例 mq-payment 的订阅周期即将结束，过期后会暂停消费并删除滞留消息。","label":"work.alert","source":"augmentation:boundary:cloud-expiry-v2"}
+{"text":"备份保管库 vault-east 周日到期，未续订的快照将在宽限期后永久清除。","label":"work.alert","source":"augmentation:boundary:cloud-expiry-v2"}
+{"text":"容器镜像仓库 registry-prod 的企业方案下周终止，私有镜像将转入只读并按保留策略回收。","label":"work.alert","source":"augmentation:boundary:cloud-expiry-v2"}
+{"text":"API 网关服务 api-partner 的合约将在8月31日结束，未续期会停用路由和访问密钥。","label":"work.alert","source":"augmentation:boundary:cloud-expiry-v2"}
+{"text":"您订购的20GB手机流量包将在今晚失效，剩余流量到期不结转。","label":"carrier.data_reminder","source":"augmentation:boundary:cloud-expiry-v2"}
+{"text":"本月移动数据还剩3.6GB，套餐周期结束后将自动清零。","label":"carrier.data_reminder","source":"augmentation:boundary:cloud-expiry-v2"}
+{"text":"国际漫游流量包还有两天到期，可在运营商应用查看使用量。","label":"carrier.data_reminder","source":"augmentation:boundary:cloud-expiry-v2"}
+{"text":"共享手机流量已使用82%，下个账单周期会重新分配额度。","label":"carrier.data_reminder","source":"augmentation:boundary:cloud-expiry-v2"}
+{"text":"Object storage project media-archive expires Tuesday; unrenewed files and prior versions are deleted after retention.","label":"work.alert","source":"augmentation:boundary:cloud-expiry-v2"}
+{"text":"Managed PostgreSQL instance pg-orders has five service days left; connections stop and automated backups are removed after expiry.","label":"work.alert","source":"augmentation:boundary:cloud-expiry-v2"}
+{"text":"Reserved cloud server vm-batch ends this month. Instances without an extension will shut down and enter reclamation.","label":"work.alert","source":"augmentation:boundary:cloud-expiry-v2"}
+{"text":"The CDN certificate expires in 72 hours, after which edge nodes cannot establish secure connections until it is renewed.","label":"work.alert","source":"augmentation:boundary:cloud-expiry-v2"}
+{"text":"Message queue mq-payment reaches the end of its subscription soon; consumption pauses and retained messages are purged afterward.","label":"work.alert","source":"augmentation:boundary:cloud-expiry-v2"}
+{"text":"Backup vault vault-east expires Sunday, and snapshots without renewal are permanently erased after the grace period.","label":"work.alert","source":"augmentation:boundary:cloud-expiry-v2"}
+{"text":"The enterprise plan for container registry registry-prod ends next week; private images become read-only before retention cleanup.","label":"work.alert","source":"augmentation:boundary:cloud-expiry-v2"}
+{"text":"API gateway api-partner ends its contract on August 31; routes and access keys are disabled unless the service is extended.","label":"work.alert","source":"augmentation:boundary:cloud-expiry-v2"}
+{"text":"Your 20 GB mobile data pack expires tonight, and unused cellular data will not roll over.","label":"carrier.data_reminder","source":"augmentation:boundary:cloud-expiry-v2"}
+{"text":"You have 3.6 GB of mobile data left; the allowance resets when this carrier plan cycle ends.","label":"carrier.data_reminder","source":"augmentation:boundary:cloud-expiry-v2"}
+{"text":"Your international roaming data pass expires in two days. Check cellular usage in the carrier app.","label":"carrier.data_reminder","source":"augmentation:boundary:cloud-expiry-v2"}
+{"text":"The shared mobile data allowance is 82 percent used and will be reassigned next billing cycle.","label":"carrier.data_reminder","source":"augmentation:boundary:cloud-expiry-v2"}
+{"text":"オブジェクトストレージ media-archive は火曜に期限切れとなり、未更新のファイルと旧版は保管期間後に削除されます。","label":"work.alert","source":"augmentation:boundary:cloud-expiry-v2"}
+{"text":"マネージド PostgreSQL pg-orders の利用期限は残り5日です。期限後は接続を停止し、自動バックアップを削除します。","label":"work.alert","source":"augmentation:boundary:cloud-expiry-v2"}
+{"text":"予約済みクラウドサーバー vm-batch は月末に終了します。延長しないインスタンスは停止後に回収されます。","label":"work.alert","source":"augmentation:boundary:cloud-expiry-v2"}
+{"text":"CDN 証明書は72時間後に失効し、更新するまでエッジノードで安全な接続を確立できません。","label":"work.alert","source":"augmentation:boundary:cloud-expiry-v2"}
+{"text":"メッセージキュー mq-payment の契約期間が終了します。期限後は受信を停止し、保留メッセージを削除します。","label":"work.alert","source":"augmentation:boundary:cloud-expiry-v2"}
+{"text":"バックアップ保管庫 vault-east は日曜に期限切れとなり、未更新のスナップショットは猶予期間後に消去されます。","label":"work.alert","source":"augmentation:boundary:cloud-expiry-v2"}
+{"text":"コンテナレジストリ registry-prod の法人プランは来週終了し、非公開イメージは読み取り専用になった後に回収されます。","label":"work.alert","source":"augmentation:boundary:cloud-expiry-v2"}
+{"text":"API ゲートウェイ api-partner の契約は8月31日に終了し、未更新の場合はルートとアクセスキーを停止します。","label":"work.alert","source":"augmentation:boundary:cloud-expiry-v2"}
+{"text":"購入した20GBの携帯データパックは今夜失効し、未使用分は翌月へ繰り越されません。","label":"carrier.data_reminder","source":"augmentation:boundary:cloud-expiry-v2"}
+{"text":"携帯データ残量は3.6GBです。この通信プランの期間終了時に利用枠をリセットします。","label":"carrier.data_reminder","source":"augmentation:boundary:cloud-expiry-v2"}
+{"text":"海外ローミング用データパスは2日後に期限切れです。通信会社アプリで使用量を確認できます。","label":"carrier.data_reminder","source":"augmentation:boundary:cloud-expiry-v2"}
+{"text":"共有モバイルデータの82%を使用しました。次の請求期間に利用枠を再設定します。","label":"carrier.data_reminder","source":"augmentation:boundary:cloud-expiry-v2"}

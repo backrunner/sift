@@ -1,0 +1,123 @@
+{"text":"证券账户提示：您提交的300股云海材料限价卖单已全部成交，成交明细可查询。","label":"finance.stock","source":"augmentation:boundary:generalization-v5"}
+{"text":"新股申购中签结果已确认，认购资金将在今日从证券资金账户扣除。","label":"finance.stock","source":"augmentation:boundary:generalization-v5"}
+{"text":"所持远峰科技完成每十股派息，现金红利已计入可用证券余额。","label":"finance.stock","source":"augmentation:boundary:generalization-v5"}
+{"text":"Your limit sell order for 300 shares of Cloudsea Materials was fully filled; execution details are available.","label":"finance.stock","source":"augmentation:boundary:generalization-v5"}
+{"text":"Your new-share allocation was confirmed, and subscription funds will be debited from the brokerage account today.","label":"finance.stock","source":"augmentation:boundary:generalization-v5"}
+{"text":"Far Peak Technology completed its cash distribution, which is now reflected in your available brokerage balance.","label":"finance.stock","source":"augmentation:boundary:generalization-v5"}
+{"text":"クラウドシー材料300株の指値売り注文がすべて約定しました。取引明細を確認できます。","label":"finance.stock","source":"augmentation:boundary:generalization-v5"}
+{"text":"新規公開株の当選が確定し、本日、証券口座から申込資金を引き落とします。","label":"finance.stock","source":"augmentation:boundary:generalization-v5"}
+{"text":"保有するファーピークテックの現金配当が証券口座の利用可能残高に反映されました。","label":"finance.stock","source":"augmentation:boundary:generalization-v5"}
+{"text":"您发起的理财产品赎回已确认，预计两个工作日内返回结算账户。","label":"finance.wealth","source":"augmentation:boundary:generalization-v5"}
+{"text":"三个月定期理财今日到期，本金与最终收益已进入待结算状态。","label":"finance.wealth","source":"augmentation:boundary:generalization-v5"}
+{"text":"组合调仓已执行，最新持仓比例和风险等级可在资产页面查看。","label":"finance.wealth","source":"augmentation:boundary:generalization-v5"}
+{"text":"Your investment-product redemption was confirmed and should reach the settlement account within two business days.","label":"finance.wealth","source":"augmentation:boundary:generalization-v5"}
+{"text":"The three-month managed product matured today; principal and final earnings are pending settlement.","label":"finance.wealth","source":"augmentation:boundary:generalization-v5"}
+{"text":"The portfolio rebalance completed; updated allocations and risk level are available on the assets page.","label":"finance.wealth","source":"augmentation:boundary:generalization-v5"}
+{"text":"運用商品の解約を受け付けました。2営業日以内に決済口座へ返金する予定です。","label":"finance.wealth","source":"augmentation:boundary:generalization-v5"}
+{"text":"3か月型の運用商品が本日満期となり、元本と最終収益は決済待ちです。","label":"finance.wealth","source":"augmentation:boundary:generalization-v5"}
+{"text":"ポートフォリオの配分変更が完了しました。最新の比率とリスク区分を資産画面で確認できます。","label":"finance.wealth","source":"augmentation:boundary:generalization-v5"}
+{"text":"增值税申报表已受理，电子缴款凭证可在企业税务账户下载。","label":"government.tax","source":"augmentation:boundary:generalization-v5"}
+{"text":"税务机关已办结发票额度调整申请，结果通知已送达电子税务平台。","label":"government.tax","source":"augmentation:boundary:generalization-v5"}
+{"text":"本期企业所得税缴款成功，完税证明将在次日生成。","label":"government.tax","source":"augmentation:boundary:generalization-v5"}
+{"text":"The VAT return was accepted, and its electronic payment receipt is ready in the business tax account.","label":"government.tax","source":"augmentation:boundary:generalization-v5"}
+{"text":"The tax authority completed your invoice-limit adjustment; the decision is on the official filing portal.","label":"government.tax","source":"augmentation:boundary:generalization-v5"}
+{"text":"This period's corporate-tax payment succeeded, and the tax certificate will be generated tomorrow.","label":"government.tax","source":"augmentation:boundary:generalization-v5"}
+{"text":"消費税申告を受理しました。電子納付書は法人税務アカウントから取得できます。","label":"government.tax","source":"augmentation:boundary:generalization-v5"}
+{"text":"税務署が請求書発行枠の変更手続きを完了し、結果を公式ポータルへ送付しました。","label":"government.tax","source":"augmentation:boundary:generalization-v5"}
+{"text":"今期の法人税納付が完了し、納税証明書は翌日に発行されます。","label":"government.tax","source":"augmentation:boundary:generalization-v5"}
+{"text":"社保平台通知：本月医疗保险单位缴费已到账，个人权益记录同步更新。","label":"government.social_security","source":"augmentation:boundary:generalization-v5"}
+{"text":"养老保险年度权益单已生成，可通过官方社保服务查询累计缴费年限。","label":"government.social_security","source":"augmentation:boundary:generalization-v5"}
+{"text":"生育津贴资格认证完成，后续发放进度将在政务账户更新。","label":"government.social_security","source":"augmentation:boundary:generalization-v5"}
+{"text":"The social-insurance portal posted this month's employer health contribution and updated your benefit record.","label":"government.social_security","source":"augmentation:boundary:generalization-v5"}
+{"text":"Your annual pension statement is ready on the official portal with total contribution years.","label":"government.social_security","source":"augmentation:boundary:generalization-v5"}
+{"text":"Maternity-benefit eligibility verification is complete; payment progress will update in the public-service account.","label":"government.social_security","source":"augmentation:boundary:generalization-v5"}
+{"text":"社会保険ポータルに今月の医療保険事業主負担分が記録され、個人給付履歴も更新されました。","label":"government.social_security","source":"augmentation:boundary:generalization-v5"}
+{"text":"年金の年間記録が発行され、公式サービスで加入年数を確認できます。","label":"government.social_security","source":"augmentation:boundary:generalization-v5"}
+{"text":"出産手当の資格確認が完了しました。支給状況は行政アカウントで更新されます。","label":"government.social_security","source":"augmentation:boundary:generalization-v5"}
+{"text":"餐厅已确认午餐订单并开始备餐，预计骑手十五分钟后到店。","label":"life.takeaway","source":"augmentation:boundary:generalization-v5"}
+{"text":"外卖骑手已从商家取餐，正在前往您的配送地址。","label":"life.takeaway","source":"augmentation:boundary:generalization-v5"}
+{"text":"您的餐食已放在前台保温柜，请凭订单尾号领取。","label":"life.takeaway","source":"augmentation:boundary:generalization-v5"}
+{"text":"The restaurant confirmed your lunch order and started preparing it; a courier is due in fifteen minutes.","label":"life.takeaway","source":"augmentation:boundary:generalization-v5"}
+{"text":"The delivery rider collected your meal and is heading to the delivery address.","label":"life.takeaway","source":"augmentation:boundary:generalization-v5"}
+{"text":"Your meal is in the reception warming cabinet; collect it using the order suffix.","label":"life.takeaway","source":"augmentation:boundary:generalization-v5"}
+{"text":"レストランが昼食の注文を確定し、調理を開始しました。配達員は15分後に到着予定です。","label":"life.takeaway","source":"augmentation:boundary:generalization-v5"}
+{"text":"配達員が店舗で食事を受け取り、届け先へ向かっています。","label":"life.takeaway","source":"augmentation:boundary:generalization-v5"}
+{"text":"食事を受付の保温ロッカーへ置きました。注文番号の末尾で受け取ってください。","label":"life.takeaway","source":"augmentation:boundary:generalization-v5"}
+{"text":"运单TR8294已离开华东转运中心，进入跨区干线运输阶段。","label":"life.logistics","source":"augmentation:boundary:generalization-v5"}
+{"text":"货物海关查验结束并获放行，正在转往目的地监管仓。","label":"life.logistics","source":"augmentation:boundary:generalization-v5"}
+{"text":"整车货运已抵达区域分拨场，下一步将按城市线路拆分。","label":"life.logistics","source":"augmentation:boundary:generalization-v5"}
+{"text":"Consignment TR8294 left the eastern transfer hub and entered its cross-region line-haul stage.","label":"life.logistics","source":"augmentation:boundary:generalization-v5"}
+{"text":"Customs inspection is complete and the cargo is moving to the destination-controlled warehouse.","label":"life.logistics","source":"augmentation:boundary:generalization-v5"}
+{"text":"The full-truck shipment reached the regional depot and will next be divided by city route.","label":"life.logistics","source":"augmentation:boundary:generalization-v5"}
+{"text":"貨物番号TR8294は東部中継拠点を出発し、地域間幹線輸送に入りました。","label":"life.logistics","source":"augmentation:boundary:generalization-v5"}
+{"text":"税関検査が終了して貨物は許可され、目的地の保税施設へ輸送中です。","label":"life.logistics","source":"augmentation:boundary:generalization-v5"}
+{"text":"貸切貨物が地域配送拠点へ到着し、次に都市別の経路へ仕分けされます。","label":"life.logistics","source":"augmentation:boundary:generalization-v5"}
+{"text":"您有一通来自010-6732的未接电话，本次来电没有语音留言。","label":"carrier.call_reminder","source":"augmentation:boundary:generalization-v5"}
+{"text":"语音信箱新增一条来自400-718的留言，可通过运营商服务收听。","label":"carrier.call_reminder","source":"augmentation:boundary:generalization-v5"}
+{"text":"对方在您通话期间来电一次，号码为0571-8840，系统已记录提醒。","label":"carrier.call_reminder","source":"augmentation:boundary:generalization-v5"}
+{"text":"You have a missed call from 010-6732; the caller left no voicemail.","label":"carrier.call_reminder","source":"augmentation:boundary:generalization-v5"}
+{"text":"A new voice message from 800-714 is available through your carrier voicemail service.","label":"carrier.call_reminder","source":"augmentation:boundary:generalization-v5"}
+{"text":"Number 0571-8840 called while your line was busy, and the carrier recorded a callback reminder.","label":"carrier.call_reminder","source":"augmentation:boundary:generalization-v5"}
+{"text":"010-6732から不在着信があり、留守番電話はありませんでした。","label":"carrier.call_reminder","source":"augmentation:boundary:generalization-v5"}
+{"text":"通信会社の留守番電話に800-714から新しい音声メッセージがあります。","label":"carrier.call_reminder","source":"augmentation:boundary:generalization-v5"}
+{"text":"通話中に0571-8840から着信があり、折り返し通知として記録されました。","label":"carrier.call_reminder","source":"augmentation:boundary:generalization-v5"}
+{"text":"公司通知：周五下午进行消防疏散演习，各部门按指定路线到广场集合。","label":"work.announcement","source":"augmentation:boundary:generalization-v5"}
+{"text":"行政公告：办公区空调检修期间，三楼员工临时移至共享工位。","label":"work.announcement","source":"augmentation:boundary:generalization-v5"}
+{"text":"园区通告：访客登记流程下月调整，员工预约方式保持不变。","label":"work.announcement","source":"augmentation:boundary:generalization-v5"}
+{"text":"Company notice: Friday's fire-evacuation drill requires each team to gather in the plaza by its assigned route.","label":"work.announcement","source":"augmentation:boundary:generalization-v5"}
+{"text":"Administration announcement: third-floor staff will use shared desks while the office ventilation is serviced.","label":"work.announcement","source":"augmentation:boundary:generalization-v5"}
+{"text":"Campus notice: the visitor check-in process changes next month; employee reservations remain unchanged.","label":"work.announcement","source":"augmentation:boundary:generalization-v5"}
+{"text":"社内通知：金曜午後に消防避難訓練を行い、各部署は指定経路で広場へ集合します。","label":"work.announcement","source":"augmentation:boundary:generalization-v5"}
+{"text":"総務からのお知らせ：空調点検中、3階の社員は一時的に共用席を利用してください。","label":"work.announcement","source":"augmentation:boundary:generalization-v5"}
+{"text":"施設案内：来月から来訪者受付手順を変更しますが、社員の予約方法は変わりません。","label":"work.announcement","source":"augmentation:boundary:generalization-v5"}
+{"text":"信息安全必修课已分配，请在周三前完成章节和结业测试。","label":"work.training","source":"augmentation:boundary:generalization-v5"}
+{"text":"新员工合规培训将在上午九点开始，课程结束后提交在线答题。","label":"work.training","source":"augmentation:boundary:generalization-v5"}
+{"text":"数据保护年度复训已开放，未完成名单将在月底同步给部门管理员。","label":"work.training","source":"augmentation:boundary:generalization-v5"}
+{"text":"The mandatory information-security course is assigned; finish its modules and final assessment by Wednesday.","label":"work.training","source":"augmentation:boundary:generalization-v5"}
+{"text":"New-hire compliance training begins at 9 AM and ends with an online quiz.","label":"work.training","source":"augmentation:boundary:generalization-v5"}
+{"text":"Annual data-protection refresher training is open; incomplete records go to department administrators at month end.","label":"work.training","source":"augmentation:boundary:generalization-v5"}
+{"text":"情報セキュリティ必修研修が割り当てられました。水曜までに各章と修了試験を終えてください。","label":"work.training","source":"augmentation:boundary:generalization-v5"}
+{"text":"新入社員向けコンプライアンス研修は9時開始で、最後にオンライン確認テストがあります。","label":"work.training","source":"augmentation:boundary:generalization-v5"}
+{"text":"年次データ保護フォロー研修が開始されました。未修了者は月末に部署管理者へ共有されます。","label":"work.training","source":"augmentation:boundary:generalization-v5"}
+{"text":"D316次列车因信号检查晚点18分钟，候车区域调整至二层B区。","label":"travel.transport","source":"augmentation:boundary:generalization-v5"}
+{"text":"机场快线临时使用4号站台发车，首末班时间均未改变。","label":"travel.transport","source":"augmentation:boundary:generalization-v5"}
+{"text":"航班到达廊桥由C12调整为C18，托运行李转盘保持原安排。","label":"travel.transport","source":"augmentation:boundary:generalization-v5"}
+{"text":"Train D316 is delayed 18 minutes for a signal inspection; passengers should wait in Level 2 Zone B.","label":"travel.transport","source":"augmentation:boundary:generalization-v5"}
+{"text":"The airport express temporarily departs from platform 4, with first and last services unchanged.","label":"travel.transport","source":"augmentation:boundary:generalization-v5"}
+{"text":"The arrival stand moved from C12 to C18, while checked baggage remains on the original carousel.","label":"travel.transport","source":"augmentation:boundary:generalization-v5"}
+{"text":"D316列車は信号点検のため18分遅れ、待合場所は2階Bエリアへ変更されました。","label":"travel.transport","source":"augmentation:boundary:generalization-v5"}
+{"text":"空港急行は一時的に4番ホームから出発します。始発と終電の時刻は変わりません。","label":"travel.transport","source":"augmentation:boundary:generalization-v5"}
+{"text":"到着スポットはC12からC18へ変更されましたが、預け荷物の受取場所は同じです。","label":"travel.transport","source":"augmentation:boundary:generalization-v5"}
+{"text":"慢病处方续配审核完成，药师确认后可选择到店取药或配送。","label":"life.medical","source":"augmentation:boundary:generalization-v5"}
+{"text":"检验科已发布本次血糖检查结果，请在医院账户查看医生建议。","label":"life.medical","source":"augmentation:boundary:generalization-v5"}
+{"text":"疫苗接种预约已确认，请按约定时间携带有效证件到门诊登记。","label":"life.medical","source":"augmentation:boundary:generalization-v5"}
+{"text":"Your repeat-prescription review is complete; after pharmacist approval, choose pickup or delivery.","label":"life.medical","source":"augmentation:boundary:generalization-v5"}
+{"text":"The laboratory posted your glucose-test result together with the clinician's note in the hospital account.","label":"life.medical","source":"augmentation:boundary:generalization-v5"}
+{"text":"Your vaccination appointment is confirmed; bring valid identification to outpatient registration.","label":"life.medical","source":"augmentation:boundary:generalization-v5"}
+{"text":"継続処方の審査が完了しました。薬剤師の確認後、店頭受取または配送を選べます。","label":"life.medical","source":"augmentation:boundary:generalization-v5"}
+{"text":"検査部が血糖検査の結果と医師のコメントを病院アカウントへ掲載しました。","label":"life.medical","source":"augmentation:boundary:generalization-v5"}
+{"text":"予防接種の予約が確定しました。予約時刻に身分証明書を持って外来受付へお越しください。","label":"life.medical","source":"augmentation:boundary:generalization-v5"}
+{"text":"荐股群声称掌握未公开消息，要求先向个人二维码支付会员费。","label":"spam","source":"augmentation:boundary:generalization-v5"}
+{"text":"假理财导师承诺固定翻倍收益，并引导下载远程控制工具转账。","label":"spam","source":"augmentation:boundary:generalization-v5"}
+{"text":"所谓证券内部通道需要缴纳解锁费，付款后才提供股票代码。","label":"spam","source":"augmentation:boundary:generalization-v5"}
+{"text":"冒充退税客服称申报异常，要求先付加急处理费并告知银行动态码。","label":"spam","source":"augmentation:boundary:generalization-v5"}
+{"text":"虚假税务通知威胁冻结账户，诱导购买充值卡并发送卡号密码。","label":"spam","source":"augmentation:boundary:generalization-v5"}
+{"text":"陌生认证页面以安全到期为由索取登录密码、证件号码和短信验证码。","label":"spam","source":"augmentation:boundary:generalization-v5"}
+{"text":"A stock-tip channel claims nonpublic information and requires membership payment to a personal wallet.","label":"spam","source":"augmentation:boundary:generalization-v5"}
+{"text":"A fake wealth mentor promises guaranteed doubled returns and asks you to install remote-access software before transferring money.","label":"spam","source":"augmentation:boundary:generalization-v5"}
+{"text":"A supposed broker's private lane charges an unlock fee before revealing its stock picks.","label":"spam","source":"augmentation:boundary:generalization-v5"}
+{"text":"A caller posing as tax-refund support demands an express fee and your banking one-time password.","label":"spam","source":"augmentation:boundary:generalization-v5"}
+{"text":"A fraudulent tax alert threatens an account freeze and tells you to buy prepaid cards and send their PINs.","label":"spam","source":"augmentation:boundary:generalization-v5"}
+{"text":"An unfamiliar verification page says security is expiring and asks for a password, identity document number, and SMS code.","label":"spam","source":"augmentation:boundary:generalization-v5"}
+{"text":"非公開情報を持つという株式グループが、個人の決済先へ会員料を払うよう求めています。","label":"spam","source":"augmentation:boundary:generalization-v5"}
+{"text":"偽の資産運用講師が利益倍増を保証し、送金前に遠隔操作アプリを入れさせようとしています。","label":"spam","source":"augmentation:boundary:generalization-v5"}
+{"text":"証券会社の内部枠を装い、銘柄情報の前に解除手数料を請求しています。","label":"spam","source":"augmentation:boundary:generalization-v5"}
+{"text":"還付窓口を装う相手が優先処理料と銀行のワンタイムパスワードを要求しています。","label":"spam","source":"augmentation:boundary:generalization-v5"}
+{"text":"偽の税務警告が口座停止を脅し、プリペイドカードの番号と暗証情報を送るよう指示しています。","label":"spam","source":"augmentation:boundary:generalization-v5"}
+{"text":"不審な認証ページが安全期限を理由に、パスワード、身分証番号、SMSコードを入力させようとしています。","label":"spam","source":"augmentation:boundary:generalization-v5"}
+{"text":"我的药放在厨房上层柜子里，你来的时候顺便帮我拿一下。","label":"__sift_abstain__","source":"augmentation:boundary:generalization-v5"}
+{"text":"公司培训链接我发到群里了，你今晚有空一起看吗？","label":"__sift_abstain__","source":"augmentation:boundary:generalization-v5"}
+{"text":"My medicine is in the top kitchen cabinet; could you bring it when you come over?","label":"__sift_abstain__","source":"augmentation:boundary:generalization-v5"}
+{"text":"I posted the course link in our chat. Are you free to watch it together tonight?","label":"__sift_abstain__","source":"augmentation:boundary:generalization-v5"}
+{"text":"薬は台所の上の棚にあるよ。来るときに持ってきてくれる？","label":"__sift_abstain__","source":"augmentation:boundary:generalization-v5"}
+{"text":"研修リンクをグループに送ったよ。今夜一緒に見る時間ある？","label":"__sift_abstain__","source":"augmentation:boundary:generalization-v5"}

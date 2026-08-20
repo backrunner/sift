@@ -1,0 +1,12 @@
+{"text":"企业采购卡十一月账单已出，最低应缴金额请在月底前处理。","label":"finance.credit_card","source":"training:generalization-v14:variant"}
+{"text":"The November corporate-card statement is ready, with a minimum amount due at month end.","label":"finance.credit_card","source":"training:generalization-v14:variant"}
+{"text":"法人カードの11月請求が確定し、最低支払額は月末が期限です。","label":"finance.credit_card","source":"training:generalization-v14:variant"}
+{"text":"商务信用卡账单已生成，本期最低付款日为下周四。","label":"finance.credit_card","source":"training:generalization-v14:variant"}
+{"text":"Your business credit-card statement lists the minimum payment due next Thursday.","label":"finance.credit_card","source":"training:generalization-v14:variant"}
+{"text":"事業用カードの請求明細が発行され、最低支払日は来週木曜です。","label":"finance.credit_card","source":"training:generalization-v14:variant"}
+{"text":"运营商周日迁移富媒体消息存档，维护期间旧附件会暂时无法预览。","label":"carrier.service","source":"training:generalization-v14:variant"}
+{"text":"The carrier will migrate its rich-message archive Sunday; old attachments may not preview during maintenance.","label":"carrier.service","source":"training:generalization-v14:variant"}
+{"text":"通信会社は日曜にリッチメッセージ保管基盤を移行し、保守中は過去の添付を表示できない場合があります。","label":"carrier.service","source":"training:generalization-v14:variant"}
+{"text":"移动通信的消息归档服务升级，历史图片将在窗口结束后恢复。","label":"carrier.service","source":"training:generalization-v14:variant"}
+{"text":"A mobile-provider message-archive upgrade will temporarily hide historical media until the window ends.","label":"carrier.service","source":"training:generalization-v14:variant"}
+{"text":"携帯会社のメッセージ保管サービス更新中は、過去の画像が一時的に表示されません。","label":"carrier.service","source":"training:generalization-v14:variant"}

@@ -1,0 +1,37 @@
+{"text":"【远山电器】会员日开启，冰箱预订立减260元并赠送安装服务。","label":"promotion","source":"reviewed:generalization-blind-v1"}
+{"text":"【拾光咖啡】本周买五送一，会员还可领取下月饮品券。","label":"promotion","source":"reviewed:generalization-blind-v1"}
+{"text":"【港城旅行】提前预订海岛酒店套餐可享七折并赠早餐。","label":"promotion","source":"reviewed:generalization-blind-v1"}
+{"text":"【北辰健身】新馆试营业，年卡赠送两个月并免入会费。","label":"promotion","source":"reviewed:generalization-blind-v1"}
+{"text":"【远山电器】Member day: pre-order a refrigerator and receive installation at no extra charge.","label":"promotion","source":"reviewed:generalization-blind-v1"}
+{"text":"Harbor Travel advance booking includes breakfast and a 30 percent discount.","label":"promotion","source":"reviewed:generalization-blind-v1"}
+{"text":"Northstar Fitness opening offer adds two months to an annual membership and waives the joining fee.","label":"promotion","source":"reviewed:generalization-blind-v1"}
+{"text":"光町カフェの会員週間。ドリンクを5杯購入すると1杯無料です。","label":"promotion","source":"reviewed:generalization-blind-v1"}
+{"text":"港町トラベルの早期予約。島のホテル2泊と朝食を通常料金から30%割引します。","label":"promotion","source":"reviewed:generalization-blind-v1"}
+{"text":"ノーススター体育館の開業企画。年会員は2か月延長、入会金無料です。","label":"promotion","source":"reviewed:generalization-blind-v1"}
+{"text":"本次消费获得940积分，积分余额更新为15820分。","label":"transaction.points","source":"reviewed:generalization-blind-v1"}
+{"text":"Your reward balance increased by 940 points after this purchase.","label":"transaction.points","source":"reviewed:generalization-blind-v1"}
+{"text":"今回の利用で940ポイントが加算され、残高は15820ポイントになりました。","label":"transaction.points","source":"reviewed:generalization-blind-v1"}
+{"text":"您的道具订单已付款，商家预计今晚交付。","label":"transaction.order","source":"reviewed:generalization-blind-v1"}
+{"text":"Your item order has been paid and is scheduled for delivery tonight.","label":"transaction.order","source":"reviewed:generalization-blind-v1"}
+{"text":"ゲームアイテムの注文は支払い済みで、今夜引き渡す予定です。","label":"transaction.order","source":"reviewed:generalization-blind-v1"}
+{"text":"本月客户端更新完成，新增了通知设置。","label":"transaction.message","source":"reviewed:generalization-blind-v1"}
+{"text":"The client update is complete and adds notification settings.","label":"transaction.message","source":"reviewed:generalization-blind-v1"}
+{"text":"アプリの更新が完了し、通知設定を追加しました。","label":"transaction.message","source":"reviewed:generalization-blind-v1"}
+{"text":"账户尾号2046今日扣款128元，商户为远山电器。","label":"finance.bank","source":"reviewed:generalization-blind-v1"}
+{"text":"Account ending 2046 was charged 128 dollars at Farview Electronics today.","label":"finance.bank","source":"reviewed:generalization-blind-v1"}
+{"text":"口座末尾2046から本日12800円を引き落としました。","label":"finance.bank","source":"reviewed:generalization-blind-v1"}
+{"text":"您的退款申请已审核通过，款项将在原支付渠道退回。","label":"finance.refund","source":"reviewed:generalization-blind-v1"}
+{"text":"Your refund request was approved and will return through the original payment channel.","label":"finance.refund","source":"reviewed:generalization-blind-v1"}
+{"text":"返金申請が承認され、元の決済経路へ返金されます。","label":"finance.refund","source":"reviewed:generalization-blind-v1"}
+{"text":"【海湾客运】船票已出票，请按短信提示提前到港完成值机和值船。","label":"travel.ticketing","source":"reviewed:generalization-blind-v1"}
+{"text":"Bay Harbor Passenger Service has issued your ticket; arrive early for check-in and boarding formalities.","label":"travel.ticketing","source":"reviewed:generalization-blind-v1"}
+{"text":"ベイハーバー旅客サービスの乗船券を発行しました。早めに港へ行き、手続きを行ってください。","label":"travel.ticketing","source":"reviewed:generalization-blind-v1"}
+{"text":"市消防部门提示：电动自行车请在指定区域充电，不要带入楼道。","label":"government.reminder","source":"reviewed:generalization-blind-v1"}
+{"text":"The fire service asks residents to charge e-bikes only in designated areas, never in corridors.","label":"government.reminder","source":"reviewed:generalization-blind-v1"}
+{"text":"消防からのお知らせです。電動自転車は指定場所で充電し、廊下で充電しないでください。","label":"government.reminder","source":"reviewed:generalization-blind-v1"}
+{"text":"云服务告警：缓存集群 cache-orchid 将于周日到期，未续费会停止写入。","label":"work.alert","source":"reviewed:generalization-blind-v1"}
+{"text":"Cloud service alert: cache-orchid expires Sunday and writes will stop without renewal.","label":"work.alert","source":"reviewed:generalization-blind-v1"}
+{"text":"クラウドキャッシュ cache-orchid は日曜に期限切れです。更新しない場合は書き込みを停止します。","label":"work.alert","source":"reviewed:generalization-blind-v1"}
+{"text":"免审核借款当天放款，请先支付解冻手续费。","label":"spam","source":"reviewed:generalization-blind-v1"}
+{"text":"Instant loan with no review: pay the unlock charge before funds are released.","label":"spam","source":"reviewed:generalization-blind-v1"}
+{"text":"無審査融資です。入金前に解除手数料を支払ってください。","label":"spam","source":"reviewed:generalization-blind-v1"}

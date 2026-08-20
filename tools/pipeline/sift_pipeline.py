@@ -72,6 +72,89 @@ PROMOTION_TEST_SET = APPLE_TRAINER / "Evaluation" / "promotion-regressions.ndjso
 CLASSIFICATION_TEST_SET = APPLE_TRAINER / "Evaluation" / "classification-regressions.ndjson"
 BILLING_CARD_TEST_SET = APPLE_TRAINER / "Evaluation" / "billing-card-regressions.ndjson"
 CONVERSATION_TEST_SET = TRANSFORMER_TRAINER / "Evaluation" / "conversation-regressions.ndjson"
+FEIZHU_TEST_SET = APPLE_TRAINER / "Evaluation" / "feizhu-boundary.ndjson"
+CRUISE_TICKETING_TEST_SET = APPLE_TRAINER / "Evaluation" / "cruise-ticketing-boundary.ndjson"
+GENERALIZATION_TEST_SET = APPLE_TRAINER / "Evaluation" / "generalization-blind-v1.ndjson"
+GENERALIZATION_ACCEPTANCE_TEST_SET = APPLE_TRAINER / "Evaluation" / "generalization-acceptance-v1.ndjson"
+GENERALIZATION_ACCEPTANCE_V2_TEST_SET = APPLE_TRAINER / "Evaluation" / "generalization-acceptance-v2.ndjson"
+GENERALIZATION_ACCEPTANCE_V3_TEST_SET = APPLE_TRAINER / "Evaluation" / "generalization-acceptance-v3.ndjson"
+GENERALIZATION_ACCEPTANCE_V4_TEST_SET = APPLE_TRAINER / "Evaluation" / "generalization-acceptance-v4.ndjson"
+GENERALIZATION_ACCEPTANCE_V5_TEST_SET = APPLE_TRAINER / "Evaluation" / "generalization-acceptance-v5.ndjson"
+GENERALIZATION_ACCEPTANCE_V6_TEST_SET = APPLE_TRAINER / "Evaluation" / "generalization-acceptance-v6.ndjson"
+GENERALIZATION_ACCEPTANCE_V7_TEST_SET = APPLE_TRAINER / "Evaluation" / "generalization-acceptance-v7.ndjson"
+GENERALIZATION_ACCEPTANCE_V8_TEST_SET = APPLE_TRAINER / "Evaluation" / "generalization-acceptance-v8.ndjson"
+GENERALIZATION_ACCEPTANCE_V9_TEST_SET = APPLE_TRAINER / "Evaluation" / "generalization-acceptance-v9.ndjson"
+GENERALIZATION_ACCEPTANCE_V10_TEST_SET = APPLE_TRAINER / "Evaluation" / "generalization-acceptance-v10.ndjson"
+GENERALIZATION_ACCEPTANCE_V11_TEST_SET = APPLE_TRAINER / "Evaluation" / "generalization-acceptance-v11.ndjson"
+GENERALIZATION_ACCEPTANCE_V12_TEST_SET = APPLE_TRAINER / "Evaluation" / "generalization-acceptance-v12.ndjson"
+GENERALIZATION_ACCEPTANCE_V13_TEST_SET = APPLE_TRAINER / "Evaluation" / "generalization-acceptance-v13.ndjson"
+GENERALIZATION_ACCEPTANCE_V14_TEST_SET = APPLE_TRAINER / "Evaluation" / "generalization-acceptance-v14.ndjson"
+GENERALIZATION_ACCEPTANCE_V15_TEST_SET = APPLE_TRAINER / "Evaluation" / "generalization-acceptance-v15.ndjson"
+GENERALIZATION_ACCEPTANCE_V16_TEST_SET = APPLE_TRAINER / "Evaluation" / "generalization-acceptance-v16.ndjson"
+GENERALIZATION_ACCEPTANCE_V17_TEST_SET = APPLE_TRAINER / "Evaluation" / "generalization-acceptance-v17.ndjson"
+GENERALIZATION_ACCEPTANCE_V18_TEST_SET = APPLE_TRAINER / "Evaluation" / "generalization-acceptance-v18.ndjson"
+GENERALIZATION_ACCEPTANCE_V19_TEST_SET = APPLE_TRAINER / "Evaluation" / "generalization-acceptance-v19.ndjson"
+GENERALIZATION_ACCEPTANCE_V20_TEST_SET = APPLE_TRAINER / "Evaluation" / "generalization-acceptance-v20.ndjson"
+TRAINING_SUPPLEMENTS = (
+    APPLE_TRAINER / "Training" / "feizhu-boundary-supplement.ndjson",
+    APPLE_TRAINER / "Training" / "feizhu-promotion-supplement.ndjson",
+    APPLE_TRAINER / "Training" / "cruise-ticketing-supplement.ndjson",
+    APPLE_TRAINER / "Training" / "cloud-service-expiry-supplement.ndjson",
+    APPLE_TRAINER / "Training" / "model-generalization-v27-supplement.ndjson",
+    APPLE_TRAINER / "Training" / "acceptance-v1-regression-supplement.ndjson",
+    APPLE_TRAINER / "Training" / "advance-fee-boundary-v2-supplement.ndjson",
+    APPLE_TRAINER / "Training" / "cloud-expiry-boundary-v2-supplement.ndjson",
+    APPLE_TRAINER / "Training" / "generalization-v2-v3-regression-supplement.ndjson",
+    APPLE_TRAINER / "Training" / "generalization-v4-regression-supplement.ndjson",
+    APPLE_TRAINER / "Training" / "generalization-v4-targeted-supplement.ndjson",
+    APPLE_TRAINER / "Training" / "generalization-v5-regression-supplement.ndjson",
+    APPLE_TRAINER / "Training" / "generalization-v6-regression-supplement.ndjson",
+    APPLE_TRAINER / "Training" / "generalization-v7-regression-supplement.ndjson",
+    APPLE_TRAINER / "Training" / "generalization-v8-regression-supplement.ndjson",
+    APPLE_TRAINER / "Training" / "generalization-v8-r2-regression-supplement.ndjson",
+    APPLE_TRAINER / "Training" / "generalization-v9-regression-variants.ndjson",
+    APPLE_TRAINER / "Training" / "generalization-v10-regression-supplement.ndjson",
+    APPLE_TRAINER / "Training" / "generalization-v11-regression-supplement.ndjson",
+    APPLE_TRAINER / "Training" / "generalization-v12-regression-supplement.ndjson",
+    APPLE_TRAINER / "Training" / "generalization-v13-regression-supplement.ndjson",
+    APPLE_TRAINER / "Training" / "generalization-v14-regression-supplement.ndjson",
+    APPLE_TRAINER / "Training" / "generalization-v16-regression-supplement.ndjson",
+    APPLE_TRAINER / "Training" / "travel-credential-boundary-v17-supplement.ndjson",
+    APPLE_TRAINER / "Training" / "travel-trust-boundary-v18-supplement.ndjson",
+    APPLE_TRAINER / "Training" / "operational-confidence-boundary-v20-supplement.ndjson",
+)
+
+
+def holdout_test_sets() -> tuple[Path, ...]:
+    return (
+        CLASSIFICATION_TEST_SET,
+        PROMOTION_TEST_SET,
+        BILLING_CARD_TEST_SET,
+        CONVERSATION_TEST_SET,
+        FEIZHU_TEST_SET,
+        CRUISE_TICKETING_TEST_SET,
+        GENERALIZATION_TEST_SET,
+        GENERALIZATION_ACCEPTANCE_TEST_SET,
+        GENERALIZATION_ACCEPTANCE_V2_TEST_SET,
+        GENERALIZATION_ACCEPTANCE_V3_TEST_SET,
+        GENERALIZATION_ACCEPTANCE_V4_TEST_SET,
+        GENERALIZATION_ACCEPTANCE_V5_TEST_SET,
+        GENERALIZATION_ACCEPTANCE_V6_TEST_SET,
+        GENERALIZATION_ACCEPTANCE_V7_TEST_SET,
+        GENERALIZATION_ACCEPTANCE_V8_TEST_SET,
+        GENERALIZATION_ACCEPTANCE_V9_TEST_SET,
+        GENERALIZATION_ACCEPTANCE_V10_TEST_SET,
+        GENERALIZATION_ACCEPTANCE_V11_TEST_SET,
+        GENERALIZATION_ACCEPTANCE_V12_TEST_SET,
+        GENERALIZATION_ACCEPTANCE_V13_TEST_SET,
+        GENERALIZATION_ACCEPTANCE_V14_TEST_SET,
+        GENERALIZATION_ACCEPTANCE_V15_TEST_SET,
+        GENERALIZATION_ACCEPTANCE_V16_TEST_SET,
+        GENERALIZATION_ACCEPTANCE_V17_TEST_SET,
+        GENERALIZATION_ACCEPTANCE_V18_TEST_SET,
+        GENERALIZATION_ACCEPTANCE_V19_TEST_SET,
+        GENERALIZATION_ACCEPTANCE_V20_TEST_SET,
+    )
 
 
 def parse_arguments() -> argparse.Namespace:
@@ -196,6 +279,12 @@ def parse_arguments() -> argparse.Namespace:
         default=1.0,
         help="loss multiplier for reviewed boundary rows without duplicating corpus samples",
     )
+    training.add_argument(
+        "--selected-label-loss-weight",
+        type=float,
+        default=1.0,
+        help="positive-row loss multiplier for labels selected by --train-label-rows",
+    )
     training.add_argument("--install-ios", action="store_true", help="install trained artifacts into apps/ios/GeneratedModels")
 
     raw_arguments = sys.argv[1:]
@@ -240,12 +329,11 @@ def load_texts(path: Path) -> list[str]:
 
 
 def require_holdout_isolation(path: Path) -> None:
-    holdout_texts = (
-        load_texts(CLASSIFICATION_TEST_SET)
-        + load_texts(PROMOTION_TEST_SET)
-        + load_texts(BILLING_CARD_TEST_SET)
-        + load_texts(CONVERSATION_TEST_SET)
-    )
+    holdout_texts = [
+        text
+        for holdout_path in holdout_test_sets()
+        for text in load_texts(holdout_path)
+    ]
     holdout_exact = {text.lower() for text in holdout_texts}
     holdout_near = {near_duplicate_signature(text) for text in holdout_texts}
     exact_collisions = 0
@@ -312,7 +400,7 @@ def stage_curate(arguments: argparse.Namespace) -> None:
         ],
         cwd=REPO_ROOT,
     )
-    inputs = [PUBLIC_CORPUS, CONVERSATION_TRAIN_SET]
+    inputs = [PUBLIC_CORPUS, CONVERSATION_TRAIN_SET, *TRAINING_SUPPLEMENTS]
     if REMOTE_CORPUS.exists():
         inputs.append(REMOTE_CORPUS)
     inputs.extend(path.expanduser().resolve() for path in arguments.extra_input)
@@ -334,10 +422,11 @@ def stage_curate(arguments: argparse.Namespace) -> None:
         "--out", str(CURATED_SET),
         "--rejected", str(REJECTED_SET),
         "--report", str(CURATION_REPORT),
-        "--holdout", str(CLASSIFICATION_TEST_SET),
-        "--holdout", str(PROMOTION_TEST_SET),
-        "--holdout", str(BILLING_CARD_TEST_SET),
-        "--holdout", str(CONVERSATION_TEST_SET),
+        *[
+            argument
+            for holdout_path in holdout_test_sets()
+            for argument in ("--holdout", str(holdout_path))
+        ],
         "--model-filter", arguments.model_filter,
         "--hard-floor", str(arguments.hard_floor),
         "--gray-keep", str(arguments.gray_keep),
@@ -360,10 +449,11 @@ def stage_augment(arguments: argparse.Namespace) -> None:
             "python3", str(TRANSFORMER_TRAINER / "augment_dataset.py"),
             "--input", str(CURATED_SET),
             "--config", str(arguments.augmentation_config),
-            "--holdout", str(CLASSIFICATION_TEST_SET),
-            "--holdout", str(PROMOTION_TEST_SET),
-            "--holdout", str(BILLING_CARD_TEST_SET),
-            "--holdout", str(CONVERSATION_TEST_SET),
+            *[
+                argument
+                for holdout_path in holdout_test_sets()
+                for argument in ("--holdout", str(holdout_path))
+            ],
             "--taxonomy", str(REPO_ROOT / "packages/taxonomy/taxonomy.json"),
             "--out", str(UNPRUNED_TRAIN_SET),
             "--report", str(AUGMENTATION_REPORT),
@@ -422,6 +512,32 @@ def stage_train_classic(arguments: argparse.Namespace) -> None:
         ],
         cwd=REPO_ROOT,
     )
+    # Reuse the strictest artifact-suite slots to require every reviewed
+    # boundary row to keep both its raw label and production MessageFilter
+    # action. Duplicating each set here also exercises the unsafe-junk gate.
+    run(
+        [
+            "swift", "run", "--package-path", str(REPO_ROOT / "apps/ios"),
+            "ClassicMessageFilterArtifactTests",
+            "--model", str(CLASSIC_OUT / "SiftSMSClassifier.mlmodel"),
+            "--fixed", str(FEIZHU_TEST_SET),
+            "--promotion", str(FEIZHU_TEST_SET),
+            "--billing", str(CRUISE_TICKETING_TEST_SET),
+            "--conversation", str(CRUISE_TICKETING_TEST_SET),
+            "--output", str(CLASSIC_OUT / "boundary-message-filter-report.json"),
+        ],
+        cwd=REPO_ROOT,
+    )
+    run(
+        [
+            "swift", str(APPLE_TRAINER / "Scripts" / "evaluate_classic_models.swift"),
+            "--require-perfect",
+            "--test", f"feizhu={FEIZHU_TEST_SET}",
+            "--test", f"cruise={CRUISE_TICKETING_TEST_SET}",
+            str(CLASSIC_OUT / "SiftSMSClassifier.mlmodel"),
+        ],
+        cwd=APPLE_TRAINER,
+    )
     if arguments.install_ios:
         destination = REPO_ROOT / "apps/ios/GeneratedModels"
         destination.mkdir(parents=True, exist_ok=True)
@@ -462,6 +578,7 @@ def stage_train_transformer(arguments: argparse.Namespace, finetune: bool = Fals
         "--batch-size", str(arguments.batch_size),
         "--warmup-ratio", str(arguments.warmup_ratio),
         "--boundary-loss-weight", str(arguments.boundary_loss_weight),
+        "--selected-label-loss-weight", str(arguments.selected_label_loss_weight),
         "--max-length", str(arguments.max_sequence_length),
         "--test-input", str(PROMOTION_TEST_SET),
     ]
@@ -486,6 +603,7 @@ def stage_quantize_transformer(arguments: argparse.Namespace) -> None:
     command = [
         "uv", "run", "quantize_candidates.py",
         "--fp16-model", str(TRANSFORMER_OUT / "SiftSignalModel.mlpackage"),
+        "--source-manifest", str(TRANSFORMER_OUT / "SiftSignalModel.manifest.json"),
         "--checkpoint", str(TRANSFORMER_OUT / "checkpoint"),
         "--tokenizer-artifact", str(TRANSFORMER_OUT / "SiftSignalModel.tokenizer.siftbpe"),
         "--calibration-input", str(TRAIN_SET),

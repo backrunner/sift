@@ -1,0 +1,54 @@
+{"text":"入住完成后新增730奖励积分，会员账户可用积分变为6810分。","label":"transaction.points","source":"augmentation:boundary:acceptance-v1-regression"}
+{"text":"本次民宿消费获得1250积分，积分账户当前余额为17300分。","label":"transaction.points","source":"augmentation:boundary:acceptance-v1-regression"}
+{"text":"免征信小额贷款声称立即到账，但放款前必须缴纳账户开通费。","label":"spam","source":"augmentation:boundary:acceptance-v1-regression"}
+{"text":"无需审核的周转资金要求预付激活费用，客服称付款后五分钟放款。","label":"spam","source":"augmentation:boundary:acceptance-v1-regression"}
+{"text":"您的厨房用品订单KT30816已经付款，中心仓预计周二安排出库。","label":"transaction.order","source":"augmentation:boundary:acceptance-v1-regression"}
+{"text":"订单HF92640支付完成，家居商家正在打包，明日交给物流公司。","label":"transaction.order","source":"augmentation:boundary:acceptance-v1-regression"}
+{"text":"家庭宽带与固话8月账单合计132.40元，缴费截止日期为9月15日。","label":"carrier.billing","source":"augmentation:boundary:acceptance-v1-regression"}
+{"text":"融合通信月度费用已出，本期应付98元，可在运营商应用查看明细。","label":"carrier.billing","source":"augmentation:boundary:acceptance-v1-regression"}
+{"text":"有人假冒码头改签客服，声称船班取消，要求预付登记费并提供动态口令。","label":"spam","source":"augmentation:boundary:acceptance-v1-regression"}
+{"text":"所谓客运理赔人员称可领取延误金，先缴认证费并发送短信验证码才会处理。","label":"spam","source":"augmentation:boundary:acceptance-v1-regression"}
+{"text":"电脑客户端升级已完成，新增本地缓存开关并改善文件预览。","label":"transaction.message","source":"augmentation:boundary:acceptance-v1-regression"}
+{"text":"桌面应用维护结束，离线下载和附件搜索功能现已恢复。","label":"transaction.message","source":"augmentation:boundary:acceptance-v1-regression"}
+{"text":"【智家工坊】窗帘电机新品预售，签约安装服务可享套餐优惠。","label":"promotion","source":"augmentation:boundary:acceptance-v1-regression"}
+{"text":"【安居科技】家庭传感器首发，预约购买赠调试服务和延长保修。","label":"promotion","source":"augmentation:boundary:acceptance-v1-regression"}
+{"text":"市公共卫生机构提醒：持续高温期间避免午后外出，注意补充水分。","label":"government.reminder","source":"augmentation:boundary:acceptance-v1-regression"}
+{"text":"区卫生服务中心提示：酷暑天气请照顾独居老人，出现不适及时就医。","label":"government.reminder","source":"augmentation:boundary:acceptance-v1-regression"}
+{"text":"明天下班后还在图书馆门口碰面吗？我大概六点半到。","label":"__sift_abstain__","source":"augmentation:boundary:acceptance-v1-regression"}
+{"text":"周末一起做晚饭吧，我负责买菜，你看看还需要什么。","label":"__sift_abstain__","source":"augmentation:boundary:acceptance-v1-regression"}
+{"text":"Your completed resort stay added 730 reward points, bringing the available balance to 6,810.","label":"transaction.points","source":"augmentation:boundary:acceptance-v1-regression"}
+{"text":"The guesthouse purchase earned 1,250 loyalty points; the account now holds 17,300.","label":"transaction.points","source":"augmentation:boundary:acceptance-v1-regression"}
+{"text":"A lender offering approval without a credit review demands an account-opening fee before funds are released.","label":"spam","source":"augmentation:boundary:acceptance-v1-regression"}
+{"text":"This no-review cash loan promises payment in minutes after an activation charge is transferred first.","label":"spam","source":"augmentation:boundary:acceptance-v1-regression"}
+{"text":"Your kitchenware order KT59127 has been paid, and the distribution center will dispatch it on Tuesday.","label":"transaction.order","source":"augmentation:boundary:acceptance-v1-regression"}
+{"text":"Payment for home-goods order HF41730 is complete; the merchant is packing it for tomorrow's carrier pickup.","label":"transaction.order","source":"augmentation:boundary:acceptance-v1-regression"}
+{"text":"The August broadband and home-phone invoice totals 132.40 dollars and is due September 15.","label":"carrier.billing","source":"augmentation:boundary:acceptance-v1-regression"}
+{"text":"Your combined home communications statement is ready; 98 dollars is payable through the carrier app.","label":"carrier.billing","source":"augmentation:boundary:acceptance-v1-regression"}
+{"text":"A person posing as terminal rebooking support claims the sailing was cancelled and asks for an advance filing fee plus a one-time password.","label":"spam","source":"augmentation:boundary:acceptance-v1-regression"}
+{"text":"Fake passenger-compensation support promises a delay payment only after a verification fee and SMS code are provided.","label":"spam","source":"augmentation:boundary:acceptance-v1-regression"}
+{"text":"The computer client upgrade is complete, adding a local-cache control and improving document previews.","label":"transaction.message","source":"augmentation:boundary:acceptance-v1-regression"}
+{"text":"Desktop application maintenance ended; offline downloads and attachment search are available again.","label":"transaction.message","source":"augmentation:boundary:acceptance-v1-regression"}
+{"text":"SmartHome Workshop launch offer includes discounted installation with each new curtain motor preorder.","label":"promotion","source":"augmentation:boundary:acceptance-v1-regression"}
+{"text":"HomeSense debuts its household sensor kit with complimentary setup and an extended warranty for advance orders.","label":"promotion","source":"augmentation:boundary:acceptance-v1-regression"}
+{"text":"The municipal public-health office advises avoiding afternoon outings and drinking water regularly during the heatwave.","label":"government.reminder","source":"augmentation:boundary:acceptance-v1-regression"}
+{"text":"The district health service reminds residents to check on older neighbors during extreme heat and seek care for symptoms.","label":"government.reminder","source":"augmentation:boundary:acceptance-v1-regression"}
+{"text":"Are we still meeting outside the library after work tomorrow? I should arrive around six thirty.","label":"__sift_abstain__","source":"augmentation:boundary:acceptance-v1-regression"}
+{"text":"Let us cook together this weekend. I will buy vegetables; tell me what else we need.","label":"__sift_abstain__","source":"augmentation:boundary:acceptance-v1-regression"}
+{"text":"リゾート宿泊の完了で730ポイントが加算され、利用可能残高は6,810ポイントになりました。","label":"transaction.points","source":"augmentation:boundary:acceptance-v1-regression"}
+{"text":"民宿の利用で1,250ポイントを獲得し、会員口座の残高は17,300ポイントです。","label":"transaction.points","source":"augmentation:boundary:acceptance-v1-regression"}
+{"text":"信用審査不要をうたう小口融資が、入金前に口座開設手数料を振り込むよう求めています。","label":"spam","source":"augmentation:boundary:acceptance-v1-regression"}
+{"text":"無審査の即時融資は、先に有効化料金を送金すれば数分で入金すると案内しています。","label":"spam","source":"augmentation:boundary:acceptance-v1-regression"}
+{"text":"台所用品の注文KT86412は支払い済みで、配送センターが火曜日に出庫します。","label":"transaction.order","source":"augmentation:boundary:acceptance-v1-regression"}
+{"text":"家庭用品の注文HF20583は決済が完了し、店舗が明日の集荷に向けて梱包中です。","label":"transaction.order","source":"augmentation:boundary:acceptance-v1-regression"}
+{"text":"8月分の光回線と固定電話の請求額は13,240円で、9月15日が支払期限です。","label":"carrier.billing","source":"augmentation:boundary:acceptance-v1-regression"}
+{"text":"家庭通信サービスの月額請求が確定しました。9,800円を通信会社のアプリから支払えます。","label":"carrier.billing","source":"augmentation:boundary:acceptance-v1-regression"}
+{"text":"港の振替窓口を装う人物が欠航を告げ、申請料の先払いとワンタイムパスワードを要求しています。","label":"spam","source":"augmentation:boundary:acceptance-v1-regression"}
+{"text":"偽の旅客補償担当が、確認手数料とSMS認証番号を送れば遅延金を支払うと案内しています。","label":"spam","source":"augmentation:boundary:acceptance-v1-regression"}
+{"text":"パソコン用クライアントの更新が完了し、ローカルキャッシュ設定と書類プレビューを改善しました。","label":"transaction.message","source":"augmentation:boundary:acceptance-v1-regression"}
+{"text":"デスクトップアプリの保守が終了し、オフライン保存と添付ファイル検索を再開しました。","label":"transaction.message","source":"augmentation:boundary:acceptance-v1-regression"}
+{"text":"スマートホーム工房のカーテンモーター先行販売。設置サービス付きプランを割引します。","label":"promotion","source":"augmentation:boundary:acceptance-v1-regression"}
+{"text":"ホームセンスの家庭用センサー新発売。事前注文には初期設定と延長保証が付きます。","label":"promotion","source":"augmentation:boundary:acceptance-v1-regression"}
+{"text":"市の公衆衛生部門は、猛暑の午後は外出を避け、こまめに水分を取るよう呼びかけています。","label":"government.reminder","source":"augmentation:boundary:acceptance-v1-regression"}
+{"text":"地区保健サービスから、厳しい暑さの間は高齢者を見守り、体調不良時に受診するよう案内しています。","label":"government.reminder","source":"augmentation:boundary:acceptance-v1-regression"}
+{"text":"明日の仕事帰り、図書館の前で会いますか。私は6時半ごろ着く予定です。","label":"__sift_abstain__","source":"augmentation:boundary:acceptance-v1-regression"}
+{"text":"週末に一緒に夕食を作りませんか。野菜は私が買うので、ほかに必要な物を教えてください。","label":"__sift_abstain__","source":"augmentation:boundary:acceptance-v1-regression"}

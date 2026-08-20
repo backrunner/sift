@@ -1,0 +1,60 @@
+{"text":"市反诈中心提醒：正规机关不会通过聊天软件要求转账，遇到可疑来电请通过官方渠道核实。","label":"government.reminder","source":"acceptance:generalization-v3"}
+{"text":"自称监管部门的人员称账户涉案，要求先交安全审查费并发送银行卡验证码。","label":"spam","source":"acceptance:generalization-v3"}
+{"text":"【东海客运】航班临时调整至18:20开航，原船票继续有效，请提前完成值船。","label":"travel.ticketing","source":"acceptance:generalization-v3"}
+{"text":"所谓航班赔付专员承诺立即退款，但要求先支付保证金并告知短信动态码。","label":"spam","source":"acceptance:generalization-v3"}
+{"text":"您的包裹因暴雨延迟，已转至城北分拨中心，预计周五重新派送。","label":"life.express","source":"acceptance:generalization-v3"}
+{"text":"包裹被海关扣留，点击陌生短链支付解锁费并填写银行卡信息后才能派送。","label":"spam","source":"acceptance:generalization-v3"}
+{"text":"账户尾号5290刚刚在新设备登录，如非本人操作请在官方应用冻结会话。","label":"transaction.account_security","source":"acceptance:generalization-v3"}
+{"text":"账户今晚将被停用，请立即打开非官方页面补录密码和身份证照片解除限制。","label":"spam","source":"acceptance:generalization-v3"}
+{"text":"市中心医院提醒：您预约的内科复诊为周三09:40，请携带就诊卡提前报到。","label":"life.medical","source":"acceptance:generalization-v3"}
+{"text":"【康宁门诊】秋季体检套餐限时八折，预约两人同行可赠骨密度检查。","label":"promotion","source":"acceptance:generalization-v3"}
+{"text":"生产数据库 orders-primary 的证书周六到期，未更新会导致应用连接失败。","label":"work.alert","source":"acceptance:generalization-v3"}
+{"text":"您的10GB夜间手机流量包将在周六到期，未用额度不会结转。","label":"carrier.data_reminder","source":"acceptance:generalization-v3"}
+{"text":"已取消演出的票款368元完成原路退款，银行入账时间可能需要两个工作日。","label":"finance.refund","source":"acceptance:generalization-v3"}
+{"text":"演出退款用户可领取复购券，本周重新购票再减60元。","label":"promotion","source":"acceptance:generalization-v3"}
+{"text":"您的咖啡机订单CM73108已付款，商家确认库存并将在今晚打包。","label":"transaction.order","source":"acceptance:generalization-v3"}
+{"text":"新款咖啡机开放预订，首发下单立减260元并赠一年滤芯。","label":"promotion","source":"acceptance:generalization-v3"}
+{"text":"您正在修改支付密码，验证码604281，五分钟内有效，请勿告诉他人。","label":"verification","source":"acceptance:generalization-v3"}
+{"text":"客服称退款失败，让您把刚收到的验证码转发过去以便人工入账。","label":"spam","source":"acceptance:generalization-v3"}
+{"text":"上次聚餐的钱我已经转给你了，你有空看看是不是收到86元。","label":"__sift_abstain__","source":"acceptance:generalization-v3"}
+{"text":"这是图书馆活动的报名页面，我刚试过可以正常打开，周末一起去吗？","label":"__sift_abstain__","source":"acceptance:generalization-v3"}
+{"text":"The city fraud office reminds residents that public agencies never demand transfers over chat; verify suspicious calls officially.","label":"government.reminder","source":"acceptance:generalization-v3"}
+{"text":"A caller posing as a regulator says your account is under investigation and demands a screening fee plus the card code.","label":"spam","source":"acceptance:generalization-v3"}
+{"text":"East Bay Ferry moved departure to 6:20 PM. Your existing ticket remains valid; complete check-in before boarding.","label":"travel.ticketing","source":"acceptance:generalization-v3"}
+{"text":"A supposed travel compensation agent promises an instant refund after a deposit and your one-time SMS passcode.","label":"spam","source":"acceptance:generalization-v3"}
+{"text":"Heavy rain delayed your parcel at the Northside depot; delivery is now expected on Friday.","label":"life.express","source":"acceptance:generalization-v3"}
+{"text":"Your parcel is allegedly held by customs. Open this unfamiliar short link, pay an unlock fee, and enter card details.","label":"spam","source":"acceptance:generalization-v3"}
+{"text":"Account ending 5290 signed in on a new device. Freeze the session in the official app if this was not you.","label":"transaction.account_security","source":"acceptance:generalization-v3"}
+{"text":"Your account will be disabled tonight unless you use this unofficial page to submit a password and identity photo.","label":"spam","source":"acceptance:generalization-v3"}
+{"text":"Central Hospital confirms your follow-up appointment for Wednesday at 9:40 AM; bring your patient card.","label":"life.medical","source":"acceptance:generalization-v3"}
+{"text":"Wellness Clinic's autumn screening package is 20 percent off and includes a free bone-density test for pairs.","label":"promotion","source":"acceptance:generalization-v3"}
+{"text":"The certificate for production database orders-primary expires Saturday; applications will lose connectivity unless it is replaced.","label":"work.alert","source":"acceptance:generalization-v3"}
+{"text":"Your 10 GB nighttime mobile data pack expires Saturday, and unused cellular allowance will not roll over.","label":"carrier.data_reminder","source":"acceptance:generalization-v3"}
+{"text":"The cancelled concert ticket refund of 368 dollars was returned to the original method; bank posting may take two days.","label":"finance.refund","source":"acceptance:generalization-v3"}
+{"text":"Customers with cancelled-show refunds can claim a 60-dollar voucher toward another ticket this week.","label":"promotion","source":"acceptance:generalization-v3"}
+{"text":"Coffee machine order CM84219 is paid. The merchant confirmed stock and will pack it tonight.","label":"transaction.order","source":"acceptance:generalization-v3"}
+{"text":"Pre-order the new coffee machine for a 260-dollar launch discount and a year's supply of filters.","label":"promotion","source":"acceptance:generalization-v3"}
+{"text":"You are changing the payment password. Code 604281 is valid for five minutes; do not share it.","label":"verification","source":"acceptance:generalization-v3"}
+{"text":"Support claims your refund failed and asks you to forward the verification code so it can be credited manually.","label":"spam","source":"acceptance:generalization-v3"}
+{"text":"I sent you 86 dollars for our last dinner. Check whenever you have time and tell me if it arrived.","label":"__sift_abstain__","source":"acceptance:generalization-v3"}
+{"text":"Here is the library event page. I opened it successfully; would you like to go together this weekend?","label":"__sift_abstain__","source":"acceptance:generalization-v3"}
+{"text":"市の詐欺対策窓口から、行政機関がチャットで送金を求めることはないため公式窓口で確認するよう案内しています。","label":"government.reminder","source":"acceptance:generalization-v3"}
+{"text":"監督機関を名乗る人物が口座の捜査を理由に、安全審査料とカード認証番号を要求しています。","label":"spam","source":"acceptance:generalization-v3"}
+{"text":"イーストベイフェリーは出航を18時20分へ変更しました。現在の乗船券は有効ですので事前に受付をお済ませください。","label":"travel.ticketing","source":"acceptance:generalization-v3"}
+{"text":"旅行補償担当を装い、保証金とSMSワンタイムコードを送ればすぐ返金すると案内しています。","label":"spam","source":"acceptance:generalization-v3"}
+{"text":"大雨のため荷物は北地区の配送拠点で遅延しており、金曜日に再配達する予定です。","label":"life.express","source":"acceptance:generalization-v3"}
+{"text":"荷物が税関で止まったとして、不審な短縮リンクから解除料とカード情報を入力するよう求めています。","label":"spam","source":"acceptance:generalization-v3"}
+{"text":"口座末尾5290へ新しい端末からログインがありました。心当たりがなければ公式アプリで接続を停止してください。","label":"transaction.account_security","source":"acceptance:generalization-v3"}
+{"text":"今夜口座を停止すると告げ、非公式ページでパスワードと身分証写真を入力するよう促しています。","label":"spam","source":"acceptance:generalization-v3"}
+{"text":"中央病院から、水曜9時40分の内科再診予約のお知らせです。診察券を持って早めに受付してください。","label":"life.medical","source":"acceptance:generalization-v3"}
+{"text":"ウェルネス医院の秋季健診は期間限定20%割引。二人で予約すると骨密度検査が無料です。","label":"promotion","source":"acceptance:generalization-v3"}
+{"text":"本番データベース orders-primary の証明書は土曜に失効し、未更新の場合はアプリから接続できなくなります。","label":"work.alert","source":"acceptance:generalization-v3"}
+{"text":"夜間用10GBの携帯データパックは土曜に期限切れとなり、未使用分は繰り越されません。","label":"carrier.data_reminder","source":"acceptance:generalization-v3"}
+{"text":"中止公演のチケット代36,800円を元の決済方法へ返金しました。銀行への反映には2営業日かかる場合があります。","label":"finance.refund","source":"acceptance:generalization-v3"}
+{"text":"公演中止の返金対象者へ再購入クーポンを配布中です。今週のチケット購入が6,000円引きになります。","label":"promotion","source":"acceptance:generalization-v3"}
+{"text":"コーヒーマシンの注文CM95320は支払い済みです。在庫を確保し、今夜梱包します。","label":"transaction.order","source":"acceptance:generalization-v3"}
+{"text":"新型コーヒーマシンの先行予約で26,000円割引と1年分のフィルターを進呈します。","label":"promotion","source":"acceptance:generalization-v3"}
+{"text":"決済パスワードを変更中です。認証コード604281は5分間有効です。他人に教えないでください。","label":"verification","source":"acceptance:generalization-v3"}
+{"text":"サポート担当が返金失敗を理由に、届いた認証コードを転送すれば手動入金すると説明しています。","label":"spam","source":"acceptance:generalization-v3"}
+{"text":"前回の食事代8,600円を送ったよ。時間があるときに届いているか見ておいて。","label":"__sift_abstain__","source":"acceptance:generalization-v3"}
+{"text":"図書館イベントの申込ページです。問題なく開けたので、週末に一緒に行きませんか。","label":"__sift_abstain__","source":"acceptance:generalization-v3"}

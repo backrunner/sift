@@ -1,0 +1,90 @@
+{"text":"课程小组把周二讨论改成视频形式，你看到群里发的新房间了吗？","label":"__sift_abstain__","source":"augmentation:boundary:generalization-v2-v3"}
+{"text":"我发的是社区讲座报名页，不着急，周末有空再一起填。","label":"__sift_abstain__","source":"augmentation:boundary:generalization-v2-v3"}
+{"text":"电影票的钱已经转回给你了，晚点确认一下聊天里的收款记录。","label":"__sift_abstain__","source":"augmentation:boundary:generalization-v2-v3"}
+{"text":"旅行方案我还拿不定主意，你看完链接后帮我选一个。","label":"__sift_abstain__","source":"augmentation:boundary:generalization-v2-v3"}
+{"text":"假客服称退款卡住，要求把支付验证码发给他才能继续处理。","label":"spam","source":"augmentation:boundary:generalization-v2-v3"}
+{"text":"海关异常通知要求打开陌生网址缴纳放行费并上传银行卡照片。","label":"spam","source":"augmentation:boundary:generalization-v2-v3"}
+{"text":"票务保安声称座位将取消，让您先提交身份证和银行动态口令。","label":"spam","source":"augmentation:boundary:generalization-v2-v3"}
+{"text":"无征信借款要求放款前购买付费担保凭证，收款方为个人账户。","label":"spam","source":"augmentation:boundary:generalization-v2-v3"}
+{"text":"冒充监管人员的来电要求缴纳账户核查费，并索取卡片验证码。","label":"spam","source":"augmentation:boundary:generalization-v2-v3"}
+{"text":"登录即将失效，请在仿冒页面输入密码和证件号码恢复账户。","label":"spam","source":"augmentation:boundary:generalization-v2-v3"}
+{"text":"夜间专用手机流量还剩6GB，将在本周套餐周期结束时清零。","label":"carrier.data_reminder","source":"augmentation:boundary:generalization-v2-v3"}
+{"text":"境外数据包三天后失效，未使用的移动流量不能延期。","label":"carrier.data_reminder","source":"augmentation:boundary:generalization-v2-v3"}
+{"text":"家庭共享流量已使用76%，额度会在下月一日重新计算。","label":"carrier.data_reminder","source":"augmentation:boundary:generalization-v2-v3"}
+{"text":"家庭共享通信套餐升级可新增副卡，并连续四个月获得赠送流量。","label":"carrier.promotion","source":"augmentation:boundary:generalization-v2-v3"}
+{"text":"运营商积分本周可优惠兑换通话券或高速数据包。","label":"carrier.promotion","source":"augmentation:boundary:generalization-v2-v3"}
+{"text":"城市科技馆家庭套票限时发售，购买年票加赠儿童实验课。","label":"promotion","source":"augmentation:boundary:generalization-v2-v3"}
+{"text":"餐厅储值季充500元赠下午茶券，活动仅限本月新办会员。","label":"promotion","source":"augmentation:boundary:generalization-v2-v3"}
+{"text":"生产日志服务 audit-stream 的索引配额接近上限，可能在24小时内停止写入。","label":"work.alert","source":"augmentation:boundary:generalization-v2-v3"}
+{"text":"内部接口证书即将过期，若未轮换密钥，周一部署会连接失败。","label":"work.alert","source":"augmentation:boundary:generalization-v2-v3"}
+{"text":"消息队列 backlog-main 的保留空间不足，最早批次将在明晚开始清理。","label":"work.alert","source":"augmentation:boundary:generalization-v2-v3"}
+{"text":"桌面浏览器维护完成，已恢复跨设备标签同步并优化下载记录。","label":"transaction.message","source":"augmentation:boundary:generalization-v2-v3"}
+{"text":"电脑客户端版本更新成功，新增离线目录并修复附件搜索。","label":"transaction.message","source":"augmentation:boundary:generalization-v2-v3"}
+{"text":"您正在确认新设备登录，验证码381420，请勿转发给任何客服。","label":"verification","source":"augmentation:boundary:generalization-v2-v3"}
+{"text":"支付密码重置码为725193，十分钟内有效，仅供本人输入。","label":"verification","source":"augmentation:boundary:generalization-v2-v3"}
+{"text":"生态环境部门提示：重污染天气请减少长时间户外锻炼并佩戴防护用品。","label":"government.reminder","source":"augmentation:boundary:generalization-v2-v3"}
+{"text":"反诈部门提醒：退款人员索要短信验证码时应立即停止操作并联系官方平台。","label":"government.reminder","source":"augmentation:boundary:generalization-v2-v3"}
+{"text":"社区医院确认您的眼科复诊为周五15:10，请提前完成签到。","label":"life.medical","source":"augmentation:boundary:generalization-v2-v3"}
+{"text":"定制衣柜订单WG60418已完成付款，工厂将在质检结束后发货。","label":"transaction.order","source":"augmentation:boundary:generalization-v2-v3"}
+{"text":"信用卡9月账单应还4,860元，最低还款486元，到期日为10月6日。","label":"finance.credit_card","source":"augmentation:boundary:generalization-v2-v3"}
+{"text":"客轮座位已经确认，请持预订证件到人工柜台领取登船牌，工作人员不会询问银行卡密码。","label":"travel.ticketing","source":"augmentation:boundary:generalization-v2-v3"}
+{"text":"Our study group moved Tuesday's discussion to video. Did you see the new room posted in chat?","label":"__sift_abstain__","source":"augmentation:boundary:generalization-v2-v3"}
+{"text":"That is the community lecture registration page I sent. We can complete it together this weekend.","label":"__sift_abstain__","source":"augmentation:boundary:generalization-v2-v3"}
+{"text":"I sent back the money for the movie tickets; check our chat payment record whenever you can.","label":"__sift_abstain__","source":"augmentation:boundary:generalization-v2-v3"}
+{"text":"I still cannot choose a travel plan. Look at the links and help me pick one later.","label":"__sift_abstain__","source":"augmentation:boundary:generalization-v2-v3"}
+{"text":"Fake support says a refund is stuck and demands the payment verification code before continuing.","label":"spam","source":"augmentation:boundary:generalization-v2-v3"}
+{"text":"A customs alert sends you to an unfamiliar site for a release fee and photos of your bank card.","label":"spam","source":"augmentation:boundary:generalization-v2-v3"}
+{"text":"A ticket security agent threatens to cancel your seat unless you submit identity files and a banking passcode.","label":"spam","source":"augmentation:boundary:generalization-v2-v3"}
+{"text":"A no-credit loan requires a paid guarantee certificate before disbursement to a personal account.","label":"spam","source":"augmentation:boundary:generalization-v2-v3"}
+{"text":"A caller posing as a regulator demands an account review charge and the code from your card message.","label":"spam","source":"augmentation:boundary:generalization-v2-v3"}
+{"text":"Your login will expire unless you enter a password and identity number on this imitation page.","label":"spam","source":"augmentation:boundary:generalization-v2-v3"}
+{"text":"Six GB remains in your nighttime mobile data allowance, which resets at the end of this plan week.","label":"carrier.data_reminder","source":"augmentation:boundary:generalization-v2-v3"}
+{"text":"The overseas cellular pass expires in three days and unused mobile data cannot be extended.","label":"carrier.data_reminder","source":"augmentation:boundary:generalization-v2-v3"}
+{"text":"Your family shared mobile data is 76 percent used and the allowance renews on the first of next month.","label":"carrier.data_reminder","source":"augmentation:boundary:generalization-v2-v3"}
+{"text":"Upgrade the shared family mobile plan to add a line and receive four months of bonus cellular data.","label":"carrier.promotion","source":"augmentation:boundary:generalization-v2-v3"}
+{"text":"Carrier reward points can be exchanged this week for discounted calling credit or a high-speed data pack.","label":"carrier.promotion","source":"augmentation:boundary:generalization-v2-v3"}
+{"text":"City Science Museum family passes are on sale with a complimentary children's laboratory class.","label":"promotion","source":"augmentation:boundary:generalization-v2-v3"}
+{"text":"Restaurant membership month adds an afternoon-tea voucher when a new account loads 500 dollars.","label":"promotion","source":"augmentation:boundary:generalization-v2-v3"}
+{"text":"Production log service audit-stream is near its index quota and may stop accepting writes within 24 hours.","label":"work.alert","source":"augmentation:boundary:generalization-v2-v3"}
+{"text":"An internal API certificate is about to expire; Monday's deployment loses connectivity unless keys are rotated.","label":"work.alert","source":"augmentation:boundary:generalization-v2-v3"}
+{"text":"Message queue backlog-main is low on retention space and starts purging the oldest batch tomorrow night.","label":"work.alert","source":"augmentation:boundary:generalization-v2-v3"}
+{"text":"Desktop browser maintenance finished, restoring cross-device tab sync and improving download history.","label":"transaction.message","source":"augmentation:boundary:generalization-v2-v3"}
+{"text":"The computer client update succeeded, adding an offline directory and fixing attachment search.","label":"transaction.message","source":"augmentation:boundary:generalization-v2-v3"}
+{"text":"You are confirming a new-device login. Code 381420 must not be forwarded to any support agent.","label":"verification","source":"augmentation:boundary:generalization-v2-v3"}
+{"text":"Payment password reset code 725193 is valid for ten minutes and should only be entered by you.","label":"verification","source":"augmentation:boundary:generalization-v2-v3"}
+{"text":"The environmental office advises less prolonged outdoor exercise and protective masks during severe pollution.","label":"government.reminder","source":"augmentation:boundary:generalization-v2-v3"}
+{"text":"The fraud office says to stop immediately and contact the official platform when refund staff request an SMS code.","label":"government.reminder","source":"augmentation:boundary:generalization-v2-v3"}
+{"text":"Community Hospital confirms your eye follow-up for Friday at 3:10 PM; complete check-in before arrival.","label":"life.medical","source":"augmentation:boundary:generalization-v2-v3"}
+{"text":"Custom wardrobe order WG71529 is paid, and the factory will ship it after quality inspection.","label":"transaction.order","source":"augmentation:boundary:generalization-v2-v3"}
+{"text":"Your September card statement is 4,860 dollars, with a 486-dollar minimum due October 6.","label":"finance.credit_card","source":"augmentation:boundary:generalization-v2-v3"}
+{"text":"Your ferry seat is confirmed. Collect the boarding pass at the staffed desk with your booking document; bank passwords are never requested.","label":"travel.ticketing","source":"augmentation:boundary:generalization-v2-v3"}
+{"text":"授業グループの火曜討論はビデオ形式になりました。チャットに出た新しいルームを見ましたか。","label":"__sift_abstain__","source":"augmentation:boundary:generalization-v2-v3"}
+{"text":"送ったのは地域講座の申込ページです。週末に一緒に入力しましょう。","label":"__sift_abstain__","source":"augmentation:boundary:generalization-v2-v3"}
+{"text":"映画代は返したよ。時間があるときにチャットの送金履歴を確認して。","label":"__sift_abstain__","source":"augmentation:boundary:generalization-v2-v3"}
+{"text":"旅行案をまだ決められないので、リンクを見て後で選ぶのを手伝って。","label":"__sift_abstain__","source":"augmentation:boundary:generalization-v2-v3"}
+{"text":"偽サポートが返金処理の停止を理由に、支払い認証コードを送るよう求めています。","label":"spam","source":"augmentation:boundary:generalization-v2-v3"}
+{"text":"税関通知を装い、不審なサイトで解放料と銀行カードの写真を提出させようとしています。","label":"spam","source":"augmentation:boundary:generalization-v2-v3"}
+{"text":"チケット保安担当を名乗り、座席取消を理由に身分証資料と銀行認証コードを要求しています。","label":"spam","source":"augmentation:boundary:generalization-v2-v3"}
+{"text":"信用確認なしの融資が、個人口座への入金前に有料保証証明書を購入するよう求めています。","label":"spam","source":"augmentation:boundary:generalization-v2-v3"}
+{"text":"監督機関を装う電話が口座審査料とカード通知に届いた認証番号を要求しています。","label":"spam","source":"augmentation:boundary:generalization-v2-v3"}
+{"text":"ログイン期限を理由に、偽サイトでパスワードと本人確認番号を入力するよう促しています。","label":"spam","source":"augmentation:boundary:generalization-v2-v3"}
+{"text":"夜間用の携帯データは残り6GBで、今週のプラン終了時に利用枠をリセットします。","label":"carrier.data_reminder","source":"augmentation:boundary:generalization-v2-v3"}
+{"text":"海外用モバイルデータパスは3日後に失効し、未使用分は延長できません。","label":"carrier.data_reminder","source":"augmentation:boundary:generalization-v2-v3"}
+{"text":"家族共有の携帯データを76%使用し、来月1日に利用枠を更新します。","label":"carrier.data_reminder","source":"augmentation:boundary:generalization-v2-v3"}
+{"text":"家族共有モバイルプランへの変更で追加回線と4か月分の特典データが付きます。","label":"carrier.promotion","source":"augmentation:boundary:generalization-v2-v3"}
+{"text":"通信ポイントを今週、通話券または高速データパックへ割引交換できます。","label":"carrier.promotion","source":"augmentation:boundary:generalization-v2-v3"}
+{"text":"市立科学館の家族券を期間限定販売中。年間券には子ども実験教室が付きます。","label":"promotion","source":"augmentation:boundary:generalization-v2-v3"}
+{"text":"レストラン会員企画で新規チャージ50,000円にアフタヌーンティー券を追加します。","label":"promotion","source":"augmentation:boundary:generalization-v2-v3"}
+{"text":"本番ログサービス audit-stream の索引上限が近く、24時間以内に書き込みを停止する可能性があります。","label":"work.alert","source":"augmentation:boundary:generalization-v2-v3"}
+{"text":"内部API証明書の期限が迫り、鍵を更新しない場合は月曜の配備で接続できません。","label":"work.alert","source":"augmentation:boundary:generalization-v2-v3"}
+{"text":"メッセージキュー backlog-main の保管容量が不足し、明夜から古い処理分を削除します。","label":"work.alert","source":"augmentation:boundary:generalization-v2-v3"}
+{"text":"デスクトップブラウザの保守が完了し、端末間タブ同期とダウンロード履歴を改善しました。","label":"transaction.message","source":"augmentation:boundary:generalization-v2-v3"}
+{"text":"パソコン用クライアントの更新に成功し、オフラインフォルダ追加と添付検索を修正しました。","label":"transaction.message","source":"augmentation:boundary:generalization-v2-v3"}
+{"text":"新端末ログインの確認コードは381420です。サポート担当にも転送しないでください。","label":"verification","source":"augmentation:boundary:generalization-v2-v3"}
+{"text":"決済パスワード再設定コード725193は10分間有効で、ご本人のみ入力できます。","label":"verification","source":"augmentation:boundary:generalization-v2-v3"}
+{"text":"環境部門は深刻な大気汚染中の長時間運動を控え、防護用品を使うよう案内しています。","label":"government.reminder","source":"augmentation:boundary:generalization-v2-v3"}
+{"text":"詐欺対策窓口は、返金担当がSMSコードを求めたら操作を中止し公式サービスへ連絡するよう呼びかけています。","label":"government.reminder","source":"augmentation:boundary:generalization-v2-v3"}
+{"text":"地域病院の眼科再診は金曜15時10分です。来院前に受付をお済ませください。","label":"life.medical","source":"augmentation:boundary:generalization-v2-v3"}
+{"text":"特注収納の注文WG82630は支払い済みで、工場が検品後に発送します。","label":"transaction.order","source":"augmentation:boundary:generalization-v2-v3"}
+{"text":"9月分のカード請求額486,000円、最低支払額48,600円で、10月6日が期限です。","label":"finance.credit_card","source":"augmentation:boundary:generalization-v2-v3"}
+{"text":"フェリー座席を確定しました。予約証明書を有人窓口へ提示して乗船証を受け取り、銀行暗証情報は伝えないでください。","label":"travel.ticketing","source":"augmentation:boundary:generalization-v2-v3"}

@@ -1,0 +1,81 @@
+{"text":"跨行定时转账已于07:42执行，收款账户尾号5026，电子回单已生成。","label":"finance.bank","source":"acceptance:generalization-v11"}
+{"text":"Your scheduled bank transfer ran at 07:42 to account ending 5026; an electronic receipt is ready.","label":"finance.bank","source":"acceptance:generalization-v11"}
+{"text":"他行宛て予約振込を7時42分に実行し、末尾5026の口座へ送金しました。電子控えを発行済みです。","label":"finance.bank","source":"acceptance:generalization-v11"}
+{"text":"未使用的渡轮卧铺附加费已核退，274元将在四个工作日内返回原支付渠道。","label":"finance.refund","source":"acceptance:generalization-v11"}
+{"text":"The unused ferry-cabin surcharge was refunded; $274 returns to the original payment channel within four business days.","label":"finance.refund","source":"acceptance:generalization-v11"}
+{"text":"未使用のフェリー寝台追加料金274円を返金し、4営業日以内に元の決済手段へ戻します。","label":"finance.refund","source":"acceptance:generalization-v11"}
+{"text":"分期信用卡本月账单为3280元，最低还款410元，最后扣款日为9月17日。","label":"finance.credit_card","source":"acceptance:generalization-v11"}
+{"text":"This month's installment-card statement is $3,280, with $410 minimum due by September 17.","label":"finance.credit_card","source":"acceptance:generalization-v11"}
+{"text":"分割払いカードの今月請求は3,280円、最低支払額は410円で、9月17日が期限です。","label":"finance.credit_card","source":"acceptance:generalization-v11"}
+{"text":"尾号1173卡在机场自动售货机支付24元，离线交易现已入账。","label":"finance.consumption","source":"acceptance:generalization-v11"}
+{"text":"A $24 offline vending-machine purchase at the airport posted to the card ending 1173.","label":"finance.consumption","source":"acceptance:generalization-v11"}
+{"text":"末尾1173のカードで空港自販機の24円オフライン決済が記録されました。","label":"finance.consumption","source":"acceptance:generalization-v11"}
+{"text":"本周期境外流量已使用82%，剩余1.4GB，套餐将在周一自动刷新。","label":"carrier.data_reminder","source":"acceptance:generalization-v11"}
+{"text":"You have used 82% of this cycle's roaming data; 1.4 GB remains before Monday's reset.","label":"carrier.data_reminder","source":"acceptance:generalization-v11"}
+{"text":"今周期の海外データを82%使用し、残りは1.4GBです。月曜に自動更新されます。","label":"carrier.data_reminder","source":"acceptance:generalization-v11"}
+{"text":"儿童手表eSIM副卡月费为36元，将随主号码账单在13日合并扣款。","label":"carrier.billing","source":"acceptance:generalization-v11"}
+{"text":"The smartwatch eSIM line costs $36 this month and will be collected with the primary mobile bill on the 13th.","label":"carrier.billing","source":"acceptance:generalization-v11"}
+{"text":"子ども用時計のeSIM副回線料金は36円で、13日に主回線請求とまとめて引き落とします。","label":"carrier.billing","source":"acceptance:generalization-v11"}
+{"text":"携号转网验证平台今晚重启，22:10至22:35暂不受理新申请。","label":"carrier.service","source":"acceptance:generalization-v11"}
+{"text":"The number-porting verification platform restarts tonight and pauses new requests from 22:10 to 22:35.","label":"carrier.service","source":"acceptance:generalization-v11"}
+{"text":"番号移行の確認基盤を今夜再起動し、22時10分から22時35分まで新規申請を停止します。","label":"carrier.service","source":"acceptance:generalization-v11"}
+{"text":"供热公司周三进行管网压力测试，测试期间高层住户可能短时停暖。","label":"life.utility","source":"acceptance:generalization-v11"}
+{"text":"The district-heating utility will pressure-test its network Wednesday; upper floors may briefly lose heat.","label":"life.utility","source":"acceptance:generalization-v11"}
+{"text":"地域暖房会社は水曜に配管圧力試験を行い、高層階では一時的に暖房が止まる場合があります。","label":"life.utility","source":"acceptance:generalization-v11"}
+{"text":"遗传检测实验室已完成复核，风险解读报告可在复诊前由医生查看。","label":"life.medical","source":"acceptance:generalization-v11"}
+{"text":"The genetics lab completed its review; your clinician can view the risk-interpretation report before follow-up.","label":"life.medical","source":"acceptance:generalization-v11"}
+{"text":"遺伝子検査室の再確認が終わり、再診前に医師がリスク解説報告を確認できます。","label":"life.medical","source":"acceptance:generalization-v11"}
+{"text":"进口冷链集装箱已从货轮卸下，正在铁路场站等待温控转运。","label":"life.logistics","source":"acceptance:generalization-v11"}
+{"text":"The imported cold-chain container was unloaded from the vessel and awaits temperature-controlled rail transfer.","label":"life.logistics","source":"acceptance:generalization-v11"}
+{"text":"輸入冷蔵コンテナを貨物船から荷下ろしし、鉄道貨物駅で温度管理輸送を待っています。","label":"life.logistics","source":"acceptance:generalization-v11"}
+{"text":"收件地址已更正为松涛路18号，快递员将在午后重新安排末端派送。","label":"life.express","source":"acceptance:generalization-v11"}
+{"text":"The delivery address was corrected to 18 Songtao Road; the courier will reschedule last-mile delivery this afternoon.","label":"life.express","source":"acceptance:generalization-v11"}
+{"text":"配達先を松涛路18番へ修正し、配達員が本日午後に最終配送を再手配します。","label":"life.express","source":"acceptance:generalization-v11"}
+{"text":"冷冻餐盒已存入社区冷柜D03，提取密码为2907，请在21点前领取。","label":"life.pickup_code","source":"acceptance:generalization-v11"}
+{"text":"Your frozen meal box is in community freezer D03; collect it before 9 p.m. with code 2907.","label":"life.pickup_code","source":"acceptance:generalization-v11"}
+{"text":"冷凍食事ボックスを共同冷凍庫D03に保管しました。受取番号2907で21時までにお受け取りください。","label":"life.pickup_code","source":"acceptance:generalization-v11"}
+{"text":"海事法院已签收证据保全申请，承办法官将在审查后发送缴费通知。","label":"government.court","source":"acceptance:generalization-v11"}
+{"text":"The maritime court received the evidence-preservation request; the assigned judge will issue a fee notice after review.","label":"government.court","source":"acceptance:generalization-v11"}
+{"text":"海事裁判所が証拠保全申立てを受領し、審査後に担当裁判官が納付案内を送ります。","label":"government.court","source":"acceptance:generalization-v11"}
+{"text":"海啸防灾部门提示：听到长鸣警报后不要乘电梯，请步行前往山腰避难台。","label":"government.reminder","source":"acceptance:generalization-v11"}
+{"text":"Tsunami emergency officials advise walking to the hillside refuge, without elevators, after the long warning tone.","label":"government.reminder","source":"acceptance:generalization-v11"}
+{"text":"津波防災機関は長い警報音の後、エレベーターを使わず徒歩で中腹避難所へ向かうよう案内しています。","label":"government.reminder","source":"acceptance:generalization-v11"}
+{"text":"生育津贴资格复核已通过，本次补发金额将在社保待遇账户显示。","label":"government.social_security","source":"acceptance:generalization-v11"}
+{"text":"Your maternity-benefit eligibility review passed; the supplemental payment will appear in the social-benefits account.","label":"government.social_security","source":"acceptance:generalization-v11"}
+{"text":"出産給付の資格再審査に通過し、追加支給額が社会保障給付アカウントに表示されます。","label":"government.social_security","source":"acceptance:generalization-v11"}
+{"text":"生产对象存储写入延迟已超过八分钟，若继续上升将阻塞备份任务。","label":"work.alert","source":"acceptance:generalization-v11"}
+{"text":"Production object-storage writes are over eight minutes behind and may block backups if latency rises.","label":"work.alert","source":"acceptance:generalization-v11"}
+{"text":"本番オブジェクトストレージの書き込み遅延が8分を超え、さらに増えるとバックアップが停止します。","label":"work.alert","source":"acceptance:generalization-v11"}
+{"text":"供应商准入单VN-209已完成合规审查，等待采购负责人确认结算条款。","label":"work.approval","source":"acceptance:generalization-v11"}
+{"text":"Vendor onboarding VN-209 cleared compliance review and awaits Procurement approval of settlement terms.","label":"work.approval","source":"acceptance:generalization-v11"}
+{"text":"取引先登録VN-209はコンプライアンス審査済みで、購買責任者の決済条件承認待ちです。","label":"work.approval","source":"acceptance:generalization-v11"}
+{"text":"夜班门禁刷卡记录缺失，补签申请已登记，工时会在薪资结算前更新。","label":"work.attendance","source":"acceptance:generalization-v11"}
+{"text":"Your night-shift entry swipe is missing; the correction was filed and hours update before payroll closes.","label":"work.attendance","source":"acceptance:generalization-v11"}
+{"text":"夜勤の入館打刻が欠落し、修正申請を登録しました。給与締め前に勤務時間を更新します。","label":"work.attendance","source":"acceptance:generalization-v11"}
+{"text":"架构评审改到周二16:30，白板房取消，新的远程会议邀请已发送。","label":"work.meeting","source":"acceptance:generalization-v11"}
+{"text":"The architecture review moved to Tuesday at 16:30; the whiteboard room was canceled and a remote invite sent.","label":"work.meeting","source":"acceptance:generalization-v11"}
+{"text":"設計レビューを火曜16時30分へ変更し、会議室を取り消してオンライン招待を送りました。","label":"work.meeting","source":"acceptance:generalization-v11"}
+{"text":"新的硬件通行密钥已绑定到账户，密码登录仍可用，恢复代码未变更。","label":"transaction.account_security","source":"acceptance:generalization-v11"}
+{"text":"A new hardware passkey was added to your account; password sign-in remains enabled and recovery codes are unchanged.","label":"transaction.account_security","source":"acceptance:generalization-v11"}
+{"text":"新しいハードウェアパスキーをアカウントへ追加しました。パスワードログインと復旧コードは変更ありません。","label":"transaction.account_security","source":"acceptance:generalization-v11"}
+{"text":"定制书桌订单已确认尺寸并收齐尾款，木工车间下周开始生产。","label":"transaction.order","source":"acceptance:generalization-v11"}
+{"text":"Your custom-desk dimensions and final payment are confirmed; the workshop starts production next week.","label":"transaction.order","source":"acceptance:generalization-v11"}
+{"text":"特注デスクの寸法確認と残金決済が完了し、工房は来週から製作を始めます。","label":"transaction.order","source":"acceptance:generalization-v11"}
+{"text":"本次城际列车行程新增420会员积分，当前可用余额为3860分。","label":"transaction.points","source":"acceptance:generalization-v11"}
+{"text":"Your intercity train trip added 420 reward points; the available balance is now 3,860.","label":"transaction.points","source":"acceptance:generalization-v11"}
+{"text":"今回の都市間列車利用で420ポイントが加算され、利用可能残高は3,860ポイントです。","label":"transaction.points","source":"acceptance:generalization-v11"}
+{"text":"极地邮轮登船凭证已签发，护照核验完成后可在港口柜台打印房卡。","label":"travel.ticketing","source":"acceptance:generalization-v11"}
+{"text":"Your polar-cruise boarding document was issued; print the cabin card at the terminal after passport verification.","label":"travel.ticketing","source":"acceptance:generalization-v11"}
+{"text":"極地クルーズの乗船書類を発行しました。旅券確認後、港窓口で客室カードを印刷できます。","label":"travel.ticketing","source":"acceptance:generalization-v11"}
+{"text":"机场快线因信号检修缩短运行区间，前往航站楼请在中央站换乘接驳巴士。","label":"travel.transport","source":"acceptance:generalization-v11"}
+{"text":"Signal repairs shortened the airport express route; transfer to a replacement bus at Central Station for the terminal.","label":"travel.transport","source":"acceptance:generalization-v11"}
+{"text":"信号点検で空港快速は区間運転となり、ターミナル方面は中央駅で代行バスへ乗り換えてください。","label":"travel.transport","source":"acceptance:generalization-v11"}
+{"text":"电动车充电会员秋季优惠，购买季度包赠送两次高速站预约权益。","label":"promotion","source":"acceptance:generalization-v11"}
+{"text":"An autumn EV-charging membership offer adds two express-station reservations to the quarterly plan.","label":"promotion","source":"acceptance:generalization-v11"}
+{"text":"EV充電会員の秋季キャンペーンで、3か月プランに急速充電所の予約権2回分が付きます。","label":"promotion","source":"acceptance:generalization-v11"}
+{"text":"所谓税务退款专员要求开启屏幕共享并报出银行动态口令，声称否则退款作废。","label":"spam","source":"acceptance:generalization-v11"}
+{"text":"A supposed tax-refund agent demands screen sharing and your bank one-time code or says the refund will expire.","label":"spam","source":"acceptance:generalization-v11"}
+{"text":"税還付担当を名乗る人物が画面共有と銀行のワンタイムコードを要求し、応じなければ還付が無効になると告げています。","label":"spam","source":"acceptance:generalization-v11"}
+{"text":"我把露营炉放在你家门口的收纳箱里了，周末出发时记得带上。","label":"__sift_abstain__","source":"acceptance:generalization-v11"}
+{"text":"I left the camping stove in the storage box by your door; remember it when we leave this weekend.","label":"__sift_abstain__","source":"acceptance:generalization-v11"}
+{"text":"キャンプ用コンロを玄関横の収納箱に入れておいたよ。週末に出るとき忘れないでね。","label":"__sift_abstain__","source":"acceptance:generalization-v11"}

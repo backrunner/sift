@@ -1,0 +1,60 @@
+{"text":"【木棉电器】旧空调换新补贴开放，预约回收并购买指定机型可再减300元。","label":"promotion","source":"acceptance:generalization-v2"}
+{"text":"【城市博物馆】家庭年卡本周办理赠两场特展预约名额。","label":"promotion","source":"acceptance:generalization-v2"}
+{"text":"您的定制书桌订单FD67231已完成付款，工厂将在质检后安排发运。","label":"transaction.order","source":"acceptance:generalization-v2"}
+{"text":"本次高铁行程新增380出行积分，可用积分总数更新为5420分。","label":"transaction.points","source":"acceptance:generalization-v2"}
+{"text":"老用户更换家庭共享套餐，可增加两张副卡并获赠周末流量。","label":"carrier.promotion","source":"acceptance:generalization-v2"}
+{"text":"9月通信服务月结单金额84.30元，自动扣款将在18日执行。","label":"carrier.billing","source":"acceptance:generalization-v2"}
+{"text":"活期账户尾号3925今日向晨曦诊所支付186元，可用余额已更新。","label":"finance.bank","source":"acceptance:generalization-v2"}
+{"text":"信用卡本期应还5170元，最低还款517元，请在10月3日前处理。","label":"finance.credit_card","source":"acceptance:generalization-v2"}
+{"text":"退订课程的款项640元已退回原支付卡，银行入账可能需要两个工作日。","label":"finance.refund","source":"acceptance:generalization-v2"}
+{"text":"【海岬航运】周日客船座席已确认，请在开航前凭订单证件到B区领取登船牌。","label":"travel.ticketing","source":"acceptance:generalization-v2"}
+{"text":"假冒航运理赔的通知称行李补偿待发放，要求先转账缴纳档案审核费。","label":"spam","source":"acceptance:generalization-v2"}
+{"text":"声称无需信用审核的借款要求先购买电子保证函，付款后才会安排放款。","label":"spam","source":"acceptance:generalization-v2"}
+{"text":"生产监控告警：日志索引 logs-apricot 的保留额度将在48小时后耗尽，写入可能暂停。","label":"work.alert","source":"acceptance:generalization-v2"}
+{"text":"浏览器桌面版更新完成，新增标签组同步并修复下载列表显示。","label":"transaction.message","source":"acceptance:generalization-v2"}
+{"text":"市生态环境部门提醒：空气污染橙色预警期间减少剧烈户外运动。","label":"government.reminder","source":"acceptance:generalization-v2"}
+{"text":"你到家后告诉我一声，我把落在这里的充电器明天带给你。","label":"__sift_abstain__","source":"acceptance:generalization-v2"}
+{"text":"课程助教说周四的讨论改到线上，你收到会议链接了吗？","label":"__sift_abstain__","source":"acceptance:generalization-v2"}
+{"text":"【晨星餐厅】工作日午餐储值套餐加送两份甜点券，本月底前可办理。","label":"promotion","source":"acceptance:generalization-v2"}
+{"text":"港口官方提示：登船牌只在人工柜台核验订单证件后发放，不会索取银行卡密码。","label":"travel.ticketing","source":"acceptance:generalization-v2"}
+{"text":"冒充票务安全人员的短信用取消订单相威胁，要求上传证件并告知银行动态码。","label":"spam","source":"acceptance:generalization-v2"}
+{"text":"Kapok Appliances trade-in offer adds a 45-dollar rebate when an old air conditioner is collected with purchase.","label":"promotion","source":"acceptance:generalization-v2"}
+{"text":"City Museum family annual passes include reservations for two special exhibitions this week.","label":"promotion","source":"acceptance:generalization-v2"}
+{"text":"Payment for custom desk order FD81529 is complete; the workshop will ship it after final inspection.","label":"transaction.order","source":"acceptance:generalization-v2"}
+{"text":"Your rail trip added 380 travel points and raised the available total to 5,420.","label":"transaction.points","source":"acceptance:generalization-v2"}
+{"text":"Existing customers who move to the shared family plan receive two extra lines and weekend data.","label":"carrier.promotion","source":"acceptance:generalization-v2"}
+{"text":"The September telecommunications statement is 84.30 dollars; automatic payment runs on the 18th.","label":"carrier.billing","source":"acceptance:generalization-v2"}
+{"text":"Checking account ending 3925 paid 186 dollars to Sunrise Clinic today; available funds were updated.","label":"finance.bank","source":"acceptance:generalization-v2"}
+{"text":"Your card balance due is 5,170 dollars, with a 517-dollar minimum payment by October 3.","label":"finance.credit_card","source":"acceptance:generalization-v2"}
+{"text":"A 640-dollar refund for the cancelled course was sent to the original card and may take two business days.","label":"finance.refund","source":"acceptance:generalization-v2"}
+{"text":"Cape Ferry confirmed your Sunday seat. Collect the boarding pass in Zone B using the document on the booking.","label":"travel.ticketing","source":"acceptance:generalization-v2"}
+{"text":"A notice impersonating marine claims says baggage compensation is pending but demands an advance file-review transfer.","label":"spam","source":"acceptance:generalization-v2"}
+{"text":"A loan advertised without a credit review requires buying an electronic guarantee certificate before release.","label":"spam","source":"acceptance:generalization-v2"}
+{"text":"Production alert: retention capacity for log index logs-plum will run out in 48 hours and may pause writes.","label":"work.alert","source":"acceptance:generalization-v2"}
+{"text":"The desktop browser update finished, adding tab-group sync and correcting the downloads list.","label":"transaction.message","source":"acceptance:generalization-v2"}
+{"text":"The city environmental health office advises limiting strenuous outdoor exercise during the orange air alert.","label":"government.reminder","source":"acceptance:generalization-v2"}
+{"text":"Message me when you get home; I will bring the charger you left here tomorrow.","label":"__sift_abstain__","source":"acceptance:generalization-v2"}
+{"text":"The course assistant moved Thursday's discussion online. Did you receive the meeting link?","label":"__sift_abstain__","source":"acceptance:generalization-v2"}
+{"text":"Morning Star Restaurant weekday lunch bundle includes two dessert vouchers when loaded before month-end.","label":"promotion","source":"acceptance:generalization-v2"}
+{"text":"Official port notice: boarding passes are issued at the staffed desk after booking-document checks; bank passwords are never requested.","label":"travel.ticketing","source":"acceptance:generalization-v2"}
+{"text":"A text posing as ticket security threatens to cancel the booking and asks for identity uploads plus a banking one-time code.","label":"spam","source":"acceptance:generalization-v2"}
+{"text":"木綿家電のエアコン買替企画。旧製品の回収と対象機種の購入で4,500円を追加割引します。","label":"promotion","source":"acceptance:generalization-v2"}
+{"text":"市立博物館の家族年間券を今週申し込むと、特別展2回分の予約枠が付きます。","label":"promotion","source":"acceptance:generalization-v2"}
+{"text":"特注机の注文FD94836は支払い済みで、工房が最終検品後に発送します。","label":"transaction.order","source":"acceptance:generalization-v2"}
+{"text":"今回の鉄道利用で380トラベルポイントが加算され、利用可能残高は5,420ポイントです。","label":"transaction.points","source":"acceptance:generalization-v2"}
+{"text":"既存利用者が家族共有プランへ変更すると、追加回線2本と週末データが付きます。","label":"carrier.promotion","source":"acceptance:generalization-v2"}
+{"text":"9月分の通信サービス請求額は8,430円で、18日に自動引き落としを行います。","label":"carrier.billing","source":"acceptance:generalization-v2"}
+{"text":"普通預金口座末尾3925から本日、朝日クリニックへ18,600円を支払い、残高を更新しました。","label":"finance.bank","source":"acceptance:generalization-v2"}
+{"text":"カード請求額は517,000円、最低支払額は51,700円で、10月3日が期限です。","label":"finance.credit_card","source":"acceptance:generalization-v2"}
+{"text":"解約した講座の返金64,000円を元のカードへ送金しました。反映まで2営業日かかる場合があります。","label":"finance.refund","source":"acceptance:generalization-v2"}
+{"text":"岬フェリーの日曜便座席を確定しました。予約時の証明書を使いBエリアで乗船証を受け取ってください。","label":"travel.ticketing","source":"acceptance:generalization-v2"}
+{"text":"海運補償窓口を装う通知が手荷物補償を案内し、先に書類審査料を振り込むよう求めています。","label":"spam","source":"acceptance:generalization-v2"}
+{"text":"信用審査なしをうたう借入が、融資実行前に電子保証書を購入するよう要求しています。","label":"spam","source":"acceptance:generalization-v2"}
+{"text":"本番監視アラート：ログ索引 logs-peach の保管容量が48時間以内に尽き、書き込み停止の可能性があります。","label":"work.alert","source":"acceptance:generalization-v2"}
+{"text":"デスクトップ版ブラウザの更新が完了し、タブグループ同期とダウンロード一覧を改善しました。","label":"transaction.message","source":"acceptance:generalization-v2"}
+{"text":"市の環境保健部門は、大気汚染オレンジ警報中の激しい屋外運動を控えるよう呼びかけています。","label":"government.reminder","source":"acceptance:generalization-v2"}
+{"text":"家に着いたら連絡してください。忘れていった充電器は明日持っていきます。","label":"__sift_abstain__","source":"acceptance:generalization-v2"}
+{"text":"木曜の授業討論はオンラインに変更だそうです。会議リンクは届きましたか。","label":"__sift_abstain__","source":"acceptance:generalization-v2"}
+{"text":"モーニングスター食堂の平日ランチ回数券。月末までの購入でデザート券2枚を追加します。","label":"promotion","source":"acceptance:generalization-v2"}
+{"text":"港の公式案内です。乗船証は予約証明書を有人窓口で確認して発行し、銀行暗証情報は求めません。","label":"travel.ticketing","source":"acceptance:generalization-v2"}
+{"text":"票券保安担当を装うSMSが予約取消をほのめかし、身分証画像と銀行ワンタイムコードを要求しています。","label":"spam","source":"acceptance:generalization-v2"}

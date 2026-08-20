@@ -1,0 +1,60 @@
+{"text":"交通管理部门通知：江湾隧道周六夜间封闭检修，请机动车改走沿江高架。","label":"government.traffic","source":"augmentation:boundary:generalization-v4"}
+{"text":"区法院提示：证据材料补交截止日为9月18日，清单请登录官方诉讼平台查看。","label":"government.court","source":"augmentation:boundary:generalization-v4"}
+{"text":"燃气公司通知：北区管线维护期间将于周四上午暂停供气三小时。","label":"life.utility","source":"augmentation:boundary:generalization-v4"}
+{"text":"运营商计划凌晨切换语音核心网，部分号码可能短暂无法接听电话。","label":"carrier.service","source":"augmentation:boundary:generalization-v4"}
+{"text":"7月绩效奖金6,280元已汇入尾号4902的工资账户。","label":"finance.income","source":"augmentation:boundary:generalization-v4"}
+{"text":"门诊手术理赔审核完成，保险金8,460元预计明日转入收款账户。","label":"finance.insurance","source":"augmentation:boundary:generalization-v4"}
+{"text":"季度产品复盘会改到周二10:00，会议室与线上地址均已更新。","label":"work.meeting","source":"augmentation:boundary:generalization-v4"}
+{"text":"合同审批单CT-6314等待处理，法务意见和附件已上传工作台。","label":"work.approval","source":"augmentation:boundary:generalization-v4"}
+{"text":"山景度假村确认您11月6日起三晚住宿，入住时请出示预订证件。","label":"travel.tourism","source":"augmentation:boundary:generalization-v4"}
+{"text":"快递已存入春晖驿站8号柜，取件码3527，请及时领取。","label":"life.pickup_code","source":"augmentation:boundary:generalization-v4"}
+{"text":"违章短信引导至仿冒网站缴纳证件解锁费，并威胁当天吊销驾照。","label":"spam","source":"augmentation:boundary:generalization-v4"}
+{"text":"冒充法院执行人员的来电要求购买礼品卡抵扣处罚并发送卡密。","label":"spam","source":"augmentation:boundary:generalization-v4"}
+{"text":"所谓重新派件页面要求先付手续费，再填写银行卡号和安全码。","label":"spam","source":"augmentation:boundary:generalization-v4"}
+{"text":"荐股导师承诺固定收益，要求把服务费和本金汇入个人账户。","label":"spam","source":"augmentation:boundary:generalization-v4"}
+{"text":"假客服以账号停用为由，诱导在陌生网址提交密码和身份证照片。","label":"spam","source":"augmentation:boundary:generalization-v4"}
+{"text":"【绿色屋顶】家庭光伏预约可获安装补贴和免费现场测量。","label":"promotion","source":"augmentation:boundary:generalization-v4"}
+{"text":"手机服务周更换屏幕立减120元，线上预约赠设备清洁。","label":"promotion","source":"augmentation:boundary:generalization-v4"}
+{"text":"家庭意外险新客活动含保费折扣和全年在线问诊权益。","label":"promotion","source":"augmentation:boundary:generalization-v4"}
+{"text":"露营地你从地图上的三个位置里选吧，我都可以，周五前告诉我。","label":"__sift_abstain__","source":"augmentation:boundary:generalization-v4"}
+{"text":"今晚还是用之前的房间视频聊吗？我九点以后都有空。","label":"__sift_abstain__","source":"augmentation:boundary:generalization-v4"}
+{"text":"Traffic management notice: Harbor Tunnel closes Saturday night for maintenance; drivers should use the river expressway.","label":"government.traffic","source":"augmentation:boundary:generalization-v4"}
+{"text":"District Court says supplemental evidence is due September 18; the checklist is on the official litigation portal.","label":"government.court","source":"augmentation:boundary:generalization-v4"}
+{"text":"The gas utility will suspend supply in the north district for three hours Thursday morning during pipeline work.","label":"life.utility","source":"augmentation:boundary:generalization-v4"}
+{"text":"The carrier switches its voice core overnight, and some numbers may briefly be unable to receive calls.","label":"carrier.service","source":"augmentation:boundary:generalization-v4"}
+{"text":"Your July performance bonus of 6,280 dollars was credited to payroll account ending 4902.","label":"finance.income","source":"augmentation:boundary:generalization-v4"}
+{"text":"The outpatient surgery claim completed review; an 8,460-dollar benefit is due in the nominated account tomorrow.","label":"finance.insurance","source":"augmentation:boundary:generalization-v4"}
+{"text":"The quarterly product review moved to Tuesday at 10 AM; both the room and online address were updated.","label":"work.meeting","source":"augmentation:boundary:generalization-v4"}
+{"text":"Contract approval CT-6314 awaits action; legal comments and attachments are available in the workspace.","label":"work.approval","source":"augmentation:boundary:generalization-v4"}
+{"text":"Mountain View Resort confirmed your three-night stay from November 6; show the booking document at check-in.","label":"travel.tourism","source":"augmentation:boundary:generalization-v4"}
+{"text":"Parcel pickup code 3527 is ready in Chunhui Station locker 8. Please collect it promptly.","label":"life.pickup_code","source":"augmentation:boundary:generalization-v4"}
+{"text":"A traffic violation text links to a fake site for a licence unlock fee and threatens same-day revocation.","label":"spam","source":"augmentation:boundary:generalization-v4"}
+{"text":"A caller posing as court enforcement demands gift cards for a penalty and asks you to send the card codes.","label":"spam","source":"augmentation:boundary:generalization-v4"}
+{"text":"A supposed redelivery page requires an advance handling fee plus your card number and security code.","label":"spam","source":"augmentation:boundary:generalization-v4"}
+{"text":"A stock mentor promises fixed returns but wants both the service fee and principal in a personal account.","label":"spam","source":"augmentation:boundary:generalization-v4"}
+{"text":"Fake support threatens account closure and directs you to submit a password and identity photo on an unfamiliar site.","label":"spam","source":"augmentation:boundary:generalization-v4"}
+{"text":"Green Roof home solar reservations include an installation rebate and free on-site measurement.","label":"promotion","source":"augmentation:boundary:generalization-v4"}
+{"text":"Phone Service Week takes 120 dollars off screen replacement and adds free cleaning for online bookings.","label":"promotion","source":"augmentation:boundary:generalization-v4"}
+{"text":"The new-customer family accident policy includes a premium discount and year-round online consultations.","label":"promotion","source":"augmentation:boundary:generalization-v4"}
+{"text":"Choose any of the three campsites I marked on the map. Tell me by Friday; they all work for me.","label":"__sift_abstain__","source":"augmentation:boundary:generalization-v4"}
+{"text":"Should we use our previous room for a video chat tonight? I am free after nine.","label":"__sift_abstain__","source":"augmentation:boundary:generalization-v4"}
+{"text":"交通管理から、ハーバートンネルは土曜夜に点検で閉鎖されるため、河岸高速へ迂回するよう案内しています。","label":"government.traffic","source":"augmentation:boundary:generalization-v4"}
+{"text":"地方裁判所から、追加証拠の期限は9月18日で、一覧は公式訴訟ポータルにあるとの通知です。","label":"government.court","source":"augmentation:boundary:generalization-v4"}
+{"text":"ガス会社は配管作業のため、木曜午前に北地区の供給を3時間停止します。","label":"life.utility","source":"augmentation:boundary:generalization-v4"}
+{"text":"通信会社は深夜に音声コアを切り替え、一部番号で一時的に着信できない場合があります。","label":"carrier.service","source":"augmentation:boundary:generalization-v4"}
+{"text":"7月分の業績賞与628,000円を給与口座末尾4902へ入金しました。","label":"finance.income","source":"augmentation:boundary:generalization-v4"}
+{"text":"外来手術の保険審査が完了し、846,000円を明日指定口座へ振り込む予定です。","label":"finance.insurance","source":"augmentation:boundary:generalization-v4"}
+{"text":"四半期製品レビューは火曜10時へ変更され、会議室とオンラインURLを更新しました。","label":"work.meeting","source":"augmentation:boundary:generalization-v4"}
+{"text":"契約承認CT-6314が処理待ちです。法務コメントと添付資料は業務画面にあります。","label":"work.approval","source":"augmentation:boundary:generalization-v4"}
+{"text":"マウンテンビューリゾートで11月6日から3泊の予約を確定しました。受付で予約証明書をご提示ください。","label":"travel.tourism","source":"augmentation:boundary:generalization-v4"}
+{"text":"荷物を春日受取所8番ロッカーへ保管しました。受取番号3527でお受け取りください。","label":"life.pickup_code","source":"augmentation:boundary:generalization-v4"}
+{"text":"交通違反SMSが偽サイトへ誘導し、免許解除料を払わなければ当日失効すると脅しています。","label":"spam","source":"augmentation:boundary:generalization-v4"}
+{"text":"裁判所執行官を装う人物が罰金用ギフトカードを購入し、番号を送るよう要求しています。","label":"spam","source":"augmentation:boundary:generalization-v4"}
+{"text":"再配達を装うページが手数料の先払いとカード番号、セキュリティコードを求めています。","label":"spam","source":"augmentation:boundary:generalization-v4"}
+{"text":"株式講師が固定利益を約束し、手数料と元金を個人口座へ送らせようとしています。","label":"spam","source":"augmentation:boundary:generalization-v4"}
+{"text":"偽サポートが口座停止を理由に、不審なサイトでパスワードと身分証写真を入力させようとしています。","label":"spam","source":"augmentation:boundary:generalization-v4"}
+{"text":"グリーンルーフの家庭用太陽光予約は設置補助と現地測定が無料です。","label":"promotion","source":"augmentation:boundary:generalization-v4"}
+{"text":"スマホサービス週間は画面交換が12,000円引き。オンライン予約で清掃も無料です。","label":"promotion","source":"augmentation:boundary:generalization-v4"}
+{"text":"家族傷害保険の新規契約で保険料割引と年間オンライン相談が付きます。","label":"promotion","source":"augmentation:boundary:generalization-v4"}
+{"text":"地図に印を付けた三つのキャンプ場から選んで。私はどこでもいいので金曜までに教えて。","label":"__sift_abstain__","source":"augmentation:boundary:generalization-v4"}
+{"text":"今夜は前と同じルームでビデオ通話する？9時以降なら空いているよ。","label":"__sift_abstain__","source":"augmentation:boundary:generalization-v4"}

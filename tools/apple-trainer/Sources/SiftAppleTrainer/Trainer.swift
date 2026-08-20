@@ -764,6 +764,25 @@ func inferCarrierAdvertisingLabel(_ text: String) -> String {
         return "carrier.call_reminder"
     }
 
+    // FBS contains a recurring monthly account-summary template. Some copies
+    // append a small offer (for example, a seasonal data giveaway), but the
+    // primary intent is still a statement of consumption and balance. Keep
+    // that strong structure ahead of broad promotion keywords so near-identical
+    // statements cannot split across billing and promotion labels.
+    let hasMonthlyConsumptionStatement =
+        containsAny(text, ["个人 实际 消费", "个人实际消费", "当月 累计 消费", "当月累计消费"]) &&
+        containsAny(text, [
+            "余额",
+            "本月 免费 项目 使用 情况",
+            "本月免费项目使用情况",
+            "已 使用",
+            "已使用",
+            "剩余",
+        ])
+    if hasMonthlyConsumptionStatement {
+        return "carrier.billing"
+    }
+
     let hasUsageSignal = containsAny(text, ["已 使用", "剩余", "余额", "本月", "免费 项目", "话费", "流量"])
     let hasPromotionSignal = containsAny(text, ["优惠", "活动", "赠送", "免费 领取", "送", "抽奖", "下载", "折", "特价", "办理 新", "回复", "开通"])
     if containsAny(text, ["账单", "缴费", "充值 成功", "欠费", "应缴", "账期", "bill", "billing", "statement", "payment received", "autopay", "請求", "支払い"]) {

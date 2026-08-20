@@ -1,0 +1,60 @@
+{"text":"交管部门提醒：滨河大道周日06:00至12:00施工封闭，请车辆绕行湖西路。","label":"government.traffic","source":"acceptance:generalization-v4"}
+{"text":"您的车辆有未处理违章，点击非官方链接缴纳加急解锁费，否则今日扣留驾驶证。","label":"spam","source":"acceptance:generalization-v4"}
+{"text":"市中级法院通知：案件材料补充期限为9月6日，请通过诉讼服务平台查看清单。","label":"government.court","source":"acceptance:generalization-v4"}
+{"text":"自称法院执行人员要求购买购物卡抵扣罚金，并把卡号通过短信发送。","label":"spam","source":"acceptance:generalization-v4"}
+{"text":"供水公司通知：管网检修将于周二13:00至16:00暂停东区供水。","label":"life.utility","source":"acceptance:generalization-v4"}
+{"text":"【绿能之家】屋顶光伏方案开放预约，签约可享设备补贴和免费勘测。","label":"promotion","source":"acceptance:generalization-v4"}
+{"text":"您的住院理赔已审核通过，赔付款12,680元将在两个工作日内转入指定账户。","label":"finance.insurance","source":"acceptance:generalization-v4"}
+{"text":"家庭医疗险本月投保赠健康咨询服务，线上测算保费可领取优惠券。","label":"promotion","source":"acceptance:generalization-v4"}
+{"text":"快递已放入松林驿站3号柜，取件码7196，请在48小时内领取。","label":"life.pickup_code","source":"acceptance:generalization-v4"}
+{"text":"包裹派送失败，需在陌生页面支付2元重新投递费并填写完整卡号。","label":"spam","source":"acceptance:generalization-v4"}
+{"text":"采购申请PR-4829等待您审批，预算和供应商报价已附在工作台。","label":"work.approval","source":"acceptance:generalization-v4"}
+{"text":"周末露营地点你来定吧，我发的两个方案看完后告诉我更喜欢哪个。","label":"__sift_abstain__","source":"acceptance:generalization-v4"}
+{"text":"运营商将在凌晨升级语音网络，期间部分用户可能短暂无法拨打电话。","label":"carrier.service","source":"acceptance:generalization-v4"}
+{"text":"手机维修节本周更换电池立减80元，预约到店再赠清洁服务。","label":"promotion","source":"acceptance:generalization-v4"}
+{"text":"8月工资18,420元已存入尾号6317账户，当前可用余额已更新。","label":"finance.income","source":"acceptance:generalization-v4"}
+{"text":"内部投资名额保证每周收益，先把入会资金转到导师私人账户即可跟单。","label":"spam","source":"acceptance:generalization-v4"}
+{"text":"海岸酒店确认您的两晚住宿，入住日为10月2日，前台凭预订证件办理。","label":"travel.tourism","source":"acceptance:generalization-v4"}
+{"text":"海岛度假早鸟套餐限时七折，连续入住两晚赠机场接送。","label":"promotion","source":"acceptance:generalization-v4"}
+{"text":"项目复盘会议改到周五14:30，视频会议室和议程已更新。","label":"work.meeting","source":"acceptance:generalization-v4"}
+{"text":"晚上有空视频聊一下吗？还是用我们上次那个房间链接。","label":"__sift_abstain__","source":"acceptance:generalization-v4"}
+{"text":"Traffic authority notice: Riverside Avenue closes Sunday from 6 AM to noon; vehicles should use West Lake Road.","label":"government.traffic","source":"acceptance:generalization-v4"}
+{"text":"An unofficial page claims an unpaid traffic violation needs an express unlock fee today or your licence will be seized.","label":"spam","source":"acceptance:generalization-v4"}
+{"text":"The district court set September 6 as the deadline for additional case documents; review the checklist on its official portal.","label":"government.court","source":"acceptance:generalization-v4"}
+{"text":"Someone posing as a court officer demands gift cards for a penalty and asks for the card numbers by text.","label":"spam","source":"acceptance:generalization-v4"}
+{"text":"The water utility will suspend service in the east district Tuesday from 1 to 4 PM for pipe maintenance.","label":"life.utility","source":"acceptance:generalization-v4"}
+{"text":"Green Home's rooftop solar offer includes an equipment rebate and a free site survey for new contracts.","label":"promotion","source":"acceptance:generalization-v4"}
+{"text":"Your hospital claim was approved; the 12,680-dollar benefit will reach the nominated account within two business days.","label":"finance.insurance","source":"acceptance:generalization-v4"}
+{"text":"This month's family health policy offer includes online premium estimates, a voucher, and medical consultation access.","label":"promotion","source":"acceptance:generalization-v4"}
+{"text":"Parcel pickup code 7196 is ready at Pine Station locker 3. Collect it within 48 hours.","label":"life.pickup_code","source":"acceptance:generalization-v4"}
+{"text":"A failed-delivery message sends you to an unfamiliar page for a two-dollar redelivery fee and full card number.","label":"spam","source":"acceptance:generalization-v4"}
+{"text":"Purchase request PR-4829 is awaiting your approval; the budget and supplier quote are attached in the workspace.","label":"work.approval","source":"acceptance:generalization-v4"}
+{"text":"You choose our camping spot this weekend. Look at the two ideas I sent and tell me which one you prefer.","label":"__sift_abstain__","source":"acceptance:generalization-v4"}
+{"text":"The carrier is upgrading its voice network overnight, and some customers may briefly be unable to place calls.","label":"carrier.service","source":"acceptance:generalization-v4"}
+{"text":"Phone Repair Week takes 80 dollars off battery replacement and adds a free cleaning for appointments.","label":"promotion","source":"acceptance:generalization-v4"}
+{"text":"Your August salary of 18,420 dollars was credited to account ending 6317 and the available balance was updated.","label":"finance.income","source":"acceptance:generalization-v4"}
+{"text":"A private mentor guarantees weekly investment returns after you transfer membership funds to a personal account.","label":"spam","source":"acceptance:generalization-v4"}
+{"text":"Coast Hotel confirmed your two-night stay beginning October 2; present the booking document at reception.","label":"travel.tourism","source":"acceptance:generalization-v4"}
+{"text":"The island resort early-booking package is 30 percent off and includes airport transfers for two-night stays.","label":"promotion","source":"acceptance:generalization-v4"}
+{"text":"The project retrospective moved to Friday at 2:30 PM; the video room and agenda have been updated.","label":"work.meeting","source":"acceptance:generalization-v4"}
+{"text":"Are you free for a video chat tonight? We can use the same room link as last time.","label":"__sift_abstain__","source":"acceptance:generalization-v4"}
+{"text":"交通管理から、リバーサイド通りは日曜6時から12時まで工事のため通行止めとなり、西湖通りへ迂回するよう案内しています。","label":"government.traffic","source":"acceptance:generalization-v4"}
+{"text":"未処理の交通違反があるとして、非公式リンクで緊急解除料を払わなければ免許を差し押さえると脅しています。","label":"spam","source":"acceptance:generalization-v4"}
+{"text":"地方裁判所から、事件資料の追加期限は9月6日で、公式訴訟ポータルの一覧を確認するよう通知しています。","label":"government.court","source":"acceptance:generalization-v4"}
+{"text":"裁判所職員を装う人物が罰金用のギフトカード購入を求め、カード番号をSMSで送るよう指示しています。","label":"spam","source":"acceptance:generalization-v4"}
+{"text":"水道局は配管点検のため、火曜13時から16時まで東地区の給水を停止します。","label":"life.utility","source":"acceptance:generalization-v4"}
+{"text":"グリーンホームの屋根用太陽光プラン。新規契約で設備補助と現地調査が無料です。","label":"promotion","source":"acceptance:generalization-v4"}
+{"text":"入院保険金の審査が完了し、1,268,000円を指定口座へ2営業日以内に振り込みます。","label":"finance.insurance","source":"acceptance:generalization-v4"}
+{"text":"今月の家族医療保険キャンペーンは、オンライン保険料試算でクーポンと健康相談が付きます。","label":"promotion","source":"acceptance:generalization-v4"}
+{"text":"荷物を松林受取所3番ロッカーへ保管しました。受取番号7196で48時間以内にお受け取りください。","label":"life.pickup_code","source":"acceptance:generalization-v4"}
+{"text":"配達失敗を理由に、不審なページで再配達料200円とカード番号全桁を入力するよう求めています。","label":"spam","source":"acceptance:generalization-v4"}
+{"text":"購買申請PR-4829が承認待ちです。予算と仕入先見積書は業務画面に添付されています。","label":"work.approval","source":"acceptance:generalization-v4"}
+{"text":"週末のキャンプ場所は任せるよ。送った二つの案を見て、どちらが好きか教えて。","label":"__sift_abstain__","source":"acceptance:generalization-v4"}
+{"text":"通信会社は深夜に音声ネットワークを更新し、一部利用者は一時的に通話できない場合があります。","label":"carrier.service","source":"acceptance:generalization-v4"}
+{"text":"スマホ修理週間はバッテリー交換が8,000円引き。来店予約でクリーニングも無料です。","label":"promotion","source":"acceptance:generalization-v4"}
+{"text":"8月分の給与1,842,000円を口座末尾6317へ入金し、利用可能残高を更新しました。","label":"finance.income","source":"acceptance:generalization-v4"}
+{"text":"毎週の投資利益を保証すると称し、参加資金を講師の個人口座へ先に送るよう求めています。","label":"spam","source":"acceptance:generalization-v4"}
+{"text":"コーストホテルで10月2日から2泊の予約を確定しました。受付で予約証明書をご提示ください。","label":"travel.tourism","source":"acceptance:generalization-v4"}
+{"text":"島のリゾート早期予約プランは30%割引。2泊すると空港送迎が付きます。","label":"promotion","source":"acceptance:generalization-v4"}
+{"text":"プロジェクト振り返り会議は金曜14時30分へ変更され、ビデオ会議室と議題を更新しました。","label":"work.meeting","source":"acceptance:generalization-v4"}
+{"text":"今夜ビデオで話せる？前回と同じルームリンクを使おう。","label":"__sift_abstain__","source":"acceptance:generalization-v4"}

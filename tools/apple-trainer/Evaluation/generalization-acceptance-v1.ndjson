@@ -1,0 +1,45 @@
+{"text":"【澄海家居】智能门锁新品预订可减220元，并赠上门测量服务。","label":"promotion","source":"acceptance:generalization-v1"}
+{"text":"您的园艺工具订单GY48271已付款，仓库将在明日上午交给承运商。","label":"transaction.order","source":"acceptance:generalization-v1"}
+{"text":"本次酒店消费累计620奖励积分，新的可用余额为9040分。","label":"transaction.points","source":"acceptance:generalization-v1"}
+{"text":"宽带家庭融合套餐限时升级，办理后每月增加共享流量并赠视频权益。","label":"carrier.promotion","source":"acceptance:generalization-v1"}
+{"text":"您的家庭通信8月账单为116.80元，请在9月12日前完成缴费。","label":"carrier.billing","source":"acceptance:generalization-v1"}
+{"text":"储蓄账户尾号7812在青木药房支出74.60元，当前余额已更新。","label":"finance.bank","source":"acceptance:generalization-v1"}
+{"text":"信用卡本期账单金额3260元，最低还款326元，到期日为本月28日。","label":"finance.credit_card","source":"acceptance:generalization-v1"}
+{"text":"取消订单的退款219元已提交至原付款渠道，到账时间由发卡行决定。","label":"finance.refund","source":"acceptance:generalization-v1"}
+{"text":"【北湾客轮】夜航船票已出票，请在开航40分钟前持预订证件到3号柜台换取登船卡。","label":"travel.ticketing","source":"acceptance:generalization-v1"}
+{"text":"冒充客轮售后的消息称航次取消，要求先支付理赔登记费并提供短信验证码。","label":"spam","source":"acceptance:generalization-v1"}
+{"text":"对象存储项目 archive-north 将在周日到期，保留期结束后未续费数据会被清除。","label":"work.alert","source":"acceptance:generalization-v1"}
+{"text":"桌面客户端升级完成，本次新增离线同步开关并修复附件预览问题。","label":"transaction.message","source":"acceptance:generalization-v1"}
+{"text":"市卫生部门提醒：高温时段减少户外活动，及时补水并留意老人儿童状态。","label":"government.reminder","source":"acceptance:generalization-v1"}
+{"text":"免征信周转金已预留名额，先缴账户激活费即可在十分钟内到账。","label":"spam","source":"acceptance:generalization-v1"}
+{"text":"周六晚还按原来的时间在社区球场见吗？我会带上两瓶水。","label":"__sift_abstain__","source":"acceptance:generalization-v1"}
+{"text":"Clearshore Home launch offer: pre-order the smart lock and receive installation plus a 35-dollar discount.","label":"promotion","source":"acceptance:generalization-v1"}
+{"text":"Your garden equipment order GY61583 is paid and will leave the warehouse tomorrow morning.","label":"transaction.order","source":"acceptance:generalization-v1"}
+{"text":"This hotel stay added 620 reward points; the available balance is now 9,040.","label":"transaction.points","source":"acceptance:generalization-v1"}
+{"text":"Family broadband upgrade offer adds shared mobile data and six months of video service.","label":"carrier.promotion","source":"acceptance:generalization-v1"}
+{"text":"Your August home communications bill is 116.80 dollars and payment is due September 12.","label":"carrier.billing","source":"acceptance:generalization-v1"}
+{"text":"Savings account ending 7812 was debited 74.60 dollars at Greenleaf Pharmacy today.","label":"finance.bank","source":"acceptance:generalization-v1"}
+{"text":"Your card statement balance is 3,260 dollars, with a 326-dollar minimum due on the 28th.","label":"finance.credit_card","source":"acceptance:generalization-v1"}
+{"text":"The cancelled-order refund of 219 dollars was returned to the original payment route.","label":"finance.refund","source":"acceptance:generalization-v1"}
+{"text":"North Bay Ferry issued your evening ticket. Bring the booking document to Counter 3 forty minutes before sailing.","label":"travel.ticketing","source":"acceptance:generalization-v1"}
+{"text":"A message impersonating ferry support claims the sailing was cancelled and asks for a claim-registration fee plus an SMS code.","label":"spam","source":"acceptance:generalization-v1"}
+{"text":"Object storage project archive-west expires Sunday; unrenewed data is removed after the retention period.","label":"work.alert","source":"acceptance:generalization-v1"}
+{"text":"The desktop client upgrade finished, adding an offline-sync switch and fixing attachment previews.","label":"transaction.message","source":"acceptance:generalization-v1"}
+{"text":"The city health department advises less outdoor activity during extreme heat and regular hydration.","label":"government.reminder","source":"acceptance:generalization-v1"}
+{"text":"A no-credit-check cash advance is reserved, but an account activation charge must be paid before release.","label":"spam","source":"acceptance:generalization-v1"}
+{"text":"Are we still meeting at the community court Saturday evening? I will bring two bottles of water.","label":"__sift_abstain__","source":"acceptance:generalization-v1"}
+{"text":"クリアホームのスマートロック先行予約。取付サービスと3,500円割引が付きます。","label":"promotion","source":"acceptance:generalization-v1"}
+{"text":"園芸用品の注文GY73914は支払い済みで、明日の朝に倉庫から発送します。","label":"transaction.order","source":"acceptance:generalization-v1"}
+{"text":"今回のホテル利用で620ポイントが加算され、利用可能残高は9,040ポイントです。","label":"transaction.points","source":"acceptance:generalization-v1"}
+{"text":"家族向け光回線の期間限定変更で、共有データと動画サービス6か月分を追加します。","label":"carrier.promotion","source":"acceptance:generalization-v1"}
+{"text":"8月分の家庭通信料金は11,680円です。9月12日までにお支払いください。","label":"carrier.billing","source":"acceptance:generalization-v1"}
+{"text":"普通預金口座末尾7812から本日、青葉薬局で7,460円を引き落としました。","label":"finance.bank","source":"acceptance:generalization-v1"}
+{"text":"カードの請求額は326,000円、最低支払額は32,600円で、支払日は28日です。","label":"finance.credit_card","source":"acceptance:generalization-v1"}
+{"text":"取消注文の返金21,900円を元のお支払い方法へ返しました。","label":"finance.refund","source":"acceptance:generalization-v1"}
+{"text":"ノースベイフェリーの夜便乗船券を発行しました。出航40分前に予約時の証明書を3番窓口へお持ちください。","label":"travel.ticketing","source":"acceptance:generalization-v1"}
+{"text":"フェリー窓口を装い欠航補償を案内し、申請料の先払いとSMS認証番号を要求するメッセージです。","label":"spam","source":"acceptance:generalization-v1"}
+{"text":"オブジェクトストレージ archive-east は日曜に期限切れとなり、未更新のデータは保管期間後に削除されます。","label":"work.alert","source":"acceptance:generalization-v1"}
+{"text":"デスクトップアプリの更新が完了し、オフライン同期設定と添付ファイル表示を改善しました。","label":"transaction.message","source":"acceptance:generalization-v1"}
+{"text":"市の保健部門から、高温時は外出を控え、こまめに水分を取るようお知らせします。","label":"government.reminder","source":"acceptance:generalization-v1"}
+{"text":"審査不要の即日融資枠を確保しました。入金前に口座有効化手数料を支払ってください。","label":"spam","source":"acceptance:generalization-v1"}
+{"text":"土曜の夜はいつもの地域コートで会いますか。水を2本持っていきます。","label":"__sift_abstain__","source":"acceptance:generalization-v1"}

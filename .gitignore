@@ -95,6 +95,7 @@ docs/APP_STORE_CONNECT_METADATA.md
 *.db
 *.ndjson
 !tools/apple-trainer/Evaluation/*.ndjson
+!tools/apple-trainer/Training/*.ndjson
 !tools/pii-trainer/Evaluation/*.ndjson
 *.jsonl
 *.csv

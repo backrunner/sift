@@ -1,0 +1,102 @@
+{"text":"安全设置已移除旧手机，旧设备现在无法访问账户。","label":"transaction.account_security","source":"augmentation:boundary:generalization-v6"}
+{"text":"账号设备列表已删除平板，个人资料访问权限已撤销。","label":"transaction.account_security","source":"augmentation:boundary:generalization-v6"}
+{"text":"Security settings removed the old phone; it can no longer access the account.","label":"transaction.account_security","source":"augmentation:boundary:generalization-v6"}
+{"text":"The tablet was removed from your device list and profile access was revoked.","label":"transaction.account_security","source":"augmentation:boundary:generalization-v6"}
+{"text":"セキュリティ設定で古いスマホを削除し、アカウントへのアクセスを停止しました。","label":"transaction.account_security","source":"augmentation:boundary:generalization-v6"}
+{"text":"端末一覧からタブレットを削除し、プロフィールの権限を取り消しました。","label":"transaction.account_security","source":"augmentation:boundary:generalization-v6"}
+{"text":"家庭会员升级已确认，新权益从下个结算周期开始生效。","label":"transaction.member","source":"augmentation:boundary:generalization-v6"}
+{"text":"家庭会员等级变更完成，新增权益已写入账户。","label":"transaction.member","source":"augmentation:boundary:generalization-v6"}
+{"text":"Your family membership upgrade is confirmed and new benefits start next billing cycle.","label":"transaction.member","source":"augmentation:boundary:generalization-v6"}
+{"text":"The household member tier changed successfully and the added benefits are now on the account.","label":"transaction.member","source":"augmentation:boundary:generalization-v6"}
+{"text":"ファミリー会員のアップグレードが確定し、次回の請求期間から特典が有効です。","label":"transaction.member","source":"augmentation:boundary:generalization-v6"}
+{"text":"会員ランクの変更が完了し、追加特典がアカウントに反映されました。","label":"transaction.member","source":"augmentation:boundary:generalization-v6"}
+{"text":"家庭音乐方案体验已开启，首月优惠并赠送离线听歌券。","label":"promotion","source":"augmentation:boundary:generalization-v6"}
+{"text":"家庭套餐限时活动：首期价格优惠并附送两张下载券。","label":"promotion","source":"augmentation:boundary:generalization-v6"}
+{"text":"The family music plan trial offers a first-month deal and two offline listening passes.","label":"promotion","source":"augmentation:boundary:generalization-v6"}
+{"text":"Join the household plan promotion for an introductory price and complimentary download credits.","label":"promotion","source":"augmentation:boundary:generalization-v6"}
+{"text":"音楽ファミリープランの体験キャンペーンで、初月割引とオフライン券が付きます。","label":"promotion","source":"augmentation:boundary:generalization-v6"}
+{"text":"家族向けプランの期間限定特典として、初回料金が割引になります。","label":"promotion","source":"augmentation:boundary:generalization-v6"}
+{"text":"云端文件续存页面要求输入钱包种子词，否则资料会被删除。","label":"spam","source":"augmentation:boundary:generalization-v6"}
+{"text":"假冒云盘升级页面索要钱包恢复短语来保留照片。","label":"spam","source":"augmentation:boundary:generalization-v6"}
+{"text":"A cloud-file retention page asks for your wallet seed words or the files will be deleted.","label":"spam","source":"augmentation:boundary:generalization-v6"}
+{"text":"A fake cloud-drive upgrade requests a wallet recovery phrase to keep your photos.","label":"spam","source":"augmentation:boundary:generalization-v6"}
+{"text":"偽のクラウド保存ページが、データを残すためウォレットのシードフレーズを要求しています。","label":"spam","source":"augmentation:boundary:generalization-v6"}
+{"text":"クラウド容量の更新を装い、写真の保存にリカバリーフレーズを入力させようとしています。","label":"spam","source":"augmentation:boundary:generalization-v6"}
+{"text":"北辰能源现金分红已到账，税后金额计入证券资金余额。","label":"finance.stock","source":"augmentation:boundary:generalization-v6"}
+{"text":"持仓公司派发股息，红利已反映在可用证券余额中。","label":"finance.stock","source":"augmentation:boundary:generalization-v6"}
+{"text":"Northstar Energy's cash dividend was posted to your brokerage balance after tax.","label":"finance.stock","source":"augmentation:boundary:generalization-v6"}
+{"text":"A dividend from your holding is now reflected in the available securities cash balance.","label":"finance.stock","source":"augmentation:boundary:generalization-v6"}
+{"text":"保有銘柄の現金配当が支払われ、税引後の金額が証券口座に反映されました。","label":"finance.stock","source":"augmentation:boundary:generalization-v6"}
+{"text":"持ち株の配当金が入金され、利用可能な証券残高を更新しました。","label":"finance.stock","source":"augmentation:boundary:generalization-v6"}
+{"text":"稳健理财90天产品到期，本金和收益已回到结算账户。","label":"finance.wealth","source":"augmentation:boundary:generalization-v6"}
+{"text":"理财组合赎回完成，资金将转入绑定的结算账户。","label":"finance.wealth","source":"augmentation:boundary:generalization-v6"}
+{"text":"The balanced 90-day investment product matured and returned principal and earnings to settlement.","label":"finance.wealth","source":"augmentation:boundary:generalization-v6"}
+{"text":"Your managed portfolio redemption completed and funds are moving to the linked settlement account.","label":"finance.wealth","source":"augmentation:boundary:generalization-v6"}
+{"text":"安定運用の90日商品が満期となり、元本と収益を決済口座へ戻しました。","label":"finance.wealth","source":"augmentation:boundary:generalization-v6"}
+{"text":"運用ポートフォリオの解約が完了し、資金を指定の決済口座へ移します。","label":"finance.wealth","source":"augmentation:boundary:generalization-v6"}
+{"text":"失业保险资格复核通过，下期待遇发放安排可在社保平台查看。","label":"government.social_security","source":"augmentation:boundary:generalization-v6"}
+{"text":"社会保险缴费权益记录已更新，请在官方平台查询。","label":"government.social_security","source":"augmentation:boundary:generalization-v6"}
+{"text":"Your unemployment-benefit eligibility review passed; the next payment schedule is available on the social-insurance portal.","label":"government.social_security","source":"augmentation:boundary:generalization-v6"}
+{"text":"The social-insurance contribution record was updated in the official benefits portal.","label":"government.social_security","source":"augmentation:boundary:generalization-v6"}
+{"text":"失業給付の受給資格確認が完了し、次回の支給予定を保険ポータルで確認できます。","label":"government.social_security","source":"augmentation:boundary:generalization-v6"}
+{"text":"社会保険料の記録が更新され、公式サイトで給付履歴を確認できます。","label":"government.social_security","source":"augmentation:boundary:generalization-v6"}
+{"text":"电子税务登记地址变更已办结，回执已存入企业账户。","label":"government.tax","source":"augmentation:boundary:generalization-v6"}
+{"text":"税务机关已受理企业信息变更，电子回执可在账户下载。","label":"government.tax","source":"augmentation:boundary:generalization-v6"}
+{"text":"The tax office completed the business address change and stored its electronic receipt.","label":"government.tax","source":"augmentation:boundary:generalization-v6"}
+{"text":"Your company tax-account update was accepted; the electronic filing receipt is ready.","label":"government.tax","source":"augmentation:boundary:generalization-v6"}
+{"text":"税務署が事業所住所の変更を処理し、電子受付票をアカウントに保存しました。","label":"government.tax","source":"augmentation:boundary:generalization-v6"}
+{"text":"法人税務情報の変更申請が受理され、電子控えをダウンロードできます。","label":"government.tax","source":"augmentation:boundary:generalization-v6"}
+{"text":"餐厅已接单并开始备餐，骑手到店后更新预计送达时间。","label":"life.takeaway","source":"augmentation:boundary:generalization-v6"}
+{"text":"外卖订单制作中，配送员取餐后会显示新的送达时间。","label":"life.takeaway","source":"augmentation:boundary:generalization-v6"}
+{"text":"The restaurant accepted the order and started cooking; the courier will update the arrival time.","label":"life.takeaway","source":"augmentation:boundary:generalization-v6"}
+{"text":"Your meal is being prepared and the delivery estimate will refresh after pickup.","label":"life.takeaway","source":"augmentation:boundary:generalization-v6"}
+{"text":"レストランが注文を受けて調理中です。配達員の受取後に到着予定を更新します。","label":"life.takeaway","source":"augmentation:boundary:generalization-v6"}
+{"text":"食事の注文を準備しています。配達員が受け取ると予定時刻が表示されます。","label":"life.takeaway","source":"augmentation:boundary:generalization-v6"}
+{"text":"货物完成海关放行，下一站进入港区保税仓分拨。","label":"life.logistics","source":"augmentation:boundary:generalization-v6"}
+{"text":"运单已通过海关检查，正在转往区域监管仓。","label":"life.logistics","source":"augmentation:boundary:generalization-v6"}
+{"text":"The shipment cleared customs and is moving to the port's bonded warehouse for sorting.","label":"life.logistics","source":"augmentation:boundary:generalization-v6"}
+{"text":"The consignment passed customs inspection and is headed to the regional bonded depot.","label":"life.logistics","source":"augmentation:boundary:generalization-v6"}
+{"text":"貨物は通関を終え、港の保税倉庫へ移動して仕分けを待っています。","label":"life.logistics","source":"augmentation:boundary:generalization-v6"}
+{"text":"輸送品の税関手続きが完了し、地域の保税拠点へ向かっています。","label":"life.logistics","source":"augmentation:boundary:generalization-v6"}
+{"text":"运营商语音信箱收到新留言，来电号码可在应用中查看。","label":"carrier.call_reminder","source":"augmentation:boundary:generalization-v6"}
+{"text":"您有新的语音留言，来自0755-3321，可打开运营商应用收听。","label":"carrier.call_reminder","source":"augmentation:boundary:generalization-v6"}
+{"text":"Your carrier voicemail has a new message; view the caller number in the app.","label":"carrier.call_reminder","source":"augmentation:boundary:generalization-v6"}
+{"text":"A new voicemail is waiting from 020-4418; listen through the carrier application.","label":"carrier.call_reminder","source":"augmentation:boundary:generalization-v6"}
+{"text":"通信会社の留守番電話に新しいメッセージがあります。アプリで再生できます。","label":"carrier.call_reminder","source":"augmentation:boundary:generalization-v6"}
+{"text":"03-4488からの留守番電話を携帯アプリで確認できます。","label":"carrier.call_reminder","source":"augmentation:boundary:generalization-v6"}
+{"text":"行政公告：办公楼东门下周起仅供访客使用，员工请走北门。","label":"work.announcement","source":"augmentation:boundary:generalization-v6"}
+{"text":"公司通知：访客入口调整，员工请按新指引进出办公区。","label":"work.announcement","source":"augmentation:boundary:generalization-v6"}
+{"text":"Administration notice: the east office entrance becomes visitors-only next week; staff should use the north door.","label":"work.announcement","source":"augmentation:boundary:generalization-v6"}
+{"text":"A company notice changes the visitor entrance and directs employees to the north gate.","label":"work.announcement","source":"augmentation:boundary:generalization-v6"}
+{"text":"総務からのお知らせ：来週から東口は来訪者専用、社員は北口を利用してください。","label":"work.announcement","source":"augmentation:boundary:generalization-v6"}
+{"text":"社内通知で来訪者入口が変更され、社員は新しい通用口を使います。","label":"work.announcement","source":"augmentation:boundary:generalization-v6"}
+{"text":"年度隐私合规课程需在28日前完成，学习记录同步员工档案。","label":"work.training","source":"augmentation:boundary:generalization-v6"}
+{"text":"学习计划已更新，请完成本周模块和结业测验。","label":"work.training","source":"augmentation:boundary:generalization-v6"}
+{"text":"Finish your annual privacy-compliance course before the 28th; your employee record stores completion.","label":"work.training","source":"augmentation:boundary:generalization-v6"}
+{"text":"Your learning plan was updated; finish this week's modules and final assessment.","label":"work.training","source":"augmentation:boundary:generalization-v6"}
+{"text":"年次プライバシー研修を28日までに修了し、受講記録を社員台帳に反映してください。","label":"work.training","source":"augmentation:boundary:generalization-v6"}
+{"text":"学習計画が更新されました。今週の各章と修了試験を終えてください。","label":"work.training","source":"augmentation:boundary:generalization-v6"}
+{"text":"机场接驳班车受道路施工影响，改在6号站台上客，班次时间不变。","label":"travel.transport","source":"augmentation:boundary:generalization-v6"}
+{"text":"机场快线临时更换上车站台，班次时间保持不变。","label":"travel.transport","source":"augmentation:boundary:generalization-v6"}
+{"text":"Road works moved the airport shuttle pickup to stand 6 while departure time stays unchanged.","label":"travel.transport","source":"augmentation:boundary:generalization-v6"}
+{"text":"The airport express uses a temporary pickup stand; the scheduled departure is unchanged.","label":"travel.transport","source":"augmentation:boundary:generalization-v6"}
+{"text":"道路工事のため空港連絡バスの乗り場が6番に変わりますが、出発時刻は同じです。","label":"travel.transport","source":"augmentation:boundary:generalization-v6"}
+{"text":"空港急行の乗車場所が一時変更され、運行時刻は変わりません。","label":"travel.transport","source":"augmentation:boundary:generalization-v6"}
+{"text":"气象部门发布霜冻蓝色预警，夜间低洼处接近零度。","label":"life.weather","source":"augmentation:boundary:generalization-v6"}
+{"text":"天气预警提示今晚低洼地区可能出现霜冻，请做好防护。","label":"life.weather","source":"augmentation:boundary:generalization-v6"}
+{"text":"The weather office issued a frost advisory for low-lying areas overnight.","label":"life.weather","source":"augmentation:boundary:generalization-v6"}
+{"text":"An overnight frost warning is in effect; temperatures may approach freezing.","label":"life.weather","source":"augmentation:boundary:generalization-v6"}
+{"text":"気象台が霜注意報を発表し、夜間は低地で氷点近くになる見込みです。","label":"life.weather","source":"augmentation:boundary:generalization-v6"}
+{"text":"夜間の霜に注意してください。低地では気温が氷点まで下がる可能性があります。","label":"life.weather","source":"augmentation:boundary:generalization-v6"}
+{"text":"应急管理部门提醒家庭清理逃生通道，并约定火灾集合点。","label":"government.reminder","source":"augmentation:boundary:generalization-v6"}
+{"text":"消防部门倡议家中检查出口，和孩子确认紧急集合位置。","label":"government.reminder","source":"augmentation:boundary:generalization-v6"}
+{"text":"Emergency management advises households to clear escape routes and choose a family fire meeting point.","label":"government.reminder","source":"augmentation:boundary:generalization-v6"}
+{"text":"The fire service asks families to check exits and agree where to meet during an emergency.","label":"government.reminder","source":"augmentation:boundary:generalization-v6"}
+{"text":"防災当局が避難経路の確認と、子どもとの火災時集合場所の相談を呼びかけています。","label":"government.reminder","source":"augmentation:boundary:generalization-v6"}
+{"text":"消防本部は家庭で避難口を確認し、緊急時の集合場所を決めるよう案内しています。","label":"government.reminder","source":"augmentation:boundary:generalization-v6"}
+{"text":"检验中心通知：血液检查报告已生成，可在医院应用查看。","label":"life.medical","source":"augmentation:boundary:generalization-v6"}
+{"text":"医院应用显示本周实验室检查结果，医生已上传报告。","label":"life.medical","source":"augmentation:boundary:generalization-v6"}
+{"text":"This week's hospital lab blood-test report is now visible in the patient app.","label":"life.medical","source":"augmentation:boundary:generalization-v6"}
+{"text":"Your lab report is available in the hospital portal after the blood test.","label":"life.medical","source":"augmentation:boundary:generalization-v6"}
+{"text":"今週の血液検査報告が完成し、病院アプリで確認できます。","label":"life.medical","source":"augmentation:boundary:generalization-v6"}
+{"text":"検査センターの結果が病院ポータルに掲載されました。","label":"life.medical","source":"augmentation:boundary:generalization-v6"}

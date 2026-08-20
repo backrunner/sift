@@ -1,0 +1,10 @@
+{"text":"【云服务控制台】您的托管数据库实例 db-prod-271 将在8月18日到期。到期后服务会暂停，保留期结束后实例和备份将被清理，请登录官方控制台续费。","label":"work.alert","source":"targeted:cloud-service-expiry-v1"}
+{"text":"云平台资源告警：账号下的对象存储套餐将于7天后失效，逾期将停止写入并按规则删除保留数据。详情请在官方应用内查看。","label":"work.alert","source":"targeted:cloud-service-expiry-v1"}
+{"text":"【计算服务】手动续费资源 vm-web-845 即将到期，未及时续费会导致主机停机，数据盘将在回收期结束后释放。请前往管理后台处理。","label":"work.alert","source":"targeted:cloud-service-expiry-v1"}
+{"text":"监控通知：生产环境缓存实例 cache-610 剩余5天到期，到期后连接将中断。请通过企业云控制台完成续费或迁移。","label":"work.alert","source":"targeted:cloud-service-expiry-v1"}
+{"text":"【云数据库】实例 mysql-main-392 的服务期将于本月底结束，逾期未续费将先停服后释放，历史备份无法恢复，请安排运维处理。","label":"work.alert","source":"targeted:cloud-service-expiry-v1"}
+{"text":"资源到期告警：容器集群 k8s-prod-128 将在72小时后停止服务。为避免业务中断，请登录官方管理控制台延长服务期。","label":"work.alert","source":"targeted:cloud-service-expiry-v1"}
+{"text":"【企业云助手】您的消息队列实例 mq-order-734 即将到期，回收后配置和消息数据会被清除，请由管理员及时续费。","label":"work.alert","source":"targeted:cloud-service-expiry-v1"}
+{"text":"云账号运维提醒：域名证书将在10天后过期，届时客户端可能无法建立安全连接。请进入证书管理页面更新部署。","label":"work.alert","source":"targeted:cloud-service-expiry-v1"}
+{"text":"【托管服务】搜索集群 search-prod-905 已进入到期倒计时，未续费将暂停读写并在保留期后删除实例，请查看站内信。","label":"work.alert","source":"targeted:cloud-service-expiry-v1"}
+{"text":"数据库服务通知：实例 pg-report-467 的续费状态仍为待处理，服务到期后业务连接会中断，请在官方控制台确认续费。","label":"work.alert","source":"targeted:cloud-service-expiry-v1"}

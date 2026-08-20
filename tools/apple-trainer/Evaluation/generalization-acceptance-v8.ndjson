@@ -1,0 +1,60 @@
+{"text":"账户安全中心已结束一台旧平板的授权，相关会话将被注销。","label":"transaction.account_security","source":"acceptance:generalization-v8"}
+{"text":"The account security center ended access for an old tablet and will sign out its sessions.","label":"transaction.account_security","source":"acceptance:generalization-v8"}
+{"text":"アカウント保護機能が古いタブレットの権限を終了し、そのセッションをログアウトします。","label":"transaction.account_security","source":"acceptance:generalization-v8"}
+{"text":"金卡会员权益升级已完成，新的服务从下一账期开始。","label":"transaction.member","source":"acceptance:generalization-v8"}
+{"text":"Gold member benefits were upgraded successfully and begin with the next billing period.","label":"transaction.member","source":"acceptance:generalization-v8"}
+{"text":"ゴールド会員の特典アップグレードが完了し、次の請求期間から始まります。","label":"transaction.member","source":"acceptance:generalization-v8"}
+{"text":"家庭影院限时订阅优惠，首月赠送四张离线观影券。","label":"promotion","source":"acceptance:generalization-v8"}
+{"text":"Limited family cinema subscription offer includes four offline viewing passes in month one.","label":"promotion","source":"acceptance:generalization-v8"}
+{"text":"ファミリー映画サブスクの期間限定企画で、初月にオフライン視聴券4枚が付きます。","label":"promotion","source":"acceptance:generalization-v8"}
+{"text":"云相册验证页面要求输入钱包种子短语才能恢复相册。","label":"spam","source":"acceptance:generalization-v8"}
+{"text":"A cloud-album verification page asks for a wallet seed phrase to restore your album.","label":"spam","source":"acceptance:generalization-v8"}
+{"text":"クラウドアルバムの確認ページが、復元のためウォレットのシードフレーズを求めています。","label":"spam","source":"acceptance:generalization-v8"}
+{"text":"远峰科技派发现金股息，税后款项已记入证券可用资金。","label":"finance.stock","source":"acceptance:generalization-v8"}
+{"text":"Far Peak Technology paid a cash dividend and the after-tax proceeds are in brokerage funds.","label":"finance.stock","source":"acceptance:generalization-v8"}
+{"text":"ファーピークテックの現金配当が支払われ、税引後の金額が証券資金に反映されました。","label":"finance.stock","source":"acceptance:generalization-v8"}
+{"text":"稳盈组合赎回款已结算，预计周四回到投资账户。","label":"finance.wealth","source":"acceptance:generalization-v8"}
+{"text":"The StableReturn portfolio redemption settled and should reach the investment account Thursday.","label":"finance.wealth","source":"acceptance:generalization-v8"}
+{"text":"安定運用ポートフォリオの解約金が決済され、木曜に投資口座へ戻ります。","label":"finance.wealth","source":"acceptance:generalization-v8"}
+{"text":"失业待遇资格复审通过，发放记录会在社保账户更新。","label":"government.social_security","source":"acceptance:generalization-v8"}
+{"text":"The unemployment-benefit recheck passed and the payment record will update in your social-insurance account.","label":"government.social_security","source":"acceptance:generalization-v8"}
+{"text":"失業給付の再審査に通過し、支給記録が社会保険アカウントに更新されます。","label":"government.social_security","source":"acceptance:generalization-v8"}
+{"text":"企业税务资料变更已受理，电子回执存入办税账户。","label":"government.tax","source":"acceptance:generalization-v8"}
+{"text":"The tax authority accepted the company record change and saved the electronic receipt.","label":"government.tax","source":"acceptance:generalization-v8"}
+{"text":"税務署が法人情報の変更を受理し、電子控えを税務アカウントに保存しました。","label":"government.tax","source":"acceptance:generalization-v8"}
+{"text":"餐馆已接单，正在烹饪，配送员取餐后会更新到达时间。","label":"life.takeaway","source":"acceptance:generalization-v8"}
+{"text":"The restaurant took the order and is cooking; the arrival time updates after courier pickup.","label":"life.takeaway","source":"acceptance:generalization-v8"}
+{"text":"レストランが注文を受けて調理中です。配達員の受取後に到着時刻を更新します。","label":"life.takeaway","source":"acceptance:generalization-v8"}
+{"text":"货物通过海关后转往内陆保税仓，等待下一次分拨。","label":"life.logistics","source":"acceptance:generalization-v8"}
+{"text":"After customs clearance, the cargo is moving to an inland bonded warehouse for the next sort.","label":"life.logistics","source":"acceptance:generalization-v8"}
+{"text":"貨物は通関後に内陸の保税倉庫へ移動し、次の仕分けを待っています。","label":"life.logistics","source":"acceptance:generalization-v8"}
+{"text":"运营商语音信箱新增留言，详情可在应用中回听。","label":"carrier.call_reminder","source":"acceptance:generalization-v8"}
+{"text":"A new carrier voicemail is available to replay in the mobile app.","label":"carrier.call_reminder","source":"acceptance:generalization-v8"}
+{"text":"通信会社の留守番電話に新着メッセージがあり、アプリで再生できます。","label":"carrier.call_reminder","source":"acceptance:generalization-v8"}
+{"text":"办公园区通知：南侧员工入口周一关闭，请从西门进入。","label":"work.announcement","source":"acceptance:generalization-v8"}
+{"text":"Office campus notice: the south staff entrance closes Monday; employees should use the west gate.","label":"work.announcement","source":"acceptance:generalization-v8"}
+{"text":"オフィス施設通知：月曜は南側の社員入口を閉鎖し、西門を利用してください。","label":"work.announcement","source":"acceptance:generalization-v8"}
+{"text":"年度信息安全课程已分配，月底前完成测验即可。","label":"work.training","source":"acceptance:generalization-v8"}
+{"text":"The annual information-security course is assigned; finish its quiz before month-end.","label":"work.training","source":"acceptance:generalization-v8"}
+{"text":"年次情報セキュリティ研修が割り当てられ、月末までに試験を受けてください。","label":"work.training","source":"acceptance:generalization-v8"}
+{"text":"机场接驳线临时改用7号上车点，航班衔接时间不变。","label":"travel.transport","source":"acceptance:generalization-v8"}
+{"text":"The airport shuttle temporarily boards at point 7; the flight connection schedule is unchanged.","label":"travel.transport","source":"acceptance:generalization-v8"}
+{"text":"空港連絡線は一時的に7番乗り場を使いますが、乗継時刻は変わりません。","label":"travel.transport","source":"acceptance:generalization-v8"}
+{"text":"气象部门发布大风预警，今晚沿海阵风可能达到八级。","label":"life.weather","source":"acceptance:generalization-v8"}
+{"text":"The weather office issued a high-wind warning; coastal gusts may reach force eight tonight.","label":"life.weather","source":"acceptance:generalization-v8"}
+{"text":"気象当局が強風注意報を発表し、今夜は沿岸で突風が強まる見込みです。","label":"life.weather","source":"acceptance:generalization-v8"}
+{"text":"消防部门提醒居民清理阳台杂物，确认紧急集合地点。","label":"government.reminder","source":"acceptance:generalization-v8"}
+{"text":"The fire service asks residents to clear balcony clutter and confirm an emergency meeting point.","label":"government.reminder","source":"acceptance:generalization-v8"}
+{"text":"消防本部はベランダの物を片付け、緊急時の集合場所を確認するよう案内しています。","label":"government.reminder","source":"acceptance:generalization-v8"}
+{"text":"医院实验室上传了肝功能检查报告，可在患者端查看。","label":"life.medical","source":"acceptance:generalization-v8"}
+{"text":"The hospital laboratory uploaded your liver-function report; view it in the patient app.","label":"life.medical","source":"acceptance:generalization-v8"}
+{"text":"病院の検査室が肝機能検査の報告書を登録し、患者アプリで確認できます。","label":"life.medical","source":"acceptance:generalization-v8"}
+{"text":"您的动车电子乘车券已发放，闸机二维码可在出发前查看。","label":"travel.ticketing","source":"acceptance:generalization-v8"}
+{"text":"The intercity rail e-ticket was issued; check its gate QR code before departure.","label":"travel.ticketing","source":"acceptance:generalization-v8"}
+{"text":"在来線の電子乗車券が発券され、出発前に改札QRコードを確認できます。","label":"travel.ticketing","source":"acceptance:generalization-v8"}
+{"text":"尾号5928账户在云杉超市扣款214元，交易已入账。","label":"finance.bank","source":"acceptance:generalization-v8"}
+{"text":"Account ending 5928 was charged $214 at Cloudpine Market and the transaction posted.","label":"finance.bank","source":"acceptance:generalization-v8"}
+{"text":"口座末尾5928からクラウドパイン市場へ214円を支払い、取引が記録されました。","label":"finance.bank","source":"acceptance:generalization-v8"}
+{"text":"运营商积分可兑换三日流量包，兑换入口已开放。","label":"carrier.promotion","source":"acceptance:generalization-v8"}
+{"text":"Carrier points can be exchanged for a three-day data pass; redemption is open.","label":"carrier.promotion","source":"acceptance:generalization-v8"}
+{"text":"キャリアポイントを3日分のデータパックに交換できる受付が始まりました。","label":"carrier.promotion","source":"acceptance:generalization-v8"}
