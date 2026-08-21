@@ -152,6 +152,7 @@ public enum TransformerModelDownloadError: Error, LocalizedError, Hashable, Send
     case appUpdateRequired
     case invalidManifestSignature
     case invalidManifestResponse
+    case invalidDistillationProvenance
     case missingRemoteArtifactList
     case unsupportedTokenizerArtifact
     case unsafeArtifactPath(String)
@@ -172,6 +173,8 @@ public enum TransformerModelDownloadError: Error, LocalizedError, Hashable, Send
             return String(localized: "高级模型签名校验失败")
         case .invalidManifestResponse:
             return String(localized: "高级模型清单不可用")
+        case .invalidDistillationProvenance:
+            return String(localized: "高级模型蒸馏来源不可用")
         case .missingRemoteArtifactList:
             return String(localized: "高级模型缺少可下载文件清单")
         case .unsupportedTokenizerArtifact:
@@ -470,14 +473,19 @@ public final class TransformerModelDownloadClient: TransformerModelDownloading, 
         guard
             manifest.schemaVersion == TransformerManifestVerifier.supportedSchemaVersion,
             TransformerManifestVerifier.supportedModelABIs.contains(manifest.modelABI),
-            TransformerRuntimeProfile.supportedComputeUnits.contains(manifest.runtimeProfile.computeUnits),
-            [4, 8].contains(manifest.quantizationProfile.weightBits),
+            TransformerManifestVerifier.supports(
+                runtimeProfile: manifest.runtimeProfile,
+                quantizationProfile: manifest.quantizationProfile
+            ),
             manifest.tokenizerKind == "bpe",
             manifest.tokenizerArtifact.hasSuffix(".siftbpe"),
             TransformerModelStore.isSHA256(manifest.sha256),
             TransformerModelStore.isSHA256(manifest.tokenizerSHA256)
         else {
             throw TransformerModelDownloadError.unsupportedTokenizerArtifact
+        }
+        guard TransformerSignalReleaseContract.accepts(manifest) else {
+            throw TransformerModelDownloadError.invalidDistillationProvenance
         }
         guard !manifest.remoteArtifacts.isEmpty else {
             throw TransformerModelDownloadError.missingRemoteArtifactList

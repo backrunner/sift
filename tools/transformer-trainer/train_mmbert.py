@@ -186,7 +186,7 @@ def parse_arguments() -> Arguments:
         selected_label_loss_weight=raw.selected_label_loss_weight,
         truncate_layers=raw.truncate_layers,
         quantize=raw.quantize,
-        quantization_profile=raw.quantization_profile or ("fp16-baseline" if raw.quantize == "fp16" else "w8a16-channel-ptq"),
+        quantization_profile=raw.quantization_profile or ("fp32-baseline" if raw.quantize == "fp16" else "w8a32-channel-ptq"),
         release_sequence=raw.release_sequence,
         model_abi=raw.model_abi,
         minimum_app_build=raw.minimum_app_build,
@@ -757,7 +757,11 @@ def export_coreml(model, labels: list[str], max_length: int, quantize: str):
             ct.TensorType(name=MODEL_ATTENTION_MASK, shape=(1, max_length), dtype=np.int32),
         ],
         classifier_config=ct.ClassifierConfig(class_labels=labels),
-        compute_precision=ct.precision.FLOAT16,
+        # Core ML Tools 9 can emit non-finite CPU_ONLY values for this
+        # attention graph when every intermediate is lowered to FP16. Keep
+        # the compute graph in FP32; the tournament still applies W8/W4
+        # weight quantization and the physical-device gate remains required.
+        compute_precision=ct.precision.FLOAT32,
         convert_to="mlprogram",
         minimum_deployment_target=ct.target.iOS18,
     )
@@ -1083,11 +1087,12 @@ def main() -> None:
             "computeUnits": "cpuOnly",
             "modelType": "mlProgram",
             "inferenceBudgetMilliseconds": 500,
+            "computePrecision": "float32",
         },
         "quantizationProfile": {
             "identifier": arguments.quantization_profile,
             "weightBits": 16 if arguments.quantize == "fp16" else 8,
-            "activationBits": 16,
+            "activationBits": 32,
             "method": "baseline" if arguments.quantize == "fp16" else "ptq",
             "granularity": "per-tensor" if arguments.quantize == "fp16" else "per-channel",
         },

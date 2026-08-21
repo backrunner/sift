@@ -2,24 +2,34 @@
   "schemaVersion": 1,
   "profiles": [
     {
-      "id": "fp16-baseline",
+      "id": "fp32-baseline",
       "eligibleForRelease": false,
       "method": "baseline",
       "weightBits": 16,
-      "activationBits": 16,
+      "activationBits": 32,
       "granularity": "per-tensor"
     },
     {
       "id": "w8a16-channel-ptq",
-      "eligibleForRelease": true,
+      "eligibleForRelease": false,
+      "historical": true,
       "method": "ptq",
       "weightBits": 8,
       "activationBits": 16,
       "granularity": "per-channel"
     },
     {
+      "id": "w8a32-channel-ptq",
+      "eligibleForRelease": true,
+      "method": "ptq",
+      "weightBits": 8,
+      "activationBits": 32,
+      "granularity": "per-channel"
+    },
+    {
       "id": "w8a16-channel-embedding-w4-block16-ptq",
       "eligibleForRelease": false,
+      "historical": true,
       "enabledByDefault": false,
       "method": "ptq",
       "weightBits": 8,
@@ -36,8 +46,27 @@
       ]
     },
     {
+      "id": "w8a32-channel-embedding-w4-block16-ptq",
+      "eligibleForRelease": false,
+      "enabledByDefault": false,
+      "method": "ptq",
+      "weightBits": 8,
+      "activationBits": 32,
+      "granularity": "per-channel",
+      "weightOverrides": [
+        {
+          "role": "tokenEmbedding",
+          "opNameContains": "embeddings_tok_embeddings_weight",
+          "weightBits": 4,
+          "granularity": "per-block",
+          "blockSize": 16
+        }
+      ]
+    },
+    {
       "id": "w4a16-block16-ptq",
-      "eligibleForRelease": true,
+      "eligibleForRelease": false,
+      "historical": true,
       "method": "ptq",
       "weightBits": 4,
       "activationBits": 16,
@@ -46,8 +75,19 @@
       "qatFallback": "w4a16-block16-qat"
     },
     {
-      "id": "w4a16-block32-ptq",
+      "id": "w4a32-block16-ptq",
       "eligibleForRelease": true,
+      "method": "ptq",
+      "weightBits": 4,
+      "activationBits": 32,
+      "granularity": "per-block",
+      "blockSize": 16,
+      "qatFallback": "w4a32-block16-qat"
+    },
+    {
+      "id": "w4a16-block32-ptq",
+      "eligibleForRelease": false,
+      "historical": true,
       "method": "ptq",
       "weightBits": 4,
       "activationBits": 16,
@@ -56,8 +96,19 @@
       "qatFallback": "w4a16-block32-qat"
     },
     {
-      "id": "w4a16-block16-qat",
+      "id": "w4a32-block32-ptq",
       "eligibleForRelease": true,
+      "method": "ptq",
+      "weightBits": 4,
+      "activationBits": 32,
+      "granularity": "per-block",
+      "blockSize": 32,
+      "qatFallback": "w4a32-block32-qat"
+    },
+    {
+      "id": "w4a16-block16-qat",
+      "eligibleForRelease": false,
+      "historical": true,
       "method": "qat",
       "weightBits": 4,
       "activationBits": 16,
@@ -67,10 +118,31 @@
     },
     {
       "id": "w4a16-block32-qat",
-      "eligibleForRelease": true,
+      "eligibleForRelease": false,
+      "historical": true,
       "method": "qat",
       "weightBits": 4,
       "activationBits": 16,
+      "granularity": "per-block",
+      "blockSize": 32,
+      "enabledWhenPTQQualityFails": true
+    },
+    {
+      "id": "w4a32-block16-qat",
+      "eligibleForRelease": true,
+      "method": "qat",
+      "weightBits": 4,
+      "activationBits": 32,
+      "granularity": "per-block",
+      "blockSize": 16,
+      "enabledWhenPTQQualityFails": true
+    },
+    {
+      "id": "w4a32-block32-qat",
+      "eligibleForRelease": true,
+      "method": "qat",
+      "weightBits": 4,
+      "activationBits": 32,
       "granularity": "per-block",
       "blockSize": 32,
       "enabledWhenPTQQualityFails": true

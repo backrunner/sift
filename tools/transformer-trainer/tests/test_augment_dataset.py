@@ -2,14 +2,46 @@ from __future__ import annotations
 
 import unittest
 import sys
+import json
+import tempfile
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from augment_dataset import augment
+from augment_dataset import augment, load_boundary_rows
 
 
 class AugmentDatasetTests(unittest.TestCase):
+    def test_loads_versioned_boundary_config(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "boundaries.json"
+            path.write_text(json.dumps({
+                "schemaVersion": 1,
+                "boundaryRows": [{
+                    "family": "v50",
+                    "label": "promotion",
+                    "text": "  Limited offer  ",
+                    "language": "en",
+                }],
+            }), encoding="utf-8")
+
+            self.assertEqual(load_boundary_rows([path]), [{
+                "text": "Limited offer",
+                "label": "promotion",
+                "family": "v50",
+                "language": "en",
+            }])
+
+    def test_rejects_non_string_boundary_fields(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "boundaries.json"
+            path.write_text(json.dumps({
+                "schemaVersion": 1,
+                "boundaryRows": [{"text": None, "label": "promotion"}],
+            }), encoding="utf-8")
+            with self.assertRaisesRegex(SystemExit, "requires string text and label"):
+                load_boundary_rows([path])
+
     def test_adds_diverse_boundary_and_replacement_rows(self) -> None:
         base = [{
             "text": "No credit check loan asks for an upfront fee",

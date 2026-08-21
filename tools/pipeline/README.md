@@ -13,13 +13,14 @@ pnpm pipeline -- finetune                     # resume last checkpoint, low LR
 pnpm pipeline -- train-transformer \
   --resume-from build/pipeline/transformer-model/checkpoint
 pnpm pipeline -- quantize-transformer \
-  --version-transformer signal-v2-reminder-v16 --release-sequence 3 \
-  --minimum-app-build 16 --maximum-app-build 2147483647
-# Add --qat-model w4a16-block16-qat=/path/to/qat.mlpackage when PTQ quality fails.
+  --version-transformer signal-v4-generalization-v50-r32-full \
+  --release-sequence 4 --minimum-app-build 19 \
+  --maximum-app-build 2147483647
+# Add --qat-model w4a32-block16-qat=/path/to/qat.mlpackage when PTQ quality fails.
 ```
 
 Stages: `fetch-public` → `fetch-remote` → `curate` → `augment` → `prune` →
-`train-classic` → `train-transformer` → `quantize-transformer`. Each stage validates its own
+`train-classic` → `train-transformer` → `distill-transformer` → `quantize-transformer`. Each stage validates its own
 inputs, so any stage can be re-run in isolation; artifacts live under
 `build/pipeline/`.
 
@@ -50,14 +51,19 @@ inputs, so any stage can be re-run in isolation; artifacts live under
   `pruning-report.json`.
 - `train-classic` uses Create ML MaxEnt by default (`--algorithm-classic
   maxent`) because it is the validated high-accuracy, tiny-model baseline for
-  the current 52-label SMS corpus; pass `--algorithm-classic bert` or `auto`
+  the current 53-label SMS corpus; pass `--algorithm-classic bert` or `auto`
   only for comparison runs. Use `--split-seed-classic` to repeat validation
   on alternate deterministic per-label holdout splits.
 - `train-transformer` fine-tunes `jhu-clsp/mmBERT-small` by default, picks
   cuda (NVIDIA/ROCm) → mps (Apple Silicon) → cpu automatically, always writes
   a resumable checkpoint, and emits
   `training-report.html` (loss curve, per-label accuracy, confusion pairs).
-- `quantize-transformer` regenerates FP16, W8A16, and supported W4A16
+- `distill-transformer` freezes that teacher checkpoint and trains the
+  release-qualified 12-layer student with temperature 2, distill alpha 0.7,
+  boundary loss 2, and seed 32 before quantization.
+- `quantize-transformer` regenerates the FP32 source baseline, W8A32, and
+  supported W4A32 candidates. Historical A16 profiles remain readable but are
+  not release-eligible because the current Core ML graph computes in FP32.
   candidates for the current checkpoint. Unsupported activation-quantized
   combinations are not generated. It never reuses the previous release's
   winner. W4 QAT candidates are considered only when their paired PTQ
@@ -69,12 +75,14 @@ candidate fails quality gates.
   retraining from scratch. When labels are added, shared classifier rows are
   migrated by label id and only new rows start from fresh weights.
 
-The `signal-v2-boundary-v16` target introduces `government.reminder`, so its
-signed catalog entry must keep `releaseSequence = 3` and
-`minimumAppBuild = 16`. The channel top level remains on release sequence 2 for
-legacy single-release parsers; build 16 and newer select sequence 3 from the
-signed `compatibleReleases` catalog. Build 15 and earlier must never receive
-the expanded label contract.
+The published `signal-v4-generalization-v50-r32-distilled-12l` target (channel
+release `signal-v4-generalization-v50-r32-distilled-12l-metadata-v2`) uses the
+current 53-label contract, so its signed catalog entry is
+`releaseSequence = 4` with `minimumAppBuild = 19`. The channel top level
+remains on release sequence 2 for legacy single-release parsers; build 16--18
+select sequence 3 and build 19 and newer select sequence 4 from the signed
+`compatibleReleases` catalog. Build 15 and earlier must never receive the
+expanded label contract.
 
 Tool requirements per stage: `swift` (fetch-public, train-classic), `pnpm`
 (fetch-remote), `uv` (prune, train-transformer, and curate when the model filter
@@ -86,29 +94,43 @@ For every candidate report under
 `build/pipeline/transformer-model/quantization-tournament/reports`, run
 `TransformerRuntimeBenchmark` and the device-hosted production
 `MessageFilterEngine` stress suite on the physical iPhone available for the
-release. Merge that evidence into the report:
+release. Merge that evidence into the report first, then generate the
+distillation gate so its student report hash covers the final evidence:
 
 ```bash
 python3 tools/transformer-trainer/record_device_metrics.py \
-  --report build/pipeline/transformer-model/quantization-tournament/reports/w8a16-channel-ptq.report.json \
+  --report build/pipeline/transformer-model/quantization-tournament/reports/w4a32-block16-ptq.report.json \
   --runtime-benchmark /path/to/runtime-benchmark.json \
   --extension-evidence /path/to/extension-evidence.json
+```
+
+```bash
+python3 tools/transformer-trainer/check_distillation_gate.py \
+  --teacher-report /path/to/teacher.report.json \
+  --student-report build/pipeline/transformer-model/quantization-tournament/reports/w4a32-block16-ptq.report.json \
+  --out build/pipeline/transformer-model/quantization-tournament/distillation-gate-w4a32-block16.json
 ```
 
 After every candidate has device evidence, select the winner. Selection fails
 instead of falling back to FP16 when no int8/int4 candidate passes:
 
 ```bash
-pnpm pipeline -- select-transformer --release-sequence 1
+pnpm pipeline -- select-transformer --release-sequence 4 --minimum-app-build 19
 ```
 
+For a distilled source, selection also requires a passing gate bound to the
+candidate's report, artifact hash, and teacher/student provenance. Gate files
+named `distillation-gate*.json` beside the reports are discovered automatically;
+pass `--distillation-gate /path/to/gate.json` (repeatable) when they are stored
+elsewhere. A missing or stale gate rejects the candidate.
+
 Publish only the selected candidate. The publisher verifies the report SHA,
-artifact SHA, profile, all quality/action/device gates and Ed25519 signatures
+artifact SHA, distillation gate, profile, all quality/action/device gates and Ed25519 signatures
 before writing the immutable release and mutable channel pointer:
 
 ```bash
 python3 tools/transformer-trainer/upload_transformer_model.py \
-  --model-dir build/pipeline/transformer-model/quantization-tournament/candidates/w8a16-channel-ptq \
+  --model-dir build/pipeline/transformer-model/quantization-tournament/candidates/w4a32-block16-ptq \
   --selection build/pipeline/transformer-model/quantization-tournament/selected-candidate.json \
   --r2-bucket "$SIFT_MODEL_R2_BUCKET" --verify-http
 ```

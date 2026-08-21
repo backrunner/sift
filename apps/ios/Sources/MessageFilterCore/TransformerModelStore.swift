@@ -126,6 +126,7 @@ public enum TransformerModelStore {
         guard
             let data = try? Data(contentsOf: manifestURL),
             let manifest = try? JSONDecoder().decode(TransformerModelManifest.self, from: data),
+            TransformerSignalReleaseContract.accepts(manifest),
             let tokenizerURL = tokenizerURL(for: manifest, in: directory, fileManager: fileManager),
             let modelURL = artifactURL(named: manifest.modelArtifact, in: directory, fileManager: fileManager),
             manifest.tokenizerKind == "bpe",

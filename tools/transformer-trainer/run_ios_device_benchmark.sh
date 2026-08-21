@@ -51,6 +51,7 @@ derived_data="$output/DerivedData"
 install_result_bundle="$output/TransformerDeviceInstall.xcresult"
 prime_result_bundle="$output/TransformerDevicePrime.xcresult"
 benchmark_result_bundle="$output/TransformerDeviceBenchmark.xcresult"
+diagnostic_arguments=(-collect-test-diagnostics never)
 
 provisioning_arguments=()
 if [[ "$allow_provisioning_updates" -eq 1 ]]; then
@@ -97,6 +98,7 @@ xcodebuild \
   -resultBundlePath "$install_result_bundle" \
   EXCLUDED_SOURCE_FILE_NAMES=SiftPIIDetector.mlpackage \
   "${provisioning_arguments[@]}" \
+  "${diagnostic_arguments[@]}" \
   -only-testing:TransformerDeviceTests/TransformerDeviceTests/testInstallCandidateWithoutFinalPathPrime \
   test-without-building
 
@@ -110,6 +112,7 @@ xcodebuild \
   -resultBundlePath "$prime_result_bundle" \
   EXCLUDED_SOURCE_FILE_NAMES=SiftPIIDetector.mlpackage \
   "${provisioning_arguments[@]}" \
+  "${diagnostic_arguments[@]}" \
   -only-testing:TransformerDeviceTests/TransformerDeviceTests/testPrimeInstalledTransformerAtFinalPath \
   test-without-building
 
@@ -123,6 +126,7 @@ xcodebuild \
   -resultBundlePath "$benchmark_result_bundle" \
   EXCLUDED_SOURCE_FILE_NAMES=SiftPIIDetector.mlpackage \
   "${provisioning_arguments[@]}" \
+  "${diagnostic_arguments[@]}" \
   -only-testing:TransformerDeviceTests/TransformerDeviceTests/testInstalledTransformerRuntimeBenchmark \
   test-without-building
 

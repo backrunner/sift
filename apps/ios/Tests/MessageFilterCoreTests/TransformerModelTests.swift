@@ -434,6 +434,81 @@ func transformerRuntimeProfileDecodesLegacyBudgetField() throws {
 }
 
 @Test
+func transformerSignalReleaseContractRequiresQualifiedDistillationFromSequence4() {
+    let legacy = TransformerModelManifest(
+        releaseSequence: 3,
+        version: "legacy",
+        trainedAt: "2026-07-01T00:00:00Z",
+        algorithm: "supervised-sequence-classification",
+        backbone: "mmbert",
+        languages: ["zh", "en", "ja"],
+        labels: ["spam"],
+        maxSequenceLength: 8,
+        doLowerCase: false,
+        tokenizerKind: "bpe",
+        tokenizerArtifact: "tokenizer.siftbpe",
+        modelArtifact: "model.mlpackage",
+        sha256: String(repeating: "b", count: 64),
+        taxonomyHash: String(repeating: "c", count: 64),
+        tokenizerSHA256: String(repeating: "d", count: 64),
+        remoteArtifacts: [],
+        downloadBytes: 1
+    )
+    #expect(TransformerSignalReleaseContract.accepts(legacy))
+
+    let missing = TransformerModelManifest(
+        releaseSequence: 4,
+        minimumAppBuild: 19,
+        version: "signal-v4",
+        trainedAt: "2026-08-21T00:00:00Z",
+        algorithm: "supervised-sequence-classification",
+        backbone: "mmbert",
+        languages: ["zh", "en", "ja"],
+        labels: ["spam"],
+        maxSequenceLength: 8,
+        doLowerCase: false,
+        tokenizerKind: "bpe",
+        tokenizerArtifact: "tokenizer.siftbpe",
+        modelArtifact: "model.mlpackage",
+        sha256: String(repeating: "b", count: 64),
+        taxonomyHash: String(repeating: "c", count: 64),
+        tokenizerSHA256: String(repeating: "d", count: 64),
+        remoteArtifacts: [],
+        downloadBytes: 1
+    )
+    #expect(!TransformerSignalReleaseContract.accepts(missing))
+
+    let qualified = TransformerModelManifest(
+        releaseSequence: 4,
+        minimumAppBuild: 19,
+        version: "signal-v4",
+        trainedAt: "2026-08-21T00:00:00Z",
+        algorithm: "teacher-student-distillation",
+        backbone: "mmbert",
+        languages: ["zh", "en", "ja"],
+        labels: ["spam"],
+        maxSequenceLength: 8,
+        doLowerCase: false,
+        tokenizerKind: "bpe",
+        tokenizerArtifact: "tokenizer.siftbpe",
+        modelArtifact: "model.mlpackage",
+        sha256: String(repeating: "b", count: 64),
+        taxonomyHash: String(repeating: "c", count: 64),
+        tokenizerSHA256: String(repeating: "d", count: 64),
+        remoteArtifacts: [],
+        downloadBytes: 1,
+        distillation: TransformerDistillationProvenance(
+            teacherCheckpointSHA256: String(repeating: "a", count: 64),
+            teacherLayers: 22,
+            studentLayers: 12,
+            temperature: 2,
+            distillAlpha: 0.7
+        )
+    )
+    #expect(TransformerSignalReleaseContract.accepts(qualified))
+}
+
+@Test
 func transformerModelStoreValidatesInstalledDirectory() throws {
     let directory = FileManager.default.temporaryDirectory
         .appendingPathComponent("sift-transformer-store-\(UUID().uuidString)", isDirectory: true)
@@ -789,6 +864,217 @@ func pythonOpenSSLManifestV2SignaturesVerifyInSwift() throws {
     try verifier.verifySignature(of: fixture.release)
 }
 
+@Test
+func transformerDistillationProvenanceIsPartOfCanonicalPayload() throws {
+    let repositoryRoot = URL(fileURLWithPath: #filePath)
+        .deletingLastPathComponent()
+        .deletingLastPathComponent()
+        .deletingLastPathComponent()
+        .deletingLastPathComponent()
+        .deletingLastPathComponent()
+    let fixtureURL = repositoryRoot
+        .appendingPathComponent("tools/transformer-trainer/tests/fixtures/manifest_v2_ed25519.json")
+    let fixture = try JSONDecoder().decode(ManifestV2InteropFixture.self, from: Data(contentsOf: fixtureURL))
+    let provenance = TransformerDistillationProvenance(
+        teacherCheckpointSHA256: String(repeating: "a", count: 64),
+        teacherLayers: 22,
+        studentLayers: 12,
+        temperature: 2,
+        distillAlpha: 0.7
+    )
+    let manifest = TransformerReleaseManifestV2(
+        schemaVersion: fixture.release.schemaVersion,
+        releaseSequence: fixture.release.releaseSequence,
+        modelABI: fixture.release.modelABI,
+        minimumAppBuild: fixture.release.minimumAppBuild,
+        maximumAppBuild: fixture.release.maximumAppBuild,
+        minimumOSVersion: fixture.release.minimumOSVersion,
+        runtimeProfile: fixture.release.runtimeProfile,
+        quantizationProfile: fixture.release.quantizationProfile,
+        validationMetrics: fixture.release.validationMetrics,
+        version: fixture.release.version,
+        trainedAt: fixture.release.trainedAt,
+        algorithm: "teacher-student-distillation",
+        backbone: fixture.release.backbone,
+        languages: fixture.release.languages,
+        labels: fixture.release.labels,
+        maxSequenceLength: fixture.release.maxSequenceLength,
+        doLowerCase: fixture.release.doLowerCase,
+        tokenizerKind: fixture.release.tokenizerKind,
+        tokenizerArtifact: fixture.release.tokenizerArtifact,
+        modelArtifact: fixture.release.modelArtifact,
+        sha256: fixture.release.sha256,
+        taxonomyHash: fixture.release.taxonomyHash,
+        tokenizerSHA256: fixture.release.tokenizerSHA256,
+        keyID: fixture.release.keyID,
+        remoteBaseURL: fixture.release.remoteBaseURL,
+        remoteArtifacts: fixture.release.remoteArtifacts,
+        downloadBytes: fixture.release.downloadBytes,
+        distillation: provenance
+    )
+    let changed = TransformerReleaseManifestV2(
+        schemaVersion: manifest.schemaVersion,
+        releaseSequence: manifest.releaseSequence,
+        modelABI: manifest.modelABI,
+        minimumAppBuild: manifest.minimumAppBuild,
+        maximumAppBuild: manifest.maximumAppBuild,
+        minimumOSVersion: manifest.minimumOSVersion,
+        runtimeProfile: manifest.runtimeProfile,
+        quantizationProfile: manifest.quantizationProfile,
+        validationMetrics: manifest.validationMetrics,
+        version: manifest.version,
+        trainedAt: manifest.trainedAt,
+        algorithm: manifest.algorithm,
+        backbone: manifest.backbone,
+        languages: manifest.languages,
+        labels: manifest.labels,
+        maxSequenceLength: manifest.maxSequenceLength,
+        doLowerCase: manifest.doLowerCase,
+        tokenizerKind: manifest.tokenizerKind,
+        tokenizerArtifact: manifest.tokenizerArtifact,
+        modelArtifact: manifest.modelArtifact,
+        sha256: manifest.sha256,
+        taxonomyHash: manifest.taxonomyHash,
+        tokenizerSHA256: manifest.tokenizerSHA256,
+        keyID: manifest.keyID,
+        remoteBaseURL: manifest.remoteBaseURL,
+        remoteArtifacts: manifest.remoteArtifacts,
+        downloadBytes: manifest.downloadBytes,
+        distillation: TransformerDistillationProvenance(
+            teacherCheckpointSHA256: provenance.teacherCheckpointSHA256,
+            teacherLayers: provenance.teacherLayers,
+            studentLayers: provenance.studentLayers,
+            temperature: 3,
+            distillAlpha: provenance.distillAlpha
+        )
+    )
+
+    #expect(manifest.canonicalPayload() != changed.canonicalPayload())
+    #expect(
+        String(data: manifest.legacyCanonicalPayload(), encoding: .utf8)?.contains("\"distillation\"") == false
+    )
+}
+
+@Test
+func transformerDistillationManifestAcceptsNewAndLegacySignatures() throws {
+    let privateKey = Curve25519.Signing.PrivateKey()
+    let provenance = TransformerDistillationProvenance(
+        teacherCheckpointSHA256: String(repeating: "a", count: 64),
+        teacherLayers: 22,
+        studentLayers: 12,
+        temperature: 2,
+        distillAlpha: 0.7
+    )
+    let unsigned = TransformerReleaseManifestV2(
+        releaseSequence: 4,
+        modelABI: "sift-signal-v1",
+        minimumAppBuild: 19,
+        runtimeProfile: TransformerRuntimeProfile(computeUnits: "cpuOnly", computePrecision: "float32"),
+        quantizationProfile: TransformerQuantizationProfile(
+            identifier: "w4a32-block16-ptq",
+            weightBits: 4,
+            activationBits: 32,
+            method: "ptq",
+            granularity: "per-block",
+            blockSize: 16
+        ),
+        validationMetrics: TransformerValidationMetrics(
+            fixedAccuracy: 0.99,
+            promotionAccuracy: 1,
+            fp16Agreement: 0.99,
+            languageAccuracy: ["zh": 0.99, "en": 0.99, "ja": 0.99]
+        ),
+        version: "signal-v4",
+        trainedAt: "2026-08-21T00:00:00Z",
+        algorithm: "teacher-student-distillation",
+        backbone: "mmbert",
+        languages: ["zh", "en", "ja"],
+        labels: ["__sift_abstain__", "spam"],
+        maxSequenceLength: 96,
+        doLowerCase: false,
+        tokenizerKind: "bpe",
+        tokenizerArtifact: "tokenizer.siftbpe",
+        modelArtifact: "SiftSignalModel.mlpackage",
+        sha256: String(repeating: "b", count: 64),
+        taxonomyHash: String(repeating: "c", count: 64),
+        keyID: "release-2026",
+        remoteArtifacts: [],
+        downloadBytes: 1,
+        distillation: provenance
+    )
+    let verifier = TransformerManifestVerifier(publicKeys: [
+        "release-2026": privateKey.publicKey.rawRepresentation.base64EncodedString()
+    ])
+
+    let newSignature = try privateKey.signature(for: unsigned.canonicalPayload()).base64EncodedString()
+    let newlySigned = TransformerReleaseManifestV2(
+        schemaVersion: unsigned.schemaVersion,
+        releaseSequence: unsigned.releaseSequence,
+        modelABI: unsigned.modelABI,
+        minimumAppBuild: unsigned.minimumAppBuild,
+        maximumAppBuild: unsigned.maximumAppBuild,
+        minimumOSVersion: unsigned.minimumOSVersion,
+        runtimeProfile: unsigned.runtimeProfile,
+        quantizationProfile: unsigned.quantizationProfile,
+        validationMetrics: unsigned.validationMetrics,
+        version: unsigned.version,
+        trainedAt: unsigned.trainedAt,
+        algorithm: unsigned.algorithm,
+        backbone: unsigned.backbone,
+        languages: unsigned.languages,
+        labels: unsigned.labels,
+        maxSequenceLength: unsigned.maxSequenceLength,
+        doLowerCase: unsigned.doLowerCase,
+        tokenizerKind: unsigned.tokenizerKind,
+        tokenizerArtifact: unsigned.tokenizerArtifact,
+        modelArtifact: unsigned.modelArtifact,
+        sha256: unsigned.sha256,
+        taxonomyHash: unsigned.taxonomyHash,
+        tokenizerSHA256: unsigned.tokenizerSHA256,
+        keyID: "release-2026",
+        signature: newSignature,
+        remoteBaseURL: unsigned.remoteBaseURL,
+        remoteArtifacts: unsigned.remoteArtifacts,
+        downloadBytes: unsigned.downloadBytes,
+        distillation: provenance
+    )
+    try verifier.verifySignature(of: newlySigned)
+
+    let legacySignature = try privateKey.signature(for: unsigned.legacyCanonicalPayload()).base64EncodedString()
+    let legacySigned = TransformerReleaseManifestV2(
+        schemaVersion: unsigned.schemaVersion,
+        releaseSequence: unsigned.releaseSequence,
+        modelABI: unsigned.modelABI,
+        minimumAppBuild: unsigned.minimumAppBuild,
+        maximumAppBuild: unsigned.maximumAppBuild,
+        minimumOSVersion: unsigned.minimumOSVersion,
+        runtimeProfile: unsigned.runtimeProfile,
+        quantizationProfile: unsigned.quantizationProfile,
+        validationMetrics: unsigned.validationMetrics,
+        version: unsigned.version,
+        trainedAt: unsigned.trainedAt,
+        algorithm: unsigned.algorithm,
+        backbone: unsigned.backbone,
+        languages: unsigned.languages,
+        labels: unsigned.labels,
+        maxSequenceLength: unsigned.maxSequenceLength,
+        doLowerCase: unsigned.doLowerCase,
+        tokenizerKind: unsigned.tokenizerKind,
+        tokenizerArtifact: unsigned.tokenizerArtifact,
+        modelArtifact: unsigned.modelArtifact,
+        sha256: unsigned.sha256,
+        taxonomyHash: unsigned.taxonomyHash,
+        tokenizerSHA256: unsigned.tokenizerSHA256,
+        keyID: "release-2026",
+        signature: legacySignature,
+        remoteBaseURL: unsigned.remoteBaseURL,
+        remoteArtifacts: unsigned.remoteArtifacts,
+        downloadBytes: unsigned.downloadBytes,
+        distillation: provenance
+    )
+    try verifier.verifySignature(of: legacySigned)
+}
+
 private struct ManifestV2InteropFixture: Decodable {
     let publicKeyBase64: String
     let channel: TransformerChannelManifestV2
@@ -837,6 +1123,34 @@ func transformerChannelCompatibilityChecksBuildOSABIAndRollback() {
 }
 
 @Test
+func fp32RuntimeProfileRequiresExplicitA32QuantizationMetadata() {
+    let fp32 = TransformerRuntimeProfile(computePrecision: "float32")
+    let a32 = TransformerQuantizationProfile(
+        identifier: "w4a32-block16-ptq",
+        weightBits: 4,
+        activationBits: 32,
+        method: "ptq",
+        granularity: "per-block",
+        blockSize: 16
+    )
+    let a16 = TransformerQuantizationProfile(
+        identifier: "w4a16-block16-ptq",
+        weightBits: 4,
+        activationBits: 16,
+        method: "ptq",
+        granularity: "per-block",
+        blockSize: 16
+    )
+
+    #expect(TransformerManifestVerifier.supports(runtimeProfile: fp32, quantizationProfile: a32))
+    #expect(!TransformerManifestVerifier.supports(runtimeProfile: fp32, quantizationProfile: a16))
+    #expect(TransformerManifestVerifier.supports(
+        runtimeProfile: TransformerRuntimeProfile(),
+        quantizationProfile: a16
+    ))
+}
+
+@Test
 func governmentReminderSignalReleaseRequiresBuild16AndSequence3() {
     let verifier = TransformerManifestVerifier(publicKeys: [:])
     let channel = TransformerChannelManifestV2(
@@ -869,6 +1183,42 @@ func governmentReminderSignalReleaseRequiresBuild16AndSequence3() {
         appBuild: 16,
         operatingSystemVersion: iOS18,
         currentReleaseSequence: 4
+    ) == .releaseRollback)
+}
+
+@Test
+func sift14DistilledSignalReleaseRequiresBuild19AndSequence4() {
+    let verifier = TransformerManifestVerifier(publicKeys: [:])
+    let channel = TransformerChannelManifestV2(
+        releaseSequence: 4,
+        releaseID: "signal-v4-generalization-v50-r32-distilled-12l-metadata-v2",
+        releaseManifestURL: "https://sift.alkinum.io/models/releases/signal-v4-generalization-v50-r32-distilled-12l-metadata-v2/SiftSignalModel.manifest.json",
+        releaseManifestSHA256: String(repeating: "b", count: 64),
+        modelABI: "sift-signal-v1",
+        minimumAppBuild: 19,
+        maximumAppBuild: .max,
+        minimumOSVersion: "18.0",
+        keyID: "release-2026"
+    )
+    let iOS18 = OperatingSystemVersion(majorVersion: 18, minorVersion: 0, patchVersion: 0)
+
+    #expect(verifier.compatibility(
+        of: channel,
+        appBuild: 18,
+        operatingSystemVersion: iOS18,
+        currentReleaseSequence: 3
+    ) == .appBuildTooOld)
+    #expect(verifier.compatibility(
+        of: channel,
+        appBuild: 19,
+        operatingSystemVersion: iOS18,
+        currentReleaseSequence: 3
+    ) == .compatible)
+    #expect(verifier.compatibility(
+        of: channel,
+        appBuild: 19,
+        operatingSystemVersion: iOS18,
+        currentReleaseSequence: 5
     ) == .releaseRollback)
 }
 

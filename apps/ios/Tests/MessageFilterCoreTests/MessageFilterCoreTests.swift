@@ -699,6 +699,119 @@ private func officialCourtNoticeDoesNotTriggerImpersonationSpamRule() {
 
 @Test(arguments: [
     PromotionClassificationCase(
+        text: "国家反诈中心提示：公检法机关不会通过电话要求转账，遇到可疑情况请拨打官方电话核实。",
+        expectedLabelID: "government.reminder"
+    ),
+    PromotionClassificationCase(
+        text: "Fraud prevention center reminder: we will never ask you to transfer money; verify through the official number.",
+        expectedLabelID: "government.reminder"
+    ),
+    PromotionClassificationCase(
+        text: "詐欺対策センターからの注意：振込を求めません。公式窓口で確認してください。",
+        expectedLabelID: "government.reminder"
+    ),
+    PromotionClassificationCase(
+        text: "信用卡餐饮季覆盖百家门店，周五消费满300元返50元刷卡金。",
+        expectedLabelID: "promotion"
+    ),
+    PromotionClassificationCase(
+        text: "Card dining offer: qualifying cardholders receive a $50 statement credit this weekend.",
+        expectedLabelID: "promotion"
+    ),
+    PromotionClassificationCase(
+        text: "金曜のカード飲食特典。対象店で1万円利用すると2000円分を還元します。",
+        expectedLabelID: "promotion"
+    ),
+    PromotionClassificationCase(
+        text: "ご利用者様へ：社会保険料346.74円の納付が完了しました。詳しくは公式窓口で確認してください。",
+        expectedLabelID: "government.social_security"
+    ),
+    PromotionClassificationCase(
+        text: "Vertex Insurance: your renewal quote is ready. Confirm before 2026-01-24.",
+        expectedLabelID: "finance.insurance"
+    ),
+    PromotionClassificationCase(
+        text: "You earned 860 points on today's card purchase; the available balance is now 12,430.",
+        expectedLabelID: "transaction.points"
+    ),
+    PromotionClassificationCase(
+        text: "【飞航旅行】机票退款成功，860元已原路退回。",
+        expectedLabelID: "finance.refund"
+    ),
+    PromotionClassificationCase(
+        text: "The limited summon bundle returns tonight with bonus character shards on every ten-pull.",
+        expectedLabelID: "promotion"
+    ),
+    PromotionClassificationCase(
+        text: "Book a fitting during the new-season fashion preview and receive an extra member discount.",
+        expectedLabelID: "promotion"
+    )
+])
+private func v48HardBoundariesStayInTheirSystemCategory(example: PromotionClassificationCase) {
+    let decision = HeuristicClassifier.highPrecisionDecision(for: example.text)
+    #expect(decision?.labelID == example.expectedLabelID)
+    #expect(decision?.systemAction == SiftTaxonomy.leaf(id: example.expectedLabelID)?.systemAction)
+}
+
+@Test(arguments: [
+    "Points balance: 4,200. Join this weekend offer to earn double points.",
+    "积分余额4200分，报名周末限时活动可享双倍积分。",
+    "ポイント残高は4,200です。週末の2倍特典にエントリーできます。",
+])
+private func pointsOffersWithABalanceAreNotForcedToCompletedTransactions(body: String) {
+    #expect(HeuristicClassifier.highPrecisionDecision(for: body)?.labelID != "transaction.points")
+}
+
+@Test
+private func discussionPointsAreNotForcedToRewardTransactions() {
+    let body = "The discussion points were added to the agenda after Legal review."
+    #expect(HeuristicClassifier.highPrecisionDecision(for: body)?.labelID != "transaction.points")
+}
+
+@Test
+private func scorecardChallengeIsNotForcedToCardPromotion() {
+    let body = "The quarterly scorecard challenge is due this weekend for manager review."
+    #expect(HeuristicClassifier.highPrecisionDecision(for: body)?.labelID != "promotion")
+}
+
+@Test
+private func privateInsurancePremiumPaymentIsNotForcedToSocialSecurity() {
+    let body = "生命保険料12,400円の支払いが完了しました。契約内容は公式アプリで確認できます。"
+    #expect(HeuristicClassifier.highPrecisionDecision(for: body)?.labelID != "government.social_security")
+}
+
+@Test(arguments: [
+    PromotionClassificationCase(
+        text: "限定坐骑已成功发放至您购买时绑定的角色仓库。",
+        expectedLabelID: "transaction.order"
+    ),
+    PromotionClassificationCase(
+        text: "The purchased character outfit is now available in the account's cosmetics collection; fulfillment is complete.",
+        expectedLabelID: "transaction.order"
+    ),
+    PromotionClassificationCase(
+        text: "購入したキャラクター衣装の納品が完了し、注文アカウントに追加されました。",
+        expectedLabelID: "transaction.order"
+    ),
+])
+private func completedDigitalItemFulfillmentRemainsAnOrder(example: PromotionClassificationCase) {
+    #expect(HeuristicClassifier.highPrecisionDecision(for: example.text)?.labelID == example.expectedLabelID)
+}
+
+@Test(arguments: [
+    "限定坐骑礼包本周返场，充值游戏币可再获额外升级材料。",
+    "The limited mount bundle returns this week; topping up game credits adds bonus upgrade materials.",
+    "限定マウントパックが今週復刻し、チャージで強化素材を追加でもらえます。",
+    "新角色皮肤已加入商城，现已可购买，活动期下单享会员折扣。",
+    "The new character skin is now available to order with a launch-week member discount.",
+    "新しいキャラクター衣装がストアに追加されました。予約注文で会員割引が適用されます。",
+])
+private func futureDigitalItemOffersAreNotForcedToOrders(body: String) {
+    #expect(HeuristicClassifier.highPrecisionDecision(for: body)?.labelID != "transaction.order")
+}
+
+@Test(arguments: [
+    PromotionClassificationCase(
         text: "应急部门提醒：社区疏散演练鸣笛时请沿绿色标识前往东广场。",
         expectedLabelID: "government.reminder"
     ),
@@ -843,6 +956,7 @@ private func v5RegressionBoundaryVariantsClassifyCorrectly(example: PromotionCla
 @Test(arguments: [
     "课程小组改成线上讨论，你看到群里发的会议链接了吗？",
     "Here is the library registration link. Would you like to go together this weekend?",
+    "We are sitting near the back window. Come over when you arrive.",
     "授業討論はオンラインです。会議リンクは届きましたか。",
     "电影票的钱已经转回给你了，晚点确认一下。",
     "家に着いたら連絡してください。忘れていった充電器は明日持っていきます。"

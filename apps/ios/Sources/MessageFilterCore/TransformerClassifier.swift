@@ -31,6 +31,9 @@ public struct TransformerRuntimeProfile: Codable, Hashable, Sendable {
 
     public let computeUnits: String
     public let modelType: String
+    /// Numeric precision used by the exported Core ML graph. Optional so
+    /// legacy manifests retain their original canonical payload.
+    public let computePrecision: String?
     /// Warm inference target used to qualify a release artifact. MessageFilter
     /// runtime fallback timing is controlled separately by MessageFilterTimingPolicy.
     public let inferenceBudgetMilliseconds: Int
@@ -38,16 +41,19 @@ public struct TransformerRuntimeProfile: Codable, Hashable, Sendable {
     public init(
         computeUnits: String = "cpuOnly",
         modelType: String = "mlProgram",
-        inferenceBudgetMilliseconds: Int = 500
+        inferenceBudgetMilliseconds: Int = 500,
+        computePrecision: String? = nil
     ) {
         self.computeUnits = computeUnits
         self.modelType = modelType
+        self.computePrecision = computePrecision
         self.inferenceBudgetMilliseconds = inferenceBudgetMilliseconds
     }
 
     private enum CodingKeys: String, CodingKey {
         case computeUnits
         case modelType
+        case computePrecision
         case inferenceBudgetMilliseconds
         case transformerBudgetMilliseconds
     }
@@ -56,6 +62,7 @@ public struct TransformerRuntimeProfile: Codable, Hashable, Sendable {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         self.computeUnits = try container.decodeIfPresent(String.self, forKey: .computeUnits) ?? "all"
         self.modelType = try container.decodeIfPresent(String.self, forKey: .modelType) ?? "mlProgram"
+        self.computePrecision = try container.decodeIfPresent(String.self, forKey: .computePrecision)
         self.inferenceBudgetMilliseconds = try container.decodeIfPresent(
             Int.self,
             forKey: .inferenceBudgetMilliseconds
@@ -69,6 +76,7 @@ public struct TransformerRuntimeProfile: Codable, Hashable, Sendable {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(computeUnits, forKey: .computeUnits)
         try container.encode(modelType, forKey: .modelType)
+        try container.encodeIfPresent(computePrecision, forKey: .computePrecision)
         try container.encode(inferenceBudgetMilliseconds, forKey: .inferenceBudgetMilliseconds)
     }
 }
@@ -132,6 +140,78 @@ public struct TransformerValidationMetrics: Codable, Hashable, Sendable {
     )
 }
 
+/// Immutable provenance for a student produced by teacher-student distillation.
+/// This is part of the signed release payload so a release cannot silently
+/// change its teacher or distillation recipe after selection.
+public struct TransformerDistillationProvenance: Codable, Hashable, Sendable {
+    public static let requiredTeacherLayers = 22
+    public static let requiredStudentLayers = 12
+    public static let requiredTemperature = 2.0
+    public static let requiredDistillAlpha = 0.7
+
+    public let teacherCheckpointSHA256: String
+    public let teacherLayers: Int
+    public let studentLayers: Int
+    public let temperature: Double
+    public let distillAlpha: Double
+
+    public init(
+        teacherCheckpointSHA256: String,
+        teacherLayers: Int,
+        studentLayers: Int,
+        temperature: Double,
+        distillAlpha: Double
+    ) {
+        self.teacherCheckpointSHA256 = teacherCheckpointSHA256
+        self.teacherLayers = teacherLayers
+        self.studentLayers = studentLayers
+        self.temperature = temperature
+        self.distillAlpha = distillAlpha
+    }
+
+    /// The release contract for the Sift 1.4 student. Keep this stricter than
+    /// the general trainer sanity checks so an eligible release cannot silently
+    /// change its teacher depth or distillation recipe.
+    public var isReleaseQualified: Bool {
+        guard
+            teacherLayers == Self.requiredTeacherLayers,
+            studentLayers == Self.requiredStudentLayers,
+            abs(temperature - Self.requiredTemperature) < 0.000001,
+            abs(distillAlpha - Self.requiredDistillAlpha) < 0.000001,
+            teacherCheckpointSHA256.count == 64,
+            teacherCheckpointSHA256.unicodeScalars.allSatisfy({ scalar in
+                (48...57).contains(scalar.value) || (97...102).contains(scalar.value)
+            })
+        else {
+            return false
+        }
+        return true
+    }
+}
+
+/// Immutable model-selection rules shared by remote downloads and installed
+/// model discovery. Older releases remain readable through the compatibility
+/// catalog; the current Sift 1.4 line must be the qualified distilled student.
+public enum TransformerSignalReleaseContract {
+    public static let distilledReleaseSequence = 4
+    public static let distilledMinimumAppBuild = 19
+
+    public static func accepts(_ manifest: TransformerModelManifest) -> Bool {
+        guard manifest.releaseSequence >= distilledReleaseSequence else {
+            return true
+        }
+        guard
+            manifest.minimumAppBuild >= distilledMinimumAppBuild,
+            manifest.algorithm == "teacher-student-distillation",
+            let distillation = manifest.distillation,
+            distillation.isReleaseQualified
+        else {
+            return false
+        }
+        return true
+    }
+}
+
 /// Release metadata for the downloadable transformer Core ML model.
 public struct TransformerModelManifest: Codable, Hashable, Sendable {
     public let schemaVersion: Int
@@ -143,6 +223,7 @@ public struct TransformerModelManifest: Codable, Hashable, Sendable {
     public let runtimeProfile: TransformerRuntimeProfile
     public let quantizationProfile: TransformerQuantizationProfile
     public let validationMetrics: TransformerValidationMetrics
+    public let distillation: TransformerDistillationProvenance?
     public let version: String
     public let trainedAt: String
     public let algorithm: String
@@ -191,7 +272,8 @@ public struct TransformerModelManifest: Codable, Hashable, Sendable {
         signature: String? = nil,
         remoteBaseURL: String? = nil,
         remoteArtifacts: [TransformerRemoteArtifact],
-        downloadBytes: Int64
+        downloadBytes: Int64,
+        distillation: TransformerDistillationProvenance? = nil
     ) {
         self.schemaVersion = schemaVersion
         self.releaseSequence = releaseSequence
@@ -202,6 +284,7 @@ public struct TransformerModelManifest: Codable, Hashable, Sendable {
         self.runtimeProfile = runtimeProfile
         self.quantizationProfile = quantizationProfile
         self.validationMetrics = validationMetrics
+        self.distillation = distillation
         self.version = version
         self.trainedAt = trainedAt
         self.algorithm = algorithm
@@ -261,7 +344,48 @@ public struct TransformerModelManifest: Codable, Hashable, Sendable {
             signature: nil,
             remoteBaseURL: remoteBaseURL,
             remoteArtifacts: remoteArtifacts,
-            downloadBytes: downloadBytes
+            downloadBytes: downloadBytes,
+            distillation: distillation
+        )
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.sortedKeys, .withoutEscapingSlashes]
+        return (try? encoder.encode(unsigned)) ?? Data()
+    }
+
+    /// Canonical payload used by manifests published before distillation
+    /// provenance was added to the signed contract. It is only used as a
+    /// migration fallback when verifying an already-published manifest.
+    public func legacyCanonicalPayload() -> Data {
+        let unsigned = TransformerModelManifest(
+            schemaVersion: schemaVersion,
+            releaseSequence: releaseSequence,
+            modelABI: modelABI,
+            minimumAppBuild: minimumAppBuild,
+            maximumAppBuild: maximumAppBuild,
+            minimumOSVersion: minimumOSVersion,
+            runtimeProfile: runtimeProfile,
+            quantizationProfile: quantizationProfile,
+            validationMetrics: validationMetrics,
+            version: version,
+            trainedAt: trainedAt,
+            algorithm: algorithm,
+            backbone: backbone,
+            languages: languages,
+            labels: labels,
+            maxSequenceLength: maxSequenceLength,
+            doLowerCase: doLowerCase,
+            tokenizerKind: tokenizerKind,
+            tokenizerArtifact: tokenizerArtifact,
+            modelArtifact: modelArtifact,
+            sha256: sha256,
+            taxonomyHash: taxonomyHash,
+            tokenizerSHA256: tokenizerSHA256,
+            keyID: keyID,
+            signature: nil,
+            remoteBaseURL: remoteBaseURL,
+            remoteArtifacts: remoteArtifacts,
+            downloadBytes: downloadBytes,
+            distillation: nil
         )
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.sortedKeys, .withoutEscapingSlashes]
@@ -271,6 +395,7 @@ public struct TransformerModelManifest: Codable, Hashable, Sendable {
     private enum CodingKeys: String, CodingKey {
         case schemaVersion, releaseSequence, modelABI, minimumAppBuild, maximumAppBuild, minimumOSVersion
         case runtimeProfile, quantizationProfile, validationMetrics
+        case distillation
         case version, trainedAt, algorithm, backbone, languages, labels, maxSequenceLength, doLowerCase
         case tokenizerKind, tokenizerArtifact, modelArtifact, sha256, taxonomyHash, tokenizerSHA256
         case keyID, signature, remoteBaseURL, remoteArtifacts, downloadBytes
@@ -290,6 +415,10 @@ public struct TransformerModelManifest: Codable, Hashable, Sendable {
             ?? .legacyInt8
         self.validationMetrics = try container.decodeIfPresent(TransformerValidationMetrics.self, forKey: .validationMetrics)
             ?? .unavailable
+        self.distillation = try container.decodeIfPresent(
+            TransformerDistillationProvenance.self,
+            forKey: .distillation
+        )
         self.version = try container.decode(String.self, forKey: .version)
         self.trainedAt = try container.decode(String.self, forKey: .trainedAt)
         self.algorithm = try container.decode(String.self, forKey: .algorithm)

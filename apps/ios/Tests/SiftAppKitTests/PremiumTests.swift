@@ -407,6 +407,59 @@ private func mockTransformerDownloadPlan(
     )
 }
 
+private func sift14DistilledManifest(
+    algorithm: String = "teacher-student-distillation",
+    provenance: TransformerDistillationProvenance? = TransformerDistillationProvenance(
+        teacherCheckpointSHA256: String(repeating: "a", count: 64),
+        teacherLayers: 22,
+        studentLayers: 12,
+        temperature: 2,
+        distillAlpha: 0.7
+    )
+) -> TransformerModelManifest {
+    let current = mockTransformerDownloadPlan().manifest
+    return TransformerModelManifest(
+        schemaVersion: 2,
+        releaseSequence: 4,
+        modelABI: current.modelABI,
+        minimumAppBuild: 19,
+        maximumAppBuild: current.maximumAppBuild,
+        minimumOSVersion: current.minimumOSVersion,
+        runtimeProfile: TransformerRuntimeProfile(
+            computeUnits: "cpuOnly",
+            computePrecision: "float32"
+        ),
+        quantizationProfile: TransformerQuantizationProfile(
+            identifier: "w4a32-block16-ptq",
+            weightBits: 4,
+            activationBits: 32,
+            method: "ptq",
+            granularity: "per-block",
+            blockSize: 16
+        ),
+        validationMetrics: current.validationMetrics,
+        version: "signal-v4-generalization-v50-r32-distilled-12l",
+        trainedAt: current.trainedAt,
+        algorithm: algorithm,
+        backbone: current.backbone,
+        languages: current.languages,
+        labels: current.labels,
+        maxSequenceLength: current.maxSequenceLength,
+        doLowerCase: current.doLowerCase,
+        tokenizerKind: current.tokenizerKind,
+        tokenizerArtifact: current.tokenizerArtifact,
+        modelArtifact: current.modelArtifact,
+        sha256: current.sha256,
+        taxonomyHash: current.taxonomyHash,
+        tokenizerSHA256: current.tokenizerSHA256,
+        keyID: current.keyID,
+        signature: current.signature,
+        remoteArtifacts: current.remoteArtifacts,
+        downloadBytes: current.downloadBytes,
+        distillation: provenance
+    )
+}
+
 @MainActor
 @Test
 func lockedTransformerSelectionOpensPaywallInsteadOfSwitching() async throws {
@@ -986,6 +1039,35 @@ func transformerDownloadAcceptsCurrentCompactManifest() throws {
 }
 
 @Test
+func transformerDownloadAcceptsQualifiedSift14DistilledManifest() throws {
+    try TransformerModelDownloadClient.validateManifestForDownload(sift14DistilledManifest())
+}
+
+@Test
+func transformerDownloadRejectsUnqualifiedSift14Distillation() {
+    let missingProvenance = sift14DistilledManifest(
+        algorithm: "supervised-sequence-classification",
+        provenance: nil
+    )
+    #expect(throws: TransformerModelDownloadError.invalidDistillationProvenance) {
+        try TransformerModelDownloadClient.validateManifestForDownload(missingProvenance)
+    }
+
+    let wrongStudentDepth = sift14DistilledManifest(
+        provenance: TransformerDistillationProvenance(
+            teacherCheckpointSHA256: String(repeating: "a", count: 64),
+            teacherLayers: 22,
+            studentLayers: 11,
+            temperature: 2,
+            distillAlpha: 0.7
+        )
+    )
+    #expect(throws: TransformerModelDownloadError.invalidDistillationProvenance) {
+        try TransformerModelDownloadClient.validateManifestForDownload(wrongStudentDepth)
+    }
+}
+
+@Test
 func transformerReleaseSequenceRestartsOnlyAcrossModelABIMigration() {
     #expect(TransformerModelDownloadClient.effectiveCurrentReleaseSequence(
         currentModelABI: "sift-mmbert-v3",
@@ -1023,7 +1105,18 @@ func transformerCatalogSelectsLatestReleaseCompatibleWithCurrentAppBuild() throw
         minimumOSVersion: "18.0",
         keyID: "test"
     )
-    let releases = [release2, release3]
+    let release4 = TransformerChannelManifestV2(
+        releaseSequence: 4,
+        releaseID: "signal-v4-generalization-v50-r32-distilled-12l-metadata-v2",
+        releaseManifestURL: "https://example.com/releases/v50-r32-distilled-12l-metadata-v2/manifest.json",
+        releaseManifestSHA256: String(repeating: "4", count: 64),
+        modelABI: "sift-signal-v1",
+        minimumAppBuild: 19,
+        maximumAppBuild: .max,
+        minimumOSVersion: "18.0",
+        keyID: "test"
+    )
+    let releases = [release2, release3, release4]
     let verifier = TransformerManifestVerifier(publicKeys: [:])
     let iOS18 = OperatingSystemVersion(majorVersion: 18, minorVersion: 0, patchVersion: 0)
 
@@ -1038,11 +1131,19 @@ func transformerCatalogSelectsLatestReleaseCompatibleWithCurrentAppBuild() throw
     #expect(TransformerModelDownloadClient.latestCompatibleRelease(
         in: releases,
         verifier: verifier,
-        appBuild: 16,
+        appBuild: 18,
         operatingSystemVersion: iOS18,
         currentModelABI: "sift-signal-v1",
         currentReleaseSequence: 2
     )?.releaseSequence == 3)
+    #expect(TransformerModelDownloadClient.latestCompatibleRelease(
+        in: releases,
+        verifier: verifier,
+        appBuild: 19,
+        operatingSystemVersion: iOS18,
+        currentModelABI: "sift-signal-v1",
+        currentReleaseSequence: 3
+    )?.releaseSequence == 4)
     #expect(TransformerModelDownloadClient.latestReleaseRequiringAppUpdate(
         in: releases,
         verifier: verifier,
@@ -1050,7 +1151,7 @@ func transformerCatalogSelectsLatestReleaseCompatibleWithCurrentAppBuild() throw
         operatingSystemVersion: iOS18,
         currentModelABI: "sift-signal-v1",
         currentReleaseSequence: 2
-    )?.releaseSequence == 3)
+    )?.releaseSequence == 4)
     #expect(TransformerModelDownloadClient.updateState(
         for: releases,
         verifier: verifier,
@@ -1066,11 +1167,11 @@ func transformerCatalogSelectsLatestReleaseCompatibleWithCurrentAppBuild() throw
         operatingSystemVersion: iOS18,
         currentModelABI: "sift-signal-v1",
         currentReleaseSequence: 2
-    ) == .requiresAppUpdate(release3))
+    ) == .requiresAppUpdate(release4))
     #expect(TransformerModelDownloadClient.updateState(
         for: releases,
         verifier: verifier,
-        appBuild: 16,
+        appBuild: 18,
         operatingSystemVersion: iOS18,
         currentModelABI: "sift-signal-v1",
         currentReleaseSequence: 2
@@ -1078,10 +1179,26 @@ func transformerCatalogSelectsLatestReleaseCompatibleWithCurrentAppBuild() throw
     #expect(TransformerModelDownloadClient.updateState(
         for: releases,
         verifier: verifier,
-        appBuild: 16,
+        appBuild: 18,
         operatingSystemVersion: iOS18,
         currentModelABI: "sift-signal-v1",
         currentReleaseSequence: 3
+    ) == .requiresAppUpdate(release4))
+    #expect(TransformerModelDownloadClient.updateState(
+        for: releases,
+        verifier: verifier,
+        appBuild: 19,
+        operatingSystemVersion: iOS18,
+        currentModelABI: "sift-signal-v1",
+        currentReleaseSequence: 3
+    ) == .updateAvailable(release4))
+    #expect(TransformerModelDownloadClient.updateState(
+        for: releases,
+        verifier: verifier,
+        appBuild: 19,
+        operatingSystemVersion: iOS18,
+        currentModelABI: "sift-signal-v1",
+        currentReleaseSequence: 4
     ) == .current)
 }
 

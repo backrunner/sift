@@ -21,7 +21,8 @@ Stages (run individually with `--only`, or drop some with `--skip`):
   prune              remove high-similarity same-label/language repetitions
                      while preserving reviewed boundaries and provenance
   train-classic      Create ML model (swift run SiftAppleTrainer --input …)
-  train-transformer  frozen FP16 mmBERT Core ML baseline
+  train-transformer  frozen FP32 mmBERT Core ML baseline
+  distill-transformer  release-qualified 12-layer student from the teacher checkpoint
   quantize-transformer  build every configured W8/W4 candidate and run the
                      external holdout/action evaluation
   select-transformer  select only a candidate with device evidence and all
@@ -48,7 +49,7 @@ import time
 import unicodedata
 from pathlib import Path
 
-STAGES = ["fetch-public", "fetch-remote", "curate", "augment", "prune", "train-classic", "train-transformer", "quantize-transformer"]
+STAGES = ["fetch-public", "fetch-remote", "curate", "augment", "prune", "train-classic", "train-transformer", "distill-transformer", "quantize-transformer"]
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 APPLE_TRAINER = REPO_ROOT / "tools/apple-trainer"
@@ -122,6 +123,11 @@ TRAINING_SUPPLEMENTS = (
     APPLE_TRAINER / "Training" / "travel-credential-boundary-v17-supplement.ndjson",
     APPLE_TRAINER / "Training" / "travel-trust-boundary-v18-supplement.ndjson",
     APPLE_TRAINER / "Training" / "operational-confidence-boundary-v20-supplement.ndjson",
+)
+BOUNDARY_AUGMENTATION_CONFIGS = (
+    APPLE_TRAINER / "Training" / "generalization-v48-hard-boundaries.json",
+    APPLE_TRAINER / "Training" / "generalization-v49-hard-boundaries.json",
+    APPLE_TRAINER / "Training" / "generalization-v50-digital-fulfillment.json",
 )
 
 
@@ -199,6 +205,13 @@ def parse_arguments() -> argparse.Namespace:
         type=Path,
         default=TRANSFORMER_TRAINER / "generalization-augmentation.json",
     )
+    quality.add_argument(
+        "--boundary-config",
+        type=Path,
+        action="append",
+        default=list(BOUNDARY_AUGMENTATION_CONFIGS),
+        help="versioned JSON boundary configs merged during augmentation (repeatable)",
+    )
     quality.add_argument("--max-augmented-per-label", type=int, default=120)
     quality.add_argument("--max-variants-per-row", type=int, default=1)
     quality.add_argument(
@@ -221,7 +234,7 @@ def parse_arguments() -> argparse.Namespace:
     )
 
     training = parser.add_argument_group("training")
-    training.add_argument("--version-classic", default="maxent-reminder-v20")
+    training.add_argument("--version-classic", default="maxent-generalization-v50-seed29-r32")
     training.add_argument(
         "--algorithm-classic",
         choices=["maxent", "bert", "auto"],
@@ -229,14 +242,14 @@ def parse_arguments() -> argparse.Namespace:
         help="Create ML classic algorithm; maxent is the current validated default",
     )
     training.add_argument("--split-seed-classic", type=int, default=42, help="classic model holdout split seed")
-    training.add_argument("--version-transformer", default="signal-v2-reminder-v16")
+    training.add_argument("--version-transformer", default="signal-v4-generalization-v50-r32-distilled-12l")
     training.add_argument("--model-abi", default="sift-signal-v1")
     training.add_argument("--backbone", default="jhu-clsp/mmBERT-small", help="transformer backbone")
     training.add_argument("--device", choices=["auto", "cpu", "cuda", "mps"], default="auto")
     training.add_argument("--quantize", choices=["fp16", "int8"], default="int8")
     training.add_argument("--quantization-profiles", type=Path, default=TRANSFORMER_TRAINER / "quantization-profiles.json")
-    training.add_argument("--release-sequence", type=int, default=3)
-    training.add_argument("--minimum-app-build", type=int, default=16)
+    training.add_argument("--release-sequence", type=int, default=4)
+    training.add_argument("--minimum-app-build", type=int, default=19)
     training.add_argument("--maximum-app-build", type=int, default=2_147_483_647)
     training.add_argument("--calibration-limit", type=int, default=256)
     training.add_argument(
@@ -251,6 +264,24 @@ def parse_arguments() -> argparse.Namespace:
         type=int,
         default=0,
         help="encoder layers kept for experiments; 0 preserves the full model",
+    )
+    training.add_argument(
+        "--distill-teacher-checkpoint",
+        type=Path,
+        default=None,
+        help="teacher checkpoint for distill-transformer; defaults to transformer-model/teacher-checkpoint",
+    )
+    training.add_argument("--distill-temperature", type=float, default=2.0)
+    training.add_argument("--distill-alpha", type=float, default=0.7)
+    training.add_argument(
+        "--distillation-gate",
+        type=Path,
+        action="append",
+        default=[],
+        help=(
+            "gate JSON produced by check_distillation_gate.py for select-transformer; "
+            "repeat for multiple candidates (auto-discovered beside quantization reports when omitted)"
+        ),
     )
     training.add_argument(
         "--max-sequence-length",
@@ -451,6 +482,11 @@ def stage_augment(arguments: argparse.Namespace) -> None:
             "--config", str(arguments.augmentation_config),
             *[
                 argument
+                for boundary_config in arguments.boundary_config
+                for argument in ("--boundary-config", str(boundary_config))
+            ],
+            *[
+                argument
                 for holdout_path in holdout_test_sets()
                 for argument in ("--holdout", str(holdout_path))
             ],
@@ -572,6 +608,9 @@ def stage_train_transformer(arguments: argparse.Namespace, finetune: bool = Fals
         "--model-abi", arguments.model_abi,
         "--backbone", arguments.backbone,
         "--device", arguments.device,
+        "--release-sequence", str(arguments.release_sequence),
+        "--minimum-app-build", str(arguments.minimum_app_build),
+        "--maximum-app-build", str(arguments.maximum_app_build),
         "--quantize", "fp16",
         "--learning-rate", str(learning_rate),
         "--num-epochs", str(arguments.num_epochs),
@@ -594,6 +633,69 @@ def stage_train_transformer(arguments: argparse.Namespace, finetune: bool = Fals
     report = TRANSFORMER_OUT / "training-report.html"
     if report.exists():
         print(f"  training report: {report.relative_to(REPO_ROOT)}")
+
+
+def stage_distill_transformer(arguments: argparse.Namespace) -> None:
+    require_tool("uv", "Install uv (https://docs.astral.sh/uv).")
+    if not TRAIN_SET.exists():
+        raise SystemExit(f"error: {TRAIN_SET} missing; run the augment and prune stages first")
+    require_holdout_isolation(TRAIN_SET)
+    teacher_checkpoint = arguments.distill_teacher_checkpoint
+    if teacher_checkpoint is not None:
+        teacher_checkpoint = teacher_checkpoint.expanduser().resolve()
+    if teacher_checkpoint is None:
+        teacher_checkpoint = TRANSFORMER_OUT / "teacher-checkpoint"
+        source_checkpoint = TRANSFORMER_OUT / "checkpoint"
+        if not source_checkpoint.exists():
+            raise SystemExit(
+                "error: current teacher checkpoint does not exist: "
+                f"{source_checkpoint}; run train-transformer first"
+            )
+        # The standard pipeline trains the teacher immediately before this
+        # stage. Refresh the snapshot every run so a stale prior student or
+        # teacher can never silently become the release source.
+        if teacher_checkpoint.exists():
+            shutil.rmtree(teacher_checkpoint)
+        shutil.copytree(source_checkpoint, teacher_checkpoint)
+    if teacher_checkpoint is None or not teacher_checkpoint.exists():
+        raise SystemExit(f"error: teacher checkpoint does not exist: {teacher_checkpoint}")
+    config_path = teacher_checkpoint / "config.json"
+    try:
+        checkpoint_config = json.loads(config_path.read_text(encoding="utf-8"))
+        teacher_layers = int(checkpoint_config["num_hidden_layers"])
+    except (OSError, json.JSONDecodeError, KeyError, TypeError, ValueError) as error:
+        raise SystemExit(f"error: teacher checkpoint has no valid layer configuration: {config_path}") from error
+    if teacher_layers <= 12:
+        raise SystemExit(
+            "error: distillation requires a teacher deeper than the 12-layer student; "
+            f"checkpoint has {teacher_layers} layers"
+        )
+    command = [
+        "uv", "run", "distill_mmbert.py",
+        "--input", str(TRAIN_SET),
+        "--teacher-checkpoint", str(teacher_checkpoint),
+        "--out", str(TRANSFORMER_OUT),
+        "--version", arguments.version_transformer,
+        "--model-abi", arguments.model_abi,
+        "--backbone", arguments.backbone,
+        "--device", arguments.device,
+        "--release-sequence", str(arguments.release_sequence),
+        "--minimum-app-build", str(arguments.minimum_app_build),
+        "--maximum-app-build", str(arguments.maximum_app_build),
+        "--quantize", "fp16",
+        "--truncate-layers", "12",
+        "--temperature", str(arguments.distill_temperature),
+        "--distill-alpha", str(arguments.distill_alpha),
+        "--learning-rate", str(arguments.learning_rate if arguments.learning_rate is not None else 2e-5),
+        "--num-epochs", str(arguments.num_epochs),
+        "--batch-size", str(arguments.batch_size),
+        "--warmup-ratio", str(arguments.warmup_ratio),
+        "--boundary-loss-weight", str(max(arguments.boundary_loss_weight, 2.0)),
+        "--max-length", str(arguments.max_sequence_length),
+        "--test-input", str(PROMOTION_TEST_SET),
+        "--seed", "32",
+    ]
+    run(command, cwd=TRANSFORMER_TRAINER)
 
 
 def stage_quantize_transformer(arguments: argparse.Namespace) -> None:
@@ -632,15 +734,15 @@ def stage_select_transformer(arguments: argparse.Namespace) -> None:
     reports = TRANSFORMER_OUT / "quantization-tournament" / "reports"
     if not reports.exists():
         raise SystemExit("error: run quantize-transformer before select-transformer")
-    run(
-        [
+    command = [
             "python3", str(TRANSFORMER_TRAINER / "select_quantization_candidate.py"),
             "--profiles", str(arguments.quantization_profiles),
             "--reports", str(reports),
             "--out", str(TRANSFORMER_OUT / "selected-candidate.json"),
-        ],
-        cwd=REPO_ROOT,
-    )
+        ]
+    for gate in arguments.distillation_gate:
+        command.extend(["--distillation-gate", str(gate.expanduser().resolve())])
+    run(command, cwd=REPO_ROOT)
 
 
 def stage_finetune(arguments: argparse.Namespace) -> None:
@@ -672,6 +774,7 @@ def main() -> None:
         "prune": stage_prune,
         "train-classic": stage_train_classic,
         "train-transformer": stage_train_transformer,
+        "distill-transformer": stage_distill_transformer,
         "quantize-transformer": stage_quantize_transformer,
         "select-transformer": stage_select_transformer,
         "finetune": stage_finetune,

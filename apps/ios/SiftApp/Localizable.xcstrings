@@ -4483,6 +4483,23 @@
         }
       }
     },
+    "高级模型蒸馏来源不可用" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Premium model distillation provenance is invalid"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "プレミアムモデルの蒸留プロベナンスが無効です"
+          }
+        }
+      }
+    },
     "高级模型清单格式不正确" : {
       "extractionState" : "stale",
       "localizations" : {

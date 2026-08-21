@@ -24,6 +24,7 @@ from quantize_candidates import (
     taxonomy_actions,
     tokenizer_artifact_name,
     utc_timestamp,
+    validate_profile_runtime_precision,
 )
 
 
@@ -77,11 +78,12 @@ class QuantizeCandidateTests(unittest.TestCase):
         )["profiles"]
         profile = next(
             item for item in profiles
-            if item["id"] == "w8a16-channel-embedding-w4-block16-ptq"
+            if item["id"] == "w8a32-channel-embedding-w4-block16-ptq"
         )
 
         self.assertFalse(profile["eligibleForRelease"])
         self.assertFalse(profile["enabledByDefault"])
+        self.assertEqual(profile["activationBits"], 32)
         self.assertEqual(profile["weightOverrides"][0]["role"], "tokenEmbedding")
 
     def test_published_tokenizer_uses_public_model_name(self) -> None:
@@ -190,6 +192,26 @@ class QuantizeCandidateTests(unittest.TestCase):
         self.assertEqual(identity["quantizationOrder"], "activation-then-weight")
         self.assertEqual(identity["coremltoolsVersion"], "9.0")
 
+    def test_fp32_graph_requires_a32_release_profile(self) -> None:
+        with self.assertRaisesRegex(SystemExit, "source Core ML graph is FP32"):
+            validate_profile_runtime_precision(
+                {
+                    "id": "w4a16-block16-ptq",
+                    "weightBits": 4,
+                    "activationBits": 16,
+                },
+                {"runtimeProfile": {"computePrecision": "float32"}},
+            )
+
+        validate_profile_runtime_precision(
+            {
+                "id": "w4a32-block16-ptq",
+                "weightBits": 4,
+                "activationBits": 32,
+            },
+            {"runtimeProfile": {"computePrecision": "float32"}},
+        )
+
     def test_source_manifest_preserves_distillation_provenance(self) -> None:
         source = {
             "trainedAt": "2026-08-18T19:57:34.783Z",
@@ -235,7 +257,7 @@ class QuantizeCandidateTests(unittest.TestCase):
             "maxSequenceLength": 96,
             "modelABI": "sift-signal-v1",
             "version": "signal-distilled",
-            "quantizationProfile": {"weightBits": 16, "activationBits": 16},
+            "quantizationProfile": {"weightBits": 16, "activationBits": 32},
             "algorithm": "teacher-student-distillation",
             "trainedAt": "2026-08-18T19:57:34.783Z",
             "backbone": "jhu-clsp/mmBERT-small",

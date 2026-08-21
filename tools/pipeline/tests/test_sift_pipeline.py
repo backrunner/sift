@@ -17,6 +17,32 @@ class HoldoutIsolationTests(unittest.TestCase):
 
         self.assertEqual(arguments.truncate_layers, 0)
         self.assertEqual(arguments.max_sequence_length, 96)
+        self.assertEqual(arguments.version_classic, "maxent-generalization-v50-seed29-r32")
+        self.assertEqual(arguments.version_transformer, "signal-v4-generalization-v50-r32-distilled-12l")
+        self.assertEqual(arguments.release_sequence, 4)
+        self.assertEqual(arguments.minimum_app_build, 19)
+        self.assertEqual(arguments.distillation_gate, [])
+
+    def test_select_transformer_forwards_explicit_distillation_gates(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            reports = root / "transformer-model" / "quantization-tournament" / "reports"
+            reports.mkdir(parents=True)
+            gate = root / "gate.json"
+            gate.write_text("{}", encoding="utf-8")
+            with (
+                patch.object(sys, "argv", ["sift_pipeline.py", "select-transformer", "--distillation-gate", str(gate)]),
+                patch.object(pipeline, "TRANSFORMER_OUT", root / "transformer-model"),
+                patch.object(pipeline, "TRANSFORMER_TRAINER", root / "trainer"),
+                patch.object(pipeline, "require_tool"),
+                patch.object(pipeline, "run") as run,
+            ):
+                arguments = pipeline.parse_arguments()
+                pipeline.stage_select_transformer(arguments)
+
+            command = run.call_args.args[0]
+            self.assertIn("--distillation-gate", command)
+            self.assertIn(str(gate.resolve()), command)
 
     def test_training_guard_rejects_exact_and_digit_normalized_collisions(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -44,6 +70,36 @@ class HoldoutIsolationTests(unittest.TestCase):
             finally:
                 pipeline.CLASSIFICATION_TEST_SET = original_fixed
                 pipeline.PROMOTION_TEST_SET = original_promotion
+
+    def test_distillation_refreshes_implicit_teacher_from_current_checkpoint(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            transformer_out = root / "transformer-model"
+            source_checkpoint = transformer_out / "checkpoint"
+            teacher_checkpoint = transformer_out / "teacher-checkpoint"
+            training_set = root / "train.ndjson"
+            source_checkpoint.mkdir(parents=True)
+            teacher_checkpoint.mkdir(parents=True)
+            (source_checkpoint / "current.txt").write_text("current", encoding="utf-8")
+            (source_checkpoint / "config.json").write_text(json.dumps({"num_hidden_layers": 22}), encoding="utf-8")
+            (teacher_checkpoint / "stale.txt").write_text("stale", encoding="utf-8")
+            self.write_rows(training_set, ["Current leak-free row"])
+
+            with (
+                patch.object(sys, "argv", ["sift_pipeline.py", "distill-transformer"]),
+                patch.object(pipeline, "TRANSFORMER_OUT", transformer_out),
+                patch.object(pipeline, "TRAIN_SET", training_set),
+                patch.object(pipeline, "require_tool"),
+                patch.object(pipeline, "run") as run,
+            ):
+                arguments = pipeline.parse_arguments()
+                pipeline.stage_distill_transformer(arguments)
+
+            self.assertEqual((teacher_checkpoint / "current.txt").read_text(encoding="utf-8"), "current")
+            self.assertFalse((teacher_checkpoint / "stale.txt").exists())
+            command = run.call_args.args[0]
+            teacher_index = command.index("--teacher-checkpoint") + 1
+            self.assertEqual(command[teacher_index], str(teacher_checkpoint))
 
     @staticmethod
     def write_rows(path: Path, texts: list[str]) -> None:

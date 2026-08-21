@@ -96,6 +96,408 @@ public struct HeuristicClassifier: MessageClassifier {
             return ModelOutputContract.abstentionDecision(confidence: 0.99)
         }
 
+        // Official anti-fraud advisories prohibit transfers and point users
+        // back to a verified channel. They are transactional government
+        // notices, even though the wording contains scam vocabulary.
+        let antiFraudAuthorityMarkers = [
+            "国家反诈中心", "反诈中心", "市反诈中心", "fraud prevention center", "fraud prevention office",
+            "anti-fraud center", "詐欺対策センター", "詐欺対策機関"
+        ]
+        let antiFraudSafetyMarkers = [
+            "不会通过电话要求转账", "不会要求转账", "不会索取转账", "不会索取",
+            "正规机关不会通过聊天软件要求转账",
+            "will never ask you to transfer", "will never ask for a transfer", "will never ask",
+            "does not ask for transfers", "要求することはありません", "振込を求めません"
+        ]
+        let antiFraudVerificationMarkers = [
+            "官方电话核实", "官方渠道核实", "verify through the official number",
+            "verify through an official channel", "official number", "公式窓口で確認"
+        ]
+        if
+            antiFraudAuthorityMarkers.contains(where: lowercased.contains),
+            antiFraudSafetyMarkers.contains(where: lowercased.contains),
+            antiFraudVerificationMarkers.contains(where: lowercased.contains),
+            let decision = forcedDecision(labelID: "government.reminder", confidence: 0.99)
+        {
+            return decision
+        }
+
+        // Completed reward postings are transactions. Keep them ahead of
+        // card-purchase and cashback rules, which intentionally target future
+        // eligibility rather than an already-settled account event.
+        let rewardCompletionContextMarkers = [
+            "积分", "points", "member points", "reward points", "ポイント"
+        ]
+        let rewardCompletionStateMarkers = [
+            "获得", "新增", "到账", "earned", "added", "posted", "獲得", "加算"
+        ]
+        let rewardAccountMarkers = [
+            "余额", "账户", "记录", "会员", "里程", "rewards", "reward", "member", "balance",
+            "account", "mileage", "credits", "会員", "残高", "口座", "マイル", "履歴"
+        ]
+        let rewardRedemptionStateMarkers = [
+            "兑换申请已受理", "兑换申请已确认", "礼品将在", "redemption request was accepted",
+            "redemption is confirmed", "gift will ship", "交換申請を受理", "景品を発送"
+        ]
+        let rewardFutureOfferMarkers = [
+            "活动", "报名", "可获得", "返现", "消费任务", "campaign", "enroll", "qualifying",
+            "receive", "offer", "eligible", "bonus", "double", "cashback", "优惠", "限时", "加倍",
+            "特典", "ボーナス", "2倍", "利用条件", "受け取れます"
+        ]
+        if
+            rewardCompletionContextMarkers.contains(where: lowercased.contains),
+            (
+                (
+                    rewardCompletionStateMarkers.contains(where: lowercased.contains)
+                        && rewardAccountMarkers.contains(where: lowercased.contains)
+                )
+                    || rewardRedemptionStateMarkers.contains(where: lowercased.contains)
+            ),
+            !rewardFutureOfferMarkers.contains(where: lowercased.contains),
+            let decision = forcedDecision(labelID: "transaction.points", confidence: 0.99)
+        {
+            return decision
+        }
+
+        // Card dining cashback language is promotional only when it describes
+        // eligibility or a future spend condition. Exclude settled/credited
+        // wording so real card transactions remain finance.consumption.
+        let cardRewardContextMarkers = [
+            "信用卡", "刷卡", "刷卡金", "返现", "返現", "cashback", "cash back", "cash rebate",
+            "statement credit", "card-spend", "卡消费", "カード", "還元"
+        ]
+        let cardRewardOfferMarkers = [
+            "活动", "特典", "优惠", "餐饮季", "餐饮回馈", "会员专享", "指定商户", "合作餐厅", "周末", "满", "消费任务", "报名",
+            "offer", "campaign", "eligible", "qualifying", "participating", "this weekend",
+            "weekend", "limited-time", "challenge", "enroll", "対象店", "飲食", "利用すると", "還元します", "会員限定", "利用条件"
+        ]
+        let cardRewardSettledMarkers = [
+            "已获得", "已到账", "已入账", "余额", "earned", "credited", "posted", "balance",
+            "today's card purchase", "獲得しました", "付与されました", "残高は"
+        ]
+        if
+            cardRewardContextMarkers.contains(where: lowercased.contains),
+            cardRewardOfferMarkers.contains(where: lowercased.contains),
+            !cardRewardSettledMarkers.contains(where: lowercased.contains),
+            let decision = forcedDecision(labelID: "promotion", confidence: 0.99)
+        {
+            return decision
+        }
+
+        // A posted social-insurance contribution is a government transaction,
+        // not a carrier or merchant promotion.
+        let socialContributionContextMarkers = [
+            "社会保险", "社保", "social insurance", "social-security", "社会保険"
+        ]
+        let socialContributionCompletionMarkers = [
+            "缴费成功", "缴费完成", "缴费已完成", "payment completed", "contribution posted",
+            "纳付完成", "納付が完了", "支払いが完了", "支払完了", "已缴费"
+        ]
+        if
+            socialContributionContextMarkers.contains(where: lowercased.contains),
+            socialContributionCompletionMarkers.contains(where: lowercased.contains),
+            let decision = forcedDecision(labelID: "government.social_security", confidence: 0.99)
+        {
+            return decision
+        }
+
+        // Renewal quotes and confirmed policy notices are insurance
+        // transactions; generic insurance offers remain with the classifier.
+        let insuranceRenewalContextMarkers = [
+            "renewal quote", "renewal estimate", "续保报价", "续保估价", "保険更新", "更新見積"
+        ]
+        let insuranceRenewalStateMarkers = [
+            "is ready", "ready", "confirm before", "已生成", "已出", "確認してください", "確認"
+        ]
+        if
+            insuranceRenewalContextMarkers.contains(where: lowercased.contains),
+            insuranceRenewalStateMarkers.contains(where: lowercased.contains),
+            let decision = forcedDecision(labelID: "finance.insurance", confidence: 0.99)
+        {
+            return decision
+        }
+
+        // Travel-service refunds are settled finance events, including
+        // Japanese wording that does not contain the English/Chinese anchors.
+        let travelRefundContextMarkers = [
+            "机票", "航班", "旅行", "travel", "flight", "airline", "航空券", "旅行サービス", "予約"
+        ]
+        let travelRefundCompletionMarkers = [
+            "退款成功", "退款已完成", "原路退回", "refund successful", "refund complete",
+            "refund has been issued", "返金完了", "返金が完了", "元の支払"
+        ]
+        if
+            travelRefundContextMarkers.contains(where: lowercased.contains),
+            travelRefundCompletionMarkers.contains(where: lowercased.contains),
+            let decision = forcedDecision(labelID: "finance.refund", confidence: 0.99)
+        {
+            return decision
+        }
+
+        // Completed delivery of a purchased digital item is an order event.
+        // Requiring purchase, digital-item, and fulfillment language keeps
+        // limited-item launch offers in the promotion category.
+        let digitalPurchaseMarkers = [
+            "购买", "订单", "付费", "purchased", "purchase", "order", "paid",
+            "購入", "注文", "有料"
+        ]
+        let digitalItemMarkers = [
+            "坐骑", "皮肤", "装扮", "角色仓库", "游戏内", "数字内容", "扩展包", "数字宠物",
+            "mount", "skin", "cosmetic", "character inventory", "in-game", "digital content", "expansion", "companion",
+            "マウント", "衣装", "キャラクター", "ゲーム内", "デジタル", "拡張", "ペット"
+        ]
+        let digitalFulfillmentMarkers = [
+            "已成功发放", "已发放", "交付完成", "已交付", "已加入", "已激活", "已履约",
+            "delivered", "delivery is complete", "fulfillment is complete", "fulfilled", "now available", "activated",
+            "納品が完了", "配布済み", "追加されました", "有効化", "購入処理が完了"
+        ]
+        let digitalFutureOfferMarkers = [
+            "可购买", "预售", "预约", "活动", "优惠", "折扣", "礼包", "赠",
+            "available to order", "preorder", "pre-order", "launch", "discount", "bundle", "bonus",
+            "予約注文", "予約販売", "購入できます", "キャンペーン", "割引", "特典", "パック"
+        ]
+        if
+            digitalPurchaseMarkers.contains(where: lowercased.contains),
+            digitalItemMarkers.contains(where: lowercased.contains),
+            digitalFulfillmentMarkers.contains(where: lowercased.contains),
+            !digitalFutureOfferMarkers.contains(where: lowercased.contains),
+            let decision = forcedDecision(labelID: "transaction.order", confidence: 0.99)
+        {
+            return decision
+        }
+
+        let investmentFraudContextMarkers = [
+            "private mentor", "investment mentor", "投资导师", "私募导师", "投資メンター"
+        ]
+        let investmentFraudPromiseMarkers = [
+            "guarantees weekly returns", "guarantees weekly investment returns", "guaranteed weekly returns", "保证每周收益",
+            "保证收益", "毎週の利益を保証"
+        ]
+        let investmentFraudPaymentMarkers = [
+            "personal account", "private account", "membership funds", "transfer membership",
+            "个人账户", "个人收款", "個人口座"
+        ]
+        if
+            investmentFraudContextMarkers.contains(where: lowercased.contains),
+            investmentFraudPromiseMarkers.contains(where: lowercased.contains),
+            investmentFraudPaymentMarkers.contains(where: lowercased.contains),
+            let decision = forcedDecision(labelID: "spam", confidence: 0.99)
+        {
+            return decision
+        }
+
+        let wealthMaturityContextMarkers = [
+            "balanced return", "balanced investment product", "稳健回报", "稳健理财",
+            "balanced product", "バランス型商品"
+        ]
+        let wealthMaturityStateMarkers = [
+            "matured", "principal and earnings", "returned to the settlement account",
+            "到期", "本金和收益", "结算账户", "満期", "元本と収益", "決済口座"
+        ]
+        if
+            wealthMaturityContextMarkers.contains(where: lowercased.contains),
+            wealthMaturityStateMarkers.contains(where: lowercased.contains),
+            let decision = forcedDecision(labelID: "finance.wealth", confidence: 0.99)
+        {
+            return decision
+        }
+
+        let courtMediationContextMarkers = [
+            "法院调解", "调解平台", "mediation platform", "court mediation", "裁判所の調停"
+        ]
+        let courtMediationStateMarkers = [
+            "收取答辩材料", "收到答辩材料", "线上会议", "排期", "received the response",
+            "online hearing", "scheduling", "答弁書を受領", "オンライン審理"
+        ]
+        if
+            courtMediationContextMarkers.contains(where: lowercased.contains),
+            courtMediationStateMarkers.contains(where: lowercased.contains),
+            let decision = forcedDecision(labelID: "government.court", confidence: 0.99)
+        {
+            return decision
+        }
+
+        let accountRecoveryChangeMarkers = [
+            "recovery phone changed", "recovery number changed", "恢复手机号已更换",
+            "恢复号码已更换", "復旧電話番号を変更"
+        ]
+        let accountRecoveryStateMarkers = [
+            "old number can no longer", "旧号码无法", "现有设备保持登录", "current devices stay signed in",
+            "現在の端末はログインを維持"
+        ]
+        if
+            accountRecoveryChangeMarkers.contains(where: lowercased.contains),
+            accountRecoveryStateMarkers.contains(where: lowercased.contains),
+            let decision = forcedDecision(labelID: "transaction.account_security", confidence: 0.99)
+        {
+            return decision
+        }
+
+        let cardStatementContextMarkers = [
+            "business-card", "business card", "fleet card", "supplementary card", "corporate card",
+            "商务卡", "企业卡", "附属卡", "法人カード", "家族カード"
+        ]
+        let cardStatementStateMarkers = [
+            "statement is ready", "statement ready", "minimum amount is due", "minimum payment",
+            "due next", "due on", "账单已出", "最低还款", "請求書", "最低支払額"
+        ]
+        if
+            cardStatementContextMarkers.contains(where: lowercased.contains),
+            cardStatementStateMarkers.contains(where: lowercased.contains),
+            let decision = forcedDecision(labelID: "finance.credit_card", confidence: 0.99)
+        {
+            return decision
+        }
+
+        let escrowTransferContextMarkers = [
+            "托管账户", "escrow account", "escrow balance", "預託口座"
+        ]
+        let escrowTransferStateMarkers = [
+            "保证金划入", "划入尾号", "银行回单", "transferred to account ending", "bank receipt",
+            "保証金を振り込み", "銀行控え"
+        ]
+        if
+            escrowTransferContextMarkers.contains(where: lowercased.contains),
+            escrowTransferStateMarkers.contains(where: lowercased.contains),
+            let decision = forcedDecision(labelID: "finance.bank", confidence: 0.99)
+        {
+            return decision
+        }
+
+        let repairOrderContextMarkers = [
+            "维修工坊", "repair shop", "repair workshop", "修理工房", "espresso-machine valve", "咖啡机阀组"
+        ]
+        let repairOrderStateMarkers = [
+            "订单已付清", "order is paid", "order was paid", "will assemble", "开始装配", "assemble when parts arrive",
+            "組み立て"
+        ]
+        if
+            repairOrderContextMarkers.contains(where: lowercased.contains),
+            repairOrderStateMarkers.contains(where: lowercased.contains),
+            let decision = forcedDecision(labelID: "transaction.order", confidence: 0.99)
+        {
+            return decision
+        }
+
+        let refrigeratedFreightContextMarkers = [
+            "冷链药品", "refrigerated medicine", "冷蔵医薬品", "集装箱", "container"
+        ]
+        let refrigeratedFreightStateMarkers = [
+            "铁路货场", "恒温车厢", "rail yard", "temperature-controlled consist", "鉄道貨物駅", "定温車両"
+        ]
+        if
+            refrigeratedFreightContextMarkers.contains(where: lowercased.contains),
+            refrigeratedFreightStateMarkers.contains(where: lowercased.contains),
+            let decision = forcedDecision(labelID: "life.logistics", confidence: 0.99)
+        {
+            return decision
+        }
+
+        let maturedDepositContextMarkers = [
+            "foreign-currency deposit", "外币定存", "外貨定期預金", "checking account", "普通預金口座"
+        ]
+        let maturedDepositStateMarkers = [
+            "matured", "moved to", "account ending", "bank receipt", "到期款", "银行电子回单",
+            "満期金", "振り替え", "銀行控え"
+        ]
+        if
+            maturedDepositContextMarkers.contains(where: lowercased.contains),
+            maturedDepositStateMarkers.contains(where: lowercased.contains),
+            let decision = forcedDecision(labelID: "finance.bank", confidence: 0.99)
+        {
+            return decision
+        }
+
+        let encryptedArchiveContextMarkers = [
+            "mail-archive", "encrypted mail archive", "加密邮件归档", "暗号化メール保管庫"
+        ]
+        let encryptedArchiveStateMarkers = [
+            "export finished", "export is complete", "download remains", "导出已完成", "下载文件",
+            "書き出しが完了", "ダウンロードできます"
+        ]
+        if
+            encryptedArchiveContextMarkers.contains(where: lowercased.contains),
+            encryptedArchiveStateMarkers.contains(where: lowercased.contains),
+            let decision = forcedDecision(labelID: "transaction.message", confidence: 0.99)
+        {
+            return decision
+        }
+
+        let remittanceReceiptContextMarkers = [
+            "planned remittance", "汇款", "remittance", "送金", "account ending"
+        ]
+        let remittanceReceiptStateMarkers = [
+            "reached account", "bank receipt", "stored in transaction details", "已到达账户",
+            "银行回单", "取引記録", "銀行記録"
+        ]
+        if
+            remittanceReceiptContextMarkers.contains(where: lowercased.contains),
+            remittanceReceiptStateMarkers.contains(where: lowercased.contains),
+            let decision = forcedDecision(labelID: "finance.bank", confidence: 0.99)
+        {
+            return decision
+        }
+
+        let backupAlertContextMarkers = [
+            "cold-backup service token", "cold backup service token", "冷备份服务令牌", "冷备份令牌"
+        ]
+        let backupAlertStateMarkers = [
+            "expires", "过期", "停止增量快照", "incremental snapshots will stop", "失効"
+        ]
+        if
+            backupAlertContextMarkers.contains(where: lowercased.contains),
+            backupAlertStateMarkers.contains(where: lowercased.contains),
+            let decision = forcedDecision(labelID: "work.alert", confidence: 0.99)
+        {
+            return decision
+        }
+
+        let artifactAlertContextMarkers = [
+            "artifact registry", "production artifact", "成果物仓库", "签名证书", "signing certificate", "日志归档"
+        ]
+        let artifactAlertStateMarkers = [
+            "quota", "quota left", "容量", "expires", "失效", "到期", "will block", "会中断", "中断"
+        ]
+        if
+            artifactAlertContextMarkers.contains(where: lowercased.contains),
+            artifactAlertStateMarkers.contains(where: lowercased.contains),
+            let decision = forcedDecision(labelID: "work.alert", confidence: 0.99)
+        {
+            return decision
+        }
+
+        let civicSafetyAuthorityMarkers = [
+            "消防", "消防本部", "fire and rescue", "fire department", "消防署"
+        ]
+        let civicSafetyNoticeMarkers = [
+            "からのお知らせ", "指定場所で充電", "廊下で充電しない", "advise", "notice",
+            "charging in designated", "do not charge in corridors"
+        ]
+        if
+            civicSafetyAuthorityMarkers.contains(where: lowercased.contains),
+            civicSafetyNoticeMarkers.contains(where: lowercased.contains),
+            let decision = forcedDecision(labelID: "government.reminder", confidence: 0.99)
+        {
+            return decision
+        }
+
+        let genericPromotionContextMarkers = [
+            "game realm", "new game release", "summon bundle", "new-season fashion", "skincare package",
+            "游戏新服", "新游戏", "召唤礼包", "新季服装", "护理套餐",
+            "ゲーム新サーバー", "新作ゲーム", "召喚パック", "新シーズン", "スキンケア"
+        ]
+        let genericPromotionOfferMarkers = [
+            "exclusive character", "bonus character shards", "limited", "launch-week savings",
+            "save", "discount", "特惠", "限时", "折扣", "extra member discount", "bonus", "限定", "割引", "减免", "优惠"
+        ]
+        if
+            genericPromotionContextMarkers.contains(where: lowercased.contains),
+            genericPromotionOfferMarkers.contains(where: lowercased.contains),
+            let decision = forcedDecision(labelID: "promotion", confidence: 0.99)
+        {
+            return decision
+        }
+
         let travelServiceContextMarkers = [
             "航空", "航班", "机票", "登机", "机场", "铁路", "列车", "动车", "高铁", "车票",
             "客运", "大巴", "轮渡", "渡轮", "邮轮", "游轮", "船票", "登船", "港口", "码头",
@@ -112,11 +514,11 @@ public struct HeuristicClassifier: MessageClassifier {
         ]
         let sensitiveCredentialMarkers = [
             "网银密码", "网银口令", "登录密码", "银行卡密码", "卡片密码", "卡片安全码",
-            "卡片安全数字", "短信动态码", "银行应用动态码", "钱包恢复短语", "online-banking password",
+            "卡片安全数字", "短信动态码", "登录验证码", "银行应用验证码", "钱包恢复短语", "online-banking password",
             "online banking password", "online account password", "banking login", "account password", "card pin", "card password",
-            "card security code", "banking approval code", "wallet recovery phrase", "ネット銀行のパスワード",
+            "card security code", "banking approval code", "login verification code", "sms verification code", "wallet recovery phrase", "ネット銀行のパスワード",
             "ネット口座のパスワード", "カード暗証番号", "カードのパスワード", "セキュリティ番号",
-            "銀行アプリの承認コード", "ウォレットの復元フレーズ"
+            "銀行アプリの承認コード", "SMS認証コード", "ログイン認証コード", "ウォレットの復元フレーズ"
         ]
         let credentialRequestMarkers = [
             "要求", "需在", "需要", "填写", "输入", "提供", "回复", "发送", "提交", "上传",
@@ -1605,7 +2007,10 @@ public struct HeuristicClassifier: MessageClassifier {
         let directTransferMarkers = [
             "转给你", "转回给你", "带给你", "放在玄关", "帮我拿", "sent you", "sent back",
             "left the membership", "when you pass by", "bring it when", "返したよ", "送ったよ",
-            "家に着いたら", "忘れていった", "玄関の引き出し", "持ってきて", "持っていくね", "持っていきます"
+            "家に着いたら", "忘れていった", "玄関の引き出し", "持ってきて", "持っていくね", "持っていきます",
+            // Short English meet-up statements are common personal SMS but
+            // can be overconfidently mapped to takeaway or travel by Signal.
+            "come over when you arrive"
         ]
         return directTransferMarkers.contains(where: body.contains)
             || (

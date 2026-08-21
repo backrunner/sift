@@ -53,7 +53,7 @@ def parse_arguments() -> argparse.Namespace:
         "--profile-id",
         action="append",
         default=[],
-        help="generate only the named profile(s); fp16-baseline is included automatically",
+        help="generate only the named profile(s); fp32-baseline is included automatically",
     )
     parser.add_argument(
         "--reuse-existing-candidates",
@@ -626,9 +626,9 @@ def load_source_manifest(
     if (
         not isinstance(profile, dict)
         or profile.get("weightBits") != 16
-        or profile.get("activationBits") != 16
+        or profile.get("activationBits") != 32
     ):
-        mismatches.append("quantizationProfile: FP16 source is required")
+        mismatches.append("quantizationProfile: FP32 source baseline is required")
     for key in ("algorithm", "trainedAt", "backbone", "tokenizerKind"):
         if not isinstance(payload.get(key), str) or not payload[key]:
             mismatches.append(f"{key}: non-empty string is required")
@@ -762,6 +762,26 @@ def parse_qat_models(values: list[str]) -> dict[str, Path]:
     return result
 
 
+def validate_profile_runtime_precision(
+    profile: dict[str, Any],
+    source_manifest: dict[str, Any],
+) -> None:
+    """Reject metadata combinations that cannot describe the source graph."""
+    runtime_profile = source_manifest.get("runtimeProfile")
+    if not isinstance(runtime_profile, dict):
+        return
+    compute_precision = runtime_profile.get("computePrecision")
+    if compute_precision == "float32" and profile.get("activationBits") != 32:
+        raise SystemExit(
+            f"error: {profile['id']} advertises A{profile.get('activationBits')} "
+            "but the source Core ML graph is FP32; use an A32 profile"
+        )
+    if compute_precision == "float16" and profile.get("activationBits") == 32:
+        raise SystemExit(
+            f"error: {profile['id']} advertises A32 but the source Core ML graph is FP16"
+        )
+
+
 def main() -> None:
     arguments = parse_arguments()
     import coremltools as ct
@@ -778,15 +798,17 @@ def main() -> None:
     unknown_profile_ids = requested_profile_ids - profiles_by_id.keys()
     if unknown_profile_ids:
         raise SystemExit(f"error: unknown quantization profile(s): {', '.join(sorted(unknown_profile_ids))}")
-    baseline_profile = profiles_by_id.get("fp16-baseline")
+    baseline_profile = profiles_by_id.get("fp32-baseline")
     if baseline_profile is None:
-        raise SystemExit("error: fp16-baseline profile is required")
+        raise SystemExit("error: fp32-baseline profile is required")
     qat_models = parse_qat_models(arguments.qat_model)
     profiles = [baseline_profile]
     for profile in configured_profiles:
-        if profile["id"] == "fp16-baseline":
+        if profile["id"] == "fp32-baseline":
             continue
         if requested_profile_ids and profile["id"] not in requested_profile_ids:
+            continue
+        if profile.get("historical") and profile["id"] not in requested_profile_ids:
             continue
         if not requested_profile_ids and profile.get("enabledByDefault") is False:
             continue
@@ -838,6 +860,9 @@ def main() -> None:
         model_abi=arguments.model_abi,
         version=arguments.version,
     )
+    for profile in profiles:
+        if profile.get("method") != "baseline":
+            validate_profile_runtime_precision(profile, source_manifest)
     source_manifest_sha256 = file_sha256(source_manifest_path)
     actions[ABSTAIN_LABEL] = "none"
     arguments.out.mkdir(parents=True, exist_ok=True)
@@ -985,7 +1010,7 @@ def main() -> None:
             None if ignores_cpu_smoke_failure else cpu_smoke_failure
         )
         if smoke_failure is not None:
-            if profile["id"] == "fp16-baseline":
+            if profile["id"] == "fp32-baseline":
                 raise SystemExit(f"error: FP16 baseline failed model smoke: {smoke_failure}")
             artifact_sha = directory_sha256(model_path)
             report = {
@@ -1040,7 +1065,7 @@ def main() -> None:
         billing = evaluate(candidate, billing_samples, billing_rows, labels, actions)
         conversation = evaluate(candidate, conversation_samples, conversation_rows, labels, actions)
         language_accuracy = combined_language_accuracy(fixed, promotion)
-        if profile["id"] == "fp16-baseline":
+        if profile["id"] == "fp32-baseline":
             baseline_predictions = {
                 "fixed": fixed["predictions"],
                 "promotion": promotion["predictions"],

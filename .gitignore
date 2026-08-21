@@ -104,6 +104,7 @@ docs/APP_STORE_CONNECT_METADATA.md
 *.arrow
 
 # Core ML / trainer working artifacts
+GeneratedModels/
 *.mlmodel
 apps/ios/GeneratedModels/
 *.mlmodelc/

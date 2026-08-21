@@ -9,6 +9,8 @@ import json
 from pathlib import Path
 from typing import Any
 
+from check_distillation_gate import gate_matches_student, is_distilled, read_report
+
 
 QUALITY_FAILURES = frozenset({
     "fixedAccuracy",
@@ -43,6 +45,16 @@ def parse_arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--profiles", type=Path, default=Path(__file__).with_name("quantization-profiles.json"))
     parser.add_argument("--reports", type=Path, required=True, help="directory containing <profile-id>.report.json")
+    parser.add_argument(
+        "--distillation-gate",
+        type=Path,
+        action="append",
+        default=[],
+        help=(
+            "gate JSON produced by check_distillation_gate.py; repeat for multiple candidates. "
+            "When omitted, distillation-gate*.json is discovered beside --reports."
+        ),
+    )
     parser.add_argument("--out", type=Path, required=True, help="selected-candidate.json output")
     return parser.parse_args()
 
@@ -66,6 +78,65 @@ def load_reports(directory: Path) -> list[dict[str, Any]]:
     if not reports:
         raise SystemExit(f"error: no candidate reports found in {directory}")
     return reports
+
+
+def discover_distillation_gates(reports_directory: Path) -> list[Path]:
+    """Find gate artifacts emitted next to a quantization tournament."""
+    candidates = set(reports_directory.glob("distillation-gate*.json"))
+    candidates.update(reports_directory.parent.glob("distillation-gate*.json"))
+    return sorted(path.resolve() for path in candidates if path.is_file())
+
+
+def load_distillation_gates(paths: list[Path]) -> list[dict[str, Any]]:
+    gates: list[dict[str, Any]] = []
+    for raw_path in paths:
+        path = raw_path.expanduser().resolve()
+        if not path.is_file():
+            raise SystemExit(f"error: distillation gate not found: {path}")
+        gate = read_report(path)
+        gate["_gatePath"] = str(path)
+        gate["_gateSHA256"] = hashlib.sha256(path.read_bytes()).hexdigest()
+        gates.append(gate)
+    return gates
+
+
+def gate_for_report(
+    report: dict[str, Any],
+    gates: list[dict[str, Any]],
+    *,
+    expected_teacher: dict[str, Any] | None = None,
+    expected_teacher_report_sha256: str | None = None,
+) -> tuple[dict[str, Any] | None, str | None]:
+    """Return the one passing gate bound to a distilled report."""
+    if not is_distilled(report):
+        return None, None
+    report_path = Path(str(report.get("_reportPath", "")))
+    report_sha = hashlib.sha256(report_path.read_bytes()).hexdigest() if report_path.is_file() else None
+    matching: list[dict[str, Any]] = []
+    failures: list[str] = []
+    for gate in gates:
+        valid, reason = gate_matches_student(
+            gate,
+            report,
+            student_report_sha256=report_sha,
+            expected_teacher=expected_teacher,
+            expected_teacher_report_sha256=expected_teacher_report_sha256,
+        )
+        if valid:
+            matching.append(gate)
+        else:
+            # Keep a useful error for a gate that is clearly intended for this
+            # candidate; unrelated candidate gates are simply skipped.
+            student = gate.get("student") if isinstance(gate.get("student"), dict) else {}
+            profile = student.get("profileID") or gate.get("studentProfileID")
+            artifact = student.get("artifactSHA256") or gate.get("studentArtifactSHA256")
+            if profile == report.get("profileID") or artifact == report.get("artifactSHA256"):
+                failures.append(reason)
+    if len(matching) > 1:
+        return None, "multiple gates match candidate"
+    if matching:
+        return matching[0], None
+    return None, failures[0] if failures else "no matching gate"
 
 
 def candidate_failures(report: dict[str, Any], fp16: dict[str, Any]) -> list[str]:
@@ -153,15 +224,64 @@ def within_five_percent(candidates: list[dict[str, Any]], value) -> list[dict[st
     return [item for item in candidates if value(item) <= minimum * 1.05]
 
 
-def select_candidate(profiles: dict[str, dict[str, Any]], reports: list[dict[str, Any]]) -> dict[str, Any]:
+def select_candidate(
+    profiles: dict[str, dict[str, Any]],
+    reports: list[dict[str, Any]],
+    distillation_gate: Path | str | dict[str, Any] | list[Path] | list[dict[str, Any]] | None = None,
+) -> dict[str, Any]:
+    """Select a release candidate, requiring a bound gate for distilled reports."""
     by_id = {report.get("profileID"): report for report in reports}
-    fp16 = by_id.get("fp16-baseline")
+    fp16 = by_id.get("fp32-baseline")
     if fp16 is None:
-        raise SystemExit("error: fp16-baseline report is required")
+        raise SystemExit("error: fp32-baseline report is required")
+    teacher_report_path = Path(str(fp16.get("_reportPath", "")))
+    teacher_report_sha256 = (
+        hashlib.sha256(teacher_report_path.read_bytes()).hexdigest()
+        if teacher_report_path.is_file()
+        else None
+    )
+
+    if distillation_gate is None:
+        gates: list[dict[str, Any]] = []
+    elif isinstance(distillation_gate, (Path, str)):
+        gates = load_distillation_gates([Path(distillation_gate)])
+    elif isinstance(distillation_gate, dict):
+        gates = [distillation_gate]
+    elif isinstance(distillation_gate, (list, tuple)) and all(isinstance(item, (Path, str)) for item in distillation_gate):
+        gates = load_distillation_gates([Path(item) for item in distillation_gate])
+    else:
+        gates = list(distillation_gate or [])
 
     eligible: list[dict[str, Any]] = []
     rejected: dict[str, list[str]] = {}
     qat_required: set[str] = set()
+
+    def evaluate_report(profile_id: str, report: dict[str, Any], *, qat: bool = False) -> None:
+        failures = candidate_failures(report, fp16)
+        gate, gate_failure = gate_for_report(
+            report,
+            gates,
+            expected_teacher=fp16,
+            expected_teacher_report_sha256=teacher_report_sha256,
+        )
+        if gate_failure is not None:
+            failures.append("distillationGate")
+        if failures:
+            rejected[profile_id] = (["qatRequired"] if qat else []) + failures
+            if (
+                not qat
+                and profile_id in profiles
+                and profiles[profile_id].get("weightBits") == 4
+                and profiles[profile_id].get("qatFallback")
+                and has_quality_failure(failures)
+            ):
+                qat_required.add(profiles[profile_id]["qatFallback"])
+            return
+        candidate = dict(report)
+        if gate is not None:
+            candidate["_distillationGate"] = gate
+        eligible.append(candidate)
+
     for profile_id, profile in profiles.items():
         if not profile.get("eligibleForRelease") or profile.get("enabledWhenPTQQualityFails"):
             continue
@@ -169,28 +289,14 @@ def select_candidate(profiles: dict[str, dict[str, Any]], reports: list[dict[str
         if report is None:
             rejected[profile_id] = ["missingReport"]
             continue
-        failures = candidate_failures(report, fp16)
-        if failures:
-            rejected[profile_id] = failures
-            if (
-                profile.get("weightBits") == 4
-                and profile.get("qatFallback")
-                and has_quality_failure(failures)
-            ):
-                qat_required.add(profile["qatFallback"])
-        else:
-            eligible.append(report)
+        evaluate_report(profile_id, report)
 
     for profile_id in sorted(qat_required):
         report = by_id.get(profile_id)
         if report is None:
             rejected[profile_id] = ["qatRequired", "missingReport"]
             continue
-        failures = candidate_failures(report, fp16)
-        if failures:
-            rejected[profile_id] = failures
-        else:
-            eligible.append(report)
+        evaluate_report(profile_id, report, qat=True)
 
     if not eligible:
         detail = ", ".join(f"{key}: {'/'.join(value)}" for key, value in sorted(rejected.items()))
@@ -202,7 +308,7 @@ def select_candidate(profiles: dict[str, dict[str, Any]], reports: list[dict[str
     eligible = within_five_percent(eligible, lambda item: item["deviceMetrics"]["p95LatencyMilliseconds"])
     eligible.sort(key=lambda item: (-item["metrics"]["promotionAccuracy"], item["profileID"]))
     winner = eligible[0]
-    return {
+    selection = {
         "schemaVersion": 1,
         "profileID": winner["profileID"],
         "artifactSHA256": winner["artifactSHA256"],
@@ -210,11 +316,31 @@ def select_candidate(profiles: dict[str, dict[str, Any]], reports: list[dict[str
         "reportPath": winner["_reportPath"],
         "rejectedCandidates": rejected,
     }
+    gate = winner.get("_distillationGate")
+    if gate is not None:
+        gate_sha = gate.get("_gateSHA256")
+        gate_path = gate.get("_gatePath")
+        if not isinstance(gate_sha, str) or not isinstance(gate_path, str):
+            raise SystemExit("error: selected distilled candidate gate lacks file provenance")
+        selection["distillationGateSHA256"] = gate_sha
+        selection["distillationGatePath"] = gate_path
+        if teacher_report_sha256 is None:
+            raise SystemExit("error: selected distilled candidate has no current teacher report hash")
+        selection["teacherProfileID"] = fp16.get("profileID")
+        selection["teacherArtifactSHA256"] = fp16.get("artifactSHA256")
+        selection["teacherReportSHA256"] = teacher_report_sha256
+    return selection
 
 
 def main() -> None:
     arguments = parse_arguments()
-    selection = select_candidate(load_profiles(arguments.profiles), load_reports(arguments.reports))
+    reports = load_reports(arguments.reports)
+    gate_paths = arguments.distillation_gate or discover_distillation_gates(arguments.reports)
+    selection = select_candidate(
+        load_profiles(arguments.profiles),
+        reports,
+        load_distillation_gates(gate_paths),
+    )
     arguments.out.parent.mkdir(parents=True, exist_ok=True)
     arguments.out.write_text(json.dumps(selection, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     print(f"selected: {selection['profileID']} ({selection['artifactSHA256']})")

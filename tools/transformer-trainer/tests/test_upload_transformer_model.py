@@ -15,6 +15,7 @@ from upload_transformer_model import (
     canonical_catalog_payload,
     canonical_channel_payload,
     canonical_release_payload,
+    legacy_canonical_release_payload,
     entries_after_metadata_revision,
     make_channel_catalog,
     merge_channel_entries,
@@ -27,6 +28,8 @@ from upload_transformer_model import (
     verify_selected_candidate,
     verify_http,
     verify_reused_remote_artifacts,
+    validate_release_profile,
+    release_signature_matches,
 )
 
 
@@ -75,12 +78,12 @@ class UploadTransformerModelTests(unittest.TestCase):
         }
 
     def selection_fixture(self, root: Path, *, report_artifact_sha: str = "artifact-sha") -> tuple[Path, dict]:
-        report = self.valid_report("w8a16-channel-ptq", report_artifact_sha, 1234)
+        report = self.valid_report("w8a32-channel-ptq", report_artifact_sha, 1234)
         report_path = root / "candidate.report.json"
         report_path.write_text(json.dumps(report), encoding="utf-8")
         selection = {
             "schemaVersion": 1,
-            "profileID": "w8a16-channel-ptq",
+            "profileID": "w8a32-channel-ptq",
             "artifactSHA256": "artifact-sha",
             "reportSHA256": hashlib.sha256(report_path.read_bytes()).hexdigest(),
             "reportPath": str(report_path),
@@ -90,7 +93,13 @@ class UploadTransformerModelTests(unittest.TestCase):
         manifest = {
             "sha256": "artifact-sha",
             "downloadBytes": 1234,
-            "quantizationProfile": {"identifier": "w8a16-channel-ptq"},
+            "runtimeProfile": {"computePrecision": "float32"},
+            "quantizationProfile": {
+                "identifier": "w8a32-channel-ptq",
+                "method": "ptq",
+                "weightBits": 8,
+                "activationBits": 32,
+            },
         }
         return selection_path, manifest
 
@@ -207,6 +216,148 @@ class UploadTransformerModelTests(unittest.TestCase):
             selection_path, manifest = self.selection_fixture(root)
 
             verify_selected_candidate(selection_path, manifest, root)
+
+    def test_upload_guard_requires_a_bound_gate_for_distilled_student(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            selection_path, manifest = self.selection_fixture(root)
+            selection = json.loads(selection_path.read_text(encoding="utf-8"))
+            report_path = Path(selection["reportPath"])
+            report = json.loads(report_path.read_text(encoding="utf-8"))
+            distillation = {
+                "teacherCheckpointSHA256": "a" * 64,
+                "teacherLayers": 22,
+                "studentLayers": 12,
+                "temperature": 2.0,
+                "distillAlpha": 0.7,
+            }
+            report.update({
+                "algorithm": "teacher-student-distillation",
+                "distillation": distillation,
+            })
+            report_path.write_text(json.dumps(report), encoding="utf-8")
+            selection["reportSHA256"] = hashlib.sha256(report_path.read_bytes()).hexdigest()
+            manifest.update({
+                "algorithm": "teacher-student-distillation",
+                "distillation": distillation,
+            })
+            selection.update({
+                "teacherProfileID": "fp32-baseline",
+                "teacherArtifactSHA256": "c" * 64,
+                "teacherReportSHA256": "d" * 64,
+            })
+            selection_path.write_text(json.dumps(selection), encoding="utf-8")
+
+            with self.assertRaisesRegex(SystemExit, "missing distillation gate"):
+                verify_selected_candidate(selection_path, manifest, root)
+
+            gate = {
+                "schemaVersion": 1,
+                "passed": True,
+                "teacher": {
+                    "profileID": "fp32-baseline",
+                    "artifactSHA256": "c" * 64,
+                    "reportSHA256": "d" * 64,
+                },
+                "student": {
+                    "profileID": report["profileID"],
+                    "artifactSHA256": report["artifactSHA256"],
+                    "reportSHA256": selection["reportSHA256"],
+                    "distillation": distillation,
+                },
+            }
+            gate_path = root / "distillation-gate.json"
+            gate_path.write_text(json.dumps(gate), encoding="utf-8")
+            selection["distillationGatePath"] = str(gate_path)
+            selection["distillationGateSHA256"] = hashlib.sha256(gate_path.read_bytes()).hexdigest()
+            selection_path.write_text(json.dumps(selection), encoding="utf-8")
+            verify_selected_candidate(selection_path, manifest, root)
+
+    def test_upload_guard_rejects_gate_bound_to_a_different_teacher(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            selection_path, manifest = self.selection_fixture(root)
+            selection = json.loads(selection_path.read_text(encoding="utf-8"))
+            report_path = Path(selection["reportPath"])
+            report = json.loads(report_path.read_text(encoding="utf-8"))
+            distillation = {
+                "teacherCheckpointSHA256": "a" * 64,
+                "teacherLayers": 22,
+                "studentLayers": 12,
+                "temperature": 2.0,
+                "distillAlpha": 0.7,
+            }
+            report.update({"algorithm": "teacher-student-distillation", "distillation": distillation})
+            report_path.write_text(json.dumps(report), encoding="utf-8")
+            selection.update({
+                "reportSHA256": hashlib.sha256(report_path.read_bytes()).hexdigest(),
+                "teacherProfileID": "fp32-baseline",
+                "teacherArtifactSHA256": "c" * 64,
+                "teacherReportSHA256": "d" * 64,
+            })
+            manifest.update({"algorithm": "teacher-student-distillation", "distillation": distillation})
+            gate = {
+                "schemaVersion": 1,
+                "passed": True,
+                "teacher": {
+                    "profileID": "fp32-baseline",
+                    "artifactSHA256": "different" * 8,
+                    "reportSHA256": "d" * 64,
+                },
+                "student": {
+                    "profileID": report["profileID"],
+                    "artifactSHA256": report["artifactSHA256"],
+                    "reportSHA256": selection["reportSHA256"],
+                    "distillation": distillation,
+                },
+            }
+            gate_path = root / "distillation-gate.json"
+            gate_path.write_text(json.dumps(gate), encoding="utf-8")
+            selection.update({
+                "distillationGatePath": str(gate_path),
+                "distillationGateSHA256": hashlib.sha256(gate_path.read_bytes()).hexdigest(),
+            })
+            selection_path.write_text(json.dumps(selection), encoding="utf-8")
+
+            with self.assertRaisesRegex(SystemExit, "does not match current teacher"):
+                verify_selected_candidate(selection_path, manifest, root)
+
+    def test_release_canonical_payload_includes_distillation_and_legacy_excludes_it(self) -> None:
+        manifest = {
+            "schemaVersion": 2,
+            "algorithm": "teacher-student-distillation",
+            "distillation": {
+                "teacherCheckpointSHA256": "a" * 64,
+                "teacherLayers": 22,
+                "studentLayers": 12,
+                "temperature": 2.0,
+                "distillAlpha": 0.7,
+            },
+        }
+        self.assertIn(b'"distillation"', canonical_release_payload(manifest))
+        self.assertNotIn(b'"distillation"', legacy_canonical_release_payload(manifest))
+
+    def test_release_profile_rejects_fp32_graph_with_a16_metadata(self) -> None:
+        with self.assertRaisesRegex(SystemExit, "use an A32 profile"):
+            validate_release_profile({
+                "runtimeProfile": {"computePrecision": "float32"},
+                "quantizationProfile": {
+                    "identifier": "w4a16-block16-ptq",
+                    "method": "ptq",
+                    "weightBits": 4,
+                    "activationBits": 16,
+                },
+            })
+
+        validate_release_profile({
+            "runtimeProfile": {"computePrecision": "float32"},
+            "quantizationProfile": {
+                "identifier": "w4a32-block16-ptq",
+                "method": "ptq",
+                "weightBits": 4,
+                "activationBits": 32,
+            },
+        })
 
     def test_upload_guard_rejects_report_for_different_artifact(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

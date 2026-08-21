@@ -131,7 +131,7 @@ pnpm pipeline -- train-classic --version-classic corpus-0.2 \
 `--language auto` trains as a single language when at least 90% of the corpus is
 one language; mixed corpora train language-independently. The validated default
 classic architecture is Create ML MaxEnt. `bert` and `auto` are available for
-comparison, but they underperformed MaxEnt on the current 52-label small SMS
+comparison, but they underperformed MaxEnt on the current 53-label small SMS
 dataset. Change `--split-seed-classic` when rechecking generalization; do not
 trust only the default seed 42.
 
@@ -162,15 +162,13 @@ python3 tools/apple-trainer/Scripts/prepare_classic_candidate.py \
 ```
 
 The script rejects exact and digit-normalized near duplicates before either
-classic or transformer training. `maxent-boundary-v19` remains the immutable
-Xcode Cloud baseline. The holdout-isolated local candidate
-`maxent-cloudkit-feizhu-cruise-v26-seed42` expands the contract to all 52
-taxonomy leaves plus abstention and scores 98.56% fixed, 97.33% promotion,
-100% billing/card raw (96.67% action), and 100% conversation. It also reaches
-100% on the reviewed Feizhu and cruise ticketing boundaries with zero benign
-or transactional messages routed to junk. Keep describing v26 as a candidate
-until its built-in model archive is published and `BuiltinModels.lock.json` is
-updated; installing it under `GeneratedModels/` only affects local builds.
+classic or transformer training. The published
+`maxent-generalization-v50-seed29-r32` archive is the immutable Xcode Cloud
+baseline. It has 53 labels and scores 98.97% raw fixed, 98.00% raw promotion
+(98.67% action), 100% billing/card raw and action, and 100% conversation. The
+reviewed Feizhu/cruise boundary suite is 100% with zero benign or transactional
+messages routed to junk. `BuiltinModels.lock.json` pins this archive together
+with the accepted `pii-boundary-v8` artifact.
 
 Classic candidates must keep billing/card raw accuracy at or above 90% and
 billing/card action accuracy at or above 95%.
@@ -199,8 +197,8 @@ retrain.
 
 ```bash
 pnpm pipeline -- train-transformer \
-  --version-transformer signal-v2-reminder-v16 --quantize int8 \
-  --release-sequence 3 --minimum-app-build 16
+  --version-transformer signal-v4-generalization-v50-r32-distilled-12l \
+  --release-sequence 4 --minimum-app-build 19
 ```
 
 - `--device auto` selects cuda (NVIDIA or AMD ROCm), then mps (Apple Silicon),
@@ -223,7 +221,7 @@ pnpm pipeline -- train-transformer \
   from the leak-free training corpus, remap retained embedding rows, then
   fine-tune and rerun every external holdout and device gate. Never use the
   fixed, promotion, billing/card, or conversation holdouts to choose tokens.
-- The explicit-only `w8a16-channel-embedding-w4-block16-ptq` experiment keeps
+- The explicit-only `w8a32-channel-embedding-w4-block16-ptq` experiment keeps
   attention and MLP weights at W8 and quantizes only the token embedding to W4.
   It must remain release-ineligible until production Swift holdouts and fresh,
   post-prime physical-iPhone process measurements pass every existing gate.
@@ -237,12 +235,18 @@ pnpm pipeline -- train-transformer \
 - Core ML export targets iOS 18.0. This is required for W4 per-block PTQ;
   exporting at an older deployment target makes Core ML reject block
   quantization before quality evaluation.
-- The released 22-layer W8A16 `signal-v2-boundary-v15` reaches 99.37% fixed,
-  99.33% promotion, 93.33% billing/card, and 100% conversation after Core ML
-  quantization. Its production MessageFilter action accuracy is 100% on all
-  four sets. The added zh/en/ja variants cover game marketplaces,
-  retail, finance, carrier offers, travel, insurance, services, loans, housing,
-  and semantically adjacent transaction/normal-message/scam negatives.
+- The released `signal-v4-generalization-v50-r32-distilled-12l` student uses
+  the current 53-label contract, a 22-layer teacher, and a 12-layer distilled
+  Core ML graph (temperature 2, distill alpha 0.7). The selected W4A32 block16
+  PTQ artifact (W4 weight-only with FP32 compute) is 108,748,513 bytes and scores 99.18% fixed, 100% promotion,
+  100% billing/card, and 100% conversation. Its production MessageFilter
+  action suite has zero benign/transaction-to-junk routes.
+- The student passed the independent two-point distillation gate for fixed,
+  promotion, billing/card, conversation, action, and zh/en/ja metrics. The
+  release manifest is sequence 4/minimum build 19 and is published through the
+  signed compatibility catalog as
+  `signal-v4-generalization-v50-r32-distilled-12l-metadata-v2`; the model remains
+  a dynamic Premium download.
 - Premium candidates must score at least 98% on the isolated promotion set,
   at least 90% raw billing/card accuracy, and at least 95% billing action
   accuracy. Selection, download validation, and upload enforce the same floors.
@@ -251,7 +255,7 @@ pnpm pipeline -- train-transformer \
 
 #### 12-layer distillation experiment (2026-08-18)
 
-The local `signal-v15-cloudkit-distilled-12l` experiment used the released
+The historical `signal-v15-cloudkit-distilled-12l` experiment used the released
 22-layer v15 checkpoint as its frozen teacher. Its quantization tournament
 produced the following download sizes and absolute two-point teacher gate
 results:
@@ -268,15 +272,14 @@ billing/card (93.33%), and conversation (100%) raw accuracy. Its fixed action
 accuracy was 99.79%, an absolute loss of 0.21 points, with zero benign or
 transactional messages routed to junk and all 17 readable cases passing.
 
-This result is experimental and not a release candidate. The student preserves
+That result is historical and not a release candidate. The student preserves
 the old v15 output contract (51 taxonomy leaves plus abstention) and therefore
 omits `government.reminder`; build 18 expects 52 leaves plus abstention. In
 addition, Core ML Tools 9.0 on macOS 27 produced non-finite output for FP16,
 W8A16, and both W4 candidates with `CPU_ONLY`, while `ALL` remained finite.
-Every report is explicitly `releaseEligible: false`. Retrain a 53-output
-student from a current compatible teacher, then collect physical-iPhone
-CPU-only cold-start, memory, idle-release, and pressure evidence before any
-selection or publication.
+Every report in that historical run is explicitly `releaseEligible: false`.
+The current 53-output retraining, device evidence, selection, and publication
+are recorded above; do not reuse the legacy v15 artifacts.
 
 ### 2.5 Upload The Premium Sift Signal Model
 
@@ -319,7 +322,7 @@ run a dry-run to validate the manifest, hashes, and total byte size:
 
 ```bash
 pnpm upload:transformer-model -- \
-  --model-dir build/pipeline/transformer-model/quantization-tournament/candidates/w8a16-channel-ptq \
+  --model-dir build/pipeline/transformer-model/quantization-tournament/candidates/w4a32-block16-ptq \
   --selection build/pipeline/transformer-model/quantization-tournament/selected-candidate.json \
   --dry-run
 ```
@@ -328,7 +331,7 @@ Upload to R2:
 
 ```bash
 pnpm upload:transformer-model -- \
-  --model-dir build/pipeline/transformer-model/quantization-tournament/candidates/w8a16-channel-ptq \
+  --model-dir build/pipeline/transformer-model/quantization-tournament/candidates/w4a32-block16-ptq \
   --selection build/pipeline/transformer-model/quantization-tournament/selected-candidate.json \
   --r2-bucket "$SIFT_MODEL_R2_BUCKET" \
   --verify-http
@@ -340,7 +343,7 @@ channel, add each older immutable manifest once:
 
 ```bash
 pnpm upload:transformer-model -- \
-  --model-dir build/pipeline/transformer-model/quantization-tournament/candidates/w8a16-channel-ptq \
+  --model-dir build/pipeline/transformer-model/quantization-tournament/candidates/w4a32-block16-ptq \
   --selection build/pipeline/transformer-model/quantization-tournament/selected-candidate.json \
   --compatible-release-manifest-url https://sift.alkinum.io/models/releases/signal-v2-boundary-v15/SiftSignalModel.manifest.json \
   --r2-bucket "$SIFT_MODEL_R2_BUCKET" \
@@ -355,7 +358,10 @@ use a new `--release-id` with `--reuse-artifacts-base-url` pointing at the old
 immutable release directory. The publisher verifies every public artifact by
 SHA-256 and byte count, and refuses to change the release sequence, app-build
 range, OS floor, ABI, or download size. This metadata-only path avoids
-overwriting or duplicating model weights.
+overwriting or duplicating model weights. The current sequence-4 repair is
+`signal-v4-generalization-v50-r32-distilled-12l-metadata-v2`, which reuses
+`signal-v4-generalization-v50-r32-distilled-12l` and advertises the W4A32/FP32
+runtime contract.
 
 If you do not want to place the account id in the environment, pass
 `--r2-endpoint-url https://<account-id>.r2.cloudflarestorage.com`. If you use an
@@ -366,7 +372,7 @@ You can also copy to a local publish directory:
 
 ```bash
 pnpm upload:transformer-model -- \
-  --model-dir build/pipeline/transformer-model/quantization-tournament/candidates/w8a16-channel-ptq \
+  --model-dir build/pipeline/transformer-model/quantization-tournament/candidates/w4a32-block16-ptq \
   --selection build/pipeline/transformer-model/quantization-tournament/selected-candidate.json \
   --dest-dir /path/to/public/models
 ```
@@ -377,7 +383,7 @@ file, supporting `{src}`, `{path}`, `{content_type}`, and `{cache_control}`:
 
 ```bash
 pnpm upload:transformer-model -- \
-  --model-dir build/pipeline/transformer-model/quantization-tournament/candidates/w8a16-channel-ptq \
+  --model-dir build/pipeline/transformer-model/quantization-tournament/candidates/w4a32-block16-ptq \
   --selection build/pipeline/transformer-model/quantization-tournament/selected-candidate.json \
   --base-url https://sift.alkinum.io/models \
   --upload-command 'rclone copyto {src} r2:sift-models/models/{path}' \
@@ -451,7 +457,7 @@ positive and hard-negative fixtures covering China, Japan, Europe, the US, and
 Hong Kong. This keeps generic order numbers, flight numbers, product models,
 company registrations, and student enrollment identifiers visible.
 
-The accepted local `pii-boundary-v8` Core ML INT8 result is 99.57% precision,
+The accepted and published `pii-boundary-v8` Core ML INT8 result is 99.57% precision,
 98.25% recall, 98.91% F1, 0/480 synthetic clean false positives, and 0/69
 fixed zh/en/ja hard-negative false positives. Its contextual account/social
 regression score is 91.67% F1 with 0/3 clean false positives. Compared with
@@ -463,9 +469,8 @@ languages while grouped points, scores, participants, views, and step counts
 remain clean negatives. CODE positives are synthesized only with
 authentication context, while ordinary error codes, product codes, SKUs, build
 identifiers, and campaign references are clean negatives. Runtime also rejects
-model CODE detections without explicit verification/OTP context. The checked-in
-`BuiltinModels.lock.json` remains on v7 until a release archive is built and
-verified; v8 is installed in `GeneratedModels/` for local validation only.
+model CODE detections without explicit verification/OTP context.
+`BuiltinModels.lock.json` pins v8 in the verified built-in archive.
 
 ## 3. Multilingual Strategy Decision
 

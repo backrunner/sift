@@ -1,5 +1,5 @@
 {
-  "publicKeyBase64": "ZMv68SQXhm7CQqi+EfHtUtFBjOKbmO2QEfevmyAOKSE=",
+  "publicKeyBase64": "OvilhHGlVlukxmWNa6kVZixq8IJEptRjJv2O8f9S7k4=",
   "channel": {
     "schemaVersion": 2,
     "releaseSequence": 42,
@@ -12,7 +12,7 @@
     "minimumOSVersion": "18.0",
     "downloadBytes": 30,
     "keyID": "interop-test-2026",
-    "signature": "c42B/8iFJIXbr7X2DFQZ99uYLt+0dLoMJhMmwjro5laZPVSCb57TXDUPeOt2EcCNjT77/9EkXF1boc2o7boSAw=="
+    "signature": "5G4hOEle1aDtfMmC+Tfby6ndipyRfB7O658GhnXCenEK80/or6LmLmajCSearKJnAYd8llXK8aaBtMB+lYfNAg=="
   },
   "release": {
     "schemaVersion": 2,
@@ -24,12 +24,13 @@
     "runtimeProfile": {
       "computeUnits": "all",
       "modelType": "mlProgram",
-      "inferenceBudgetMilliseconds": 500
+      "inferenceBudgetMilliseconds": 500,
+      "computePrecision": "float32"
     },
     "quantizationProfile": {
-      "identifier": "w4a16-block16-qat",
+      "identifier": "w4a32-block16-qat",
       "weightBits": 4,
-      "activationBits": 16,
+      "activationBits": 32,
       "method": "qat",
       "granularity": "per-block",
       "blockSize": 16
@@ -73,6 +74,6 @@
       }
     ],
     "downloadBytes": 30,
-    "signature": "zKabIQvXyUg7NYp5eEB+f3e/iuC3i7+a/0Y3eFXIijgr2Txm6GsRKBzEE1teJsD6zZHn3vqQIpw0E+SO/LQKCQ=="
+    "signature": "3epZJILMp7OcIBpOmNPhu0US6hhFpPSQ/BVkcWWqHHeLZl6gRgj8skWFQdBkRlrPf+YgpWsvF0SF5oXcFKQzBQ=="
   }
 }

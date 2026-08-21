@@ -30,7 +30,7 @@ compact `.siftbpe` artifact with `tokenizerKind: "bpe"` in the manifest.
 
 Size levers for the message-filter extension's tight memory budget are evaluated
 as a tournament, not selected from validation accuracy alone. The checked-in
-`quantization-profiles.json` includes W8A16 and supported W4A16
+`quantization-profiles.json` includes W8A32 and supported W4A32
 block-16/block-32 profiles. Unsupported activation-quantized combinations are
 not generated. A W4 QAT profile is only enabled when its PTQ predecessor fails
 the quality gates.
@@ -44,7 +44,7 @@ fine-tune, and run the full external holdout and device tournament. Compare 96k
 and 64k before trading away encoder depth with `--truncate-layers`.
 
 For a lower-risk intermediate experiment, the explicit-only
-`w8a16-channel-embedding-w4-block16-ptq` profile quantizes just the 256k x 384
+`w8a32-channel-embedding-w4-block16-ptq` profile quantizes just the 256k x 384
 token embedding to W4 while leaving the encoder at W8. Request it with
 `--profile-id`; it is deliberately ineligible for release until the production
 Swift holdouts and physical-iPhone cold-start, memory, and stress gates have all
@@ -73,23 +73,36 @@ Provide QAT-trained FP16 exports with repeated
 considers each QAT report when its exact PTQ predecessor fails quality gates;
 it never uses QAT to bypass a passing, smaller PTQ candidate.
 
-Generate the FP16 baseline and all candidates after training:
+Generate the FP32 source baseline and all candidates after training:
 
 ```bash
 pnpm pipeline -- train-transformer --version-transformer signal-v1
+pnpm pipeline -- distill-transformer --version-transformer signal-v1
 pnpm pipeline -- quantize-transformer --version-transformer signal-v1
 ```
 
-The FP16 source package targets iOS 18. Generate only quantization profiles
-that Core ML can execute for this graph. The current tournament keeps W8A16
-per-channel and W4A16 per-block candidates; unsupported activation-quantized
+The source package targets iOS 18 and uses FP32 intermediates for reliable
+CPU-only execution. Generate only quantization profiles that Core ML can
+execute for this graph. The current tournament keeps W8A32 per-channel and W4A32 per-block candidates; unsupported activation-quantized
 combinations are not generated. Candidate reuse binds the Core ML Tools
 version, profile, tokenizer, calibration sample set, max sequence length, and
-the exact FP16 source manifest. Quantization preserves the source training
+the exact source manifest. Quantization preserves the source training
 algorithm and distillation provenance; it records a separate `quantizedAt`
 timestamp instead of rewriting `trainedAt`.
 
-## Distilled student experiment
+## Distilled student release
+
+The current published student is `signal-v4-generalization-v50-r32-distilled-12l`
+(channel release `signal-v4-generalization-v50-r32-distilled-12l-metadata-v2`).
+It was trained from a leak-free 53-label corpus with a 22-layer teacher, then
+distilled to 12 layers using temperature 2 and distill alpha 0.7. The selected
+W4A32 block16 PTQ artifact (W4 weight-only with FP32 compute) is 108,748,513 bytes, runs CPU-only on the physical
+iPhone gate, and is compatible with app build 19 and newer. Its signed channel
+entry is sequence 4; builds 16--18 continue to resolve the sequence 3 entry.
+The Premium artifact is uploaded dynamically and must not be added to
+`GeneratedModels/` or any Xcode resource phase.
+
+## Historical distilled student experiment
 
 The production Signal checkpoint can be used as a frozen teacher for a smaller,
 structurally truncated student. This entry point is opt-in and never installs
@@ -119,11 +132,19 @@ student report with the teacher report using an absolute two-point gate:
 
 ```bash
 python3 check_distillation_gate.py \
-  --teacher-report /path/to/teacher/w8a16-channel-ptq.report.json \
-  --student-report /path/to/student/w8a16-channel-ptq.report.json \
+  --teacher-report /path/to/teacher/w4a32-block16-ptq.report.json \
+  --student-report /path/to/student/w4a32-block16-ptq.report.json \
   --max-loss 0.02 \
   --out /path/to/student/distillation-gate.json
 ```
+
+The gate JSON includes hashes for both holdout reports and the student
+artifact, plus the teacher checkpoint, layer counts, temperature, and
+distillation weight. `select_quantization_candidate.py` requires this bound
+passing gate for every distilled candidate (it auto-discovers
+`distillation-gate*.json` beside the reports, or accepts repeatable
+`--distillation-gate` paths). The uploader verifies the same hash and
+provenance again; a missing, changed, or cross-wired gate cannot be published.
 
 The student is release-ineligible until this gate, the existing Swift artifact
 suite, and fresh physical-iPhone cold-start/memory evidence all pass. The
@@ -157,7 +178,7 @@ device is available:
   --allow-provisioning-updates
 
 python3 record_device_metrics.py \
-  --report ../../build/pipeline/transformer-model/quantization-tournament/reports/w8a16-channel-ptq.report.json \
+  --report ../../build/pipeline/transformer-model/quantization-tournament/reports/w4a32-block16-ptq.report.json \
   --runtime-benchmark ../../build/device-evidence/release/<profile>/runtime-benchmark.json \
   --extension-evidence ../../build/device-evidence/release/<profile>/extension-evidence.json
 ```
@@ -390,11 +411,11 @@ uv run train_mmbert.py \
 # validate and upload only the selected candidate
 cp ../../.env.signal-model.example ../../.env.signal-model
 python3 upload_transformer_model.py \
-  --model-dir ../../build/pipeline/transformer-model/quantization-tournament/candidates/w8a16-channel-ptq \
+  --model-dir ../../build/pipeline/transformer-model/quantization-tournament/candidates/w4a32-block16-ptq \
   --selection ../../build/pipeline/transformer-model/selected-candidate.json \
   --dry-run
 python3 upload_transformer_model.py \
-  --model-dir ../../build/pipeline/transformer-model/quantization-tournament/candidates/w8a16-channel-ptq \
+  --model-dir ../../build/pipeline/transformer-model/quantization-tournament/candidates/w4a32-block16-ptq \
   --selection ../../build/pipeline/transformer-model/selected-candidate.json \
   --r2-bucket "$SIFT_MODEL_R2_BUCKET" \
   --verify-http
@@ -417,10 +438,10 @@ publish a new release id and reuse the verified immutable artifact directory:
 
 ```bash
 python3 upload_transformer_model.py \
-  --model-dir ../../build/pipeline/transformer-model/quantization-tournament/candidates/w8a16-channel-ptq \
+  --model-dir ../../build/pipeline/transformer-model/quantization-tournament/candidates/w4a32-block16-ptq \
   --selection ../../build/pipeline/transformer-model/quantization-tournament/selected-candidate.json \
-  --release-id signal-v3-metadata-v2 \
-  --reuse-artifacts-base-url https://sift.alkinum.io/models/releases/signal-v3 \
+  --release-id signal-v4-generalization-v50-r32-distilled-12l-metadata-v2 \
+  --reuse-artifacts-base-url https://sift.alkinum.io/models/releases/signal-v4-generalization-v50-r32-distilled-12l \
   --dry-run
 ```
 

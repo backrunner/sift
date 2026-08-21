@@ -25,6 +25,13 @@ def parse_arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--input", type=Path, required=True)
     parser.add_argument("--config", type=Path, default=Path(__file__).with_name("generalization-augmentation.json"))
+    parser.add_argument(
+        "--boundary-config",
+        type=Path,
+        action="append",
+        default=[],
+        help="additional JSON boundary config files (repeatable; each contains boundaryRows)",
+    )
     parser.add_argument("--holdout", type=Path, action="append", required=True)
     parser.add_argument("--taxonomy", type=Path, required=True)
     parser.add_argument("--out", type=Path, required=True)
@@ -66,6 +73,52 @@ def load_holdout_keys(paths: list[Path]) -> tuple[set[str], set[str]]:
             exact.add(row["text"].lower())
             near.add(near_duplicate_signature(row["text"]))
     return exact, near
+
+
+def load_boundary_rows(paths: list[Path]) -> list[dict[str, str]]:
+    """Load reviewed boundary rows from versioned JSON config files.
+
+    Keeping boundary families in separate files makes releases auditable while
+    retaining one augmentation implementation and deterministic ordering.
+    """
+    rows: list[dict[str, str]] = []
+    for path in paths:
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as error:
+            raise SystemExit(f"error: could not read boundary config {path}: {error}") from error
+        if not isinstance(payload, dict) or payload.get("schemaVersion") != 1:
+            raise SystemExit(f"error: unsupported boundary config schema: {path}")
+        boundary_rows = payload.get("boundaryRows")
+        if not isinstance(boundary_rows, list):
+            raise SystemExit(f"error: boundary config has no boundaryRows list: {path}")
+        for number, raw_row in enumerate(boundary_rows, 1):
+            if not isinstance(raw_row, dict):
+                raise SystemExit(f"error: invalid boundary row at {path}:{number}")
+            raw_text = raw_row.get("text")
+            raw_label = raw_row.get("label")
+            if not isinstance(raw_text, str) or not isinstance(raw_label, str):
+                raise SystemExit(f"error: boundary row requires string text and label at {path}:{number}")
+            text = normalize(raw_text)
+            label = raw_label.strip()
+            if not text or not label:
+                raise SystemExit(f"error: boundary row requires text and label at {path}:{number}")
+            raw_family = raw_row.get("family", path.stem)
+            if not isinstance(raw_family, str):
+                raise SystemExit(f"error: boundary row family must be a string at {path}:{number}")
+            row = {
+                "text": text,
+                "label": label,
+                "family": raw_family.strip() or path.stem,
+            }
+            raw_language = raw_row.get("language", "")
+            if not isinstance(raw_language, str):
+                raise SystemExit(f"error: boundary row language must be a string at {path}:{number}")
+            language = raw_language.strip()
+            if language:
+                row["language"] = language
+            rows.append(row)
+    return rows
 
 
 def validate_config(config: dict[str, Any], valid_labels: set[str]) -> None:
@@ -227,6 +280,12 @@ def main() -> None:
     arguments = parse_arguments()
     valid_labels = model_labels(load_taxonomy_labels(arguments.taxonomy))
     config = json.loads(arguments.config.read_text(encoding="utf-8"))
+    if arguments.boundary_config:
+        config = dict(config)
+        config["boundaryRows"] = [
+            *config.get("boundaryRows", []),
+            *load_boundary_rows(arguments.boundary_config),
+        ]
     base_rows = load_rows(arguments.input)
     holdout_exact, holdout_near = load_holdout_keys(arguments.holdout)
     output, report = augment(
