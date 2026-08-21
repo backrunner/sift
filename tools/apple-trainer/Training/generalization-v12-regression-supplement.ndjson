@@ -1,0 +1,54 @@
+{"text":"尾号1746卡在东湾高速收费站完成58元通行费支付，已记入本期消费。","label":"finance.consumption","source":"training:generalization-v12:variant"}
+{"text":"A $18 tollway charge was approved on the card ending 1746 and is now in the posted purchases.","label":"finance.consumption","source":"training:generalization-v12:variant"}
+{"text":"末尾1746のカードで東湾料金所の通行料金58円を決済し、利用履歴に反映しました。","label":"finance.consumption","source":"training:generalization-v12:variant"}
+{"text":"高速出口的信用卡付款42元已完成，交易记录稍后更新。","label":"finance.consumption","source":"training:generalization-v12:variant"}
+{"text":"The card payment for the expressway toll posted successfully; no action is needed.","label":"finance.consumption","source":"training:generalization-v12:variant"}
+{"text":"高速道路の料金をカードで支払い、明細への反映が完了しました。","label":"finance.consumption","source":"training:generalization-v12:variant"}
+{"text":"运营商通知：语音留言转写系统周三维护，维护期间录音照常保存，文字会稍后生成。","label":"carrier.service","source":"training:generalization-v12:variant"}
+{"text":"The carrier's voicemail-to-text service will be upgraded Wednesday; recordings remain available while transcripts are delayed.","label":"carrier.service","source":"training:generalization-v12:variant"}
+{"text":"通信会社の留守番電話文字起こしサービスを水曜に保守し、録音は保存されますが表示が遅れます。","label":"carrier.service","source":"training:generalization-v12:variant"}
+{"text":"移动网络语音信箱转写平台完成切换，新留言将在系统恢复后生成文字。","label":"carrier.service","source":"training:generalization-v12:variant"}
+{"text":"Voicemail transcription maintenance is scheduled by the mobile provider; new messages will be transcribed after the window.","label":"carrier.service","source":"training:generalization-v12:variant"}
+{"text":"携帯会社は留守番電話の文字化基盤を更新します。保守中も録音は失われません。","label":"carrier.service","source":"training:generalization-v12:variant"}
+{"text":"排水服务中心公告：南区污水管道清淤时请减少地漏排水，预计18时恢复。","label":"life.utility","source":"training:generalization-v12:variant"}
+{"text":"The wastewater utility is cleaning the South District sewer; residents should limit drain discharge until 6 PM.","label":"life.utility","source":"training:generalization-v12:variant"}
+{"text":"下水道事業者は南地区の管清掃を行うため、18時まで大量の排水を控えるよう案内しています。","label":"life.utility","source":"training:generalization-v12:variant"}
+{"text":"污水处理公司提醒，雨水井清淤作业期间不要向排水口倾倒大量用水。","label":"life.utility","source":"training:generalization-v12:variant"}
+{"text":"Sewer maintenance is underway, and the wastewater department asks homes to reduce discharge during the work.","label":"life.utility","source":"training:generalization-v12:variant"}
+{"text":"下水道局の清掃作業中は排水量を抑え、作業終了のお知らせを待ってください。","label":"life.utility","source":"training:generalization-v12:variant"}
+{"text":"恒温样本包已存入医学楼冷冻柜F2，请凭提取码8042领取。","label":"life.pickup_code","source":"training:generalization-v12:variant"}
+{"text":"Your temperature-controlled sample parcel is in freezer F2; enter pickup PIN 8042 at the research desk.","label":"life.pickup_code","source":"training:generalization-v12:variant"}
+{"text":"定温サンプルの荷物を研究棟の冷凍庫F2に保管しました。引取番号8042をご提示ください。","label":"life.pickup_code","source":"training:generalization-v12:variant"}
+{"text":"冷链试剂已放入实验室冷柜，请使用取货码2605在今天领取。","label":"life.pickup_code","source":"training:generalization-v12:variant"}
+{"text":"The reagent package is waiting in the laboratory freezer; collect it with PIN 2605 before closing.","label":"life.pickup_code","source":"training:generalization-v12:variant"}
+{"text":"冷蔵試薬を施設の冷蔵ロッカーに入れました。受取番号2605でお受け取りください。","label":"life.pickup_code","source":"training:generalization-v12:variant"}
+{"text":"家事法庭已收到遗产清单的补交文件，线上审理日期将在排期确定后通知。","label":"government.court","source":"training:generalization-v12:variant"}
+{"text":"The family court accepted the added estate inventory and will serve the next hearing date after scheduling.","label":"government.court","source":"training:generalization-v12:variant"}
+{"text":"家庭裁判所が追加の遺産目録を受領しました。次回審理の日程は確定後に送達します。","label":"government.court","source":"training:generalization-v12:variant"}
+{"text":"家事法院通知：遗产清册材料已登记，等待下一次询问排期。","label":"government.court","source":"training:generalization-v12:variant"}
+{"text":"The estate inventory filing is recorded with family court; an online-hearing date will follow the docket schedule.","label":"government.court","source":"training:generalization-v12:variant"}
+{"text":"遺産目録の追加資料を家庭裁判所が受領し、期日確定後にオンライン審理の案内を送ります。","label":"government.court","source":"training:generalization-v12:variant"}
+{"text":"火山防灾中心提示演练警报后戴好口罩，沿蓝色标线前往室内避难点。","label":"government.reminder","source":"training:generalization-v12:variant"}
+{"text":"Volcano emergency authorities say to wear a mask and follow the blue route to the indoor shelter after the drill alarm.","label":"government.reminder","source":"training:generalization-v12:variant"}
+{"text":"火山防災当局は訓練警報が鳴ったらマスクを着け、青い経路で屋内避難所へ向かうよう呼びかけています。","label":"government.reminder","source":"training:generalization-v12:variant"}
+{"text":"火山应急部门提醒：演练结束前请留在避难所，不要偏离指定路线。","label":"government.reminder","source":"training:generalization-v12:variant"}
+{"text":"Volcano officials advise residents to remain in the shelter during the exercise and keep to the marked route.","label":"government.reminder","source":"training:generalization-v12:variant"}
+{"text":"火山防災機関から、訓練中は避難所に留まり指定経路を外れないよう案内しています。","label":"government.reminder","source":"training:generalization-v12:variant"}
+{"text":"供应商风险审查SR-884已通过法务核对，等待负责人批准付款条件。","label":"work.approval","source":"training:generalization-v12:variant"}
+{"text":"Vendor risk review SR-884 cleared Legal and is awaiting the owner's approval of payment terms.","label":"work.approval","source":"training:generalization-v12:variant"}
+{"text":"取引先リスク審査SR-884は法務確認済みで、支払条件の責任者承認を待っています。","label":"work.approval","source":"training:generalization-v12:variant"}
+{"text":"供应商风险评估已完成，业务负责人尚未批准本季度结算周期。","label":"work.approval","source":"training:generalization-v12:variant"}
+{"text":"The supplier risk assessment is complete; business approval of the quarterly payment cycle is still pending.","label":"work.approval","source":"training:generalization-v12:variant"}
+{"text":"サプライヤーのリスク確認は完了し、事業責任者の決済期間承認待ちです。","label":"work.approval","source":"training:generalization-v12:variant"}
+{"text":"夜行卧铺车的电子乘车票已签发，请在6号闸机出示二维码。","label":"travel.ticketing","source":"training:generalization-v12:variant"}
+{"text":"An overnight sleeper train e-ticket was issued; show the travel QR at gate 6 before boarding.","label":"travel.ticketing","source":"training:generalization-v12:variant"}
+{"text":"夜行寝台列車の電子乗車券を発行しました。乗車前に6番改札でQRを提示してください。","label":"travel.ticketing","source":"training:generalization-v12:variant"}
+{"text":"卧铺列车票已出票，出发前请在车站检票口展示乘车码。","label":"travel.ticketing","source":"training:generalization-v12:variant"}
+{"text":"Your sleeper-train ticket has been issued; present its QR code at the station gate before departure.","label":"travel.ticketing","source":"training:generalization-v12:variant"}
+{"text":"寝台列車の乗車券を発行済みです。出発前に改札で乗車QRをお見せください。","label":"travel.ticketing","source":"training:generalization-v12:variant"}
+{"text":"有轨电车因供电检修改为区间运行，去科技园请在北站换乘代行巴士。","label":"travel.transport","source":"training:generalization-v12:variant"}
+{"text":"Power work limits the streetcar route; transfer to the replacement bus at North Station for the tech park.","label":"travel.transport","source":"training:generalization-v12:variant"}
+{"text":"給電設備の点検で路面電車は区間運転となり、北駅で代行バスに乗り換えてください。","label":"travel.transport","source":"training:generalization-v12:variant"}
+{"text":"路面电车线路缩短，中央站提供接驳巴士前往大学城。","label":"travel.transport","source":"training:generalization-v12:variant"}
+{"text":"The tram route is shortened during repairs; a replacement bus connects Central Station with University District.","label":"travel.transport","source":"training:generalization-v12:variant"}
+{"text":"路面電車の運転区間が短縮され、中央駅から大学地区へは代行バスを利用してください。","label":"travel.transport","source":"training:generalization-v12:variant"}

@@ -210,6 +210,81 @@ func sanitizerRedactsEmailAndKeepsPlainText() {
 }
 
 @Test
+func sanitizerRedactsCloudKitContextualIdentifiersAndURL() {
+    let sanitizer = PrivacySanitizer()
+    let result = sanitizer.sanitize(
+        "云服务账号ID：acct-synthetic-568******，昵称：DemoUser，实例ID:cdb-demo1234，请访问 https://cloud.example/renew。"
+    )
+
+    #expect(
+        result.text
+            == "云服务账号ID：{{ID}}，昵称：{{NAME}}，实例ID:{{ID}}，请访问 {{URL}}。"
+    )
+    #expect(!result.text.contains("acct-synthetic-568******"))
+    #expect(!result.text.contains("DemoUser"))
+    #expect(!result.text.contains("cdb-demo1234"))
+}
+
+@Test
+func sanitizerRedactsSocialAccountsWithContextAndKeepsIdentifiersWithoutIt() {
+    let sanitizer = PrivacySanitizer()
+    let social = sanitizer.sanitize("客服QQ号：12345****，微信号: demo_user_7，微博ID：demo_weibo_8；状态码 WK88421 已完成。")
+    #expect(social.text == "客服QQ号：{{ID}}，微信号: {{ID}}，微博ID：{{ID}}；状态码 WK88421 已完成。")
+
+    let cleanSamples = [
+        "QQ音乐活动编号 12345678 已发布。",
+        "Build wxid_demo_7 passed the release check.",
+        "Product code SKU-4821 is active.",
+        "QQ account available for support; no handle is shown.",
+        "WeChat username is active in the settings panel."
+    ]
+    for sample in cleanSamples {
+        #expect(sanitizer.sanitize(sample).text == sample)
+    }
+}
+
+@Test
+func sanitizerRedactsAtHandles() {
+    let sanitizer = PrivacySanitizer()
+    let result = sanitizer.sanitize("Instagram handle: @safe_user_77；WeChat ID: WeChat")
+    #expect(result.text == "Instagram handle: {{ID}}；WeChat ID: {{ID}}")
+}
+
+@Test
+func sanitizerCoversSupportedSocialLabels() {
+    let sanitizer = PrivacySanitizer()
+    let text =
+        "小红书号：demo_xhs_7，抖音号：demo_dy_7，快手号：demo_ks_7，知乎号：demo_zh_7；" +
+        "WhatsApp ID: demo_wa_7，TikTok username: demo_tt_7，Twitter handle: demo_tw_7，X ID: demo_x_77"
+    let result = sanitizer.sanitize(text)
+    #expect(result.redactions.count == 8)
+    for handle in ["demo_xhs_7", "demo_dy_7", "demo_ks_7", "demo_zh_7", "demo_wa_7", "demo_tt_7", "demo_tw_7", "demo_x_77"] {
+        #expect(!result.text.contains(handle))
+    }
+}
+
+@Test
+func sanitizerURLFallbackTrimsCJKPunctuation() {
+    let sanitizer = PrivacySanitizer()
+    let result = sanitizer.sanitize("详情见 https://example.invalid/path，感谢。")
+    #expect(result.text == "详情见 {{URL}}，感谢。")
+}
+
+@Test
+func sanitizerRedactsMaskedPrefixAccountIDs() {
+    let sanitizer = PrivacySanitizer()
+    let result = sanitizer.sanitize("云资源账号：****acct-safe-31，昵称：合成用户。")
+    #expect(result.text == "云资源账号：{{ID}}，昵称：{{NAME}}。")
+}
+
+@Test
+func sanitizerRedactsJapaneseContextualIdentifiers() {
+    let sanitizer = PrivacySanitizer()
+    let result = sanitizer.sanitize("表示名：テスト利用者、アカウントID：acct-ja-55、インスタンスID：db-ja-55。")
+    #expect(result.text == "表示名：{{NAME}}、アカウントID：{{ID}}、インスタンスID：{{ID}}。")
+}
+
+@Test
 func sanitizerRedactsCompleteAmountsWithThousandsSeparators() {
     let sanitizer = PrivacySanitizer()
     let samples = [

@@ -57,6 +57,15 @@ func messageFilterDiagnosticsContainNoMessageContentFields() throws {
 }
 
 @Test
+func messageFilterLatencyBucketsPreserveColdStartResolution() {
+    #expect(MessageFilterLatencyBucket(elapsed: .milliseconds(1_500)) == .under2000Milliseconds)
+    #expect(MessageFilterLatencyBucket(elapsed: .milliseconds(2_500)) == .under3000Milliseconds)
+    #expect(MessageFilterLatencyBucket(elapsed: .seconds(4)) == .under5000Milliseconds)
+    #expect(MessageFilterLatencyBucket(elapsed: .milliseconds(5_500)) == .under6000Milliseconds)
+    #expect(MessageFilterLatencyBucket(elapsed: .seconds(6)) == .atLeast6000Milliseconds)
+}
+
+@Test
 func messageFilterSessionTrackerMarksOnlyTheFirstQueryCold() async {
     let tracker = MessageFilterSessionTracker()
     let coldCount = await withTaskGroup(of: Bool.self, returning: Int.self) { group in
@@ -97,15 +106,17 @@ func messageFilterPerformanceEvidenceAggregatesWithoutMessageContent() throws {
     store.record(MessageFilterDiagnosticEvent(
         artifactIdentity: requested,
         latencyBucket: .under150Milliseconds,
-        fallbackReason: .none,
+        fallbackReason: .handlerTimedOut,
         errorCode: "handler_watchdog",
         requestedArtifactIdentity: requested,
-        physicalFootprintBytes: 124
+        physicalFootprintBytes: 124,
+        selectedVariant: .transformer,
+        executionPath: .noDecision
     ))
 
     let snapshot = store.snapshot()
     let release = try #require(snapshot.releases.values.first)
-    #expect(snapshot.schemaVersion == 1)
+    #expect(snapshot.schemaVersion == 2)
     #expect(snapshot.releases.count == 1)
     #expect(release.requestedArtifactIdentity == requested)
     #expect(release.coldRunCount == 1)
@@ -113,11 +124,16 @@ func messageFilterPerformanceEvidenceAggregatesWithoutMessageContent() throws {
     #expect(release.coldLatencyBuckets[MessageFilterLatencyBucket.under600Milliseconds.rawValue] == 1)
     #expect(release.warmLatencyBuckets[MessageFilterLatencyBucket.under150Milliseconds.rawValue] == 1)
     #expect(release.fallbackCounts[MessageFilterFallbackReason.transformerTimedOut.rawValue] == 1)
+    #expect(release.fallbackCounts[MessageFilterFallbackReason.handlerTimedOut.rawValue] == 1)
+    #expect(release.executionPathCounts[MessageFilterExecutionPath.classic.rawValue] == 1)
+    #expect(release.executionPathCounts[MessageFilterExecutionPath.noDecision.rawValue] == 1)
+    #expect(release.actualArtifactCounts.count == 1)
     #expect(release.watchdogCount == 1)
     #expect(release.firstPhysicalFootprintBytes == 100)
     #expect(release.latestPhysicalFootprintBytes == 124)
     #expect(release.peakPhysicalFootprintBytes == 124)
     #expect(release.memoryDriftBytes == 24)
+    #expect(snapshot.latestEvent?.executionPath == .noDecision)
 
     let json = try #require(String(data: JSONEncoder().encode(snapshot), encoding: .utf8))
     #expect(!json.contains("sender"))
@@ -228,7 +244,8 @@ func junkAndPromotionAlwaysMapRegardlessOfConfidence() {
 func lowConfidenceTransactionFallsBackToAllow() {
     // 低置信不该把消息硬塞进"交易"分栏 —— 宁可放行。
     #expect(MessageFilterActionMapper.systemAction(for: decision(action: .transaction, confidence: 0.5)) == .none)
-    #expect(MessageFilterActionMapper.systemAction(for: decision(action: .transaction, confidence: 0.65)) == .transaction)
+    #expect(MessageFilterActionMapper.systemAction(for: decision(action: .transaction, confidence: 0.59)) == .none)
+    #expect(MessageFilterActionMapper.systemAction(for: decision(action: .transaction, confidence: 0.60)) == .transaction)
     #expect(MessageFilterActionMapper.systemAction(for: decision(action: .none, confidence: 0.99)) == .none)
 }
 

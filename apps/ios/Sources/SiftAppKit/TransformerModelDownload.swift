@@ -1,5 +1,6 @@
 @preconcurrency import Foundation
 import MessageFilterCore
+import MessageFilterExtensionKit
 
 #if canImport(Network)
 import Network
@@ -151,6 +152,7 @@ public enum TransformerModelDownloadError: Error, LocalizedError, Hashable, Send
     case appUpdateRequired
     case invalidManifestSignature
     case invalidManifestResponse
+    case invalidDistillationProvenance
     case missingRemoteArtifactList
     case unsupportedTokenizerArtifact
     case unsafeArtifactPath(String)
@@ -171,6 +173,8 @@ public enum TransformerModelDownloadError: Error, LocalizedError, Hashable, Send
             return String(localized: "高级模型签名校验失败")
         case .invalidManifestResponse:
             return String(localized: "高级模型清单不可用")
+        case .invalidDistillationProvenance:
+            return String(localized: "高级模型蒸馏来源不可用")
         case .missingRemoteArtifactList:
             return String(localized: "高级模型缺少可下载文件清单")
         case .unsupportedTokenizerArtifact:
@@ -287,6 +291,7 @@ public final class TransformerModelDownloadClient: TransformerModelDownloading, 
     private let networkConditionChecker: any TransformerNetworkConditionChecking
     private let fileManager: FileManager
     private let backgroundSessionIdentifierPrefix: String?
+    private let diagnosticLogStore: MessageFilterDiagnosticLogStore?
     private let stateLock = NSLock()
     private var channelETag: String?
     private var cachedChannel: TransformerChannelManifestV2?
@@ -298,7 +303,8 @@ public final class TransformerModelDownloadClient: TransformerModelDownloading, 
         session: URLSession = .shared,
         networkConditionChecker: any TransformerNetworkConditionChecking = PathNetworkConditionChecker(),
         fileManager: FileManager = .default,
-        backgroundSessionIdentifierPrefix: String? = nil
+        backgroundSessionIdentifierPrefix: String? = nil,
+        diagnosticLogStore: MessageFilterDiagnosticLogStore? = nil
     ) {
         self.manifestURL = manifestURL
         self.channelURL = nil
@@ -311,6 +317,7 @@ public final class TransformerModelDownloadClient: TransformerModelDownloading, 
         self.networkConditionChecker = networkConditionChecker
         self.fileManager = fileManager
         self.backgroundSessionIdentifierPrefix = backgroundSessionIdentifierPrefix
+        self.diagnosticLogStore = diagnosticLogStore
     }
 
     public init(
@@ -323,7 +330,8 @@ public final class TransformerModelDownloadClient: TransformerModelDownloading, 
         session: URLSession = .shared,
         networkConditionChecker: any TransformerNetworkConditionChecking = PathNetworkConditionChecker(),
         fileManager: FileManager = .default,
-        backgroundSessionIdentifierPrefix: String? = nil
+        backgroundSessionIdentifierPrefix: String? = nil,
+        diagnosticLogStore: MessageFilterDiagnosticLogStore? = nil
     ) {
         self.manifestURL = channelURL
         self.channelURL = channelURL
@@ -336,6 +344,7 @@ public final class TransformerModelDownloadClient: TransformerModelDownloading, 
         self.networkConditionChecker = networkConditionChecker
         self.fileManager = fileManager
         self.backgroundSessionIdentifierPrefix = backgroundSessionIdentifierPrefix
+        self.diagnosticLogStore = diagnosticLogStore
     }
 
     public static func configured(bundle: Bundle = .main) -> TransformerModelDownloadClient? {
@@ -369,7 +378,8 @@ public final class TransformerModelDownloadClient: TransformerModelDownloading, 
             publicKeys: publicKeys,
             appBuild: appBuild,
             estimatedByteCount: estimatedBytes,
-            backgroundSessionIdentifierPrefix: "io.alkinum.sift.signal-download"
+            backgroundSessionIdentifierPrefix: "io.alkinum.sift.signal-download",
+            diagnosticLogStore: MessageFilterDiagnosticLogStore()
         )
     }
 
@@ -463,14 +473,19 @@ public final class TransformerModelDownloadClient: TransformerModelDownloading, 
         guard
             manifest.schemaVersion == TransformerManifestVerifier.supportedSchemaVersion,
             TransformerManifestVerifier.supportedModelABIs.contains(manifest.modelABI),
-            TransformerRuntimeProfile.supportedComputeUnits.contains(manifest.runtimeProfile.computeUnits),
-            [4, 8].contains(manifest.quantizationProfile.weightBits),
+            TransformerManifestVerifier.supports(
+                runtimeProfile: manifest.runtimeProfile,
+                quantizationProfile: manifest.quantizationProfile
+            ),
             manifest.tokenizerKind == "bpe",
             manifest.tokenizerArtifact.hasSuffix(".siftbpe"),
             TransformerModelStore.isSHA256(manifest.sha256),
             TransformerModelStore.isSHA256(manifest.tokenizerSHA256)
         else {
             throw TransformerModelDownloadError.unsupportedTokenizerArtifact
+        }
+        guard TransformerSignalReleaseContract.accepts(manifest) else {
+            throw TransformerModelDownloadError.invalidDistillationProvenance
         }
         guard !manifest.remoteArtifacts.isEmpty else {
             throw TransformerModelDownloadError.missingRemoteArtifactList
@@ -696,6 +711,21 @@ public final class TransformerModelDownloadClient: TransformerModelDownloading, 
             )
             try Task.checkCancellation()
             try TransformerModelStore.activate(stagedDirectory: staging, resourceName: resourceName, fileManager: fileManager)
+            // Validation runs in staging. Prime the final URL as well because
+            // Core ML specialization artifacts can be path-specific. This is
+            // best effort: the staged runtime smoke test already proved the
+            // model is valid, and a cache write failure must not break install.
+            let primeMetrics = TransformerClassifierLoader.primeInstalledModel(
+                resourceName: resourceName,
+                fileManager: fileManager
+            )
+            // Publish the new artifact only after priming. Otherwise a message
+            // arriving during installation can make the extension contend for
+            // the same unprimed Core ML specialization work.
+            FilterConfigurationSnapshotStore.refreshModelArtifactIdentity()
+            if let primeMetrics {
+                diagnosticLogStore?.record(primeMetrics)
+            }
             if resourceName == TransformerClassifierLoader.defaultResourceName {
                 for legacyResourceName in TransformerClassifierLoader.legacyResourceNames {
                     try? TransformerModelStore.remove(
@@ -704,7 +734,6 @@ public final class TransformerModelDownloadClient: TransformerModelDownloading, 
                     )
                 }
             }
-            FilterConfigurationSnapshotStore.refreshModelArtifactIdentity()
             let resumeDirectory = TransformerModelStore.downloadResumeDataDirectory(
                 resourceName: resourceName,
                 fileManager: fileManager

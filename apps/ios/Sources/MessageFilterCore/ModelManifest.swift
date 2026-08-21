@@ -111,6 +111,38 @@ public struct TransformerManifestVerifier: Sendable {
         self.publicKeys = publicKeys
     }
 
+    /// Keeps the release contract aligned with the exported Core ML graph.
+    /// Legacy manifests omit `computePrecision`, so their historical A16
+    /// metadata remains readable; newly exported FP32 graphs must advertise
+    /// A32 explicitly.
+    public static func supports(
+        runtimeProfile: TransformerRuntimeProfile,
+        quantizationProfile: TransformerQuantizationProfile
+    ) -> Bool {
+        guard
+            TransformerRuntimeProfile.supportedComputeUnits.contains(runtimeProfile.computeUnits),
+            runtimeProfile.inferenceBudgetMilliseconds <= 500,
+            [4, 8].contains(quantizationProfile.weightBits),
+            [8, 16, 32].contains(quantizationProfile.activationBits)
+        else {
+            return false
+        }
+
+        guard let computePrecision = runtimeProfile.computePrecision else {
+            return true
+        }
+        switch computePrecision {
+        case "float16":
+            return quantizationProfile.activationBits != 32
+        case "float32":
+            return quantizationProfile.activationBits == 32
+        case "mixedFloat16Float32":
+            return true
+        default:
+            return false
+        }
+    }
+
     public func verifySignature(of channel: TransformerChannelManifestV2) throws {
         try verify(signature: channel.signature, keyID: channel.keyID, payload: channel.canonicalPayload())
     }
@@ -151,7 +183,14 @@ public struct TransformerManifestVerifier: Sendable {
         guard let keyID = manifest.keyID else {
             throw ManifestVerificationError.invalidKey
         }
-        try verify(signature: manifest.signature, keyID: keyID, payload: manifest.canonicalPayload())
+        do {
+            try verify(signature: manifest.signature, keyID: keyID, payload: manifest.canonicalPayload())
+        } catch ManifestVerificationError.invalidSignature where manifest.distillation != nil {
+            // Releases published before distillation provenance joined the
+            // signed payload must remain readable through the compatibility
+            // catalog. New releases are always signed with canonicalPayload().
+            try verify(signature: manifest.signature, keyID: keyID, payload: manifest.legacyCanonicalPayload())
+        }
     }
 
     public func compatibility(
@@ -192,10 +231,10 @@ public struct TransformerManifestVerifier: Sendable {
             manifest.minimumAppBuild == channel.minimumAppBuild,
             manifest.maximumAppBuild == channel.maximumAppBuild,
             manifest.minimumOSVersion == channel.minimumOSVersion,
-            TransformerRuntimeProfile.supportedComputeUnits.contains(manifest.runtimeProfile.computeUnits),
-            manifest.runtimeProfile.inferenceBudgetMilliseconds <= 500,
-            [4, 8].contains(manifest.quantizationProfile.weightBits),
-            manifest.quantizationProfile.activationBits == 8 || manifest.quantizationProfile.activationBits == 16
+            Self.supports(
+                runtimeProfile: manifest.runtimeProfile,
+                quantizationProfile: manifest.quantizationProfile
+            )
         else {
             throw TransformerManifestValidationError.channelReleaseMismatch
         }

@@ -1,0 +1,60 @@
+{"text":"退货审核已完成，328元将于三个工作日内原路退回。","label":"finance.refund","source":"acceptance:generalization-v9"}
+{"text":"The return was approved and $328 will be refunded to the original payment method within three business days.","label":"finance.refund","source":"acceptance:generalization-v9"}
+{"text":"返品審査が完了し、328円を3営業日以内に元の支払方法へ返金します。","label":"finance.refund","source":"acceptance:generalization-v9"}
+{"text":"信用卡本期账单已生成，应还金额1260元，最后还款日为周五。","label":"finance.credit_card","source":"acceptance:generalization-v9"}
+{"text":"Your credit-card statement is ready; $1,260 is due by Friday.","label":"finance.credit_card","source":"acceptance:generalization-v9"}
+{"text":"クレジットカードの今月の請求額は1,260円で、金曜が支払期限です。","label":"finance.credit_card","source":"acceptance:generalization-v9"}
+{"text":"尾号2468卡在青云家具消费680元，交易已确认。","label":"finance.consumption","source":"acceptance:generalization-v9"}
+{"text":"A $680 purchase at Qingyun Furniture was approved on the card ending 2468.","label":"finance.consumption","source":"acceptance:generalization-v9"}
+{"text":"末尾2468のカードで青雲家具にて680円を利用し、取引が確定しました。","label":"finance.consumption","source":"acceptance:generalization-v9"}
+{"text":"家庭宽带八月账单为159元，自动缴费将在25日执行。","label":"carrier.billing","source":"acceptance:generalization-v9"}
+{"text":"Your August home broadband bill is $159 and autopay runs on the 25th.","label":"carrier.billing","source":"acceptance:generalization-v9"}
+{"text":"8月の家庭向け通信料金は159円で、25日に自動支払いを行います。","label":"carrier.billing","source":"acceptance:generalization-v9"}
+{"text":"运营商今晚升级短信网关，维护期间部分通知可能延迟。","label":"carrier.service","source":"acceptance:generalization-v9"}
+{"text":"The carrier upgrades its messaging gateway tonight; some notifications may be delayed during maintenance.","label":"carrier.service","source":"acceptance:generalization-v9"}
+{"text":"通信会社は今夜メッセージ設備を更新し、保守中は一部通知が遅れる可能性があります。","label":"carrier.service","source":"acceptance:generalization-v9"}
+{"text":"燃气管线年度检修将于上午九点开始，北区暂停供气两小时。","label":"life.utility","source":"acceptance:generalization-v9"}
+{"text":"Annual gas-pipe maintenance starts at 9 a.m.; service in the north district pauses for two hours.","label":"life.utility","source":"acceptance:generalization-v9"}
+{"text":"ガス管の定期点検を午前9時から行い、北地区への供給を2時間停止します。","label":"life.utility","source":"acceptance:generalization-v9"}
+{"text":"包裹已放入松林驿站12号柜，取件码为4072。","label":"life.pickup_code","source":"acceptance:generalization-v9"}
+{"text":"Your parcel is in locker 12 at Pine Station; pickup code 4072.","label":"life.pickup_code","source":"acceptance:generalization-v9"}
+{"text":"荷物を松林ステーション12番ロッカーに保管しました。受取コードは4072です。","label":"life.pickup_code","source":"acceptance:generalization-v9"}
+{"text":"快递员已从网点出发，预计16点前送达，请留意电话。","label":"life.express","source":"acceptance:generalization-v9"}
+{"text":"The courier left the depot and expects to deliver before 4 p.m.; please watch for a call.","label":"life.express","source":"acceptance:generalization-v9"}
+{"text":"配達員が営業所を出発し、16時までにお届けする予定です。電話にご注意ください。","label":"life.express","source":"acceptance:generalization-v9"}
+{"text":"法院已接收补充证据，案件材料清单可在诉讼平台查询。","label":"government.court","source":"acceptance:generalization-v9"}
+{"text":"The court received the supplemental evidence; view the case document list on the litigation portal.","label":"government.court","source":"acceptance:generalization-v9"}
+{"text":"裁判所が追加証拠を受領しました。事件資料の一覧は訴訟ポータルで確認できます。","label":"government.court","source":"acceptance:generalization-v9"}
+{"text":"新能源停车收费办法将于十月实施，细则已在政府网站公布。","label":"government.policy","source":"acceptance:generalization-v9"}
+{"text":"The new electric-vehicle parking fee policy takes effect in October; details are on the government website.","label":"government.policy","source":"acceptance:generalization-v9"}
+{"text":"電気自動車の新しい駐車料金制度を10月から施行し、詳細を政府サイトで公開しました。","label":"government.policy","source":"acceptance:generalization-v9"}
+{"text":"生产证书将在72小时后过期，未更新会导致支付接口停止连接。","label":"work.alert","source":"acceptance:generalization-v9"}
+{"text":"The production certificate expires in 72 hours; without renewal the payment API will lose connectivity.","label":"work.alert","source":"acceptance:generalization-v9"}
+{"text":"本番証明書は72時間後に失効し、更新しない場合は決済APIへ接続できなくなります。","label":"work.alert","source":"acceptance:generalization-v9"}
+{"text":"项目复盘会改到周四下午，日历邀请和会议室均已更新。","label":"work.meeting","source":"acceptance:generalization-v9"}
+{"text":"The project retrospective moved to Thursday afternoon; the calendar invite and room were updated.","label":"work.meeting","source":"acceptance:generalization-v9"}
+{"text":"プロジェクト振り返り会は木曜午後に変更され、予定と会議室を更新しました。","label":"work.meeting","source":"acceptance:generalization-v9"}
+{"text":"采购审批单PR-8421已到财务节点，附件等待复核。","label":"work.approval","source":"acceptance:generalization-v9"}
+{"text":"Purchase approval PR-8421 reached the finance step and its attachments await review.","label":"work.approval","source":"acceptance:generalization-v9"}
+{"text":"購買承認PR-8421は財務確認の段階に進み、添付資料の審査待ちです。","label":"work.approval","source":"acceptance:generalization-v9"}
+{"text":"本周排班已调整，周三晚班改由您负责，请确认考勤安排。","label":"work.attendance","source":"acceptance:generalization-v9"}
+{"text":"This week's roster changed; you now cover Wednesday evening, so confirm the attendance schedule.","label":"work.attendance","source":"acceptance:generalization-v9"}
+{"text":"今週の勤務表が変更され、水曜の夜勤担当になりました。勤怠予定を確認してください。","label":"work.attendance","source":"acceptance:generalization-v9"}
+{"text":"定制灯具订单已完成付款，工坊将在质检后安排发运。","label":"transaction.order","source":"acceptance:generalization-v9"}
+{"text":"Your custom lighting order is paid; the workshop will ship it after inspection.","label":"transaction.order","source":"acceptance:generalization-v9"}
+{"text":"特注照明の注文は支払い済みで、工房が検品後に発送します。","label":"transaction.order","source":"acceptance:generalization-v9"}
+{"text":"本次住宿获得1260积分，会员积分余额更新为8040分。","label":"transaction.points","source":"acceptance:generalization-v9"}
+{"text":"This hotel stay earned 1,260 points and your member balance is now 8,040.","label":"transaction.points","source":"acceptance:generalization-v9"}
+{"text":"今回の宿泊で1,260ポイントを獲得し、会員残高は8,040ポイントになりました。","label":"transaction.points","source":"acceptance:generalization-v9"}
+{"text":"桌面应用更新完成，新增离线搜索和附件预览。","label":"transaction.message","source":"acceptance:generalization-v9"}
+{"text":"The desktop application update completed and added offline search plus attachment previews.","label":"transaction.message","source":"acceptance:generalization-v9"}
+{"text":"デスクトップアプリの更新が完了し、オフライン検索と添付プレビューを追加しました。","label":"transaction.message","source":"acceptance:generalization-v9"}
+{"text":"登录验证码为638204，五分钟内有效，请勿向他人透露。","label":"verification","source":"acceptance:generalization-v9"}
+{"text":"Your login verification code is 638204, valid for five minutes; do not share it.","label":"verification","source":"acceptance:generalization-v9"}
+{"text":"ログイン認証コードは638204です。5分間有効で、他人に教えないでください。","label":"verification","source":"acceptance:generalization-v9"}
+{"text":"海湾酒店已确认两晚住宿，入住时间为周六下午三点。","label":"travel.tourism","source":"acceptance:generalization-v9"}
+{"text":"Bay Hotel confirmed your two-night stay with check-in at 3 p.m. Saturday.","label":"travel.tourism","source":"acceptance:generalization-v9"}
+{"text":"ベイホテルが2泊の宿泊を確定し、土曜15時からチェックインできます。","label":"travel.tourism","source":"acceptance:generalization-v9"}
+{"text":"我把借你的书放在前台了，下班时记得拿。","label":"__sift_abstain__","source":"acceptance:generalization-v9"}
+{"text":"I left the book you lent me at reception; remember to pick it up after work.","label":"__sift_abstain__","source":"acceptance:generalization-v9"}
+{"text":"借りていた本を受付に置いたよ。仕事の帰りに受け取ってね。","label":"__sift_abstain__","source":"acceptance:generalization-v9"}

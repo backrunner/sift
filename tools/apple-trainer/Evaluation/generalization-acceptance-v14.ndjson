@@ -1,0 +1,75 @@
+{"text":"预约的企业年金转账已执行，款项汇入尾号2468账户，回执可在银行记录查看。","label":"finance.bank","source":"acceptance:generalization-v14"}
+{"text":"The scheduled pension transfer reached account ending 2468; its bank receipt is available in activity.","label":"finance.bank","source":"acceptance:generalization-v14"}
+{"text":"予約した年金振込を末尾2468の口座へ実行し、銀行記録に控えを掲載しました。","label":"finance.bank","source":"acceptance:generalization-v14"}
+{"text":"未启用的共享办公月卡已作废，押金与余额将退回原付款工具。","label":"finance.refund","source":"acceptance:generalization-v14"}
+{"text":"The unused coworking pass was voided; its deposit and balance will return to the original payment method.","label":"finance.refund","source":"acceptance:generalization-v14"}
+{"text":"未使用のコワーキングパスを取消し、保証金と残額を元の支払方法へ払い戻します。","label":"finance.refund","source":"acceptance:generalization-v14"}
+{"text":"商务卡十月账单已生成，最低应缴金额将在27日到期。","label":"finance.credit_card","source":"acceptance:generalization-v14"}
+{"text":"Your October business-card statement is ready, and its minimum amount is due on the 27th.","label":"finance.credit_card","source":"acceptance:generalization-v14"}
+{"text":"法人カードの10月請求が確定し、最低支払額は27日が期限です。","label":"finance.credit_card","source":"acceptance:generalization-v14"}
+{"text":"尾号3579卡支付了客运码头车辆停放费，消费已进入交易明细。","label":"finance.consumption","source":"acceptance:generalization-v14"}
+{"text":"The card ending 3579 paid the passenger-terminal vehicle fee, now posted as a purchase.","label":"finance.consumption","source":"acceptance:generalization-v14"}
+{"text":"末尾3579のカードで旅客ターミナルの駐車料金を決済し、利用履歴に反映しました。","label":"finance.consumption","source":"acceptance:generalization-v14"}
+{"text":"应急卫星数据包已使用68%，剩余容量可用到演练结束。","label":"carrier.data_reminder","source":"acceptance:generalization-v14"}
+{"text":"The emergency satellite data pack is 68% used; its remaining allowance lasts through the exercise.","label":"carrier.data_reminder","source":"acceptance:generalization-v14"}
+{"text":"緊急衛星データパックを68%使用し、残量は訓練終了まで利用できます。","label":"carrier.data_reminder","source":"acceptance:generalization-v14"}
+{"text":"平板eSIM副线本期通信费用已出，将随主账户账单自动扣缴。","label":"carrier.billing","source":"acceptance:generalization-v14"}
+{"text":"The tablet eSIM companion line's monthly service charge will autopay with the primary telecom bill.","label":"carrier.billing","source":"acceptance:generalization-v14"}
+{"text":"タブレットeSIM追加回線の月額通信料金は、主回線の請求とまとめて引き落とします。","label":"carrier.billing","source":"acceptance:generalization-v14"}
+{"text":"运营商将迁移富媒体消息归档服务，维护时历史附件可能暂时无法打开。","label":"carrier.service","source":"acceptance:generalization-v14"}
+{"text":"The carrier is migrating its rich-message archive; historical attachments may be unavailable during maintenance.","label":"carrier.service","source":"acceptance:generalization-v14"}
+{"text":"通信会社はリッチメッセージの保管サービスを移行し、保守中は過去の添付を開けない場合があります。","label":"carrier.service","source":"acceptance:generalization-v14"}
+{"text":"区域供冷公司通知：管网冲洗期间制冷会短暂停止，完成后自动恢复。","label":"life.utility","source":"acceptance:generalization-v14"}
+{"text":"The district-cooling utility will briefly pause service while flushing its network, then restore it automatically.","label":"life.utility","source":"acceptance:generalization-v14"}
+{"text":"地域冷房会社は配管洗浄中に供給を一時停止し、完了後に自動復旧します。","label":"life.utility","source":"acceptance:generalization-v14"}
+{"text":"睡眠监测中心已发布夜间检查结论，复诊医生可在健康档案查看。","label":"life.medical","source":"acceptance:generalization-v14"}
+{"text":"The sleep laboratory posted the overnight study result for your follow-up clinician in the health record.","label":"life.medical","source":"acceptance:generalization-v14"}
+{"text":"睡眠検査室が終夜検査結果を登録し、再診担当医が健康記録から確認できます。","label":"life.medical","source":"acceptance:generalization-v14"}
+{"text":"移植用恒温货箱已进入机场监管仓，等待医疗物流车辆转运。","label":"life.logistics","source":"acceptance:generalization-v14"}
+{"text":"The temperature-controlled transplant cargo entered the airport bonded depot and awaits medical-logistics transfer.","label":"life.logistics","source":"acceptance:generalization-v14"}
+{"text":"移植用定温貨物が空港の保税倉庫へ入り、医療物流車両への積替えを待っています。","label":"life.logistics","source":"acceptance:generalization-v14"}
+{"text":"暴雨封路后快件已转至东岭营业点，配送员计划明天下午派送。","label":"life.express","source":"acceptance:generalization-v14"}
+{"text":"Flooded roads rerouted the parcel to East Ridge depot; the courier plans delivery tomorrow afternoon.","label":"life.express","source":"acceptance:generalization-v14"}
+{"text":"大雨による通行止めで荷物を東丘営業所へ迂回し、明日午後に配達予定です。","label":"life.express","source":"acceptance:generalization-v14"}
+{"text":"无人机水样盒已放入环保站冷藏柜C4，请凭领取口令6427取走。","label":"life.pickup_code","source":"acceptance:generalization-v14"}
+{"text":"The drone water-sample box is in environmental-station refrigerator C4; collect it with access PIN 6427.","label":"life.pickup_code","source":"acceptance:generalization-v14"}
+{"text":"ドローン採水箱を環境観測所の冷蔵庫C4へ保管しました。受領番号6427でお受け取りください。","label":"life.pickup_code","source":"acceptance:generalization-v14"}
+{"text":"遗嘱认证法庭已登记补充资产清单，下一次远程听证将在排期后通知。","label":"government.court","source":"acceptance:generalization-v14"}
+{"text":"Probate court logged the supplemental asset inventory and will notify you of the remote hearing after scheduling.","label":"government.court","source":"acceptance:generalization-v14"}
+{"text":"遺言検認裁判所が追加資産目録を登録し、日程確定後に遠隔審理日を通知します。","label":"government.court","source":"acceptance:generalization-v14"}
+{"text":"地质灾害部门提醒：滑坡演练警报后请沿黄色标识撤离至室内集合点。","label":"government.reminder","source":"acceptance:generalization-v14"}
+{"text":"Landslide emergency officials advise following yellow signs to the indoor assembly point after the drill alarm.","label":"government.reminder","source":"acceptance:generalization-v14"}
+{"text":"土砂災害防災機関は訓練警報後、黄色の表示に沿って屋内集合所へ避難するよう案内しています。","label":"government.reminder","source":"acceptance:generalization-v14"}
+{"text":"照护津贴年度资格确认完成，调整后的待遇将在社会保障记录补记。","label":"government.social_security","source":"acceptance:generalization-v14"}
+{"text":"The annual caregiver-allowance eligibility check is complete; the adjustment will appear in social-benefit history.","label":"government.social_security","source":"acceptance:generalization-v14"}
+{"text":"介護手当の年次資格確認が完了し、調整額を社会保障給付履歴へ追記します。","label":"government.social_security","source":"acceptance:generalization-v14"}
+{"text":"生产签名证书将在36小时后到期，未轮换会阻止夜间应用发布。","label":"work.alert","source":"acceptance:generalization-v14"}
+{"text":"The production signing certificate expires in 36 hours; failing to rotate it will block tonight's app release.","label":"work.alert","source":"acceptance:generalization-v14"}
+{"text":"本番署名証明書は36時間後に失効し、更新しないと今夜のアプリ公開が停止します。","label":"work.alert","source":"acceptance:generalization-v14"}
+{"text":"数据保留例外申请已完成安全复核，等待合规负责人批准保存期限。","label":"work.approval","source":"acceptance:generalization-v14"}
+{"text":"The data-retention exception cleared security review and awaits Compliance approval of the retention period.","label":"work.approval","source":"acceptance:generalization-v14"}
+{"text":"データ保管例外申請は安全確認済みで、保管期間についてコンプライアンス責任者の承認待ちです。","label":"work.approval","source":"acceptance:generalization-v14"}
+{"text":"混合办公排班已登记，下周办公室签到日和考勤基准已更新。","label":"work.attendance","source":"acceptance:generalization-v14"}
+{"text":"Your hybrid-office schedule was recorded; next week's on-site clock-in days and attendance baseline were updated.","label":"work.attendance","source":"acceptance:generalization-v14"}
+{"text":"ハイブリッド勤務予定を登録し、来週の出社打刻日と勤怠基準を更新しました。","label":"work.attendance","source":"acceptance:generalization-v14"}
+{"text":"账户通行密钥备份已刷新，旧恢复代码仍然有效。","label":"transaction.account_security","source":"acceptance:generalization-v14"}
+{"text":"Your account passkey backup was refreshed, while the existing recovery codes remain valid.","label":"transaction.account_security","source":"acceptance:generalization-v14"}
+{"text":"アカウントのパスキーバックアップを更新し、既存の復旧コードは引き続き有効です。","label":"transaction.account_security","source":"acceptance:generalization-v14"}
+{"text":"定制矫形鞋垫订单已确认足模并结清尾款，制作室周五开始加工。","label":"transaction.order","source":"acceptance:generalization-v14"}
+{"text":"Your custom orthotic order has a confirmed foot mold and final payment; fabrication starts Friday.","label":"transaction.order","source":"acceptance:generalization-v14"}
+{"text":"特注インソールの足型確認と残金決済が完了し、金曜から工房で製作します。","label":"transaction.order","source":"acceptance:generalization-v14"}
+{"text":"山顶缆车往返电子票已签发，请在下站闸机出示乘车二维码。","label":"travel.ticketing","source":"acceptance:generalization-v14"}
+{"text":"Your mountain cable-car return e-ticket was issued; show its travel QR at the lower-station gate.","label":"travel.ticketing","source":"acceptance:generalization-v14"}
+{"text":"山頂ロープウェイ往復電子券を発行しました。山麓駅改札で乗車QRをご提示ください。","label":"travel.ticketing","source":"acceptance:generalization-v14"}
+{"text":"跨湾渡轮因机械检修暂停，中环码头提供代行巴士前往对岸。","label":"travel.transport","source":"acceptance:generalization-v14"}
+{"text":"The cross-bay ferry is suspended for mechanical work; a replacement bus leaves Central Pier for the far shore.","label":"travel.transport","source":"acceptance:generalization-v14"}
+{"text":"湾岸フェリーは機器点検で運休し、中央埠頭から対岸へ代行バスを運行します。","label":"travel.transport","source":"acceptance:generalization-v14"}
+{"text":"家庭热泵秋季保养活动开放，预约年度方案可获一次免费能效检测。","label":"promotion","source":"acceptance:generalization-v14"}
+{"text":"The autumn home-heat-pump offer adds one free efficiency inspection to an annual maintenance booking.","label":"promotion","source":"acceptance:generalization-v14"}
+{"text":"家庭用ヒートポンプの秋季キャンペーンで、年間保守予約に効率点検1回が無料で付きます。","label":"promotion","source":"acceptance:generalization-v14"}
+{"text":"自称海关罚款处理员要求远程控制手机并发送银行动态码，否则声称扣留证件。","label":"spam","source":"acceptance:generalization-v14"}
+{"text":"A supposed customs fine officer demands remote phone access and a bank one-time code, threatening to hold your documents.","label":"spam","source":"acceptance:generalization-v14"}
+{"text":"税関罰金担当を名乗る人物が端末の遠隔操作と銀行ワンタイムコードを求め、書類を差し止めると脅しています。","label":"spam","source":"acceptance:generalization-v14"}
+{"text":"我把你借我的书放在餐桌左边了，周末过来时带走就好。","label":"__sift_abstain__","source":"acceptance:generalization-v14"}
+{"text":"I left the book you lent me on the left side of the dining table; take it when you come by this weekend.","label":"__sift_abstain__","source":"acceptance:generalization-v14"}
+{"text":"借りていた本を食卓の左側に置いたよ。週末に来たとき持って帰ってね。","label":"__sift_abstain__","source":"acceptance:generalization-v14"}

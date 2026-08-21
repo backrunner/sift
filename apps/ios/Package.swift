@@ -18,7 +18,10 @@ let package = Package(
     ],
     targets: [
         .target(name: "MessageFilterCore"),
-        .target(name: "SiftAppKit", dependencies: ["MessageFilterCore"]),
+        .target(
+            name: "SiftAppKit",
+            dependencies: ["MessageFilterCore", "MessageFilterExtensionKit"]
+        ),
         .target(name: "MessageFilterExtensionKit", dependencies: ["MessageFilterCore"]),
         .executableTarget(
             name: "CoreSmokeTests",

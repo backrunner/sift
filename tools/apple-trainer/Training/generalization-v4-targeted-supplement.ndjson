@@ -1,0 +1,78 @@
+{"text":"市交通中心公告：南环路周三22:00至次日05:00封闭施工，请从东环路绕行。","label":"government.traffic","source":"augmentation:boundary:generalization-v4-targeted"}
+{"text":"交警提示：滨江匝道本周日进行路面养护，07:00至11:30暂停通行。","label":"government.traffic","source":"augmentation:boundary:generalization-v4-targeted"}
+{"text":"道路管理部门通知：北站前路将分时管制，车辆请按现场指示改道。","label":"government.traffic","source":"augmentation:boundary:generalization-v4-targeted"}
+{"text":"Traffic control notice: Maple Bridge will be closed from 10 PM to 5 AM for resurfacing; use East Loop Road.","label":"government.traffic","source":"augmentation:boundary:generalization-v4-targeted"}
+{"text":"The city advises that the airport approach road has a Sunday lane closure for maintenance; follow the signed detour.","label":"government.traffic","source":"augmentation:boundary:generalization-v4-targeted"}
+{"text":"Road operations will restrict vehicles near Central Station during overnight works; allow extra travel time.","label":"government.traffic","source":"augmentation:boundary:generalization-v4-targeted"}
+{"text":"道路局のお知らせ：海浜通りは木曜夜間に補修工事のため通行止めとなります。案内された迂回路をご利用ください。","label":"government.traffic","source":"augmentation:boundary:generalization-v4-targeted"}
+{"text":"交通管理課より、空港連絡道の一部車線を日曜朝に規制します。現地の案内に従ってください。","label":"government.traffic","source":"augmentation:boundary:generalization-v4-targeted"}
+{"text":"駅前道路は舗装工事のため22時から翌朝まで車両通行を制限します。","label":"government.traffic","source":"augmentation:boundary:generalization-v4-targeted"}
+{"text":"运营商通知：核心网将在周一凌晨维护，部分用户的语音服务可能短时中断。","label":"carrier.service","source":"augmentation:boundary:generalization-v4-targeted"}
+{"text":"移动网络升级安排已确定，维护窗口内可能无法拨打电话，结束后会自动恢复。","label":"carrier.service","source":"augmentation:boundary:generalization-v4-targeted"}
+{"text":"本地运营商提醒：周末进行交换设备切换，短信和通话或有短暂延迟。","label":"carrier.service","source":"augmentation:boundary:generalization-v4-targeted"}
+{"text":"The carrier will replace switching equipment overnight; voice service may be briefly unavailable during the window.","label":"carrier.service","source":"augmentation:boundary:generalization-v4-targeted"}
+{"text":"Network maintenance is scheduled for Monday morning, and calls or texts may arrive a few minutes late.","label":"carrier.service","source":"augmentation:boundary:generalization-v4-targeted"}
+{"text":"Your mobile provider is migrating a service node tonight; no action is required and service will recover automatically.","label":"carrier.service","source":"augmentation:boundary:generalization-v4-targeted"}
+{"text":"通信事業者は月曜未明に交換設備を切り替えるため、音声サービスが一時停止する場合があります。","label":"carrier.service","source":"augmentation:boundary:generalization-v4-targeted"}
+{"text":"携帯ネットワークの保守時間中は通話の接続に遅れが出ることがあります。作業後に自動復旧します。","label":"carrier.service","source":"augmentation:boundary:generalization-v4-targeted"}
+{"text":"通信会社から、今夜サービスノードを移行するとの案内です。利用者の操作は必要ありません。","label":"carrier.service","source":"augmentation:boundary:generalization-v4-targeted"}
+{"text":"6月绩效奖金已发放，金额5,760元进入工资卡尾号2741。","label":"finance.income","source":"augmentation:boundary:generalization-v4-targeted"}
+{"text":"公司薪资系统提示：本月工资已汇入您登记的收款账户，尾号9063。","label":"finance.income","source":"augmentation:boundary:generalization-v4-targeted"}
+{"text":"年终奖励12,800元已入账，可在工资账户明细中查看。","label":"finance.income","source":"augmentation:boundary:generalization-v4-targeted"}
+{"text":"Your June performance bonus of 5,760 dollars was deposited into payroll account ending 2741.","label":"finance.income","source":"augmentation:boundary:generalization-v4-targeted"}
+{"text":"Payroll confirms that this month's salary reached the registered account ending 9063.","label":"finance.income","source":"augmentation:boundary:generalization-v4-targeted"}
+{"text":"An annual award of 12,800 dollars has been credited; see the entry in your payroll statement.","label":"finance.income","source":"augmentation:boundary:generalization-v4-targeted"}
+{"text":"6月分の給与が登録口座末尾2741に振り込まれました。","label":"finance.income","source":"augmentation:boundary:generalization-v4-targeted"}
+{"text":"給与システムより、今月の給与を口座末尾9063へ入金したとのお知らせです。","label":"finance.income","source":"augmentation:boundary:generalization-v4-targeted"}
+{"text":"年末手当12,800円が給与口座に反映されました。明細をご確認ください。","label":"finance.income","source":"augmentation:boundary:generalization-v4-targeted"}
+{"text":"门诊理赔已审核通过，保险金6,280元将在两个工作日内汇入指定账户。","label":"finance.insurance","source":"augmentation:boundary:generalization-v4-targeted"}
+{"text":"住院费用报销完成，保险公司将把3,150元赔付款转入登记账户。","label":"finance.insurance","source":"augmentation:boundary:generalization-v4-targeted"}
+{"text":"您的意外险申请已结案，理赔金额9,600元预计周五到账。","label":"finance.insurance","source":"augmentation:boundary:generalization-v4-targeted"}
+{"text":"The outpatient claim was approved; a 6,280-dollar benefit will be sent to the nominated account within two business days.","label":"finance.insurance","source":"augmentation:boundary:generalization-v4-targeted"}
+{"text":"Hospital reimbursement is complete and the insurer will transfer 3,150 dollars to the registered account.","label":"finance.insurance","source":"augmentation:boundary:generalization-v4-targeted"}
+{"text":"Your accident policy claim is closed; the 9,600-dollar payment is expected on Friday.","label":"finance.insurance","source":"augmentation:boundary:generalization-v4-targeted"}
+{"text":"外来診療の保険金請求が承認され、6,280円が指定口座へ振り込まれます。","label":"finance.insurance","source":"augmentation:boundary:generalization-v4-targeted"}
+{"text":"入院費の給付手続きが完了しました。3,150円を登録口座へ送金します。","label":"finance.insurance","source":"augmentation:boundary:generalization-v4-targeted"}
+{"text":"傷害保険の請求が確定し、9,600円の給付金は金曜に入金予定です。","label":"finance.insurance","source":"augmentation:boundary:generalization-v4-targeted"}
+{"text":"供水公司公告：东城区周二13:00至16:00停水检修，请提前储水。","label":"life.utility","source":"augmentation:boundary:generalization-v4-targeted"}
+{"text":"燃气管线维护期间，南片区周四上午暂停供气，恢复时间以现场通知为准。","label":"life.utility","source":"augmentation:boundary:generalization-v4-targeted"}
+{"text":"电力公司提醒：变电站检修将影响湖畔小区，预计18:30恢复供电。","label":"life.utility","source":"augmentation:boundary:generalization-v4-targeted"}
+{"text":"The water utility will suspend service in the east district Tuesday afternoon for scheduled pipe work.","label":"life.utility","source":"augmentation:boundary:generalization-v4-targeted"}
+{"text":"Gas maintenance will affect the south neighborhood Thursday morning; service resumes after the safety inspection.","label":"life.utility","source":"augmentation:boundary:generalization-v4-targeted"}
+{"text":"The power company is servicing a substation near Lakeside and expects electricity to return at 6:30 PM.","label":"life.utility","source":"augmentation:boundary:generalization-v4-targeted"}
+{"text":"水道局より、東地区は火曜午後に配管工事のため一時断水するとの案内です。","label":"life.utility","source":"augmentation:boundary:generalization-v4-targeted"}
+{"text":"ガス設備の点検で南地区は木曜午前に供給を停止します。安全確認後に復旧します。","label":"life.utility","source":"augmentation:boundary:generalization-v4-targeted"}
+{"text":"電力会社は湖畔付近の変電所を点検し、18時30分ごろの復旧を予定しています。","label":"life.utility","source":"augmentation:boundary:generalization-v4-targeted"}
+{"text":"项目例会改到周四14:30，新的会议室和视频链接已同步到日历。","label":"work.meeting","source":"augmentation:boundary:generalization-v4-targeted"}
+{"text":"研发评审会延后一小时，请使用邀请中的新线上会议地址。","label":"work.meeting","source":"augmentation:boundary:generalization-v4-targeted"}
+{"text":"部门周会仍按原计划举行，议程已更新到团队工作区。","label":"work.meeting","source":"augmentation:boundary:generalization-v4-targeted"}
+{"text":"The project sync moved to Thursday at 2:30 PM; the room and video link were updated in the calendar.","label":"work.meeting","source":"augmentation:boundary:generalization-v4-targeted"}
+{"text":"The engineering review starts an hour later; use the new meeting address in the invitation.","label":"work.meeting","source":"augmentation:boundary:generalization-v4-targeted"}
+{"text":"The department's weekly meeting remains on schedule and its agenda is now in the team workspace.","label":"work.meeting","source":"augmentation:boundary:generalization-v4-targeted"}
+{"text":"プロジェクト定例は木曜14時30分に変更され、会議室とビデオリンクがカレンダーに反映されました。","label":"work.meeting","source":"augmentation:boundary:generalization-v4-targeted"}
+{"text":"開発レビューは開始時刻が1時間遅くなりました。招待状の新しい会議先をご利用ください。","label":"work.meeting","source":"augmentation:boundary:generalization-v4-targeted"}
+{"text":"部署の週次会議は予定どおりで、議題がチームのワークスペースに更新されています。","label":"work.meeting","source":"augmentation:boundary:generalization-v4-targeted"}
+{"text":"山谷温泉确认您12月2日起入住两晚，办理入住时请出示预订证件。","label":"travel.tourism","source":"augmentation:boundary:generalization-v4-targeted"}
+{"text":"海边酒店已保留您的家庭房，入住日期和取消规则见订单详情。","label":"travel.tourism","source":"augmentation:boundary:generalization-v4-targeted"}
+{"text":"Mountain Valley Resort confirmed two nights from December 2; bring the booking document at check-in.","label":"travel.tourism","source":"augmentation:boundary:generalization-v4-targeted"}
+{"text":"The seaside hotel held your family room; check the order details for dates and cancellation terms.","label":"travel.tourism","source":"augmentation:boundary:generalization-v4-targeted"}
+{"text":"山あいの宿泊施設で12月2日から2泊を確保しました。チェックイン時に予約書類をご提示ください。","label":"travel.tourism","source":"augmentation:boundary:generalization-v4-targeted"}
+{"text":"海辺のホテルがファミリールームを確保しています。日程と取消条件は予約詳細をご確認ください。","label":"travel.tourism","source":"augmentation:boundary:generalization-v4-targeted"}
+{"text":"冒充快递客服称包裹异常，要求先付重新派送费并填写银行卡安全码。","label":"spam","source":"augmentation:boundary:generalization-v4-targeted"}
+{"text":"假冒法院通知以未缴罚款为由，要求购买礼品卡并回传卡密。","label":"spam","source":"augmentation:boundary:generalization-v4-targeted"}
+{"text":"所谓退款专员声称原路退款失败，诱导提供短信验证码才能补发。","label":"spam","source":"augmentation:boundary:generalization-v4-targeted"}
+{"text":"A fake delivery agent says the parcel is held and demands a redelivery fee plus your card security code.","label":"spam","source":"augmentation:boundary:generalization-v4-targeted"}
+{"text":"A message impersonating a court clerk asks you to buy gift cards and send back the card numbers for a fine.","label":"spam","source":"augmentation:boundary:generalization-v4-targeted"}
+{"text":"A supposed refund specialist says the original transfer failed and requests the one-time code to resend it.","label":"spam","source":"augmentation:boundary:generalization-v4-targeted"}
+{"text":"偽の配送業者が荷物の再配達料とカードのセキュリティコードを要求しています。","label":"spam","source":"augmentation:boundary:generalization-v4-targeted"}
+{"text":"裁判所職員を名乗るSMSが罰金の代わりにギフトカードを買い、番号を送るよう求めています。","label":"spam","source":"augmentation:boundary:generalization-v4-targeted"}
+{"text":"返金担当を装う相手が送金失敗を理由に、再送のためワンタイムコードを聞き出そうとしています。","label":"spam","source":"augmentation:boundary:generalization-v4-targeted"}
+{"text":"包裹配送确实失败时，官方页面只会提供查询入口，不会要求短信支付手续费。","label":"spam","source":"augmentation:boundary:generalization-v4-targeted"}
+{"text":"Legitimate parcel notices provide a tracking page and never ask for a text-message payment fee.","label":"spam","source":"augmentation:boundary:generalization-v4-targeted"}
+{"text":"正規の配送案内は追跡ページを示すだけで、SMSで手数料の支払いを求めません。","label":"spam","source":"augmentation:boundary:generalization-v4-targeted"}
+{"text":"我周五下班后再决定去哪里吃饭，到时发消息给你。","label":"__sift_abstain__","source":"augmentation:boundary:generalization-v4-targeted"}
+{"text":"The meeting link is just for our small group; I will message you when I am free.","label":"__sift_abstain__","source":"augmentation:boundary:generalization-v4-targeted"}
+{"text":"金曜の仕事帰りにどこで食事するか決めて、あとで連絡します。","label":"__sift_abstain__","source":"augmentation:boundary:generalization-v4-targeted"}
+{"text":"软件维护已完成，客户端现在可以正常同步文件。","label":"transaction.message","source":"augmentation:boundary:generalization-v4-targeted"}
+{"text":"The account settings update is complete and the new notification preference is active.","label":"transaction.message","source":"augmentation:boundary:generalization-v4-targeted"}
+{"text":"アプリの更新が完了し、新しい通知設定が有効になりました。","label":"transaction.message","source":"augmentation:boundary:generalization-v4-targeted"}

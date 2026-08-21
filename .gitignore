@@ -95,6 +95,7 @@ docs/APP_STORE_CONNECT_METADATA.md
 *.db
 *.ndjson
 !tools/apple-trainer/Evaluation/*.ndjson
+!tools/apple-trainer/Training/*.ndjson
 !tools/pii-trainer/Evaluation/*.ndjson
 *.jsonl
 *.csv
@@ -103,6 +104,7 @@ docs/APP_STORE_CONNECT_METADATA.md
 *.arrow
 
 # Core ML / trainer working artifacts
+GeneratedModels/
 *.mlmodel
 apps/ios/GeneratedModels/
 *.mlmodelc/

@@ -1,0 +1,30 @@
+{"text":"航旅助手称退票款需二次认证，要求提交银行应用口令和信用卡背面数字。","label":"spam"}
+{"text":"假冒铁路身份审核通知让旅客下载控制工具并开启屏幕共享。","label":"spam"}
+{"text":"港口登船资格被冻结，陌生网页要求同时填写网银密码与短信动态码。","label":"spam"}
+{"text":"所谓航空客服要求购买购物卡并回传卡号，声称用于支付航班改签差价。","label":"spam"}
+{"text":"酒店接机代理要求向私人账户转保证金并提供登录验证码才能确认车辆。","label":"spam"}
+{"text":"航班时刻调整后机票已自动重开，官方应用中的登机二维码现已可用。","label":"travel.ticketing"}
+{"text":"动车座位由六车调整到八车，订单金额不变，无需再次付款。","label":"travel.ticketing"}
+{"text":"海湾轮渡改由南区二号口登船，原船票和购票证件仍然有效。","label":"travel.ticketing"}
+{"text":"邮轮阳台舱升级办理成功，电子差价凭证已进入官方订单档案。","label":"travel.ticketing"}
+{"text":"港站联运提示：先在人工窗口取纸质船票，再持护照原件办理值船。","label":"travel.ticketing"}
+{"text":"A ferry reservation review page requires both your passport image and the approval code from your bank app.","label":"spam"}
+{"text":"An airline refund representative asks to view your banking app through screen sharing before releasing the money.","label":"spam"}
+{"text":"A train-delay compensation form demands the online-account password and the card's security code.","label":"spam"}
+{"text":"Fake hotel-upgrade support says to buy store vouchers and send the redemption numbers to confirm the room.","label":"spam"}
+{"text":"A port-authority alert instructs passengers to install remote-support software for document inspection.","label":"spam"}
+{"text":"The rerouted flight ticket was automatically reissued, and the new boarding QR is ready in the airline app.","label":"travel.ticketing"}
+{"text":"Your rail reservation now uses coach eight instead of coach six; the fare is unchanged and no new payment is due.","label":"travel.ticketing"}
+{"text":"Bay ferry boarding moved to south gate two. The original ticket and booking document remain valid.","label":"travel.ticketing"}
+{"text":"The balcony-cabin upgrade succeeded, and its electronic adjustment receipt is in the official booking archive.","label":"travel.ticketing"}
+{"text":"Interline notice: obtain the printed vessel ticket at the staffed desk, then present the original passport at check-in.","label":"travel.ticketing"}
+{"text":"フェリー予約の再審査として、旅券画像と銀行アプリの承認コードを同時に送るよう求めています。","label":"spam"}
+{"text":"航空券返金の担当を装い、入金前に銀行アプリを画面共有で見せるよう要求する連絡です。","label":"spam"}
+{"text":"列車遅延の補償フォームがネット口座のパスワードとカードのセキュリティ番号を要求しています。","label":"spam"}
+{"text":"偽のホテル客室変更窓口が商品券を購入させ、引換番号を送れば確定すると案内しています。","label":"spam"}
+{"text":"港湾当局を装う通知が、書類検査のため遠隔支援ソフトを導入するよう指示しています。","label":"spam"}
+{"text":"経路変更後の航空券は自動で再発行され、新しい搭乗QRを航空会社アプリで表示できます。","label":"travel.ticketing"}
+{"text":"鉄道予約は六号車から八号車へ変更されました。運賃は同じで追加決済はありません。","label":"travel.ticketing"}
+{"text":"湾内フェリーの乗船口は南側二番へ移りました。元の乗船券と予約証明は有効です。","label":"travel.ticketing"}
+{"text":"バルコニー客室への変更が完了し、差額の電子明細を公式予約履歴へ保存しました。","label":"travel.ticketing"}
+{"text":"連絡便をご利用の方は有人窓口で紙の乗船券を受け取り、旅券原本を提示して乗船手続をしてください。","label":"travel.ticketing"}

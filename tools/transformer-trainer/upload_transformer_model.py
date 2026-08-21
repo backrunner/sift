@@ -68,6 +68,8 @@ from pathlib import Path
 from string import Formatter
 from typing import Any
 
+from check_distillation_gate import gate_matches_student, is_distilled
+
 
 DEFAULT_MODEL_NAME = "SiftSignalModel"
 DEFAULT_ARTIFACT_CACHE_CONTROL = "public, max-age=31536000, immutable"
@@ -555,6 +557,7 @@ def verify_selected_candidate(selection_path: Path, manifest: dict[str, Any], mo
         )
     if selection.get("profileID") != profile_id:
         raise SystemExit("error: selected candidate profile does not match manifest")
+    validate_release_profile(manifest)
     report_path = Path(str(selection.get("reportPath", "")))
     if not report_path.is_absolute():
         report_path = (selection_path.parent / report_path).resolve()
@@ -567,6 +570,13 @@ def verify_selected_candidate(selection_path: Path, manifest: dict[str, Any], mo
         raise SystemExit("error: selected candidate report artifact does not match selection")
     if report.get("downloadBytes") != manifest.get("downloadBytes"):
         raise SystemExit("error: selected candidate report download size does not match manifest")
+    if manifest.get("algorithm") != report.get("algorithm"):
+        raise SystemExit("error: selected candidate report algorithm does not match manifest")
+    if manifest.get("distillation") != report.get("distillation"):
+        if is_distilled(manifest) or is_distilled(report):
+            raise SystemExit("error: selected candidate distillation provenance does not match manifest")
+    if is_distilled(manifest) or is_distilled(report):
+        verify_selected_distillation_gate(selection, report, report_path, selection_path)
     metrics = report.get("metrics", {})
     actions = report.get("messageFilterActions", {})
     device = report.get("deviceMetrics", {})
@@ -630,17 +640,113 @@ def verify_selected_candidate(selection_path: Path, manifest: dict[str, Any], mo
         raise SystemExit(f"error: candidate directory is not a directory: {model_dir}")
 
 
-def canonical_release_payload(manifest: dict[str, Any]) -> bytes:
-    fields = (
+def verify_selected_distillation_gate(
+    selection: dict[str, Any],
+    report: dict[str, Any],
+    report_path: Path,
+    selection_path: Path,
+) -> None:
+    teacher_profile_id = selection.get("teacherProfileID")
+    teacher_artifact_sha256 = selection.get("teacherArtifactSHA256")
+    teacher_report_sha256 = selection.get("teacherReportSHA256")
+    if not all(
+        isinstance(value, str) and value
+        for value in (teacher_profile_id, teacher_artifact_sha256, teacher_report_sha256)
+    ):
+        raise SystemExit("error: distilled candidate selection is missing current teacher identity")
+    if teacher_profile_id != "fp32-baseline":
+        raise SystemExit("error: distilled candidate selection is not bound to fp32-baseline teacher")
+    if len(teacher_report_sha256) != 64:
+        raise SystemExit("error: distilled candidate selection has an invalid teacher report hash")
+    gate_path_value = selection.get("distillationGatePath")
+    gate_sha = selection.get("distillationGateSHA256")
+    if not isinstance(gate_path_value, str) or not gate_path_value:
+        raise SystemExit("error: distilled candidate selection is missing distillation gate")
+    if not isinstance(gate_sha, str) or len(gate_sha) != 64:
+        raise SystemExit("error: distilled candidate selection has an invalid distillation gate hash")
+    gate_path = Path(gate_path_value).expanduser()
+    if not gate_path.is_absolute():
+        gate_path = (selection_path.parent / gate_path).resolve()
+    if not gate_path.is_file() or file_sha256(gate_path) != gate_sha:
+        raise SystemExit("error: distillation gate is missing or has changed")
+    gate = read_manifest(gate_path)
+    valid, reason = gate_matches_student(
+        gate,
+        report,
+        student_report_sha256=file_sha256(report_path),
+        expected_teacher={
+            "profileID": teacher_profile_id,
+            "artifactSHA256": teacher_artifact_sha256,
+        },
+        expected_teacher_report_sha256=teacher_report_sha256,
+    )
+    if not valid:
+        raise SystemExit(f"error: distillation gate verification failed: {reason}")
+
+
+def validate_release_profile(manifest: dict[str, Any]) -> None:
+    """Keep signed quantization metadata consistent with the exported graph."""
+    runtime = manifest.get("runtimeProfile")
+    profile = manifest.get("quantizationProfile")
+    if not isinstance(runtime, dict) or not isinstance(profile, dict):
+        raise SystemExit("error: runtimeProfile and quantizationProfile are required")
+    compute_precision = runtime.get("computePrecision")
+    activation_bits = profile.get("activationBits")
+    if compute_precision == "float32" and activation_bits != 32:
+        raise SystemExit(
+            f"error: {profile.get('identifier')} advertises A{activation_bits} "
+            "but runtimeProfile.computePrecision is float32; use an A32 profile"
+        )
+    if compute_precision == "float16" and activation_bits == 32:
+        raise SystemExit(
+            f"error: {profile.get('identifier')} advertises A32 but runtimeProfile.computePrecision is float16"
+        )
+    if compute_precision not in (None, "float16", "float32", "mixedFloat16Float32"):
+        raise SystemExit(f"error: unsupported runtimeProfile.computePrecision: {compute_precision}")
+    if profile.get("method") != "baseline" and profile.get("weightBits") not in (4, 8):
+        raise SystemExit("error: release quantization must use W4 or W8 weights")
+
+
+_RELEASE_PAYLOAD_FIELDS = (
         "schemaVersion", "releaseSequence", "modelABI", "minimumAppBuild", "maximumAppBuild",
         "minimumOSVersion", "runtimeProfile", "quantizationProfile", "validationMetrics",
+        "distillation",
         "version", "trainedAt", "algorithm", "backbone", "languages", "labels",
         "maxSequenceLength", "doLowerCase", "tokenizerKind", "tokenizerArtifact",
         "modelArtifact", "sha256", "taxonomyHash", "tokenizerSHA256", "keyID",
         "remoteBaseURL", "remoteArtifacts", "downloadBytes",
-    )
+)
+_LEGACY_RELEASE_PAYLOAD_FIELDS = tuple(
+    field for field in _RELEASE_PAYLOAD_FIELDS if field != "distillation"
+)
+
+
+def _canonical_release_payload(
+    manifest: dict[str, Any],
+    fields: tuple[str, ...],
+) -> bytes:
     payload = {key: manifest[key] for key in fields if key in manifest}
+    # Swift JSONEncoder renders integral Doubles as integers. Normalize the
+    # newly signed provenance numbers so Python and Swift produce identical
+    # bytes while leaving the legacy payload byte-for-byte unchanged.
+    distillation = payload.get("distillation")
+    if isinstance(distillation, dict):
+        distillation = dict(distillation)
+        for key in ("temperature", "distillAlpha"):
+            value = distillation.get(key)
+            if isinstance(value, float) and value.is_integer():
+                distillation[key] = int(value)
+        payload["distillation"] = distillation
     return json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
+
+
+def canonical_release_payload(manifest: dict[str, Any]) -> bytes:
+    return _canonical_release_payload(manifest, _RELEASE_PAYLOAD_FIELDS)
+
+
+def legacy_canonical_release_payload(manifest: dict[str, Any]) -> bytes:
+    """Canonical bytes used by releases signed before distillation provenance."""
+    return _canonical_release_payload(manifest, _LEGACY_RELEASE_PAYLOAD_FIELDS)
 
 
 def canonical_channel_payload(channel: dict[str, Any]) -> bytes:
@@ -693,7 +799,7 @@ def sign_payload(payload: bytes, signing_key: Path) -> str:
         source.flush()
         result = subprocess.run(
             [
-                "openssl", "pkeyutl", "-sign", "-inkey", str(signing_key),
+                openssl_executable(), "pkeyutl", "-sign", "-inkey", str(signing_key),
                 "-rawin", "-in", source.name,
             ],
             stdout=subprocess.PIPE,
@@ -703,6 +809,48 @@ def sign_payload(payload: bytes, signing_key: Path) -> str:
     if result.returncode != 0:
         raise SystemExit(f"error: Ed25519 signing failed: {result.stderr.decode(errors='replace').strip()}")
     return base64.b64encode(result.stdout).decode("ascii")
+
+
+def openssl_executable() -> str:
+    """Return an OpenSSL build with Ed25519 support.
+
+    macOS ships LibreSSL at `/usr/bin/openssl`, which reports the same command
+    name but cannot load Ed25519 keys. Prefer a compatible OpenSSL already on
+    PATH, then common Homebrew locations, so publishing does not depend on the
+    caller's login-shell PATH ordering.
+    """
+    configured = os.getenv("SIFT_OPENSSL_BIN")
+    candidates = [configured] if configured else []
+    candidates.extend(
+        candidate
+        for candidate in (
+            shutil.which("openssl"),
+            "/opt/homebrew/bin/openssl",
+            "/usr/local/bin/openssl",
+        )
+        if candidate
+    )
+    seen: set[str] = set()
+    for candidate in candidates:
+        if candidate in seen:
+            continue
+        seen.add(candidate)
+        try:
+            result = subprocess.run(
+                [candidate, "version"],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                check=False,
+                text=True,
+            )
+        except OSError:
+            continue
+        if result.returncode == 0 and result.stdout.startswith("OpenSSL "):
+            return candidate
+    raise SystemExit(
+        "error: an OpenSSL 3 binary with Ed25519 support is required; "
+        "install Homebrew openssl@3 or set SIFT_OPENSSL_BIN"
+    )
 
 
 def make_channel_manifest(
@@ -770,6 +918,16 @@ def signature_matches(payload: bytes, signature: Any, signing_key: Path) -> bool
     return isinstance(signature, str) and signature == sign_payload(payload, signing_key)
 
 
+def release_signature_matches(manifest: dict[str, Any], signing_key: Path) -> bool:
+    """Accept new signatures and the pre-provenance signature for old releases."""
+    if signature_matches(canonical_release_payload(manifest), manifest.get("signature"), signing_key):
+        return True
+    return bool(
+        manifest.get("distillation") is not None
+        and signature_matches(legacy_canonical_release_payload(manifest), manifest.get("signature"), signing_key)
+    )
+
+
 def verified_channel_entries(channel: dict[str, Any], signing_key: Path) -> list[dict[str, Any]]:
     if not signature_matches(canonical_channel_payload(channel), channel.get("signature"), signing_key):
         raise SystemExit("error: published channel signature does not match the configured signing key")
@@ -835,7 +993,7 @@ def channel_entry_from_release_manifest(
         raise SystemExit(f"error: compatible release manifest must be an object: {url}")
     if manifest.get("keyID") != key_id:
         raise SystemExit(f"error: compatible release uses a different signing key: {url}")
-    if not signature_matches(canonical_release_payload(manifest), manifest.get("signature"), signing_key):
+    if not release_signature_matches(manifest, signing_key):
         raise SystemExit(f"error: compatible release signature is invalid: {url}")
     release_id = Path(parsed.path).parent.name
     return make_channel_manifest(

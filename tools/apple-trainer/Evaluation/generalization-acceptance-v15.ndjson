@@ -1,0 +1,75 @@
+{"text":"预约的外币定存到期款已转入尾号5286活期账户，银行电子回单已生成。","label":"finance.bank","source":"acceptance:generalization-v15"}
+{"text":"The matured foreign-currency deposit moved to checking account ending 5286; its bank receipt is ready.","label":"finance.bank","source":"acceptance:generalization-v15"}
+{"text":"外貨定期預金の満期金を末尾5286の普通口座へ振り替え、銀行控えを発行しました。","label":"finance.bank","source":"acceptance:generalization-v15"}
+{"text":"取消的露营地预订已完成退款，清洁押金和营位费将原路退回。","label":"finance.refund","source":"acceptance:generalization-v15"}
+{"text":"The canceled campsite booking was refunded; its cleaning deposit and pitch fee return to the original payment method.","label":"finance.refund","source":"acceptance:generalization-v15"}
+{"text":"キャンプ場予約の取消が完了し、清掃保証金と区画料金を元の支払方法へ返金します。","label":"finance.refund","source":"acceptance:generalization-v15"}
+{"text":"车队商务卡月结单已生成，本期最低付款额于下周二到期。","label":"finance.credit_card","source":"acceptance:generalization-v15"}
+{"text":"The fleet business-card statement is ready; its minimum payment is due next Tuesday.","label":"finance.credit_card","source":"acceptance:generalization-v15"}
+{"text":"車両管理用法人カードの月次請求が確定し、最低支払額は来週火曜が期限です。","label":"finance.credit_card","source":"acceptance:generalization-v15"}
+{"text":"尾号6113卡在城市快充站支付了87元充电费，消费已入账。","label":"finance.consumption","source":"acceptance:generalization-v15"}
+{"text":"An $87 EV fast-charging purchase posted to the card ending 6113 at City Charge Hub.","label":"finance.consumption","source":"acceptance:generalization-v15"}
+{"text":"末尾6113のカードで急速充電料金87円を決済し、利用明細へ反映しました。","label":"finance.consumption","source":"acceptance:generalization-v15"}
+{"text":"远洋卫星通信包已用73%，剩余900MB可用至返港日。","label":"carrier.data_reminder","source":"acceptance:generalization-v15"}
+{"text":"Your offshore satellite data pack is 73% used; 900 MB remains until the return-to-port date.","label":"carrier.data_reminder","source":"acceptance:generalization-v15"}
+{"text":"洋上衛星データを73%使用し、帰港日まで900MB残っています。","label":"carrier.data_reminder","source":"acceptance:generalization-v15"}
+{"text":"智能手表eSIM副号本期通信账单为45元，将随主号码自动扣款。","label":"carrier.billing","source":"acceptance:generalization-v15"}
+{"text":"The smartwatch eSIM companion line's $45 telecom bill will autopay with the primary number.","label":"carrier.billing","source":"acceptance:generalization-v15"}
+{"text":"スマートウォッチeSIM追加回線の通信料金45円は、主回線とまとめて自動引き落としします。","label":"carrier.billing","source":"acceptance:generalization-v15"}
+{"text":"运营商将升级紧急广播网关，维护期间测试警报可能延迟到达。","label":"carrier.service","source":"acceptance:generalization-v15"}
+{"text":"The carrier is upgrading its emergency-broadcast gateway; test alerts may arrive late during maintenance.","label":"carrier.service","source":"acceptance:generalization-v15"}
+{"text":"通信会社は緊急速報ゲートウェイを更新し、保守中は試験通知が遅れる場合があります。","label":"carrier.service","source":"acceptance:generalization-v15"}
+{"text":"海水供冷服务中心通知：换热管清洗期间东区制冷将暂停两小时。","label":"life.utility","source":"acceptance:generalization-v15"}
+{"text":"The seawater district-cooling utility will pause East District cooling for two hours while cleaning heat-exchange pipes.","label":"life.utility","source":"acceptance:generalization-v15"}
+{"text":"海水地域冷房事業者は熱交換配管の清掃中、東地区への供給を2時間停止します。","label":"life.utility","source":"acceptance:generalization-v15"}
+{"text":"遗传检测中心已发布药物代谢报告，复诊医生可在病历系统查看。","label":"life.medical","source":"acceptance:generalization-v15"}
+{"text":"The genetics laboratory posted your medication-metabolism report for the follow-up clinician in the patient record.","label":"life.medical","source":"acceptance:generalization-v15"}
+{"text":"遺伝子検査室が薬物代謝レポートを登録し、再診担当医が診療記録から確認できます。","label":"life.medical","source":"acceptance:generalization-v15"}
+{"text":"移植器官恒温运输箱已进入机场医疗货运区，等待专车转往医院。","label":"life.logistics","source":"acceptance:generalization-v15"}
+{"text":"The temperature-controlled transplant container entered airport medical cargo and awaits dedicated transport to the hospital.","label":"life.logistics","source":"acceptance:generalization-v15"}
+{"text":"移植臓器の定温輸送箱が空港医療貨物区へ入り、病院行き専用車を待っています。","label":"life.logistics","source":"acceptance:generalization-v15"}
+{"text":"海岛渡运暂停后包裹已改送北岸网点，快递员预计周一派送。","label":"life.express","source":"acceptance:generalization-v15"}
+{"text":"A suspended island ferry rerouted your parcel to North Shore depot; the courier expects Monday delivery.","label":"life.express","source":"acceptance:generalization-v15"}
+{"text":"島のフェリー運休により荷物を北岸営業所へ迂回し、月曜に配達予定です。","label":"life.express","source":"acceptance:generalization-v15"}
+{"text":"低温菌株盒已放入生物楼液氮柜L3，请凭领取码3184在一小时内取走。","label":"life.pickup_code","source":"acceptance:generalization-v15"}
+{"text":"The cryogenic culture box is in biology-building cold cabinet L3; collect it within an hour using code 3184.","label":"life.pickup_code","source":"acceptance:generalization-v15"}
+{"text":"低温菌株箱を生物棟の液体窒素保管庫L3へ入れました。受取番号3184で1時間以内にお受け取りください。","label":"life.pickup_code","source":"acceptance:generalization-v15"}
+{"text":"海事法院已接收船舶碰撞证据清单，远程庭审日期将在排期后送达。","label":"government.court","source":"acceptance:generalization-v15"}
+{"text":"The maritime court received the vessel-collision evidence inventory and will serve the remote-hearing date after scheduling.","label":"government.court","source":"acceptance:generalization-v15"}
+{"text":"海事裁判所が船舶衝突の証拠目録を受領し、日程確定後に遠隔審理日を送達します。","label":"government.court","source":"acceptance:generalization-v15"}
+{"text":"海啸防灾部门提醒：演练警报后请沿高地路线前往三楼以上避难区。","label":"government.reminder","source":"acceptance:generalization-v15"}
+{"text":"Tsunami emergency officials advise following the high-ground route to shelter above the third floor after the drill alarm.","label":"government.reminder","source":"acceptance:generalization-v15"}
+{"text":"津波防災機関は訓練警報後、高台経路で3階以上の避難区域へ移動するよう案内しています。","label":"government.reminder","source":"acceptance:generalization-v15"}
+{"text":"遗属津贴年度资格核验通过，调整后的待遇将在社保明细补记。","label":"government.social_security","source":"acceptance:generalization-v15"}
+{"text":"The annual survivor-benefit eligibility check passed; the adjustment will appear in social-security history.","label":"government.social_security","source":"acceptance:generalization-v15"}
+{"text":"遺族給付の年次資格確認に通過し、調整額を社会保障履歴へ追記します。","label":"government.social_security","source":"acceptance:generalization-v15"}
+{"text":"生产制品仓库的签名密钥将在24小时后失效，未轮换会中断发布流水线。","label":"work.alert","source":"acceptance:generalization-v15"}
+{"text":"The production artifact registry's signing key expires in 24 hours; failing to rotate it will stop the release pipeline.","label":"work.alert","source":"acceptance:generalization-v15"}
+{"text":"本番成果物レジストリの署名鍵は24時間後に失効し、更新しないとリリース処理が停止します。","label":"work.alert","source":"acceptance:generalization-v15"}
+{"text":"高风险数据导出申请已完成隐私审查，等待部门负责人批准保留期限。","label":"work.approval","source":"acceptance:generalization-v15"}
+{"text":"The high-risk data-export request cleared Privacy and awaits the department owner's approval of its retention period.","label":"work.approval","source":"acceptance:generalization-v15"}
+{"text":"高リスクデータ書出し申請はプライバシー確認済みで、部門責任者の保管期間承認待ちです。","label":"work.approval","source":"acceptance:generalization-v15"}
+{"text":"压缩工作周申请已登记，周五不再计为到岗日，考勤基准同步更新。","label":"work.attendance","source":"acceptance:generalization-v15"}
+{"text":"Your compressed-workweek request was recorded; Friday is no longer an on-site day and attendance expectations were updated.","label":"work.attendance","source":"acceptance:generalization-v15"}
+{"text":"週4日勤務の申請を登録し、金曜を出社日から外して勤怠基準を更新しました。","label":"work.attendance","source":"acceptance:generalization-v15"}
+{"text":"账户恢复邮箱已更换，原地址不能再接收重置链接，现有设备保持登录。","label":"transaction.account_security","source":"acceptance:generalization-v15"}
+{"text":"Your account recovery email changed; the old address can no longer receive reset links while current devices stay signed in.","label":"transaction.account_security","source":"acceptance:generalization-v15"}
+{"text":"アカウント復旧メールを変更し、旧アドレスへの再設定リンクを停止しました。現在の端末はログインを維持します。","label":"transaction.account_security","source":"acceptance:generalization-v15"}
+{"text":"定制假肢内衬订单已确认尺寸并付清尾款，制作中心下周开工。","label":"transaction.order","source":"acceptance:generalization-v15"}
+{"text":"The custom prosthetic-liner order has confirmed dimensions and final payment; fabrication starts next week.","label":"transaction.order","source":"acceptance:generalization-v15"}
+{"text":"特注義足ライナーの寸法確認と残金決済が完了し、来週から製作を開始します。","label":"transaction.order","source":"acceptance:generalization-v15"}
+{"text":"天文台登山齿轨车电子往返票已签发，请在山脚闸机出示二维码。","label":"travel.ticketing","source":"acceptance:generalization-v15"}
+{"text":"Your observatory cog-railway return e-ticket was issued; show its QR code at the base-station gate.","label":"travel.ticketing","source":"acceptance:generalization-v15"}
+{"text":"天文台登山鉄道の往復電子乗車券を発行しました。山麓駅改札でQRをご提示ください。","label":"travel.ticketing","source":"acceptance:generalization-v15"}
+{"text":"跨河索道因风速超限停运，中央广场提供代行巴士前往北岸。","label":"travel.transport","source":"acceptance:generalization-v15"}
+{"text":"The cross-river gondola is suspended for high winds; a replacement bus leaves Central Square for North Bank.","label":"travel.transport","source":"acceptance:generalization-v15"}
+{"text":"川越えロープウェイは強風で運休し、中央広場から北岸へ代行バスを運行します。","label":"travel.transport","source":"acceptance:generalization-v15"}
+{"text":"家庭地热系统冬季保养活动开放，签约年度方案赠一次循环泵检测。","label":"promotion","source":"acceptance:generalization-v15"}
+{"text":"The winter home-geothermal offer adds one circulation-pump inspection to the annual maintenance plan.","label":"promotion","source":"acceptance:generalization-v15"}
+{"text":"家庭用地熱システムの冬季キャンペーンで、年間保守に循環ポンプ点検1回が付きます。","label":"promotion","source":"acceptance:generalization-v15"}
+{"text":"冒充灾害补助人员要求安装远程控制软件并发送银行动态码，否则声称取消救助资格。","label":"spam","source":"acceptance:generalization-v15"}
+{"text":"A supposed disaster-aid officer demands remote-control software and a bank one-time code, threatening to cancel assistance.","label":"spam","source":"acceptance:generalization-v15"}
+{"text":"災害支援担当を名乗る人物が遠隔操作アプリと銀行ワンタイムコードを要求し、援助資格を取消すと脅しています。","label":"spam","source":"acceptance:generalization-v15"}
+{"text":"你借我的折叠伞放在书架最下面了，下次来时记得拿走。","label":"__sift_abstain__","source":"acceptance:generalization-v15"}
+{"text":"I left the folding umbrella you lent me on the bottom shelf; remember it next time you visit.","label":"__sift_abstain__","source":"acceptance:generalization-v15"}
+{"text":"借りていた折り畳み傘を本棚の一番下に置いたよ。次に来たとき持って帰ってね。","label":"__sift_abstain__","source":"acceptance:generalization-v15"}

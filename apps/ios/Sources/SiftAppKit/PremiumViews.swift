@@ -17,6 +17,7 @@ private struct SettingsRowContent<Trailing: View>: View {
                 .foregroundStyle(tint)
                 .frame(width: 32, height: 32)
                 .background(tint.opacity(0.12), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                .accessibilityHidden(true)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
@@ -364,6 +365,8 @@ struct SettingsView: View {
     @State private var transformerStorageByteCount: Int64?
     @State private var exportedJSON: String?
     @State private var isExporting = false
+    @State private var diagnosticsExportURL: URL?
+    @State private var isExportingDiagnostics = false
 
     var body: some View {
         ScrollView {
@@ -374,6 +377,9 @@ struct SettingsView: View {
                     storageManagementSection
                 }
                 legalSection
+                if model.isDeveloperModeEnabled {
+                    developerSection
+                }
                 aboutSection
             }
             .padding(.horizontal, 16)
@@ -384,7 +390,10 @@ struct SettingsView: View {
         }
         .scrollIndicators(.hidden)
         .background(AtmosphericBackground())
-        .onAppear { model.refreshRemoteAccountStatus() }
+        .onAppear {
+            model.refreshRemoteAccountStatus()
+            model.refreshMessageFilterDiagnostics()
+        }
         .task(id: model.isTransformerModelDownloaded) {
             guard model.isTransformerModelDownloaded else {
                 transformerStorageByteCount = nil
@@ -437,6 +446,7 @@ struct SettingsView: View {
         } message: {
             Text(transformerCleanupConfirmationMessage)
         }
+        .sensoryFeedback(.success, trigger: model.isDeveloperModeEnabled)
     }
 
     private var remoteAccountAlertBinding: Binding<Bool> {
@@ -725,11 +735,16 @@ struct SettingsView: View {
     private var aboutSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             SectionHeader(title: String(localized: "关于"), icon: "info.circle")
-            SettingsRowContent(title: String(localized: "版本"), icon: "app.badge") {
-                Text(Self.appVersion)
-                    .font(.callout.monospacedDigit())
-                    .foregroundStyle(.secondary)
+            Button {
+                model.registerVersionTap()
+            } label: {
+                SettingsRowContent(title: String(localized: "版本"), icon: "app.badge") {
+                    Text(Self.appVersion)
+                        .font(.callout.monospacedDigit())
+                        .foregroundStyle(.secondary)
+                }
             }
+            .buttonStyle(.plain)
             .insetSurface(cornerRadius: 12)
 
             SettingsRowContent(
@@ -756,6 +771,150 @@ struct SettingsView: View {
         }
         .padding(18)
         .cardSurface()
+    }
+
+    private var developerSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            SectionHeader(title: String(localized: "开发者"), icon: "hammer.fill")
+
+            SettingsRowContent(
+                title: String(localized: "App Group 共享容器"),
+                icon: "shippingbox.fill",
+                tint: model.isSharedAppGroupContainerAvailable ? .siftMint : .siftAmber
+            ) {
+                Text(
+                    model.isSharedAppGroupContainerAvailable
+                        ? String(localized: "可用")
+                        : String(localized: "不可用")
+                )
+                .font(.callout.weight(.semibold))
+                .foregroundStyle(
+                    model.isSharedAppGroupContainerAvailable ? Color.siftMint : Color.siftAmber
+                )
+            }
+            .insetSurface(cornerRadius: 12)
+            .accessibilityElement(children: .combine)
+
+            SettingsRowContent(
+                title: String(localized: "最近筛选执行"),
+                subtitle: latestMessageFilterExecutionSubtitle,
+                icon: "waveform.path.ecg",
+                tint: latestMessageFilterTint
+            ) {
+                Text(latestMessageFilterExecutionTitle)
+                    .font(.callout.weight(.semibold))
+                    .foregroundStyle(latestMessageFilterTint)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+            }
+            .insetSurface(cornerRadius: 12)
+            .accessibilityElement(children: .combine)
+
+            Button {
+                guard isExportingDiagnostics == false else { return }
+                isExportingDiagnostics = true
+                Task {
+                    defer { isExportingDiagnostics = false }
+                    diagnosticsExportURL = await model.prepareMessageFilterDiagnosticsExport()
+                }
+            } label: {
+                SettingsRowContent(
+                    title: String(localized: "导出诊断日志"),
+                    icon: "square.and.arrow.up",
+                    isEnabled: isExportingDiagnostics == false
+                ) {
+                    if isExportingDiagnostics {
+                        ProgressView().controlSize(.small)
+                    }
+                }
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(.primary)
+            .insetSurface(cornerRadius: 12)
+            .disabled(isExportingDiagnostics)
+
+            if let diagnosticsExportURL {
+                ShareLink(
+                    item: diagnosticsExportURL,
+                    preview: SharePreview(String(localized: "Sift 诊断日志"))
+                ) {
+                    Label(String(localized: "分享诊断日志（JSONL）"), systemImage: "doc.text")
+                        .font(.callout.weight(.semibold))
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(12)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(Color.siftMint)
+                .insetSurface(cornerRadius: 12)
+            }
+
+            Text(String(localized: "诊断日志不包含短信正文或发送方。"))
+                .font(.caption)
+                .foregroundStyle(.tertiary)
+        }
+        .padding(18)
+        .cardSurface()
+    }
+
+    private var latestMessageFilterExecutionTitle: String {
+        guard let event = model.latestMessageFilterDiagnosticEvent else {
+            return String(localized: "尚无记录")
+        }
+        switch event.executionPath {
+        case .rule:
+            return String(localized: "自定义规则")
+        case .classic:
+            return String(localized: "经典模型")
+        case .signal:
+            return String(localized: "Sift Signal")
+        case .noDecision:
+            return String(localized: "未返回结果")
+        }
+    }
+
+    private var latestMessageFilterExecutionSubtitle: String? {
+        guard let event = model.latestMessageFilterDiagnosticEvent else {
+            return nil
+        }
+        guard event.fallbackReason != .none else {
+            return event.decisionSource == .fallback
+                ? String(localized: "模型未返回可用分类")
+                : String(localized: "未触发兜底")
+        }
+        return String(
+            format: String(localized: "兜底：%@"),
+            fallbackReasonTitle(event.fallbackReason)
+        )
+    }
+
+    private var latestMessageFilterTint: Color {
+        guard let event = model.latestMessageFilterDiagnosticEvent else {
+            return .secondary
+        }
+        return event.fallbackReason == .none
+            && event.executionPath != .noDecision
+            && event.decisionSource != .fallback
+            ? .siftMint : .siftAmber
+    }
+
+    private func fallbackReasonTitle(_ reason: MessageFilterFallbackReason) -> String {
+        switch reason {
+        case .none:
+            return String(localized: "未触发兜底")
+        case .configurationMismatch:
+            return String(localized: "配置不一致")
+        case .unsupportedDevice:
+            return String(localized: "设备不支持")
+        case .transformerUnavailable:
+            return String(localized: "Signal 模型不可用")
+        case .transformerInferenceFailed:
+            return String(localized: "Signal 推理失败")
+        case .transformerTimedOut:
+            return String(localized: "Signal 推理超时")
+        case .handlerTimedOut:
+            return String(localized: "扩展处理超时")
+        }
     }
 
     private var settingsModelTypeTitle: String {

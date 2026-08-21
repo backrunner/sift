@@ -22,6 +22,15 @@ from model_contract import ABSTAIN_LABEL, MODEL_ABI_V1, model_labels
 def parse_arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--fp16-model", type=Path, required=True)
+    parser.add_argument(
+        "--source-manifest",
+        type=Path,
+        default=None,
+        help=(
+            "manifest emitted with the FP16 source model; defaults to "
+            "<fp16-model-parent>/<model-name>.manifest.json"
+        ),
+    )
     parser.add_argument("--checkpoint", type=Path, required=True, help="Hugging Face checkpoint containing the tokenizer")
     parser.add_argument("--tokenizer-artifact", type=Path, required=True)
     parser.add_argument("--calibration-input", type=Path, required=True)
@@ -44,12 +53,28 @@ def parse_arguments() -> argparse.Namespace:
         "--profile-id",
         action="append",
         default=[],
-        help="generate only the named profile(s); fp16-baseline is included automatically",
+        help="generate only the named profile(s); fp32-baseline is included automatically",
     )
     parser.add_argument(
         "--reuse-existing-candidates",
         action="store_true",
         help="reuse a saved candidate only when its complete build identity matches",
+    )
+    parser.add_argument(
+        "--allow-experimental-macos-cpu-smoke-failure",
+        action="store_true",
+        help=(
+            "allow a macOS CPU_ONLY smoke failure only for each release-ineligible "
+            "profile; ALL and physical-iPhone gates still apply"
+        ),
+    )
+    parser.add_argument(
+        "--experimental-release-ineligible-run",
+        action="store_true",
+        help=(
+            "mark every generated report release-ineligible; when combined with the macOS "
+            "CPU smoke exception, permits quality-only evaluation of otherwise eligible profiles"
+        ),
     )
     parser.add_argument(
         "--qat-model",
@@ -144,6 +169,7 @@ def run_message_filter_artifact_suite(
 
 
 MODEL_SMOKE_WORKER = """
+import json
 import math
 import sys
 import coremltools as ct
@@ -151,30 +177,50 @@ import numpy as np
 
 model_path, max_length, compute_unit = sys.argv[1], int(sys.argv[2]), sys.argv[3]
 model = ct.models.MLModel(model_path, compute_units=getattr(ct.ComputeUnit, compute_unit))
-sample = {
-    "input_ids": np.ones((1, max_length), dtype=np.int32),
-    "attention_mask": np.ones((1, max_length), dtype=np.int32),
-}
-output = model.predict(sample)
-probability_maps = [value for value in output.values() if isinstance(value, dict)]
-if not probability_maps:
-    print("missing_probability_output")
-    raise SystemExit(2)
-probabilities = [float(value) for value in probability_maps[0].values()]
-if not probabilities or not all(math.isfinite(value) for value in probabilities):
-    print("non_finite_probabilities")
-    raise SystemExit(3)
-if not 0.99 <= sum(probabilities) <= 1.01:
-    print("invalid_probability_sum")
-    raise SystemExit(4)
+encoded_samples = json.loads(sys.argv[4]) if len(sys.argv) > 4 else [{
+    "input_ids": [[1] * max_length],
+    "attention_mask": [[1] * max_length],
+}]
+for encoded in encoded_samples:
+    sample = {
+        "input_ids": np.asarray(encoded["input_ids"], dtype=np.int32),
+        "attention_mask": np.asarray(encoded["attention_mask"], dtype=np.int32),
+    }
+    output = model.predict(sample)
+    probability_maps = [value for value in output.values() if isinstance(value, dict)]
+    if not probability_maps:
+        print("missing_probability_output")
+        raise SystemExit(2)
+    probabilities = [float(value) for value in probability_maps[0].values()]
+    if not probabilities or not all(math.isfinite(value) for value in probabilities):
+        print("non_finite_probabilities")
+        raise SystemExit(3)
+    if not 0.99 <= sum(probabilities) <= 1.01:
+        print("invalid_probability_sum")
+        raise SystemExit(4)
 """
 
 
-def model_smoke_failure(model_path: Path, max_length: int) -> str | None:
-    for compute_unit in ("CPU_ONLY", "ALL"):
+def model_smoke_failure(
+    model_path: Path,
+    max_length: int,
+    compute_units: tuple[str, ...] = ("CPU_ONLY", "ALL"),
+    encoded_samples: list[dict[str, Any]] | None = None,
+) -> str | None:
+    for compute_unit in compute_units:
+        command = [
+            sys.executable,
+            "-c",
+            MODEL_SMOKE_WORKER,
+            str(model_path),
+            str(max_length),
+            compute_unit,
+        ]
+        if encoded_samples is not None:
+            command.append(json.dumps(encoded_samples, separators=(",", ":")))
         try:
             result = subprocess.run(
-                [sys.executable, "-c", MODEL_SMOKE_WORKER, str(model_path), str(max_length), compute_unit],
+                command,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 check=False,
@@ -212,6 +258,62 @@ def encode_samples(tokenizer, rows: list[dict[str, str]], max_length: int) -> li
     return samples
 
 
+def representative_smoke_samples(tokenizer, max_length: int) -> list[dict[str, Any]]:
+    texts = [
+        "您的验证码是 482913，请勿泄露。",
+        "Your verification code is 482913. Do not share it.",
+        "認証コードは482913です。他人に教えないでください。",
+    ]
+
+    def batched_list(value) -> list[list[int]]:
+        resolved = value.tolist() if hasattr(value, "tolist") else value
+        return [resolved] if resolved and isinstance(resolved[0], int) else resolved
+
+    samples: list[dict[str, Any]] = []
+    for text in texts:
+        encoded = tokenizer(
+            text,
+            truncation=True,
+            padding="max_length",
+            max_length=max_length,
+        )
+        samples.append({
+            "input_ids": batched_list(encoded["input_ids"]),
+            "attention_mask": batched_list(encoded["attention_mask"]),
+        })
+    return samples
+
+
+def linear_quantizer_options(settings: dict[str, Any]) -> dict[str, Any]:
+    options: dict[str, Any] = {
+        "mode": "linear_symmetric",
+        "dtype": f"int{settings['weightBits']}",
+        "granularity": settings["granularity"].replace("-", "_"),
+    }
+    if settings.get("blockSize") is not None:
+        options["block_size"] = settings["blockSize"]
+    return options
+
+
+def matching_const_names(model, name_fragment: str) -> list[str]:
+    matches: set[str] = set()
+
+    def visit_block(block) -> None:
+        for operation in block.operations:
+            if operation.type == "const":
+                for output in operation.outputs:
+                    if name_fragment in output.name:
+                        matches.add(output.name)
+            for nested_block in operation.blocks:
+                visit_block(nested_block)
+
+    specification = model.get_spec()
+    for function in specification.mlProgram.functions.values():
+        for block in function.block_specializations.values():
+            visit_block(block)
+    return sorted(matches)
+
+
 def quantize_weights(model, profile: dict[str, Any]):
     from coremltools.optimize.coreml import (
         OpLinearQuantizerConfig,
@@ -220,16 +322,27 @@ def quantize_weights(model, profile: dict[str, Any]):
     )
 
     if profile["weightBits"] < 16:
-        weight_options: dict[str, Any] = {
-            "mode": "linear_symmetric",
-            "dtype": f"int{profile['weightBits']}",
-            "granularity": profile["granularity"].replace("-", "_"),
-        }
-        if profile.get("blockSize") is not None:
-            weight_options["block_size"] = profile["blockSize"]
+        global_config = OpLinearQuantizerConfig(**linear_quantizer_options(profile))
+        op_name_configs = {}
+        for override in profile.get("weightOverrides", []):
+            name_fragment = override.get("opNameContains")
+            if not isinstance(name_fragment, str) or not name_fragment:
+                raise SystemExit(f"error: {profile['id']} has an invalid weight override")
+            names = matching_const_names(model, name_fragment)
+            if len(names) != 1:
+                raise SystemExit(
+                    f"error: {profile['id']} expected one weight matching {name_fragment!r}, "
+                    f"found {names}"
+                )
+            op_name_configs[names[0]] = OpLinearQuantizerConfig(
+                **linear_quantizer_options(override)
+            )
         model = linear_quantize_weights(
             model,
-            config=OptimizationConfig(global_config=OpLinearQuantizerConfig(**weight_options)),
+            config=OptimizationConfig(
+                global_config=global_config,
+                op_name_configs=op_name_configs,
+            ),
         )
     return model
 
@@ -387,6 +500,7 @@ def candidate_build_identity(
     calibration: dict[str, Any],
     max_length: int,
     coremltools_version: str,
+    source_manifest_sha256: str = "",
 ) -> dict[str, Any]:
     if profile["method"] == "baseline":
         quantization_order = "baseline"
@@ -395,10 +509,11 @@ def candidate_build_identity(
     else:
         quantization_order = "weight-only"
     return {
-        "schemaVersion": 2,
+        "schemaVersion": 3,
         "profile": profile,
         "quantizationOrder": quantization_order,
         "sourceModelSHA256": source_model_sha256,
+        "sourceManifestSHA256": source_manifest_sha256,
         "tokenizerSHA256": tokenizer_sha256,
         "calibration": calibration,
         "maxSequenceLength": max_length,
@@ -428,6 +543,22 @@ def reusable_candidate(
     return reusable_model(model_path, identity_path, expected_identity)
 
 
+def ignores_experimental_cpu_smoke_failure(
+    profile: dict[str, Any],
+    allow_experimental_failure: bool,
+    failure: str | None,
+    release_ineligible_run: bool = False,
+) -> bool:
+    return (
+        allow_experimental_failure
+        and failure is not None
+        and (
+            release_ineligible_run
+            or profile.get("eligibleForRelease") is False
+        )
+    )
+
+
 def taxonomy_actions(path: Path) -> dict[str, str]:
     payload = json.loads(path.read_text(encoding="utf-8"))
     actions: dict[str, str] = {}
@@ -452,6 +583,97 @@ def checkpoint_labels(path: Path) -> list[str]:
     if len(ordered) != len(set(ordered)):
         raise SystemExit("error: checkpoint labels must be unique")
     return ordered
+
+
+def load_source_manifest(
+    path: Path,
+    *,
+    source_model_sha256: str,
+    source_model_name: str,
+    tokenizer_sha256: str,
+    tokenizer_name: str,
+    taxonomy_sha256: str,
+    labels: list[str],
+    max_length: int,
+    model_abi: str,
+    version: str,
+) -> dict[str, Any]:
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as error:
+        raise SystemExit(f"error: could not read source manifest {path}: {error}") from error
+    if not isinstance(payload, dict):
+        raise SystemExit(f"error: source manifest must contain a JSON object: {path}")
+
+    expected = {
+        "schemaVersion": 2,
+        "sha256": source_model_sha256,
+        "modelArtifact": source_model_name,
+        "tokenizerSHA256": tokenizer_sha256,
+        "tokenizerArtifact": tokenizer_name,
+        "taxonomyHash": taxonomy_sha256,
+        "labels": labels,
+        "maxSequenceLength": max_length,
+        "modelABI": model_abi,
+        "version": version,
+    }
+    mismatches = [
+        f"{key}: expected {value!r}, found {payload.get(key)!r}"
+        for key, value in expected.items()
+        if payload.get(key) != value
+    ]
+    profile = payload.get("quantizationProfile")
+    if (
+        not isinstance(profile, dict)
+        or profile.get("weightBits") != 16
+        or profile.get("activationBits") != 32
+    ):
+        mismatches.append("quantizationProfile: FP32 source baseline is required")
+    for key in ("algorithm", "trainedAt", "backbone", "tokenizerKind"):
+        if not isinstance(payload.get(key), str) or not payload[key]:
+            mismatches.append(f"{key}: non-empty string is required")
+    languages = payload.get("languages")
+    if not isinstance(languages, list) or not languages or not all(
+        isinstance(item, str) and item for item in languages
+    ):
+        mismatches.append("languages: non-empty string array is required")
+
+    if payload.get("algorithm") == "teacher-student-distillation":
+        distillation = payload.get("distillation")
+        required_distillation_fields = (
+            "teacherCheckpointSHA256",
+            "teacherLayers",
+            "studentLayers",
+            "temperature",
+            "distillAlpha",
+        )
+        if not isinstance(distillation, dict) or any(
+            field not in distillation for field in required_distillation_fields
+        ):
+            mismatches.append("distillation: complete teacher/student provenance is required")
+
+    if mismatches:
+        raise SystemExit("error: source manifest contract mismatch; " + "; ".join(mismatches))
+    return payload
+
+
+def merge_source_manifest(
+    source_manifest: dict[str, Any],
+    *,
+    quantized_fields: dict[str, Any],
+    external_validation_metrics: dict[str, Any],
+) -> dict[str, Any]:
+    manifest = dict(source_manifest)
+    source_validation_metrics = manifest.get("validationMetrics")
+    merged_validation_metrics = (
+        dict(source_validation_metrics) if isinstance(source_validation_metrics, dict) else {}
+    )
+    merged_validation_metrics.update(external_validation_metrics)
+    manifest.update(quantized_fields)
+    manifest["validationMetrics"] = merged_validation_metrics
+    for stale_signature_field in ("keyID", "signature", "remoteBaseURL"):
+        manifest.pop(stale_signature_field, None)
+    return manifest
 
 
 def evaluate(model, samples, rows, labels, actions) -> dict[str, Any]:
@@ -540,6 +762,26 @@ def parse_qat_models(values: list[str]) -> dict[str, Path]:
     return result
 
 
+def validate_profile_runtime_precision(
+    profile: dict[str, Any],
+    source_manifest: dict[str, Any],
+) -> None:
+    """Reject metadata combinations that cannot describe the source graph."""
+    runtime_profile = source_manifest.get("runtimeProfile")
+    if not isinstance(runtime_profile, dict):
+        return
+    compute_precision = runtime_profile.get("computePrecision")
+    if compute_precision == "float32" and profile.get("activationBits") != 32:
+        raise SystemExit(
+            f"error: {profile['id']} advertises A{profile.get('activationBits')} "
+            "but the source Core ML graph is FP32; use an A32 profile"
+        )
+    if compute_precision == "float16" and profile.get("activationBits") == 32:
+        raise SystemExit(
+            f"error: {profile['id']} advertises A32 but the source Core ML graph is FP16"
+        )
+
+
 def main() -> None:
     arguments = parse_arguments()
     import coremltools as ct
@@ -556,21 +798,33 @@ def main() -> None:
     unknown_profile_ids = requested_profile_ids - profiles_by_id.keys()
     if unknown_profile_ids:
         raise SystemExit(f"error: unknown quantization profile(s): {', '.join(sorted(unknown_profile_ids))}")
-    baseline_profile = profiles_by_id.get("fp16-baseline")
+    baseline_profile = profiles_by_id.get("fp32-baseline")
     if baseline_profile is None:
-        raise SystemExit("error: fp16-baseline profile is required")
+        raise SystemExit("error: fp32-baseline profile is required")
     qat_models = parse_qat_models(arguments.qat_model)
     profiles = [baseline_profile]
     for profile in configured_profiles:
-        if profile["id"] == "fp16-baseline":
+        if profile["id"] == "fp32-baseline":
             continue
         if requested_profile_ids and profile["id"] not in requested_profile_ids:
+            continue
+        if profile.get("historical") and profile["id"] not in requested_profile_ids:
+            continue
+        if not requested_profile_ids and profile.get("enabledByDefault") is False:
             continue
         if profile.get("enabledWhenPTQQualityFails") and profile["id"] not in qat_models:
             if profile["id"] in requested_profile_ids:
                 raise SystemExit(f"error: {profile['id']} requires --qat-model {profile['id']}=MLPACKAGE")
             continue
         profiles.append(profile)
+    fp16_model_path = arguments.fp16_model.expanduser().resolve()
+    if not fp16_model_path.is_dir():
+        raise SystemExit(f"error: FP16 source model does not exist: {fp16_model_path}")
+    source_manifest_path = (
+        arguments.source_manifest.expanduser().resolve()
+        if arguments.source_manifest is not None
+        else fp16_model_path.parent / f"{arguments.model_name}.manifest.json"
+    )
     tokenizer = AutoTokenizer.from_pretrained(arguments.checkpoint)
     all_calibration_rows = read_ndjson(arguments.calibration_input)
     calibration_source_sha256 = file_sha256(arguments.calibration_input)
@@ -584,6 +838,7 @@ def main() -> None:
     promotion_samples = encode_samples(tokenizer, promotion_rows, arguments.max_length)
     billing_samples = encode_samples(tokenizer, billing_rows, arguments.max_length)
     conversation_samples = encode_samples(tokenizer, conversation_rows, arguments.max_length)
+    smoke_samples = representative_smoke_samples(tokenizer, arguments.max_length)
     actions = taxonomy_actions(arguments.taxonomy)
     labels = checkpoint_labels(arguments.checkpoint)
     expected_labels = model_labels(set(actions))
@@ -591,14 +846,32 @@ def main() -> None:
         missing = sorted(expected_labels - set(labels))
         unknown = sorted(set(labels) - expected_labels)
         raise SystemExit(f"error: checkpoint label contract mismatch; missing={missing}, unknown={unknown}")
+    taxonomy_sha256 = file_sha256(arguments.taxonomy)
+    fp16_model_sha256 = directory_sha256(fp16_model_path)
+    source_manifest = load_source_manifest(
+        source_manifest_path,
+        source_model_sha256=fp16_model_sha256,
+        source_model_name=fp16_model_path.name,
+        tokenizer_sha256=tokenizer_sha256,
+        tokenizer_name=arguments.tokenizer_artifact.name,
+        taxonomy_sha256=taxonomy_sha256,
+        labels=labels,
+        max_length=arguments.max_length,
+        model_abi=arguments.model_abi,
+        version=arguments.version,
+    )
+    for profile in profiles:
+        if profile.get("method") != "baseline":
+            validate_profile_runtime_precision(profile, source_manifest)
+    source_manifest_sha256 = file_sha256(source_manifest_path)
     actions[ABSTAIN_LABEL] = "none"
     arguments.out.mkdir(parents=True, exist_ok=True)
     reports_dir = arguments.out / "reports"
     reports_dir.mkdir(exist_ok=True)
-    trained_at = utc_timestamp()
+    quantized_at = utc_timestamp()
 
     baseline_predictions: dict[str, list[str]] = {}
-    source_model_hashes: dict[Path, str] = {}
+    source_model_hashes: dict[Path, str] = {fp16_model_path: fp16_model_sha256}
     for profile in profiles:
         source_path = qat_models.get(profile["id"], arguments.fp16_model).resolve()
         if not source_path.is_dir():
@@ -623,6 +896,7 @@ def main() -> None:
             calibration,
             arguments.max_length,
             ct.__version__,
+            source_manifest_sha256,
         )
         profile_manifest = {
             "identifier": profile["id"],
@@ -632,6 +906,7 @@ def main() -> None:
             "granularity": profile["granularity"],
             "quantizationOrder": expected_build_identity["quantizationOrder"],
             **({"blockSize": profile["blockSize"]} if profile.get("blockSize") else {}),
+            **({"weightOverrides": profile["weightOverrides"]} if profile.get("weightOverrides") else {}),
             "calibration": calibration,
         }
         candidate_dir = arguments.out / "candidates" / profile["id"]
@@ -651,6 +926,7 @@ def main() -> None:
                     "schemaVersion": 1,
                     "stage": "activation-calibration",
                     "sourceModelSHA256": source_model_hashes[source_path],
+                    "sourceManifestSHA256": source_manifest_sha256,
                     "tokenizerSHA256": tokenizer_sha256,
                     "calibration": calibration,
                     "maxSequenceLength": arguments.max_length,
@@ -712,17 +988,45 @@ def main() -> None:
             del candidate
             gc.collect()
 
-        smoke_failure = model_smoke_failure(model_path, arguments.max_length)
+        cpu_smoke_failure = model_smoke_failure(
+            model_path,
+            arguments.max_length,
+            compute_units=("CPU_ONLY",),
+            encoded_samples=smoke_samples,
+        )
+        all_smoke_failure = model_smoke_failure(
+            model_path,
+            arguments.max_length,
+            compute_units=("ALL",),
+            encoded_samples=smoke_samples,
+        )
+        ignores_cpu_smoke_failure = ignores_experimental_cpu_smoke_failure(
+            profile,
+            arguments.allow_experimental_macos_cpu_smoke_failure,
+            cpu_smoke_failure,
+            arguments.experimental_release_ineligible_run,
+        )
+        smoke_failure = all_smoke_failure or (
+            None if ignores_cpu_smoke_failure else cpu_smoke_failure
+        )
         if smoke_failure is not None:
-            if profile["id"] == "fp16-baseline":
+            if profile["id"] == "fp32-baseline":
                 raise SystemExit(f"error: FP16 baseline failed model smoke: {smoke_failure}")
             artifact_sha = directory_sha256(model_path)
             report = {
                 "schemaVersion": 1,
                 "profileID": profile["id"],
+                "releaseEligible": False,
                 "artifactSHA256": artifact_sha,
                 "downloadBytes": directory_bytes(model_path) + tokenizer_path.stat().st_size,
                 "quantizationProfile": profile_manifest,
+                "sourceModelSHA256": source_model_hashes[source_path],
+                "sourceManifestSHA256": source_manifest_sha256,
+                "algorithm": source_manifest["algorithm"],
+                **(
+                    {"distillation": source_manifest["distillation"]}
+                    if "distillation" in source_manifest else {}
+                ),
                 "generationError": smoke_failure,
                 "metrics": {
                     "fixedAccuracy": 0,
@@ -761,7 +1065,7 @@ def main() -> None:
         billing = evaluate(candidate, billing_samples, billing_rows, labels, actions)
         conversation = evaluate(candidate, conversation_samples, conversation_rows, labels, actions)
         language_accuracy = combined_language_accuracy(fixed, promotion)
-        if profile["id"] == "fp16-baseline":
+        if profile["id"] == "fp32-baseline":
             baseline_predictions = {
                 "fixed": fixed["predictions"],
                 "promotion": promotion["predictions"],
@@ -785,42 +1089,48 @@ def main() -> None:
         model_path = candidate_dir / f"{arguments.model_name}.mlpackage"
         tokenizer_path = candidate_dir / published_tokenizer_name
         artifact_sha = directory_sha256(model_path)
-        manifest = {
-            "schemaVersion": 2,
-            "releaseSequence": arguments.release_sequence,
-            "modelABI": arguments.model_abi,
-            "minimumAppBuild": arguments.minimum_app_build,
-            "maximumAppBuild": arguments.maximum_app_build,
-            "minimumOSVersion": "18.0",
-            "runtimeProfile": {
-                "computeUnits": "cpuOnly",
-                "modelType": "mlProgram",
-                "inferenceBudgetMilliseconds": 500,
-            },
-            "quantizationProfile": profile_manifest,
-            "validationMetrics": {
-                "fixedAccuracy": fixed["accuracy"],
-                "promotionAccuracy": promotion["accuracy"],
-                "billingAccuracy": billing["accuracy"],
-                "conversationAccuracy": conversation["accuracy"],
-                "fp16Agreement": agreement_correct / agreement_total,
-                "languageAccuracy": language_accuracy,
-            },
-            "version": arguments.version,
-            "trainedAt": trained_at,
-            "algorithm": "supervised-sequence-classification",
-            "backbone": arguments.checkpoint.name,
-            "languages": ["zh", "en", "ja"],
-            "labels": labels,
-            "maxSequenceLength": arguments.max_length,
-            "doLowerCase": bool(getattr(tokenizer, "do_lower_case", False)),
-            "tokenizerKind": "bpe",
-            "tokenizerArtifact": tokenizer_path.name,
-            "modelArtifact": model_path.name,
-            "sha256": artifact_sha,
-            "taxonomyHash": file_sha256(arguments.taxonomy),
-            "tokenizerSHA256": tokenizer_sha256,
+        external_validation_metrics = {
+            "fixedAccuracy": fixed["accuracy"],
+            "promotionAccuracy": promotion["accuracy"],
+            "billingAccuracy": billing["accuracy"],
+            "conversationAccuracy": conversation["accuracy"],
+            "fp16Agreement": agreement_correct / agreement_total,
+            "languageAccuracy": language_accuracy,
         }
+        manifest = merge_source_manifest(
+            source_manifest,
+            quantized_fields={
+                "schemaVersion": 2,
+                "releaseSequence": arguments.release_sequence,
+                "modelABI": arguments.model_abi,
+                "minimumAppBuild": arguments.minimum_app_build,
+                "maximumAppBuild": arguments.maximum_app_build,
+                "quantizationProfile": profile_manifest,
+                "releaseEligible": (
+                    profile.get("eligibleForRelease", False)
+                    and not arguments.experimental_release_ineligible_run
+                ),
+                **(
+                    {"experimentalMacCPUSmokeFailure": cpu_smoke_failure}
+                    if ignores_cpu_smoke_failure else {}
+                ),
+                "version": arguments.version,
+                "quantizedAt": quantized_at,
+                "labels": labels,
+                "maxSequenceLength": arguments.max_length,
+                "doLowerCase": bool(getattr(tokenizer, "do_lower_case", False)),
+                "tokenizerArtifact": tokenizer_path.name,
+                "modelArtifact": model_path.name,
+                "sha256": artifact_sha,
+                "taxonomyHash": taxonomy_sha256,
+                "tokenizerSHA256": tokenizer_sha256,
+                "quantizationSource": {
+                    "modelSHA256": source_model_hashes[source_path],
+                    "manifestSHA256": source_manifest_sha256,
+                },
+            },
+            external_validation_metrics=external_validation_metrics,
+        )
         artifacts = remote_artifacts(model_path, tokenizer_path, candidate_dir)
         manifest["remoteArtifacts"] = artifacts
         manifest["downloadBytes"] = sum(item["byteCount"] for item in artifacts)
@@ -841,9 +1151,21 @@ def main() -> None:
         report = {
             "schemaVersion": 1,
             "profileID": profile["id"],
+            "releaseEligible": (
+                profile.get("eligibleForRelease", False)
+                and not arguments.experimental_release_ineligible_run
+            ),
             "artifactSHA256": artifact_sha,
             "downloadBytes": manifest["downloadBytes"],
             "quantizationProfile": profile_manifest,
+            "sourceModelSHA256": source_model_hashes[source_path],
+            "sourceManifestSHA256": source_manifest_sha256,
+            "algorithm": manifest["algorithm"],
+            **({"distillation": manifest["distillation"]} if "distillation" in manifest else {}),
+            **(
+                {"experimentalMacCPUSmokeFailure": cpu_smoke_failure}
+                if ignores_cpu_smoke_failure else {}
+            ),
             "metrics": {
                 "fixedAccuracy": fixed["accuracy"],
                 "promotionAccuracy": promotion["accuracy"],

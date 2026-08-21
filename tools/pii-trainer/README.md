@@ -23,6 +23,19 @@ truncated to 2 encoder layers) is fine-tuned for per-token tagging, then exporte
 `logits [1, seq, tags]` with the same vocab format the Swift
 `WordPieceTokenizer` consumes.
 
+The reviewed synthetic feedback set
+`Evaluation/redaction-regressions.ndjson` adds cloud account/resource IDs,
+nicknames, and contextual QQ/WeChat/Weibo/Xiaohongshu/Douyin/Kuaishou/Zhihu,
+LINE/Telegram/Discord/WhatsApp/Facebook/Instagram/TikTok/Twitter/X handles
+(including explicit `@handle` forms) in zh/en/ja, together with matched
+product/build/quantity negatives. It contains
+no CloudKit text or real user values and is split into independent train/eval
+rows. The loader fails closed on malformed spans or any `{{...}}` marker.
+Each normal run also adds 2,000 freshly generated contextual hard examples
+(`--contextual-redaction-samples`) with 25% matched clean negatives and repeats
+the reviewed train split eight times. This gives the feedback patterns enough
+weight to affect the model without leaking the independent eval split.
+
 ## Usage
 
 ```bash
@@ -41,6 +54,11 @@ false-positive rate. Evaluation includes the fixed multilingual hard-negative
 set under `Evaluation/clean-negatives.ndjson`. `--install-ios` is gated by
 `--minimum-pii-f1` (0.90) and `--maximum-clean-fpr` (0.02), using the same 0.85
 non-PII confidence gate as the iOS detector (`--inference-threshold`).
+It also reports the fixed contextual-redaction F1/FPR and refuses
+`--install-ios` unless `--minimum-redaction-f1` (0.90) and
+`--maximum-redaction-clean-fpr` (0.02) pass. Sanitizer tokens are an
+intermediate export representation; reverse-redaction replaces them with
+deterministic synthetic values before any model examples are encoded.
 
 Vehicle-plate accuracy is gated separately by Swift sanitizer regressions. The
 shared `Evaluation/plate-positives.ndjson` fixture covers China, Japan, Europe,

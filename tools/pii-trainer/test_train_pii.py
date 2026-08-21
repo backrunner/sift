@@ -3,17 +3,61 @@ import tempfile
 import unittest
 from pathlib import Path
 
+import sys
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
 from train_pii import (
     FakePII,
+    assert_no_placeholder_examples,
     contextualize_value,
+    load_redaction_regressions,
     normalize_package_permissions,
     ordinary_code_negative,
     ordinary_grouped_number_negative,
     synthesize,
+    synthesize_contextual_redaction_examples,
 )
 
 
 class PIISynthesisTests(unittest.TestCase):
+    def test_contextual_redaction_synthesis_is_placeholder_free_and_multilingual(self) -> None:
+        examples = synthesize_contextual_redaction_examples(600, random.Random(13), clean_fraction=0.25)
+
+        self.assertEqual(len(examples), 600)
+        self.assertTrue(any(not example["spans"] for example in examples))
+        self.assertTrue(any(any(span[2] == "ID" for span in example["spans"]) for example in examples))
+        self.assertTrue(any(any(span[2] == "NAME" for span in example["spans"]) for example in examples))
+        self.assertTrue(any("微信" in example["text"] or "QQ号" in example["text"] for example in examples))
+        self.assertTrue(any("Cloud account ID" in example["text"] for example in examples))
+        self.assertTrue(any("アカウントID" in example["text"] or "表示名" in example["text"] for example in examples))
+        assert_no_placeholder_examples(examples, "test-contextual")
+        for example in examples:
+            for start, end, tag in example["spans"]:
+                self.assertIn(tag, ("ID", "NAME"))
+                self.assertTrue(example["text"][start:end])
+
+    def test_fixed_redaction_regressions_are_synthetic_and_have_train_eval_splits(self) -> None:
+        path = Path(__file__).resolve().parent / "Evaluation/redaction-regressions.ndjson"
+        examples = load_redaction_regressions(path)
+
+        self.assertGreaterEqual(len(examples), 12)
+        self.assertTrue(any(example["split"] == "train" for example in examples))
+        self.assertTrue(any(example["split"] == "eval" for example in examples))
+        self.assertTrue(any(span[2] == "ID" for example in examples for span in example["spans"]))
+        self.assertTrue(any(not example["spans"] for example in examples))
+        assert_no_placeholder_examples(examples, "test")
+
+    def test_redaction_regression_loader_rejects_placeholder_markers(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            path = Path(temporary_directory) / "bad.ndjson"
+            path.write_text(
+                '{"text":"QQ号：{{ID}}","spans":[],"split":"eval"}\n',
+                encoding="utf-8",
+            )
+            with self.assertRaises(SystemExit):
+                load_redaction_regressions(path)
+
     def test_exported_package_permissions_are_xcode_sandbox_readable(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
             package = Path(temporary_directory) / "Detector.mlpackage"

@@ -32,6 +32,21 @@ distribution still uses the upload flow in section 2.5.
 Without CloudKit credentials, `fetch-remote` skips politely; use
 `--require-remote` to make missing credentials a hard failure.
 
+For a production CloudKit refresh, make the remote input mandatory and keep
+the resulting candidate versions distinct from the installed release:
+
+```bash
+pnpm pipeline -- all \
+  --cloudkit-env production \
+  --require-remote \
+  --version-classic maxent-cloud-v21 \
+  --version-transformer signal-cloud-v17
+```
+
+The pipeline prints the exported row count and label distribution before
+curation. Do not promote the generated transformer until its quantization
+tournament and physical-device evidence pass.
+
 Common variants:
 
 ```bash
@@ -116,43 +131,63 @@ pnpm pipeline -- train-classic --version-classic corpus-0.2 \
 `--language auto` trains as a single language when at least 90% of the corpus is
 one language; mixed corpora train language-independently. The validated default
 classic architecture is Create ML MaxEnt. `bert` and `auto` are available for
-comparison, but they underperformed MaxEnt on the current 52-label small SMS
+comparison, but they underperformed MaxEnt on the current 53-label small SMS
 dataset. Change `--split-seed-classic` when rechecking generalization; do not
 trust only the default seed 42.
 
 The automated curation stage always isolates the classification, promotion,
-billing/card, and conversation external holdouts before training. For a custom
-candidate assembled outside `pnpm pipeline`, use the same mandatory isolation
-helper:
+billing/card, conversation, Feizhu transaction, and cruise ticketing external
+holdouts before training. It also isolates the general blind set and every
+versioned `generalization-acceptance-v*.ndjson` set (currently v1-v20). These
+sets are cumulative: a new boundary version does not replace an older one.
+For a custom candidate assembled outside
+`pnpm pipeline`, use the same mandatory isolation helper. `--supplement` is
+repeatable so independently reviewed boundary sets do not need to be merged by
+hand:
 
 ```bash
 python3 tools/apple-trainer/Scripts/prepare_classic_candidate.py \
   --base build/pipeline/mmbert-fixed-train-dense60-boundary-v3.ndjson \
   --supplement build/pipeline/synthetic-tri-180-promotion-v8.ndjson \
+  --supplement tools/apple-trainer/Training/feizhu-boundary-supplement.ndjson \
   --holdout tools/apple-trainer/Evaluation/classification-regressions.ndjson \
   --holdout tools/apple-trainer/Evaluation/promotion-regressions.ndjson \
   --holdout tools/apple-trainer/Evaluation/billing-card-regressions.ndjson \
+  --holdout tools/transformer-trainer/Evaluation/conversation-regressions.ndjson \
+  --holdout tools/apple-trainer/Evaluation/feizhu-boundary.ndjson \
+  --holdout tools/apple-trainer/Evaluation/cruise-ticketing-boundary.ndjson \
   --labels promotion,carrier.promotion,carrier.billing,carrier.data_reminder,transaction.message,transaction.order,transaction.points,finance.bank,finance.consumption,finance.credit_card,finance.refund,finance.insurance,travel.ticketing,spam \
   --out build/pipeline/classic-transformer-promotion-v8.ndjson \
   --report build/pipeline/classic-transformer-promotion-v8.report.json
 ```
 
 The script rejects exact and digit-normalized near duplicates before either
-classic or transformer training. `maxent-boundary-v19` is the accepted legacy
-51-label classic candidate; the next candidate expands the contract to 52
-labels with `government.reminder`. On the taxonomy-corrected holdouts v19 scores
-98.73% fixed, 96.00% promotion, 90.00% billing/card raw (100% action), and
-100% conversation. Compared with v17 it preserves fixed and promotion accuracy
-while improving billing/card raw accuracy by 16.67 percentage points.
+classic or transformer training. The published
+`maxent-generalization-v50-seed29-r32` archive is the immutable Xcode Cloud
+baseline. It has 53 labels and scores 98.97% raw fixed, 98.00% raw promotion
+(98.67% action), 100% billing/card raw and action, and 100% conversation. The
+reviewed Feizhu/cruise boundary suite is 100% with zero benign or transactional
+messages routed to junk. `BuiltinModels.lock.json` pins this archive together
+with the accepted `pii-boundary-v8` artifact.
 
 Classic candidates must keep billing/card raw accuracy at or above 90% and
 billing/card action accuracy at or above 95%.
+Generalization selection prioritizes production action behavior over the
+trainer's internal validation split. A candidate may lose at most three
+absolute percentage points against the released Classic baseline on an
+established external suite, but any benign or transactional message routed to
+junk is a hard failure regardless of aggregate accuracy. New shadow failures
+must be addressed with independently worded training variants while the shadow
+rows themselves remain isolated.
 
 `pnpm pipeline -- train-classic --install-ios` runs the real compiled model
 through `NLModelTextClassifier`, `CascadingClassifier`, and
 `MessageFilterEngine` before copying it into `GeneratedModels`. The artifact
 suite blocks installation unless Fixed, Promotion, Billing/Card, Conversation,
-and unsafe junk-action gates pass.
+and unsafe junk-action gates pass. A second production action-suite pass then
+requires perfect raw-label and final-action accuracy, plus zero unsafe junk
+routes, on the reviewed Feizhu and cruise ticketing boundary sets before
+installation.
 
 Training prints the weakest 12 labels and the top confusion pairs. Use those
 reports as the main improvement loop: add targeted templates or samples, then
@@ -162,8 +197,8 @@ retrain.
 
 ```bash
 pnpm pipeline -- train-transformer \
-  --version-transformer signal-v2-reminder-v16 --quantize int8 \
-  --release-sequence 3 --minimum-app-build 16
+  --version-transformer signal-v4-generalization-v50-r32-distilled-12l \
+  --release-sequence 4 --minimum-app-build 19
 ```
 
 - `--device auto` selects cuda (NVIDIA or AMD ROCm), then mps (Apple Silicon),
@@ -179,21 +214,72 @@ pnpm pipeline -- train-transformer \
   release benefit. The BPE tokenizer
   is exported as the memory-mapped
   `SiftSignalModel.tokenizer.siftbpe` artifact.
+- The current mmBERT backbone has a 256,000-token vocabulary and a 384-wide
+  embedding. At W8, that embedding alone is about 98.3 MB. Before removing
+  encoder layers, evaluate 96k and 64k zh/en/ja vocabulary-pruned checkpoints:
+  preserve special and byte-fallback tokens, derive vocabulary frequency only
+  from the leak-free training corpus, remap retained embedding rows, then
+  fine-tune and rerun every external holdout and device gate. Never use the
+  fixed, promotion, billing/card, or conversation holdouts to choose tokens.
+- The explicit-only `w8a32-channel-embedding-w4-block16-ptq` experiment keeps
+  attention and MLP weights at W8 and quantizes only the token embedding to W4.
+  It must remain release-ineligible until production Swift holdouts and fresh,
+  post-prime physical-iPhone process measurements pass every existing gate.
+  The device runner records the final-path installation prediction in
+  `installation-prime.json`, exits that XCTest process, and records the next
+  process's load in `runtime-benchmark.json`. Do not infer cross-process
+  priming from two loads in one XCTest process.
 - The exported `SiftSignalModel.manifest.json` includes
   `remoteArtifacts` and `downloadBytes`. `.mlpackage` is a directory package,
   so remote distribution downloads the listed files individually.
 - Core ML export targets iOS 18.0. This is required for W4 per-block PTQ;
   exporting at an older deployment target makes Core ML reject block
   quantization before quality evaluation.
-- The released 22-layer W8A16 `signal-v2-boundary-v15` reaches 99.37% fixed,
-  99.33% promotion, 93.33% billing/card, and 100% conversation after Core ML
-  quantization. Its production MessageFilter action accuracy is 100% on all
-  four sets. The added zh/en/ja variants cover game marketplaces,
-  retail, finance, carrier offers, travel, insurance, services, loans, housing,
-  and semantically adjacent transaction/normal-message/scam negatives.
+- The released `signal-v4-generalization-v50-r32-distilled-12l` student uses
+  the current 53-label contract, a 22-layer teacher, and a 12-layer distilled
+  Core ML graph (temperature 2, distill alpha 0.7). The selected W4A32 block16
+  PTQ artifact (W4 weight-only with FP32 compute) is 108,748,513 bytes and scores 99.18% fixed, 100% promotion,
+  100% billing/card, and 100% conversation. Its production MessageFilter
+  action suite has zero benign/transaction-to-junk routes.
+- The student passed the independent two-point distillation gate for fixed,
+  promotion, billing/card, conversation, action, and zh/en/ja metrics. The
+  release manifest is sequence 4/minimum build 19 and is published through the
+  signed compatibility catalog as
+  `signal-v4-generalization-v50-r32-distilled-12l-metadata-v2`; the model remains
+  a dynamic Premium download.
 - Premium candidates must score at least 98% on the isolated promotion set,
   at least 90% raw billing/card accuracy, and at least 95% billing action
   accuracy. Selection, download validation, and upload enforce the same floors.
+  Among otherwise comparable candidates, selection now prioritizes the actual
+  IdentityLookup cold-start P95 before steady-state inference latency.
+
+#### 12-layer distillation experiment (2026-08-18)
+
+The historical `signal-v15-cloudkit-distilled-12l` experiment used the released
+22-layer v15 checkpoint as its frozen teacher. Its quantization tournament
+produced the following download sizes and absolute two-point teacher gate
+results:
+
+| Candidate | Download bytes | Teacher gate |
+| --- | ---: | --- |
+| FP16 | 260,548,289 | Baseline only |
+| W8A16 | 139,696,330 | Failed one readable MessageFilter action case |
+| W4 block 16 | 93,540,690 | Failed: billing raw accuracy lost 3.33 points |
+| W4 block 32 | 85,948,562 | Passed |
+
+W4 block 32 matched the v15 teacher on fixed (99.37%), promotion (99.33%),
+billing/card (93.33%), and conversation (100%) raw accuracy. Its fixed action
+accuracy was 99.79%, an absolute loss of 0.21 points, with zero benign or
+transactional messages routed to junk and all 17 readable cases passing.
+
+That result is historical and not a release candidate. The student preserves
+the old v15 output contract (51 taxonomy leaves plus abstention) and therefore
+omits `government.reminder`; build 18 expects 52 leaves plus abstention. In
+addition, Core ML Tools 9.0 on macOS 27 produced non-finite output for FP16,
+W8A16, and both W4 candidates with `CPU_ONLY`, while `ALL` remained finite.
+Every report in that historical run is explicitly `releaseEligible: false`.
+The current 53-output retraining, device evidence, selection, and publication
+are recorded above; do not reuse the legacy v15 artifacts.
 
 ### 2.5 Upload The Premium Sift Signal Model
 
@@ -236,7 +322,7 @@ run a dry-run to validate the manifest, hashes, and total byte size:
 
 ```bash
 pnpm upload:transformer-model -- \
-  --model-dir build/pipeline/transformer-model/quantization-tournament/candidates/w8a16-channel-ptq \
+  --model-dir build/pipeline/transformer-model/quantization-tournament/candidates/w4a32-block16-ptq \
   --selection build/pipeline/transformer-model/quantization-tournament/selected-candidate.json \
   --dry-run
 ```
@@ -245,7 +331,7 @@ Upload to R2:
 
 ```bash
 pnpm upload:transformer-model -- \
-  --model-dir build/pipeline/transformer-model/quantization-tournament/candidates/w8a16-channel-ptq \
+  --model-dir build/pipeline/transformer-model/quantization-tournament/candidates/w4a32-block16-ptq \
   --selection build/pipeline/transformer-model/quantization-tournament/selected-candidate.json \
   --r2-bucket "$SIFT_MODEL_R2_BUCKET" \
   --verify-http
@@ -257,7 +343,7 @@ channel, add each older immutable manifest once:
 
 ```bash
 pnpm upload:transformer-model -- \
-  --model-dir build/pipeline/transformer-model/quantization-tournament/candidates/w8a16-channel-ptq \
+  --model-dir build/pipeline/transformer-model/quantization-tournament/candidates/w4a32-block16-ptq \
   --selection build/pipeline/transformer-model/quantization-tournament/selected-candidate.json \
   --compatible-release-manifest-url https://sift.alkinum.io/models/releases/signal-v2-boundary-v15/SiftSignalModel.manifest.json \
   --r2-bucket "$SIFT_MODEL_R2_BUCKET" \
@@ -272,7 +358,10 @@ use a new `--release-id` with `--reuse-artifacts-base-url` pointing at the old
 immutable release directory. The publisher verifies every public artifact by
 SHA-256 and byte count, and refuses to change the release sequence, app-build
 range, OS floor, ABI, or download size. This metadata-only path avoids
-overwriting or duplicating model weights.
+overwriting or duplicating model weights. The current sequence-4 repair is
+`signal-v4-generalization-v50-r32-distilled-12l-metadata-v2`, which reuses
+`signal-v4-generalization-v50-r32-distilled-12l` and advertises the W4A32/FP32
+runtime contract.
 
 If you do not want to place the account id in the environment, pass
 `--r2-endpoint-url https://<account-id>.r2.cloudflarestorage.com`. If you use an
@@ -283,7 +372,7 @@ You can also copy to a local publish directory:
 
 ```bash
 pnpm upload:transformer-model -- \
-  --model-dir build/pipeline/transformer-model/quantization-tournament/candidates/w8a16-channel-ptq \
+  --model-dir build/pipeline/transformer-model/quantization-tournament/candidates/w4a32-block16-ptq \
   --selection build/pipeline/transformer-model/quantization-tournament/selected-candidate.json \
   --dest-dir /path/to/public/models
 ```
@@ -294,7 +383,7 @@ file, supporting `{src}`, `{path}`, `{content_type}`, and `{cache_control}`:
 
 ```bash
 pnpm upload:transformer-model -- \
-  --model-dir build/pipeline/transformer-model/quantization-tournament/candidates/w8a16-channel-ptq \
+  --model-dir build/pipeline/transformer-model/quantization-tournament/candidates/w4a32-block16-ptq \
   --selection build/pipeline/transformer-model/quantization-tournament/selected-candidate.json \
   --base-url https://sift.alkinum.io/models \
   --upload-command 'rclone copyto {src} r2:sift-models/models/{path}' \
@@ -350,22 +439,38 @@ fixed `Evaluation/clean-negatives.ndjson` set. Runtime uses whole-word average
 probabilities with a 0.85 threshold. If the PII model is absent, pure rules run;
 see `tools/pii-trainer/README.md`.
 
+CloudKit-derived text has a second, dependency-free redaction pass before it
+reaches curation. It covers contextual account/resource IDs, nicknames, and QQ,
+WeChat, Weibo, Xiaohongshu, Douyin, Kuaishou, Zhihu, LINE, Telegram, Discord,
+WhatsApp, Facebook, Instagram, TikTok, and Twitter/X handles while leaving ordinary
+product/build/order identifiers visible. Curation records only a hash and length
+for rejected remote rows. Any `{{...}}` token is then reverse-redacted with a
+deterministic synthetic value; a fail-closed assertion prevents a token from
+entering a classifier or PII model corpus. The fixed synthetic
+`tools/pii-trainer/Evaluation/redaction-regressions.ndjson` set is split into
+train/eval rows and is an additional install gate (contextual F1 >= 0.90,
+clean-sentence FPR <= 0.02).
+
 Vehicle plates are deliberately excluded from the PII model. They are redacted
 only after complete regional-format and nearby-context checks pass, with shared
 positive and hard-negative fixtures covering China, Japan, Europe, the US, and
 Hong Kong. This keeps generic order numbers, flight numbers, product models,
 company registrations, and student enrollment identifiers visible.
 
-The accepted `pii-boundary-v7` Core ML INT8 result is 99.27% precision, 98.90%
-recall, 99.08% F1, 0/487 synthetic clean false positives, and 0/64 fixed
-zh/en/ja hard-negative false positives. Compared with v6, v7 improves recall
-and F1 without increasing either clean false-positive set. Training covers
-comma-grouped amounts and currency placement in all three languages while
-grouped points, scores, participants, views, and step counts remain clean
-negatives. CODE positives are synthesized only with authentication context,
-while ordinary error codes, product codes, SKUs, build identifiers, and
-campaign references are clean negatives. Runtime also rejects model CODE
-detections without explicit verification/OTP context.
+The accepted and published `pii-boundary-v8` Core ML INT8 result is 99.57% precision,
+98.25% recall, 98.91% F1, 0/480 synthetic clean false positives, and 0/69
+fixed zh/en/ja hard-negative false positives. Its contextual account/social
+regression score is 91.67% F1 with 0/3 clean false positives. Compared with
+v7, v8 adds explicit `@handle` spans and matched product/version negatives for
+`wxid_*`, `demo_user_*`, and similar account-looking identifiers, while keeping
+the install gate unchanged (PII F1 >= 0.90, both clean FPR gates <= 0.02).
+Training covers comma-grouped amounts and currency placement in all three
+languages while grouped points, scores, participants, views, and step counts
+remain clean negatives. CODE positives are synthesized only with
+authentication context, while ordinary error codes, product codes, SKUs, build
+identifiers, and campaign references are clean negatives. Runtime also rejects
+model CODE detections without explicit verification/OTP context.
+`BuiltinModels.lock.json` pins v8 in the verified built-in archive.
 
 ## 3. Multilingual Strategy Decision
 

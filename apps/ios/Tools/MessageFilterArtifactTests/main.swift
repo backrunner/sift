@@ -167,8 +167,10 @@ private struct ArtifactRuntimeLoader: TransformerRuntimeLoading {
     let classifier: any MessageClassifier
 
     @concurrent
-    func loadTransformer(identity: ModelArtifactIdentity) async -> (any MessageClassifier)? {
-        identity == self.identity ? classifier : nil
+    func loadTransformer(identity: ModelArtifactIdentity) async -> TransformerRuntimeLoadResult {
+        TransformerRuntimeLoadResult(
+            classifier: identity == self.identity ? classifier : nil
+        )
     }
 }
 
@@ -683,10 +685,14 @@ private func run() async throws {
         guard arguments.model.pathExtension == "mlmodelc" else {
             throw ArtifactSuiteError.invalidArguments
         }
+        let baselinePhysicalFootprintBytes = TransformerRuntimeBenchmark.currentPhysicalFootprintBytes()
+        let clock = ContinuousClock()
+        let tokenizerStartedAt = clock.now
         let tokenizer = try BPETokenizer(
             tokenizerURL: arguments.tokenizer,
             configuration: .init(maxSequenceLength: manifest.maxSequenceLength)
         )
+        let tokenizerInitializationMilliseconds = tokenizerStartedAt.duration(to: clock.now) / .milliseconds(1)
         let benchmark = try await TransformerRuntimeBenchmark.run(
             modelURL: arguments.model,
             tokenizer: tokenizer,
@@ -694,7 +700,8 @@ private func run() async throws {
             requests: readableCases().map { MessageFilterRequest(sender: $0.sender, body: $0.body) },
             artifactIdentity: manifest.artifactIdentity,
             computeUnits: arguments.benchmarkComputeUnits ?? manifest.runtimeProfile.computeUnits,
-            baselinePhysicalFootprintBytes: TransformerRuntimeBenchmark.currentPhysicalFootprintBytes(),
+            baselinePhysicalFootprintBytes: baselinePhysicalFootprintBytes,
+            tokenizerInitializationMilliseconds: tokenizerInitializationMilliseconds,
             warmupIterations: 20,
             measuredIterations: 1_000
         )
@@ -745,16 +752,22 @@ private func run() async throws {
         ? try await TransformerComputePlanInspector.inspect(modelURL: runtime.computePlanModelURL)
         : nil
     if let runtimeBenchmarkOutput = arguments.runtimeBenchmarkOutput {
+        let baselinePhysicalFootprintBytes = TransformerRuntimeBenchmark.currentPhysicalFootprintBytes()
+        let clock = ContinuousClock()
+        let tokenizerStartedAt = clock.now
         let tokenizer = try BPETokenizer(
             tokenizerURL: arguments.tokenizer,
             configuration: .init(maxSequenceLength: manifest.maxSequenceLength)
         )
+        let tokenizerInitializationMilliseconds = tokenizerStartedAt.duration(to: clock.now) / .milliseconds(1)
         let benchmark = try await TransformerRuntimeBenchmark.run(
             modelURL: runtime.computePlanModelURL,
             tokenizer: tokenizer,
             labels: manifest.labels,
             requests: readableCases().map { MessageFilterRequest(sender: $0.sender, body: $0.body) },
             artifactIdentity: runtime.identity,
+            baselinePhysicalFootprintBytes: baselinePhysicalFootprintBytes,
+            tokenizerInitializationMilliseconds: tokenizerInitializationMilliseconds,
             warmupIterations: 10,
             measuredIterations: 100
         )

@@ -7,26 +7,56 @@ final class TransformerDeviceTests: XCTestCase {
     private static let candidateDirectoryName = ".DeviceBenchmarkCandidate"
     private static let evidenceDirectoryName = "DeviceEvidence"
 
-    func testInstalledTransformerRuntimeBenchmark() async throws {
-        #if targetEnvironment(simulator)
-        throw XCTSkip("Accelerator and memory evidence must be collected on a physical iPhone")
-        #else
-        guard TransformerDeviceSupport.current().isSupported else {
-            throw XCTSkip("This device is below the Premium Transformer hardware gate")
-        }
-        #endif
+    func testInstallCandidateWithoutFinalPathPrime() throws {
+        try requireSupportedPhysicalDevice()
+        let evidenceDirectory = try Self.evidenceDirectory(reset: true)
+        let installed = try installTransferredCandidate()
+        let report = DeviceInstallationReport(
+            processIdentifier: ProcessInfo.processInfo.processIdentifier,
+            artifactIdentity: installed.manifest.artifactIdentity
+        )
+        try Self.writeJSON(
+            report,
+            to: evidenceDirectory.appendingPathComponent("installation.json")
+        )
+    }
 
-        let installed = try prepareInstalledModel()
+    func testPrimeInstalledTransformerAtFinalPath() throws {
+        try requireSupportedPhysicalDevice()
+        let installed = try installedModelForBenchmark()
+        let metrics = try XCTUnwrap(TransformerClassifierLoader.primeInstalledModel())
+        XCTAssertEqual(metrics.artifactIdentity, installed.manifest.artifactIdentity)
+        XCTAssertTrue(metrics.succeeded)
+        XCTAssertGreaterThan(metrics.totalMilliseconds, 0)
+        XCTAssertGreaterThan(metrics.modelInitializationMilliseconds, 0)
+        XCTAssertGreaterThan(metrics.inferenceMilliseconds, 0)
+
+        let report = DevicePrimeReport(
+            processIdentifier: ProcessInfo.processInfo.processIdentifier,
+            metrics: metrics
+        )
+        try Self.writeJSON(
+            report,
+            to: Self.evidenceDirectory().appendingPathComponent("installation-prime.json")
+        )
+    }
+
+    func testInstalledTransformerRuntimeBenchmark() async throws {
+        try requireSupportedPhysicalDevice()
+        let installed = try installedModelForBenchmark()
         let processBaseline = TransformerRuntimeBenchmark.currentPhysicalFootprintBytes()
         let compiledModelURL = installed.modelURL.pathExtension == "mlmodelc"
             ? installed.modelURL
             : TransformerModelStore.compiledModelURL(in: installed.directoryURL)
         XCTAssertTrue(FileManager.default.fileExists(atPath: compiledModelURL.path))
 
+        let clock = ContinuousClock()
+        let tokenizerStartedAt = clock.now
         let tokenizer = try BPETokenizer(
             tokenizerURL: installed.tokenizerURL,
             configuration: .init(maxSequenceLength: installed.manifest.maxSequenceLength)
         )
+        let tokenizerInitializationMilliseconds = tokenizerStartedAt.duration(to: clock.now) / .milliseconds(1)
         let measuredIterations = Self.measuredIterations()
         let computeUnits = Self.benchmarkComputeUnits(
             default: installed.manifest.runtimeProfile.computeUnits
@@ -39,6 +69,7 @@ final class TransformerDeviceTests: XCTestCase {
             artifactIdentity: installed.manifest.artifactIdentity,
             computeUnits: computeUnits,
             baselinePhysicalFootprintBytes: processBaseline,
+            tokenizerInitializationMilliseconds: tokenizerInitializationMilliseconds,
             warmupIterations: 20,
             measuredIterations: measuredIterations
         )
@@ -60,7 +91,18 @@ final class TransformerDeviceTests: XCTestCase {
             report.peakPhysicalFootprintBytes,
             report.steadyStatePeakPhysicalFootprintBytes
         )
+        XCTAssertTrue(report.firstInferenceMilliseconds.isFinite)
+        XCTAssertGreaterThan(report.firstInferenceMilliseconds, 0)
+        XCTAssertEqual(
+            report.coldPathMilliseconds,
+            report.tokenizerInitializationMilliseconds
+                + report.coldLoadMilliseconds
+                + report.firstInferenceMilliseconds,
+            accuracy: 0.001
+        )
         XCTAssertTrue(report.p95LatencyMilliseconds.isFinite)
+        // This is a steady-state release-quality gate, not an IdentityLookup
+        // completion deadline. Cold loading is measured separately above.
         XCTAssertLessThan(report.p95LatencyMilliseconds, 500)
         let allowedDrift = max(
             Int64(Double(report.postWarmupPhysicalFootprintBytes) * 0.10),
@@ -161,44 +203,60 @@ final class TransformerDeviceTests: XCTestCase {
         ))
     }
 
-    private func prepareInstalledModel() throws -> InstalledTransformerModel {
+    private func requireSupportedPhysicalDevice() throws {
+        #if targetEnvironment(simulator)
+        throw XCTSkip("Accelerator and memory evidence must be collected on a physical iPhone")
+        #else
+        guard TransformerDeviceSupport.current().isSupported else {
+            throw XCTSkip("This device is below the Premium Transformer hardware gate")
+        }
+        #endif
+    }
+
+    private func installTransferredCandidate() throws -> InstalledTransformerModel {
         let fileManager = FileManager.default
         let transferRoot = try Self.deviceTransferDirectory(fileManager: fileManager)
-
-        if fileManager.fileExists(atPath: transferRoot.path) {
-            let sourceDirectory = try Self.resolveCandidateDirectory(
-                transferRoot: transferRoot,
-                fileManager: fileManager
-            )
-            guard
-                let candidate = TransformerModelStore.model(
-                    in: sourceDirectory,
-                    fileManager: fileManager,
-                    validateChecksums: true
-                ),
-                TransformerRuntimeProfile.supportedComputeUnits.contains(
-                    candidate.manifest.runtimeProfile.computeUnits
-                ),
-                [4, 8].contains(candidate.manifest.quantizationProfile.weightBits)
-            else {
-                throw DeviceBenchmarkError.invalidCandidate
-            }
-            try TransformerClassifierLoader.prepareDownloadedModel(
+        guard fileManager.fileExists(atPath: transferRoot.path) else {
+            throw DeviceBenchmarkError.missingTransferredCandidate
+        }
+        let sourceDirectory = try Self.resolveCandidateDirectory(
+            transferRoot: transferRoot,
+            fileManager: fileManager
+        )
+        guard
+            let candidate = TransformerModelStore.model(
                 in: sourceDirectory,
                 fileManager: fileManager,
-                validatesRuntime: false
-            )
-            try TransformerModelStore.activate(
-                stagedDirectory: sourceDirectory,
-                fileManager: fileManager
-            )
-            FilterConfigurationSnapshotStore.refreshModelArtifactIdentity()
-            if sourceDirectory.standardizedFileURL != transferRoot.standardizedFileURL,
-               fileManager.fileExists(atPath: transferRoot.path) {
-                try fileManager.removeItem(at: transferRoot)
-            }
+                validateChecksums: true
+            ),
+            TransformerRuntimeProfile.supportedComputeUnits.contains(
+                candidate.manifest.runtimeProfile.computeUnits
+            ),
+            [4, 8].contains(candidate.manifest.quantizationProfile.weightBits)
+        else {
+            throw DeviceBenchmarkError.invalidCandidate
         }
+        // Keep this phase load-only. The next XCTest process performs the
+        // final-path prediction prime and records its genuinely cold cost.
+        try TransformerClassifierLoader.prepareDownloadedModel(
+            in: sourceDirectory,
+            fileManager: fileManager,
+            validatesRuntime: false
+        )
+        try TransformerModelStore.activate(
+            stagedDirectory: sourceDirectory,
+            fileManager: fileManager
+        )
+        FilterConfigurationSnapshotStore.refreshModelArtifactIdentity()
+        if sourceDirectory.standardizedFileURL != transferRoot.standardizedFileURL,
+           fileManager.fileExists(atPath: transferRoot.path) {
+            try fileManager.removeItem(at: transferRoot)
+        }
+        return try installedModelForBenchmark()
+    }
 
+    private func installedModelForBenchmark() throws -> InstalledTransformerModel {
+        let fileManager = FileManager.default
         guard
             let installed = TransformerModelStore.installedModel(
                 fileManager: fileManager,
@@ -242,9 +300,12 @@ final class TransformerDeviceTests: XCTestCase {
         return candidate
     }
 
-    private static func evidenceDirectory() throws -> URL {
+    private static func evidenceDirectory(reset: Bool = false) throws -> URL {
         let directory = try deviceTransferRoot()
             .appendingPathComponent(evidenceDirectoryName, isDirectory: true)
+        if reset, FileManager.default.fileExists(atPath: directory.path) {
+            try FileManager.default.removeItem(at: directory)
+        }
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         return directory
     }
@@ -295,8 +356,19 @@ final class TransformerDeviceTests: XCTestCase {
 
 private enum DeviceBenchmarkError: Error {
     case invalidCandidate
+    case missingTransferredCandidate
     case missingInstalledModel
     case missingAppGroupContainer
+}
+
+private struct DeviceInstallationReport: Encodable {
+    let processIdentifier: Int32
+    let artifactIdentity: ModelArtifactIdentity
+}
+
+private struct DevicePrimeReport: Encodable {
+    let processIdentifier: Int32
+    let metrics: SignalModelInstallationPrimeMetrics
 }
 
 private extension JSONEncoder {

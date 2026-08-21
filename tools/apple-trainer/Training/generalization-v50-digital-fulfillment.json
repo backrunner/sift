@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "boundaryRows": [
+    {"family":"digital-fulfillment-v50","label":"transaction.order","text":"您购买的游戏皮肤交付完成，现已加入下单账号的装扮收藏。"},
+    {"family":"digital-fulfillment-v50","label":"transaction.order","text":"付费扩展地图已激活到订单关联账户，可在内容库中下载。"},
+    {"family":"digital-fulfillment-v50","label":"transaction.order","text":"数字宠物购买订单已履约，物品已写入玩家资产清单。"},
+    {"family":"digital-fulfillment-v50","label":"transaction.order","text":"The purchased character outfit is now available in the account's cosmetics collection; fulfillment is complete."},
+    {"family":"digital-fulfillment-v50","label":"transaction.order","text":"Your paid map expansion was activated for the account tied to checkout and is ready in the content library."},
+    {"family":"digital-fulfillment-v50","label":"transaction.order","text":"Delivery of the in-game companion purchase is complete, and the item now appears in your player assets."},
+    {"family":"digital-fulfillment-v50","label":"transaction.order","text":"購入したキャラクター衣装の納品が完了し、注文アカウントのコレクションに追加されました。"},
+    {"family":"digital-fulfillment-v50","label":"transaction.order","text":"有料マップ拡張を決済時のアカウントへ有効化し、コンテンツ一覧から取得できます。"},
+    {"family":"digital-fulfillment-v50","label":"transaction.order","text":"ゲーム内ペットの購入処理が完了し、プレイヤー資産一覧へ追加されました。"},
+
+    {"family":"digital-promotion-v50","label":"promotion","text":"限定坐骑礼包本周返场，充值游戏币可再获额外升级材料。"},
+    {"family":"digital-promotion-v50","label":"promotion","text":"新皮肤开启预售，活动期下单可获会员专属折扣。"},
+    {"family":"digital-promotion-v50","label":"promotion","text":"数字宠物首发活动已开始，购买组合包赠限定饰品。"},
+    {"family":"digital-promotion-v50","label":"promotion","text":"The limited mount bundle returns this week; topping up game credits adds bonus upgrade materials."},
+    {"family":"digital-promotion-v50","label":"promotion","text":"Preorders for the new character skin include a members-only discount during the launch event."},
+    {"family":"digital-promotion-v50","label":"promotion","text":"The digital companion launch campaign includes a limited accessory with each bundle purchase."},
+    {"family":"digital-promotion-v50","label":"promotion","text":"限定マウントパックが今週復刻し、ゲーム通貨のチャージで強化素材を追加でもらえます。"},
+    {"family":"digital-promotion-v50","label":"promotion","text":"新しいキャラクター衣装の予約販売で、開催期間中は会員限定割引が適用されます。"},
+    {"family":"digital-promotion-v50","label":"promotion","text":"デジタルペット発売記念キャンペーンで、セット購入ごとに限定アクセサリーが付きます。"}
+  ]
+}

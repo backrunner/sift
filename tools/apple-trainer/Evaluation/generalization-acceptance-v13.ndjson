@@ -1,0 +1,75 @@
+{"text":"跨境汇款已按预约时间发出，收款账户尾号7314，电子回执已生成。","label":"finance.bank","source":"acceptance:generalization-v13"}
+{"text":"Your scheduled overseas transfer was sent to account ending 7314; the bank receipt is ready.","label":"finance.bank","source":"acceptance:generalization-v13"}
+{"text":"予約した海外振込を実行し、末尾7314の口座へ送金しました。電子控えを確認できます。","label":"finance.bank","source":"acceptance:generalization-v13"}
+{"text":"租借的摄影器材已取消，押金将按原支付路径退回，到账时间以银行处理为准。","label":"finance.refund","source":"acceptance:generalization-v13"}
+{"text":"The camera-rental cancellation is complete; its deposit will return through the original payment route.","label":"finance.refund","source":"acceptance:generalization-v13"}
+{"text":"レンタル機材の取消が完了し、保証金は元の支払方法へ払い戻します。","label":"finance.refund","source":"acceptance:generalization-v13"}
+{"text":"循环卡账单已出，本期应还金额和自动扣款日期已列在账单详情中。","label":"finance.credit_card","source":"acceptance:generalization-v13"}
+{"text":"Your revolving-card statement is available, with the amount due and scheduled autopay date.","label":"finance.credit_card","source":"acceptance:generalization-v13"}
+{"text":"リボカードの請求明細が確定し、支払額と自動引落日を確認できます。","label":"finance.credit_card","source":"acceptance:generalization-v13"}
+{"text":"尾号9041卡在机场停车出口支付了36元，消费已计入明细。","label":"finance.consumption","source":"acceptance:generalization-v13"}
+{"text":"A parking-exit purchase of $36 was charged to the card ending 9041 and posted to your activity.","label":"finance.consumption","source":"acceptance:generalization-v13"}
+{"text":"末尾9041のカードで空港駐車料金36円を決済し、利用明細に反映しました。","label":"finance.consumption","source":"acceptance:generalization-v13"}
+{"text":"本月海岛漫游套餐已使用82%，剩余流量可用至周一。","label":"carrier.data_reminder","source":"acceptance:generalization-v13"}
+{"text":"Your island-roaming data pass is 82% used; the remaining allowance is valid through Monday.","label":"carrier.data_reminder","source":"acceptance:generalization-v13"}
+{"text":"島しょローミングのデータを82%利用し、残量は月曜まで使用できます。","label":"carrier.data_reminder","source":"acceptance:generalization-v13"}
+{"text":"家庭宽带本月服务发票已生成，将在账期日从已绑定账户扣款。","label":"carrier.billing","source":"acceptance:generalization-v13"}
+{"text":"The home-broadband service invoice is ready and will be collected from the linked account on the billing date.","label":"carrier.billing","source":"acceptance:generalization-v13"}
+{"text":"自宅光回線の利用請求が確定し、請求日に登録口座から引き落とします。","label":"carrier.billing","source":"acceptance:generalization-v13"}
+{"text":"通信公司将在周末迁移语音服务节点，期间新留言可能延迟出现。","label":"carrier.service","source":"acceptance:generalization-v13"}
+{"text":"The telecom provider will migrate a voice-service node this weekend; new voicemail may appear late.","label":"carrier.service","source":"acceptance:generalization-v13"}
+{"text":"通信会社は週末に音声サービス設備を切り替え、新しい留守番電話の表示が遅れる場合があります。","label":"carrier.service","source":"acceptance:generalization-v13"}
+{"text":"燃气公用事业通知：北区压力测试期间请勿关闭入户阀门，结束后会恢复正常。","label":"life.utility","source":"acceptance:generalization-v13"}
+{"text":"The gas utility is pressure-testing the North District; service will return to normal when testing ends.","label":"life.utility","source":"acceptance:generalization-v13"}
+{"text":"ガス会社が北地区で圧力試験を行います。終了後に通常サービスへ復旧します。","label":"life.utility","source":"acceptance:generalization-v13"}
+{"text":"影像科已上传增强扫描报告，复诊时医生可在患者档案查看。","label":"life.medical","source":"acceptance:generalization-v13"}
+{"text":"Radiology uploaded the contrast-scan report for your clinician to review at the follow-up visit.","label":"life.medical","source":"acceptance:generalization-v13"}
+{"text":"画像診断室が造影検査レポートを登録しました。再診時に患者記録から確認できます。","label":"life.medical","source":"acceptance:generalization-v13"}
+{"text":"冷链货物已抵达西站监管仓，等待温控车辆接驳。","label":"life.logistics","source":"acceptance:generalization-v13"}
+{"text":"The cold-chain consignment reached the west bonded depot and awaits a temperature-controlled truck.","label":"life.logistics","source":"acceptance:generalization-v13"}
+{"text":"コールドチェーン貨物が西駅の保税倉庫に到着し、定温車両を待っています。","label":"life.logistics","source":"acceptance:generalization-v13"}
+{"text":"山路施工导致包裹改由南门网点派送，预计明早送达。","label":"life.express","source":"acceptance:generalization-v13"}
+{"text":"Road works rerouted your parcel through South Gate depot, with delivery expected tomorrow morning.","label":"life.express","source":"acceptance:generalization-v13"}
+{"text":"山道工事のため荷物は南口営業所を経由し、明朝に配達予定です。","label":"life.express","source":"acceptance:generalization-v13"}
+{"text":"冷藏疫苗包已放入医院冷柜H8，请凭引取编号9150在两小时内领取。","label":"life.pickup_code","source":"acceptance:generalization-v13"}
+{"text":"The refrigerated vaccine parcel is in hospital freezer H8; use pickup PIN 9150 within two hours.","label":"life.pickup_code","source":"acceptance:generalization-v13"}
+{"text":"冷蔵ワクチンの荷物を病院の冷蔵ロッカーH8へ保管しました。受取番号9150でお受け取りください。","label":"life.pickup_code","source":"acceptance:generalization-v13"}
+{"text":"家事法院确认已登记监护安排补充材料，线上听证日期将在法院排期后发送。","label":"government.court","source":"acceptance:generalization-v13"}
+{"text":"Family court logged the supplemental guardianship filing; the online hearing date will follow the docket schedule.","label":"government.court","source":"acceptance:generalization-v13"}
+{"text":"家庭裁判所が監護に関する追加書類を登録し、期日確定後にオンライン審理日を通知します。","label":"government.court","source":"acceptance:generalization-v13"}
+{"text":"市应急部门提醒：台风演练警报响起时请沿橙色标线进入室内避难所。","label":"government.reminder","source":"acceptance:generalization-v13"}
+{"text":"Emergency officials advise following the orange markings to the indoor shelter when the typhoon drill alarm sounds.","label":"government.reminder","source":"acceptance:generalization-v13"}
+{"text":"自治体は台風訓練の警報が鳴ったら、橙色の表示に沿って屋内避難所へ移動するよう案内しています。","label":"government.reminder","source":"acceptance:generalization-v13"}
+{"text":"伤残补助年度复核已通过，新的待遇金额会显示在社保记录中。","label":"government.social_security","source":"acceptance:generalization-v13"}
+{"text":"Your disability allowance annual review passed; the revised benefit will appear in social-security history.","label":"government.social_security","source":"acceptance:generalization-v13"}
+{"text":"障害給付の年次確認に通過し、新しい支給額を社会保険の記録へ反映します。","label":"government.social_security","source":"acceptance:generalization-v13"}
+{"text":"生产监控发现对象存储写入延迟，备份任务可能推迟，请值班工程师查看。","label":"work.alert","source":"acceptance:generalization-v13"}
+{"text":"Production monitoring detected object-storage write latency; the backup job may be delayed.","label":"work.alert","source":"acceptance:generalization-v13"}
+{"text":"本番監視でオブジェクトストレージの書き込み遅延を検知し、バックアップが遅れる可能性があります。","label":"work.alert","source":"acceptance:generalization-v13"}
+{"text":"采购合规申请已完成供应商核验，等待财务负责人批准付款周期。","label":"work.approval","source":"acceptance:generalization-v13"}
+{"text":"The procurement compliance request cleared vendor checks and awaits Finance approval of payment timing.","label":"work.approval","source":"acceptance:generalization-v13"}
+{"text":"調達コンプライアンス申請は取引先確認済みで、財務責任者の支払期間承認待ちです。","label":"work.approval","source":"acceptance:generalization-v13"}
+{"text":"弹性排班申请已批准，下周一的签到时间和考勤规则已同步更新。","label":"work.attendance","source":"acceptance:generalization-v13"}
+{"text":"Your flexible-schedule request was approved; Monday's clock-in time and attendance rules were updated.","label":"work.attendance","source":"acceptance:generalization-v13"}
+{"text":"時差勤務の申請が承認され、月曜の打刻時刻と勤怠ルールを更新しました。","label":"work.attendance","source":"acceptance:generalization-v13"}
+{"text":"账户的新安全密钥已注册，旧恢复设备仍保持授权。","label":"transaction.account_security","source":"acceptance:generalization-v13"}
+{"text":"A new security key was registered on your account; the previous recovery device remains authorized.","label":"transaction.account_security","source":"acceptance:generalization-v13"}
+{"text":"アカウントに新しいセキュリティキーを登録し、以前の復旧端末は引き続き認証済みです。","label":"transaction.account_security","source":"acceptance:generalization-v13"}
+{"text":"定制登山包订单已付清尾款，工厂正在按尺寸开始缝制。","label":"transaction.order","source":"acceptance:generalization-v13"}
+{"text":"The custom hiking-pack order is paid in full and the workshop has started sewing to the requested dimensions.","label":"transaction.order","source":"acceptance:generalization-v13"}
+{"text":"特注ハイキングバッグの残金決済が完了し、工房で指定寸法の縫製を始めました。","label":"transaction.order","source":"acceptance:generalization-v13"}
+{"text":"渡轮电子票已出票，登船时请在人工柜台出示订单证件。","label":"travel.ticketing","source":"acceptance:generalization-v13"}
+{"text":"Your ferry e-ticket was issued; show the booking ID and identification at the staffed boarding counter.","label":"travel.ticketing","source":"acceptance:generalization-v13"}
+{"text":"フェリーの電子乗船券を発行しました。有人窓口で予約と本人確認を行ってください。","label":"travel.ticketing","source":"acceptance:generalization-v13"}
+{"text":"机场快线因信号检修临时停靠B站，请在B站换乘接驳巴士。","label":"travel.transport","source":"acceptance:generalization-v13"}
+{"text":"The airport express is stopping at Station B during signal maintenance; transfer to the shuttle bus there.","label":"travel.transport","source":"acceptance:generalization-v13"}
+{"text":"空港連絡線は信号点検のためB駅に臨時停車し、そこで連絡バスへ乗り換えてください。","label":"travel.transport","source":"acceptance:generalization-v13"}
+{"text":"家庭净水设备年度服务活动开始，预约上门滤芯检测可获一次免费保养。","label":"promotion","source":"acceptance:generalization-v13"}
+{"text":"The home-water service campaign includes one free filter inspection with a booked annual visit.","label":"promotion","source":"acceptance:generalization-v13"}
+{"text":"家庭用浄水器の年間サービス企画で、訪問フィルター点検を1回無料で予約できます。","label":"promotion","source":"acceptance:generalization-v13"}
+{"text":"冒充税务退款专员要求打开远程控制并提供银行卡动态码，否则称会冻结账户。","label":"spam","source":"acceptance:generalization-v13"}
+{"text":"A supposed tax-refund agent demands remote access and your bank one-time code, threatening an account freeze.","label":"spam","source":"acceptance:generalization-v13"}
+{"text":"税務署の還付担当を名乗る人物が遠隔操作と銀行ワンタイムコードを求め、応じなければ口座を凍結すると脅しています。","label":"spam","source":"acceptance:generalization-v13"}
+{"text":"我把备用门卡放在玄关柜第二层，回家时记得拿。","label":"__sift_abstain__","source":"acceptance:generalization-v13"}
+{"text":"I left the spare access card on the second shelf by the entryway; remember to take it when you get home.","label":"__sift_abstain__","source":"acceptance:generalization-v13"}
+{"text":"予備の入館カードを玄関棚の二段目に置いたよ。帰ったら持って行ってね。","label":"__sift_abstain__","source":"acceptance:generalization-v13"}

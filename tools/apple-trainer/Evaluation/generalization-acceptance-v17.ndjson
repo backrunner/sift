@@ -1,0 +1,24 @@
+{"text":"【蓝湾邮轮】旅客信息异常，请访问 https://blue-deck.example/confirm 上传证件并输入登录验证码，逾期取消航程。","label":"spam"}
+{"text":"假冒轮渡售后称退款被拦截，要求提供网银口令和银行卡背面数字才能放款。","label":"spam"}
+{"text":"所谓港口检疫人员要求下载会议软件并共享屏幕，由其远程完成登船审核。","label":"spam"}
+{"text":"陌生号码称船票升舱需先购买充值卡，并把卡密发给私人客服。","label":"spam"}
+{"text":"Ocean Star says check-in failed and asks you to send a passport image plus the authentication code from your banking app.","label":"spam"}
+{"text":"A supposed ferry agent needs your card PIN and online account password to release a delayed refund.","label":"spam"}
+{"text":"A port-health message directs passengers to install screen-sharing software for a remote document inspection.","label":"spam"}
+{"text":"An unknown agent demands prepaid voucher codes before confirming an already paid cabin upgrade.","label":"spam"}
+{"text":"【瀬戸内クルーズ】本人確認エラーとして、外部ページへ旅券写真と銀行アプリの認証コードを送るよう求めています。","label":"spam"}
+{"text":"フェリー返金担当を装い、カード暗証番号とネット口座のパスワードを聞き出す内容です。","label":"spam"}
+{"text":"港の検疫通知を装って画面共有ソフトを導入させ、遠隔で書類確認を行うと案内しています。","label":"spam"}
+{"text":"支払い済みの客室変更を確定するため、プリペイド番号を個人担当者へ送るよう要求しています。","label":"spam"}
+{"text":"【蓝湾邮轮】值船手续已完成，登船牌可在官方应用查看，现场仍需核验护照原件。","label":"travel.ticketing"}
+{"text":"轮渡订单RZ6081已改签到周六14:10，票价不变，原付款方式无需重新验证。","label":"travel.ticketing"}
+{"text":"港口提醒：国际航班联运旅客请先领取纸质船票，再到联运柜台托运行李。","label":"travel.ticketing"}
+{"text":"您的客舱升级已确认，差价电子收据已发送至官方订单中心。","label":"travel.ticketing"}
+{"text":"Ocean Star check-in is complete. The boarding pass is in the official app; bring the original passport for inspection.","label":"travel.ticketing"}
+{"text":"Ferry booking RZ6081 was moved to Saturday at 14:10. The fare is unchanged and no payment re-verification is needed.","label":"travel.ticketing"}
+{"text":"Port reminder: collect the printed vessel ticket before checking baggage at the connecting-service counter.","label":"travel.ticketing"}
+{"text":"Your cabin upgrade is confirmed, and the fare-difference receipt is available in the official order center.","label":"travel.ticketing"}
+{"text":"瀬戸内クルーズの乗船手続が完了しました。公式アプリの搭乗券と旅券原本を当日ご提示ください。","label":"travel.ticketing"}
+{"text":"フェリー予約RZ6081は土曜14時10分発へ変更されました。運賃は変わらず、決済の再認証は不要です。","label":"travel.ticketing"}
+{"text":"港からのお知らせです。連絡便をご利用の方は紙の乗船券を受け取ってから手荷物を預けてください。","label":"travel.ticketing"}
+{"text":"客室のアップグレードが確定し、差額の電子領収書を公式予約センターへ発行しました。","label":"travel.ticketing"}

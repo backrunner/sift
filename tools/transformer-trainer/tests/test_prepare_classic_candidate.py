@@ -112,8 +112,53 @@ class PrepareClassicCandidateTests(unittest.TestCase):
             rows = [json.loads(line) for line in output.read_text(encoding="utf-8").splitlines()]
             self.assertCountEqual(rows, [
                 {"text": "Existing base message", "label": "alpha"},
-                {"text": "Reviewed cloud expiry warning", "label": "beta"},
+                {
+                    "text": "Reviewed cloud expiry warning",
+                    "label": "beta",
+                    "source": "augmentation:boundary:cloud-expiry",
+                },
             ])
+            self.assertEqual(json.loads(report.read_text(encoding="utf-8"))["boundaryWeightedCount"], 1)
+
+    def test_multiple_supplements_are_combined(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = Path(temporary)
+            base = directory / "base.ndjson"
+            first = directory / "first.ndjson"
+            second = directory / "second.ndjson"
+            holdout = directory / "holdout.ndjson"
+            output = directory / "output.ndjson"
+            report = directory / "report.json"
+            base.write_text(json.dumps({"text": "Existing base", "label": "alpha"}) + "\n", encoding="utf-8")
+            first.write_text(json.dumps({"text": "First reviewed row", "label": "beta"}) + "\n", encoding="utf-8")
+            second.write_text(json.dumps({"text": "Second reviewed row", "label": "gamma"}) + "\n", encoding="utf-8")
+            holdout.write_text(json.dumps({"text": "External evaluation row", "label": "alpha"}) + "\n", encoding="utf-8")
+
+            subprocess.run(
+                [
+                    "python3", str(SCRIPT),
+                    "--base", str(base),
+                    "--supplement", str(first),
+                    "--supplement", str(second),
+                    "--holdout", str(holdout),
+                    "--labels", "beta,gamma",
+                    "--out", str(output),
+                    "--report", str(report),
+                ],
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+
+            rows = [json.loads(line) for line in output.read_text(encoding="utf-8").splitlines()]
+            summary = json.loads(report.read_text(encoding="utf-8"))
+            self.assertCountEqual(rows, [
+                {"text": "Existing base", "label": "alpha"},
+                {"text": "First reviewed row", "label": "beta"},
+                {"text": "Second reviewed row", "label": "gamma"},
+            ])
+            self.assertEqual(summary["supplementCount"], 2)
+            self.assertEqual(len(summary["supplementPaths"]), 2)
 
 
 if __name__ == "__main__":

@@ -1,0 +1,56 @@
+{"text":"【深圳招商蛇口国际邮轮母港】购票证件须与出境证件一致，抵达港口后先取纸质船票，再到二楼值机柜台办理值机和值船手续，完成后方可检票入闸。","label":"travel.ticketing","source":"targeted:cruise-ticketing-boundary-v1"}
+{"text":"邮轮母港行程提醒：请提前60分钟到达港口，开航前30分钟停止值机、值船和行李托运，开航前15分钟停止检票。","label":"travel.ticketing","source":"targeted:cruise-ticketing-boundary-v1"}
+{"text":"【蛇口邮轮中心】船票出行须知：请携带符合目的地入境要求的材料，到港后领取纸质船票并前往国际出发区办理值机。","label":"travel.ticketing","source":"targeted:cruise-ticketing-boundary-v1"}
+{"text":"深圳港口登船提醒：请在开航前一小时抵达，先取票、值机、值船，再按指引检票入闸，逾时将停止办理手续。","label":"travel.ticketing","source":"targeted:cruise-ticketing-boundary-v1"}
+{"text":"邮轮行程通知：港口二楼设有国际及港澳出发检票口，请核对证件和船票信息后办理登船。","label":"travel.ticketing","source":"targeted:cruise-ticketing-boundary-v1"}
+{"text":"【深圳邮轮中心】请提前办理值机和行李托运，计划开航前30分钟停止相关手续，开航前15分钟停止检票。","label":"travel.ticketing","source":"targeted:cruise-ticketing-boundary-v1"}
+{"text":"邮轮值船提示：旅客须持有符合目的地要求的证件材料，因个人原因无法登船的返程及其他费用由本人承担。","label":"travel.ticketing","source":"targeted:cruise-ticketing-boundary-v1"}
+{"text":"蛇口国际邮轮母港通知：纸质船票在抵达港口后领取，二楼柜台办理值机和值船，完成手续后进入检票区域。","label":"travel.ticketing","source":"targeted:cruise-ticketing-boundary-v1"}
+{"text":"邮轮出发服务提醒：请确认出境证件、入境材料和航司登机要求，提前60分钟抵达港口办理值机。","label":"travel.ticketing","source":"targeted:cruise-ticketing-boundary-v1"}
+{"text":"【蛇口邮轮中心】您的出行提示：开航前15分钟停止检票，请预留取票、值机和值船的办理时间。","label":"travel.ticketing","source":"targeted:cruise-ticketing-boundary-v1"}
+{"text":"深圳港澳出发邮轮通知：请在二楼国际出发区完成值机和值船手续，之后凭纸质船票检票入闸。","label":"travel.ticketing","source":"targeted:cruise-ticketing-boundary-v1"}
+{"text":"邮轮登船须知：证件信息需与购票信息一致，目的地入境材料请提前准备，迟到可能无法办理登船。","label":"travel.ticketing","source":"targeted:cruise-ticketing-boundary-v1"}
+{"text":"【深圳招商蛇口国际邮轮母港】请按行程时间提前抵达，先领取纸质船票，再到值机柜台完成值船和值机。","label":"travel.ticketing","source":"targeted:cruise-ticketing-boundary-v1"}
+{"text":"邮轮港口服务提醒：行李托运和值船手续将在开航前30分钟停止，检票将在开航前15分钟停止，请勿迟到。","label":"travel.ticketing","source":"targeted:cruise-ticketing-boundary-v1"}
+{"text":"蛇口邮轮中心行程确认：国际及港澳出发检票口位于西区二楼，请携带有效证件和船票前往。","label":"travel.ticketing","source":"targeted:cruise-ticketing-boundary-v1"}
+{"text":"邮轮出行材料提醒：请关注目的地实时入境政策，准备所有符合入境和登船要求的材料。","label":"travel.ticketing","source":"targeted:cruise-ticketing-boundary-v1"}
+{"text":"【深圳港口】船班开航时间临近，请先取票再办理值机、值船，手续完成后按工作人员指引检票。","label":"travel.ticketing","source":"targeted:cruise-ticketing-boundary-v1"}
+{"text":"邮轮母港登船通知：建议提前一小时抵达，证件不一致可能无法办理值机，请仔细核对购票资料。","label":"travel.ticketing","source":"targeted:cruise-ticketing-boundary-v1"}
+{"text":"蛇口国际邮轮提醒：开航前30分钟停止行李托运及值船，开航前15分钟停止检票入闸。","label":"travel.ticketing","source":"targeted:cruise-ticketing-boundary-v1"}
+{"text":"【邮轮中心】请按时到达二楼国际出发区，领取纸质船票并完成值机和值船手续后再检票。","label":"travel.ticketing","source":"targeted:cruise-ticketing-boundary-v1"}
+{"text":"【东海客运】海岛航线船票已确认，请携带订单所用证件，在开船前到人工柜台换取登船凭证。","label":"travel.ticketing","source":"augmentation:boundary:cruise-ticketing-v2"}
+{"text":"滨湾轮渡通知：车辆和同行旅客均已登记，请在预约时段进入码头并按现场指引办理登船。","label":"travel.ticketing","source":"augmentation:boundary:cruise-ticketing-v2"}
+{"text":"Bluewater Ferry confirms your crossing. Present the travel document used for booking at the terminal desk before boarding.","label":"travel.ticketing","source":"augmentation:boundary:cruise-ticketing-v2"}
+{"text":"Your island shuttle ticket is issued. Check baggage at Pier 4 and proceed to the boarding lane shown on the pass.","label":"travel.ticketing","source":"augmentation:boundary:cruise-ticketing-v2"}
+{"text":"HarborLink passenger notice: arrive 45 minutes before sailing to collect the printed pass and complete document checks.","label":"travel.ticketing","source":"augmentation:boundary:cruise-ticketing-v2"}
+{"text":"The vehicle ferry booking is confirmed for Saturday. Drivers must check in at the marked terminal entrance before loading.","label":"travel.ticketing","source":"augmentation:boundary:cruise-ticketing-v2"}
+{"text":"Coastal Star has issued your cabin ticket. Bring the passport listed on the reservation and follow the international-departure signs.","label":"travel.ticketing","source":"augmentation:boundary:cruise-ticketing-v2"}
+{"text":"Passenger boarding closes 20 minutes before departure. Collect your ferry pass from the staffed counter before that time.","label":"travel.ticketing","source":"augmentation:boundary:cruise-ticketing-v2"}
+{"text":"Port Bay check-in is open for your booked sailing; oversized baggage must be handed in at the terminal service desk.","label":"travel.ticketing","source":"augmentation:boundary:cruise-ticketing-v2"}
+{"text":"Your return ferry has moved to Gate C. The booking remains valid and no payment or identity resubmission is required.","label":"travel.ticketing","source":"augmentation:boundary:cruise-ticketing-v2"}
+{"text":"青海フェリーの乗船予約を確認しました。予約に使用した身分証を持参し、出航前に窓口で乗船券を受け取ってください。","label":"travel.ticketing","source":"augmentation:boundary:cruise-ticketing-v2"}
+{"text":"島便のチケットを発行しました。第4埠頭で手荷物を預け、乗船券に記載された列へお進みください。","label":"travel.ticketing","source":"augmentation:boundary:cruise-ticketing-v2"}
+{"text":"ハーバーリンクからのお知らせです。出航45分前までに到着し、紙の乗船証と旅券の確認を済ませてください。","label":"travel.ticketing","source":"augmentation:boundary:cruise-ticketing-v2"}
+{"text":"土曜日の車両フェリー予約が確定しました。運転者は積み込み前にターミナル入口で受付を行ってください。","label":"travel.ticketing","source":"augmentation:boundary:cruise-ticketing-v2"}
+{"text":"コースタルスターの客室券を発行しました。予約に登録した旅券を持ち、国際出発の案内に従ってください。","label":"travel.ticketing","source":"augmentation:boundary:cruise-ticketing-v2"}
+{"text":"出航20分前に乗船受付を終了します。それまでに有人窓口でフェリーパスを受け取ってください。","label":"travel.ticketing","source":"augmentation:boundary:cruise-ticketing-v2"}
+{"text":"ポートベイ便のチェックインを開始しました。大型荷物はターミナルの係員へお預けください。","label":"travel.ticketing","source":"augmentation:boundary:cruise-ticketing-v2"}
+{"text":"復路フェリーの乗り場はCゲートへ変更されました。予約は有効で、追加の支払いや本人確認は不要です。","label":"travel.ticketing","source":"augmentation:boundary:cruise-ticketing-v2"}
+{"text":"所谓海运理赔专员称延误补偿已获批，要求先向个人账户转一笔认证费才能放款。","label":"spam","source":"augmentation:boundary:cruise-ticketing-v2"}
+{"text":"陌生码头客服声称登船资料失效，要求在非官方网页上传证件并输入短信验证码。","label":"spam","source":"augmentation:boundary:cruise-ticketing-v2"}
+{"text":"船票退款通知要求提供银行卡完整号码、有效期和验证码，否则当晚取消退款资格。","label":"spam","source":"augmentation:boundary:cruise-ticketing-v2"}
+{"text":"有人冒充轮渡公司称可优先改签，需先扫码支付保证金，完成后才发送新船票。","label":"spam","source":"augmentation:boundary:cruise-ticketing-v2"}
+{"text":"虚假港口安检消息称行李违规，要求点击短链登录支付账户并缴纳解冻手续费。","label":"spam","source":"augmentation:boundary:cruise-ticketing-v2"}
+{"text":"自称国际航运客服要求共享屏幕核对订舱信息，并索取银行动态口令处理退款。","label":"spam","source":"augmentation:boundary:cruise-ticketing-v2"}
+{"text":"A fake ferry compensation agent says your claim is approved but asks for an advance verification transfer to a personal account.","label":"spam","source":"augmentation:boundary:cruise-ticketing-v2"}
+{"text":"An unverified terminal message says your boarding profile expired and requests passport photos plus the one-time SMS code.","label":"spam","source":"augmentation:boundary:cruise-ticketing-v2"}
+{"text":"A supposed ticket refund desk asks for the full card number, security code, and online-banking password before tonight.","label":"spam","source":"augmentation:boundary:cruise-ticketing-v2"}
+{"text":"Someone posing as the ferry operator offers priority rebooking only after a refundable deposit is paid by QR code.","label":"spam","source":"augmentation:boundary:cruise-ticketing-v2"}
+{"text":"A bogus port-security alert claims your luggage is blocked and directs you to a short link to pay an account release charge.","label":"spam","source":"augmentation:boundary:cruise-ticketing-v2"}
+{"text":"A caller claiming to handle international sailings requests screen sharing and your bank one-time password for a refund.","label":"spam","source":"augmentation:boundary:cruise-ticketing-v2"}
+{"text":"偽のフェリー補償担当者が、給付前に個人口座へ認証料を振り込むよう求めています。","label":"spam","source":"augmentation:boundary:cruise-ticketing-v2"}
+{"text":"未確認の港湾メッセージが乗船情報の失効を告げ、旅券画像とSMS認証コードの入力を求めています。","label":"spam","source":"augmentation:boundary:cruise-ticketing-v2"}
+{"text":"船券返金窓口を名乗り、カード番号、有効期限、暗証情報を今夜までに送るよう要求する連絡です。","label":"spam","source":"augmentation:boundary:cruise-ticketing-v2"}
+{"text":"フェリー会社を装い、優先振替にはQRコードで保証金を先払いする必要があると案内しています。","label":"spam","source":"augmentation:boundary:cruise-ticketing-v2"}
+{"text":"偽の港湾保安通知が手荷物の差し止めを主張し、短縮リンクで解除手数料を払うよう誘導しています。","label":"spam","source":"augmentation:boundary:cruise-ticketing-v2"}
+{"text":"国際航路の担当者を名乗る人物が、返金処理のため画面共有と銀行のワンタイムパスワードを要求しています。","label":"spam","source":"augmentation:boundary:cruise-ticketing-v2"}

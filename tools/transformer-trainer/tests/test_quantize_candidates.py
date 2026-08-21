@@ -12,17 +12,80 @@ from quantize_candidates import (
     candidate_build_identity,
     checkpoint_labels,
     combined_language_accuracy,
+    ignores_experimental_cpu_smoke_failure,
+    linear_quantizer_options,
+    load_source_manifest,
+    merge_source_manifest,
     model_smoke_failure,
+    representative_smoke_samples,
     reusable_candidate,
     run_message_filter_artifact_suite,
     select_calibration_rows,
     taxonomy_actions,
     tokenizer_artifact_name,
     utc_timestamp,
+    validate_profile_runtime_precision,
 )
 
 
 class QuantizeCandidateTests(unittest.TestCase):
+    def test_cpu_smoke_exception_never_applies_to_release_eligible_profile(self) -> None:
+        self.assertTrue(
+            ignores_experimental_cpu_smoke_failure(
+                {"eligibleForRelease": False},
+                True,
+                "cpu_only_smoke_non_finite_probabilities_exit_3",
+            )
+        )
+        self.assertFalse(
+            ignores_experimental_cpu_smoke_failure(
+                {"eligibleForRelease": True},
+                True,
+                "cpu_only_smoke_non_finite_probabilities_exit_3",
+            )
+        )
+        self.assertTrue(
+            ignores_experimental_cpu_smoke_failure(
+                {"eligibleForRelease": True},
+                True,
+                "cpu_only_smoke_non_finite_probabilities_exit_3",
+                release_ineligible_run=True,
+            )
+        )
+
+    def test_mixed_precision_override_uses_int4_block_quantization(self) -> None:
+        options = linear_quantizer_options(
+            {
+                "weightBits": 4,
+                "granularity": "per-block",
+                "blockSize": 16,
+            }
+        )
+
+        self.assertEqual(
+            options,
+            {
+                "mode": "linear_symmetric",
+                "dtype": "int4",
+                "granularity": "per_block",
+                "block_size": 16,
+            },
+        )
+
+    def test_embedding_mixed_precision_profile_is_explicit_only(self) -> None:
+        profiles = json.loads(
+            (Path(__file__).parents[1] / "quantization-profiles.json").read_text(encoding="utf-8")
+        )["profiles"]
+        profile = next(
+            item for item in profiles
+            if item["id"] == "w8a32-channel-embedding-w4-block16-ptq"
+        )
+
+        self.assertFalse(profile["eligibleForRelease"])
+        self.assertFalse(profile["enabledByDefault"])
+        self.assertEqual(profile["activationBits"], 32)
+        self.assertEqual(profile["weightOverrides"][0]["role"], "tokenEmbedding")
+
     def test_published_tokenizer_uses_public_model_name(self) -> None:
         self.assertEqual(
             tokenizer_artifact_name("SiftSignalModel"),
@@ -125,9 +188,120 @@ class QuantizeCandidateTests(unittest.TestCase):
             coremltools_version="9.0",
         )
 
-        self.assertEqual(identity["schemaVersion"], 2)
+        self.assertEqual(identity["schemaVersion"], 3)
         self.assertEqual(identity["quantizationOrder"], "activation-then-weight")
         self.assertEqual(identity["coremltoolsVersion"], "9.0")
+
+    def test_fp32_graph_requires_a32_release_profile(self) -> None:
+        with self.assertRaisesRegex(SystemExit, "source Core ML graph is FP32"):
+            validate_profile_runtime_precision(
+                {
+                    "id": "w4a16-block16-ptq",
+                    "weightBits": 4,
+                    "activationBits": 16,
+                },
+                {"runtimeProfile": {"computePrecision": "float32"}},
+            )
+
+        validate_profile_runtime_precision(
+            {
+                "id": "w4a32-block16-ptq",
+                "weightBits": 4,
+                "activationBits": 32,
+            },
+            {"runtimeProfile": {"computePrecision": "float32"}},
+        )
+
+    def test_source_manifest_preserves_distillation_provenance(self) -> None:
+        source = {
+            "trainedAt": "2026-08-18T19:57:34.783Z",
+            "algorithm": "teacher-student-distillation",
+            "backbone": "jhu-clsp/mmBERT-small",
+            "distillation": {
+                "teacherCheckpointSHA256": "a" * 64,
+                "teacherLayers": 22,
+                "studentLayers": 12,
+                "temperature": 2.0,
+                "distillAlpha": 0.7,
+            },
+            "validationMetrics": {
+                "validationAccuracy": 0.994,
+                "teacherValidationAccuracy": 0.992,
+            },
+            "signature": "stale",
+        }
+
+        merged = merge_source_manifest(
+            source,
+            quantized_fields={"quantizedAt": "2026-08-19T00:00:00.000Z"},
+            external_validation_metrics={"fixedAccuracy": 0.99},
+        )
+
+        self.assertEqual(merged["algorithm"], "teacher-student-distillation")
+        self.assertEqual(merged["distillation"]["studentLayers"], 12)
+        self.assertEqual(merged["trainedAt"], source["trainedAt"])
+        self.assertEqual(merged["validationMetrics"]["teacherValidationAccuracy"], 0.992)
+        self.assertEqual(merged["validationMetrics"]["fixedAccuracy"], 0.99)
+        self.assertNotIn("signature", merged)
+
+    def test_source_manifest_contract_requires_exact_model_identity(self) -> None:
+        labels = ["__sift_abstain__", "travel.ticketing"]
+        payload = {
+            "schemaVersion": 2,
+            "sha256": "model-sha",
+            "modelArtifact": "SiftSignalModel.mlpackage",
+            "tokenizerSHA256": "tokenizer-sha",
+            "tokenizerArtifact": "SiftSignalModel.tokenizer.siftbpe",
+            "taxonomyHash": "taxonomy-sha",
+            "labels": labels,
+            "maxSequenceLength": 96,
+            "modelABI": "sift-signal-v1",
+            "version": "signal-distilled",
+            "quantizationProfile": {"weightBits": 16, "activationBits": 32},
+            "algorithm": "teacher-student-distillation",
+            "trainedAt": "2026-08-18T19:57:34.783Z",
+            "backbone": "jhu-clsp/mmBERT-small",
+            "tokenizerKind": "bpe",
+            "languages": ["zh", "en", "ja"],
+            "distillation": {
+                "teacherCheckpointSHA256": "a" * 64,
+                "teacherLayers": 22,
+                "studentLayers": 12,
+                "temperature": 2.0,
+                "distillAlpha": 0.7,
+            },
+        }
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            manifest = Path(temporary_directory) / "source.manifest.json"
+            manifest.write_text(json.dumps(payload), encoding="utf-8")
+
+            loaded = load_source_manifest(
+                manifest,
+                source_model_sha256="model-sha",
+                source_model_name="SiftSignalModel.mlpackage",
+                tokenizer_sha256="tokenizer-sha",
+                tokenizer_name="SiftSignalModel.tokenizer.siftbpe",
+                taxonomy_sha256="taxonomy-sha",
+                labels=labels,
+                max_length=96,
+                model_abi="sift-signal-v1",
+                version="signal-distilled",
+            )
+            self.assertEqual(loaded["distillation"]["teacherLayers"], 22)
+
+            with self.assertRaisesRegex(SystemExit, "source manifest contract mismatch"):
+                load_source_manifest(
+                    manifest,
+                    source_model_sha256="different-model-sha",
+                    source_model_name="SiftSignalModel.mlpackage",
+                    tokenizer_sha256="tokenizer-sha",
+                    tokenizer_name="SiftSignalModel.tokenizer.siftbpe",
+                    taxonomy_sha256="taxonomy-sha",
+                    labels=labels,
+                    max_length=96,
+                    model_abi="sift-signal-v1",
+                    version="signal-distilled",
+                )
 
     def test_model_smoke_isolates_non_finite_candidate_failure(self) -> None:
         result = subprocess.CompletedProcess(
@@ -146,6 +320,48 @@ class QuantizeCandidateTests(unittest.TestCase):
 
         self.assertIsNone(failure)
         self.assertEqual(run.call_count, 2)
+
+    def test_model_smoke_can_isolate_all_compute_units(self) -> None:
+        result = subprocess.CompletedProcess(args=[], returncode=0, stdout="", stderr="")
+        with patch("quantize_candidates.subprocess.run", return_value=result) as run:
+            failure = model_smoke_failure(
+                Path("candidate.mlpackage"),
+                96,
+                compute_units=("ALL",),
+            )
+
+        self.assertIsNone(failure)
+        self.assertEqual(run.call_count, 1)
+        self.assertEqual(run.call_args.args[0][-1], "ALL")
+
+    def test_model_smoke_passes_encoded_samples_to_isolated_worker(self) -> None:
+        result = subprocess.CompletedProcess(args=[], returncode=0, stdout="", stderr="")
+        samples = [{"input_ids": [[2, 1]], "attention_mask": [[1, 1]]}]
+        with patch("quantize_candidates.subprocess.run", return_value=result) as run:
+            failure = model_smoke_failure(
+                Path("candidate.mlpackage"),
+                2,
+                compute_units=("ALL",),
+                encoded_samples=samples,
+            )
+
+        self.assertIsNone(failure)
+        self.assertEqual(json.loads(run.call_args.args[0][-1]), samples)
+
+    def test_representative_smoke_samples_are_json_serializable(self) -> None:
+        class Tokenizer:
+            def __call__(self, text, **_):
+                token = len(text)
+                return {
+                    "input_ids": [2, token, 1, 0],
+                    "attention_mask": [1, 1, 1, 0],
+                }
+
+        samples = representative_smoke_samples(Tokenizer(), 4)
+
+        self.assertEqual(len(samples), 3)
+        self.assertEqual(samples[0]["input_ids"][0][0], 2)
+        json.dumps(samples)
 
     def test_message_filter_artifact_suite_includes_readable_case_gate(self) -> None:
         result = subprocess.CompletedProcess(args=[], returncode=0, stdout="", stderr="")

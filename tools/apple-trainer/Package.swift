@@ -11,6 +11,10 @@ let package = Package(
         .executable(name: "SiftAppleTrainer", targets: ["SiftAppleTrainer"])
     ],
     targets: [
-        .executableTarget(name: "SiftAppleTrainer")
+        .executableTarget(name: "SiftAppleTrainer"),
+        .testTarget(
+            name: "SiftAppleTrainerTests",
+            dependencies: ["SiftAppleTrainer"]
+        )
     ]
 )

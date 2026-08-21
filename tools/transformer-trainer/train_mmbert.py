@@ -67,6 +67,7 @@ class Arguments:
     train_new_label_rows_only: bool
     train_label_rows: list[str]
     boundary_loss_weight: float
+    selected_label_loss_weight: float
     truncate_layers: int
     quantize: str
     quantization_profile: str
@@ -127,6 +128,12 @@ def parse_arguments() -> Arguments:
         default=1.0,
         help="loss multiplier for reviewed augmentation:boundary:* rows without duplicating corpus rows",
     )
+    parser.add_argument(
+        "--selected-label-loss-weight",
+        type=float,
+        default=1.0,
+        help="positive-row loss multiplier for labels named by --train-label-rows",
+    )
     parser.add_argument("--truncate-layers", type=int, default=0, help="keep only the first N encoder layers before training")
     parser.add_argument("--quantize", choices=["fp16", "int8"], default="int8")
     parser.add_argument("--quantization-profile", default=None, help="v2 profile id recorded in the release manifest")
@@ -146,6 +153,10 @@ def parse_arguments() -> Arguments:
     raw = parser.parse_args()
     if raw.boundary_loss_weight < 1:
         parser.error("--boundary-loss-weight must be at least 1")
+    if raw.selected_label_loss_weight < 1:
+        parser.error("--selected-label-loss-weight must be at least 1")
+    if raw.selected_label_loss_weight != 1 and not raw.train_label_rows.strip():
+        parser.error("--selected-label-loss-weight requires --train-label-rows")
 
     repo_root = locate_repo_root()
     return Arguments(
@@ -172,9 +183,10 @@ def parse_arguments() -> Arguments:
         train_new_label_rows_only=raw.train_new_label_rows_only,
         train_label_rows=[item.strip() for item in raw.train_label_rows.split(",") if item.strip()],
         boundary_loss_weight=raw.boundary_loss_weight,
+        selected_label_loss_weight=raw.selected_label_loss_weight,
         truncate_layers=raw.truncate_layers,
         quantize=raw.quantize,
-        quantization_profile=raw.quantization_profile or ("fp16-baseline" if raw.quantize == "fp16" else "w8a16-channel-ptq"),
+        quantization_profile=raw.quantization_profile or ("fp32-baseline" if raw.quantize == "fp16" else "w8a32-channel-ptq"),
         release_sequence=raw.release_sequence,
         model_abi=raw.model_abi,
         minimum_app_build=raw.minimum_app_build,
@@ -372,7 +384,26 @@ class TextDataset:
         }
 
 
-def make_collate(tokenizer, max_length: int, boundary_loss_weight: float = 1.0):
+def row_loss_weight(
+    label_id: int,
+    source: str,
+    boundary_loss_weight: float,
+    selected_label_ids: set[int] | frozenset[int],
+    selected_label_loss_weight: float,
+) -> float:
+    weight = selected_label_loss_weight if label_id in selected_label_ids else 1.0
+    if source.startswith("augmentation:boundary:"):
+        weight *= boundary_loss_weight
+    return weight
+
+
+def make_collate(
+    tokenizer,
+    max_length: int,
+    boundary_loss_weight: float = 1.0,
+    selected_label_ids: set[int] | frozenset[int] = frozenset(),
+    selected_label_loss_weight: float = 1.0,
+):
     import torch
 
     def collate(batch: list[dict[str, str | int]]) -> dict[str, "torch.Tensor"]:
@@ -383,10 +414,17 @@ def make_collate(tokenizer, max_length: int, boundary_loss_weight: float = 1.0):
             max_length=max_length,
             return_tensors="pt",
         )
-        encoded["labels"] = torch.tensor([int(item["label"]) for item in batch], dtype=torch.long)
+        label_ids = [int(item["label"]) for item in batch]
+        encoded["labels"] = torch.tensor(label_ids, dtype=torch.long)
         encoded["loss_weights"] = torch.tensor([
-            boundary_loss_weight if str(item.get("source", "")).startswith("augmentation:boundary:") else 1.0
-            for item in batch
+            row_loss_weight(
+                label_id,
+                str(item.get("source", "")),
+                boundary_loss_weight,
+                selected_label_ids,
+                selected_label_loss_weight,
+            )
+            for item, label_id in zip(batch, label_ids)
         ], dtype=torch.float32)
         return encoded
 
@@ -412,11 +450,21 @@ def train_model(
     generator = torch.Generator()
     generator.manual_seed(arguments.seed)
     dataset = TextDataset(rows, label_to_id)
+    selected_label_ids = {
+        label_to_id[label]
+        for label in arguments.train_label_rows
+    }
     loader = DataLoader(
         dataset,
         batch_size=arguments.batch_size,
         shuffle=True,
-        collate_fn=make_collate(tokenizer, arguments.max_length, arguments.boundary_loss_weight),
+        collate_fn=make_collate(
+            tokenizer,
+            arguments.max_length,
+            arguments.boundary_loss_weight,
+            selected_label_ids,
+            arguments.selected_label_loss_weight,
+        ),
         generator=generator,
     )
     model.to(device)
@@ -709,7 +757,11 @@ def export_coreml(model, labels: list[str], max_length: int, quantize: str):
             ct.TensorType(name=MODEL_ATTENTION_MASK, shape=(1, max_length), dtype=np.int32),
         ],
         classifier_config=ct.ClassifierConfig(class_labels=labels),
-        compute_precision=ct.precision.FLOAT16,
+        # Core ML Tools 9 can emit non-finite CPU_ONLY values for this
+        # attention graph when every intermediate is lowered to FP16. Keep
+        # the compute graph in FP32; the tournament still applies W8/W4
+        # weight quantization and the physical-device gate remains required.
+        compute_precision=ct.precision.FLOAT32,
         convert_to="mlprogram",
         minimum_deployment_target=ct.target.iOS18,
     )
@@ -1002,6 +1054,9 @@ def main() -> None:
                 "mlpDropout": arguments.mlp_dropout,
                 "classifierPooling": arguments.classifier_pooling,
                 "freezeEncoder": arguments.freeze_encoder,
+                "trainLabelRows": arguments.train_label_rows,
+                "boundaryLossWeight": arguments.boundary_loss_weight,
+                "selectedLabelLossWeight": arguments.selected_label_loss_weight,
                 "maxLength": arguments.max_length,
                 "seed": arguments.seed,
             },
@@ -1032,11 +1087,12 @@ def main() -> None:
             "computeUnits": "cpuOnly",
             "modelType": "mlProgram",
             "inferenceBudgetMilliseconds": 500,
+            "computePrecision": "float32",
         },
         "quantizationProfile": {
             "identifier": arguments.quantization_profile,
             "weightBits": 16 if arguments.quantize == "fp16" else 8,
-            "activationBits": 16,
+            "activationBits": 32,
             "method": "baseline" if arguments.quantize == "fp16" else "ptq",
             "granularity": "per-tensor" if arguments.quantize == "fp16" else "per-channel",
         },
@@ -1065,6 +1121,11 @@ def main() -> None:
         "validationAccuracy": accuracy,
         "trainingCount": len(training_rows),
         "validationCount": len(validation_rows),
+        "trainingParameters": {
+            "boundaryLossWeight": arguments.boundary_loss_weight,
+            "selectedLabelLossWeight": arguments.selected_label_loss_weight,
+            "trainLabelRows": arguments.train_label_rows,
+        },
     }
     if test_accuracy is not None:
         manifest["testAccuracy"] = test_accuracy

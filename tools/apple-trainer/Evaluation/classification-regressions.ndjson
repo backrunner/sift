@@ -484,4 +484,4 @@
 {"text": "消防本部から、調理中は火元を離れず、避難経路に荷物を置かないよう呼びかけています。", "label": "government.reminder"}
 {"text": "保健所からのお知らせです。家庭の容器にたまった水を捨て、蚊の発生を防ぎましょう。", "label": "government.reminder"}
 {"text": "消費生活センターから、リコール情報を公式サイトで確認してから中古家電を使うよう案内しています。", "label": "government.reminder"}
-{"text": "【腾讯云】尊敬的用户，您（账号ID：568******，昵称：BackRunner）的手动续费资源：云数据库MySQL（实例ID:cdb-68ohvyat, 实例ID:cdb-68ohvyat）将于2026-08-01 14:47:19到期，仅剩7天。到期后将在7天后停止服务，逾期仍未续费资源将会被释放，数据不可恢复。为了保障您的服务正常运行，请及时前往“腾讯云助手”小程序进行续费 https://mc.tencent.com/oHN2H5z5 ，详情请见邮件和站内信。", "label": "work.alert"}
+{"text": "【云服务】尊敬的用户，您（账号ID：acct-regression-4821，昵称：测试用户）的手动续费资源：云数据库MySQL（实例ID:db-regression-2048）将于2026-08-01 14:47到期，仅剩7天。到期后将在7天后停止服务，逾期仍未续费资源将会被释放，数据不可恢复。为了保障您的服务正常运行，请及时前往云服务助手进行续费 https://example.invalid/renew，详情请见邮件和站内信。", "label": "work.alert", "source": "reviewed:cloud-resource-expiry-v2"}

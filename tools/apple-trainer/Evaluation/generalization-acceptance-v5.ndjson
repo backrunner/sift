@@ -1,0 +1,60 @@
+{"text":"您的金卡会员续费成功，有效期延长至2027年8月，原有权益保持不变。","label":"transaction.member","source":"acceptance:generalization-v5"}
+{"text":"金卡会员周年活动开启，升级年费方案可获双倍积分和机场休息室权益。","label":"promotion","source":"acceptance:generalization-v5"}
+{"text":"账户尾号1168的登录密码已在官方应用修改，如非本人操作请立即冻结账户。","label":"transaction.account_security","source":"acceptance:generalization-v5"}
+{"text":"账户安全认证即将失效，请在陌生页面输入密码、身份证和短信验证码。","label":"spam","source":"acceptance:generalization-v5"}
+{"text":"您提交的200股海岳科技限价买单已成交，成交均价为36.42元。","label":"finance.stock","source":"acceptance:generalization-v5"}
+{"text":"本行稳健理财产品开放预约，风险等级和历史业绩可在官方应用查看。","label":"finance.wealth","source":"acceptance:generalization-v5"}
+{"text":"内部荐股群保证三天涨停，先将入群费转到老师私人账户即可领取代码。","label":"spam","source":"acceptance:generalization-v5"}
+{"text":"社保中心通知：本月养老保险缴费记录已入账，可在政务平台查询。","label":"government.social_security","source":"acceptance:generalization-v5"}
+{"text":"电子税务局提醒：第二季度申报已受理，回执编号可在纳税人账户查看。","label":"government.tax","source":"acceptance:generalization-v5"}
+{"text":"所谓退税专员要求先缴快速通道费，并发送银行卡动态验证码。","label":"spam","source":"acceptance:generalization-v5"}
+{"text":"您的晚餐订单已由骑手取餐，预计19:25送达，请保持电话畅通。","label":"life.takeaway","source":"acceptance:generalization-v5"}
+{"text":"运单LG58420已完成干线运输，货物正在转入区域配送仓。","label":"life.logistics","source":"acceptance:generalization-v5"}
+{"text":"您有一个来自021-6258的未接来电，对方未留下语音留言。","label":"carrier.call_reminder","source":"acceptance:generalization-v5"}
+{"text":"公司公告：办公楼周六进行消防演练，全员请按楼层指引集合。","label":"work.announcement","source":"acceptance:generalization-v5"}
+{"text":"数据安全年度培训将在周一开放，完成课程后需参加在线测验。","label":"work.training","source":"acceptance:generalization-v5"}
+{"text":"城际列车G8206因设备检查晚点25分钟，检票口保持不变。","label":"travel.transport","source":"acceptance:generalization-v5"}
+{"text":"气象台发布雷暴黄色预警，未来两小时局地可能出现短时强降雨。","label":"life.weather","source":"acceptance:generalization-v5"}
+{"text":"市应急部门提醒：雷雨期间远离临时搭建物，不要在大树下停留。","label":"government.reminder","source":"acceptance:generalization-v5"}
+{"text":"处方药续配申请已通过，药房将在审核身份后安排配送。","label":"life.medical","source":"acceptance:generalization-v5"}
+{"text":"我把会员卡放在玄关抽屉里了，你明天路过时记得带上。","label":"__sift_abstain__","source":"acceptance:generalization-v5"}
+{"text":"Your Gold membership renewed successfully through August 2027 with all existing benefits unchanged.","label":"transaction.member","source":"acceptance:generalization-v5"}
+{"text":"Gold membership anniversary offer adds double points and lounge access when you upgrade the annual plan.","label":"promotion","source":"acceptance:generalization-v5"}
+{"text":"The password for account ending 1168 changed in the official app; freeze access immediately if this was not you.","label":"transaction.account_security","source":"acceptance:generalization-v5"}
+{"text":"Your security verification is expiring. Enter a password, identity number, and SMS code on this unfamiliar page.","label":"spam","source":"acceptance:generalization-v5"}
+{"text":"Your limit order for 200 shares of Seaview Tech filled at an average price of 36.42 dollars.","label":"finance.stock","source":"acceptance:generalization-v5"}
+{"text":"The bank's balanced investment product is open for reservations; risk and performance details are in the official app.","label":"finance.wealth","source":"acceptance:generalization-v5"}
+{"text":"A private stock group guarantees a three-day surge after you transfer an entry fee to the mentor's personal account.","label":"spam","source":"acceptance:generalization-v5"}
+{"text":"The social security office posted this month's pension contribution; the record is available on the public portal.","label":"government.social_security","source":"acceptance:generalization-v5"}
+{"text":"The online tax office accepted your second-quarter filing; its receipt number is in the taxpayer account.","label":"government.tax","source":"acceptance:generalization-v5"}
+{"text":"A supposed tax-refund agent demands an express-processing fee and your banking one-time code.","label":"spam","source":"acceptance:generalization-v5"}
+{"text":"The courier collected your dinner order and expects delivery at 7:25 PM; keep your phone available.","label":"life.takeaway","source":"acceptance:generalization-v5"}
+{"text":"Shipment LG69531 completed its main-haul journey and is moving into the regional distribution warehouse.","label":"life.logistics","source":"acceptance:generalization-v5"}
+{"text":"You missed a call from 021-6258, and the caller did not leave a voicemail.","label":"carrier.call_reminder","source":"acceptance:generalization-v5"}
+{"text":"Company announcement: the office holds a fire drill Saturday; everyone should gather by floor instructions.","label":"work.announcement","source":"acceptance:generalization-v5"}
+{"text":"Annual data-security training opens Monday and requires an online assessment after the course.","label":"work.training","source":"acceptance:generalization-v5"}
+{"text":"Intercity train G8206 is delayed 25 minutes for an equipment inspection; the boarding gate is unchanged.","label":"travel.transport","source":"acceptance:generalization-v5"}
+{"text":"The weather service issued a yellow thunderstorm warning with possible intense local rain over the next two hours.","label":"life.weather","source":"acceptance:generalization-v5"}
+{"text":"The city emergency office advises staying away from temporary structures and large trees during thunderstorms.","label":"government.reminder","source":"acceptance:generalization-v5"}
+{"text":"Your prescription refill was approved; the pharmacy will arrange delivery after confirming identity.","label":"life.medical","source":"acceptance:generalization-v5"}
+{"text":"I left the membership card in the hall drawer. Remember to bring it when you pass by tomorrow.","label":"__sift_abstain__","source":"acceptance:generalization-v5"}
+{"text":"ゴールド会員の更新が完了し、有効期限は2027年8月まで延長され、現在の特典は継続します。","label":"transaction.member","source":"acceptance:generalization-v5"}
+{"text":"ゴールド会員周年企画。年間プランの更新でポイント2倍と空港ラウンジ特典が付きます。","label":"promotion","source":"acceptance:generalization-v5"}
+{"text":"口座末尾1168のパスワードが公式アプリで変更されました。心当たりがなければ直ちに停止してください。","label":"transaction.account_security","source":"acceptance:generalization-v5"}
+{"text":"安全認証の期限を理由に、不審なページでパスワード、身分証番号、SMSコードを入力させようとしています。","label":"spam","source":"acceptance:generalization-v5"}
+{"text":"シービューテック200株の指値買い注文が平均3,642円で約定しました。","label":"finance.stock","source":"acceptance:generalization-v5"}
+{"text":"銀行の安定運用商品を予約受付中です。リスク区分と運用実績は公式アプリで確認できます。","label":"finance.wealth","source":"acceptance:generalization-v5"}
+{"text":"非公開の株情報で3日以内の上昇を保証し、講師の個人口座へ参加費を振り込ませようとしています。","label":"spam","source":"acceptance:generalization-v5"}
+{"text":"社会保険窓口から、今月の年金保険料を記録し、行政ポータルで確認できるとの通知です。","label":"government.social_security","source":"acceptance:generalization-v5"}
+{"text":"電子税務署が第2四半期の申告を受理しました。受付番号は納税者アカウントで確認できます。","label":"government.tax","source":"acceptance:generalization-v5"}
+{"text":"還付担当を装い、優先処理料と銀行ワンタイムコードを要求しています。","label":"spam","source":"acceptance:generalization-v5"}
+{"text":"夕食の注文を配達員が受け取り、19時25分に到着予定です。電話に出られるようにしてください。","label":"life.takeaway","source":"acceptance:generalization-v5"}
+{"text":"貨物番号LG70642は幹線輸送を終え、地域配送倉庫へ移動中です。","label":"life.logistics","source":"acceptance:generalization-v5"}
+{"text":"021-6258からの不在着信がありました。留守番電話は残されていません。","label":"carrier.call_reminder","source":"acceptance:generalization-v5"}
+{"text":"社内告知：土曜にオフィスの消防訓練を行います。全員、各階の案内に従って集合してください。","label":"work.announcement","source":"acceptance:generalization-v5"}
+{"text":"年次データ安全研修は月曜に開始し、受講後にオンライン試験があります。","label":"work.training","source":"acceptance:generalization-v5"}
+{"text":"都市間列車G8206は車両点検のため25分遅れています。改札口の変更はありません。","label":"travel.transport","source":"acceptance:generalization-v5"}
+{"text":"気象台は雷雨黄色警報を発表し、今後2時間は局地的な激しい雨の可能性があります。","label":"life.weather","source":"acceptance:generalization-v5"}
+{"text":"市の防災部門は、雷雨中は仮設物や大きな木から離れるよう呼びかけています。","label":"government.reminder","source":"acceptance:generalization-v5"}
+{"text":"処方薬の継続申請を承認しました。薬局が本人確認後に配送を手配します。","label":"life.medical","source":"acceptance:generalization-v5"}
+{"text":"会員カードは玄関の引き出しに置いたよ。明日通るときに忘れず持ってきて。","label":"__sift_abstain__","source":"acceptance:generalization-v5"}

@@ -1,0 +1,30 @@
+{"text":"尾号4820卡在港口停车场完成离场费支付，消费记录已更新。","label":"finance.consumption","source":"training:generalization-v13:variant"}
+{"text":"A marina parking charge posted as a purchase on the card ending 4820.","label":"finance.consumption","source":"training:generalization-v13:variant"}
+{"text":"末尾4820のカードで港の駐車料金を支払い、利用履歴へ反映しました。","label":"finance.consumption","source":"training:generalization-v13:variant"}
+{"text":"信用卡已支付会展中心停车出口费用，交易已入账。","label":"finance.consumption","source":"training:generalization-v13:variant"}
+{"text":"The parking-exit payment was charged to your card and is listed in posted activity.","label":"finance.consumption","source":"training:generalization-v13:variant"}
+{"text":"駐車場出口の料金をカード決済し、利用明細に計上しました。","label":"finance.consumption","source":"training:generalization-v13:variant"}
+{"text":"家庭光纤服务发票已生成，费用将在账单日自动扣缴。","label":"carrier.billing","source":"training:generalization-v13:variant"}
+{"text":"Your fiber-broadband service invoice is ready and autopay will run on the billing date.","label":"carrier.billing","source":"training:generalization-v13:variant"}
+{"text":"家庭用光回線の利用請求が確定し、請求日に自動引き落としを行います。","label":"carrier.billing","source":"training:generalization-v13:variant"}
+{"text":"卫星通信副卡本期服务账单将在主号码结算日合并扣款。","label":"carrier.billing","source":"training:generalization-v13:variant"}
+{"text":"The companion mobile line's service bill will be collected with the primary account statement.","label":"carrier.billing","source":"training:generalization-v13:variant"}
+{"text":"追加回線の月額請求は主回線の請求日にまとめて引き落とされます。","label":"carrier.billing","source":"training:generalization-v13:variant"}
+{"text":"运营商周六迁移语音服务节点，维护期间语音留言列表可能延迟刷新。","label":"carrier.service","source":"training:generalization-v13:variant"}
+{"text":"The carrier is migrating its voice-service node Saturday, so voicemail listings may refresh late.","label":"carrier.service","source":"training:generalization-v13:variant"}
+{"text":"通信会社は土曜に音声サービス設備を切り替え、留守番電話一覧の更新が遅れる場合があります。","label":"carrier.service","source":"training:generalization-v13:variant"}
+{"text":"移动通信核心语音平台升级，新留言会保存但通知可能稍后送达。","label":"carrier.service","source":"training:generalization-v13:variant"}
+{"text":"A mobile voice-platform upgrade may delay voicemail notifications while preserving every recording.","label":"carrier.service","source":"training:generalization-v13:variant"}
+{"text":"携帯会社の音声基盤更新中も録音は保存されますが、留守番電話通知が遅れることがあります。","label":"carrier.service","source":"training:generalization-v13:variant"}
+{"text":"燃气公司将在西区进行管网压力测试，作业结束后恢复常规供气。","label":"life.utility","source":"training:generalization-v13:variant"}
+{"text":"The gas utility is conducting a network pressure test in the west district and will restore normal service afterward.","label":"life.utility","source":"training:generalization-v13:variant"}
+{"text":"ガス会社は西地区で配管の圧力試験を実施し、終了後に通常供給へ戻します。","label":"life.utility","source":"training:generalization-v13:variant"}
+{"text":"供热公司提醒：换热站压力测试期间暖气可能短暂停止。","label":"life.utility","source":"training:generalization-v13:variant"}
+{"text":"The district-heating utility warns of a brief service pause during plant pressure testing.","label":"life.utility","source":"training:generalization-v13:variant"}
+{"text":"地域暖房会社は設備の圧力試験中、一時的に供給を停止する場合があります。","label":"life.utility","source":"training:generalization-v13:variant"}
+{"text":"弹性排班申请已批准，周二签到时间和考勤基准已调整。","label":"work.attendance","source":"training:generalization-v13:variant"}
+{"text":"Your flexible-schedule request was approved and Tuesday's clock-in expectation was updated.","label":"work.attendance","source":"training:generalization-v13:variant"}
+{"text":"時差勤務が承認され、火曜の打刻時刻と勤怠基準を更新しました。","label":"work.attendance","source":"training:generalization-v13:variant"}
+{"text":"本周弹性工时安排已登记，考勤系统会按新的到岗时间计算。","label":"work.attendance","source":"training:generalization-v13:variant"}
+{"text":"The flex-hours schedule is recorded; timekeeping will use the new arrival time this week.","label":"work.attendance","source":"training:generalization-v13:variant"}
+{"text":"今週のフレックス勤務を登録し、勤怠システムは新しい始業時刻で集計します。","label":"work.attendance","source":"training:generalization-v13:variant"}

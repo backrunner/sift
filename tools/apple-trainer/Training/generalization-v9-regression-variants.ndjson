@@ -1,0 +1,72 @@
+{"text":"采购申请PC-7316已通过部门负责人审批，现由财务核对预算科目。","label":"work.approval","source":"augmentation:boundary:generalization-v9-regression"}
+{"text":"Purchase request PC-7316 passed department approval and is now with Finance for budget-code review.","label":"work.approval","source":"augmentation:boundary:generalization-v9-regression"}
+{"text":"購買申請PC-7316は部門承認を通過し、現在は財務部が予算科目を確認しています。","label":"work.approval","source":"augmentation:boundary:generalization-v9-regression"}
+{"text":"差旅报销单TR-5084已获主管批准，票据正在会计复核。","label":"work.approval","source":"augmentation:boundary:generalization-v9-regression"}
+{"text":"Travel reimbursement TR-5084 has manager approval; Accounting is reviewing the receipts.","label":"work.approval","source":"augmentation:boundary:generalization-v9-regression"}
+{"text":"出張精算TR-5084は上長承認済みで、経理が領収書を確認中です。","label":"work.approval","source":"augmentation:boundary:generalization-v9-regression"}
+{"text":"供应商合同VC-2940进入法务审批节点，修订附件等待确认。","label":"work.approval","source":"augmentation:boundary:generalization-v9-regression"}
+{"text":"Vendor contract VC-2940 reached Legal approval, where the revised attachment awaits confirmation.","label":"work.approval","source":"augmentation:boundary:generalization-v9-regression"}
+{"text":"取引先契約VC-2940は法務承認の段階に進み、改訂資料の確認待ちです。","label":"work.approval","source":"augmentation:boundary:generalization-v9-regression"}
+{"text":"系统访问权限申请AC-6172已由安全团队批准，等待IT开通。","label":"work.approval","source":"augmentation:boundary:generalization-v9-regression"}
+{"text":"System-access request AC-6172 was approved by Security and is waiting for IT activation.","label":"work.approval","source":"augmentation:boundary:generalization-v9-regression"}
+{"text":"システム権限申請AC-6172はセキュリティ部門が承認し、ITによる有効化待ちです。","label":"work.approval","source":"augmentation:boundary:generalization-v9-regression"}
+{"text":"采购订单PO-8653因成本中心不符退回，请修正后重新提交审批。","label":"work.approval","source":"augmentation:boundary:generalization-v9-regression"}
+{"text":"Purchase order PO-8653 was returned for an incorrect cost center; revise and resubmit for approval.","label":"work.approval","source":"augmentation:boundary:generalization-v9-regression"}
+{"text":"発注書PO-8653は原価部門の相違で差し戻されました。修正後に再申請してください。","label":"work.approval","source":"augmentation:boundary:generalization-v9-regression"}
+{"text":"您的调休申请已完成最终审批，记录将同步至人事档案。","label":"work.approval","source":"augmentation:boundary:generalization-v9-regression"}
+{"text":"Your compensatory-leave request received final approval and will sync to the HR record.","label":"work.approval","source":"augmentation:boundary:generalization-v9-regression"}
+{"text":"振替休暇の申請が最終承認され、人事記録へ反映されます。","label":"work.approval","source":"augmentation:boundary:generalization-v9-regression"}
+{"text":"下周门店排班已发布，您的周二早班调整为周四晚班。","label":"work.attendance","source":"augmentation:boundary:generalization-v9-regression"}
+{"text":"Next week's store roster is posted; your Tuesday morning shift moved to Thursday evening.","label":"work.attendance","source":"augmentation:boundary:generalization-v9-regression"}
+{"text":"来週の店舗シフトが公開され、火曜早番から木曜遅番へ変更されました。","label":"work.attendance","source":"augmentation:boundary:generalization-v9-regression"}
+{"text":"3月12日漏打卡更正已通过，考勤记录将在今晚更新。","label":"work.attendance","source":"augmentation:boundary:generalization-v9-regression"}
+{"text":"Your missed clock-in correction for March 12 was approved; attendance updates tonight.","label":"work.attendance","source":"augmentation:boundary:generalization-v9-regression"}
+{"text":"3月12日の打刻漏れ修正が承認され、今夜勤怠記録へ反映されます。","label":"work.attendance","source":"augmentation:boundary:generalization-v9-regression"}
+{"text":"本周加班工时已确认，共计6.5小时，请核对考勤明细。","label":"work.attendance","source":"augmentation:boundary:generalization-v9-regression"}
+{"text":"This week's overtime was confirmed at 6.5 hours; review the attendance details.","label":"work.attendance","source":"augmentation:boundary:generalization-v9-regression"}
+{"text":"今週の残業6.5時間が確定しました。勤怠明細をご確認ください。","label":"work.attendance","source":"augmentation:boundary:generalization-v9-regression"}
+{"text":"年假安排已登记，4月8日至10日无需签到。","label":"work.attendance","source":"augmentation:boundary:generalization-v9-regression"}
+{"text":"Your annual leave is recorded for April 8 through 10; no attendance check-in is required.","label":"work.attendance","source":"augmentation:boundary:generalization-v9-regression"}
+{"text":"4月8日から10日までの年次休暇を登録しました。出勤打刻は不要です。","label":"work.attendance","source":"augmentation:boundary:generalization-v9-regression"}
+{"text":"园区施工期间，周五签到地点临时改为西门考勤机。","label":"work.attendance","source":"augmentation:boundary:generalization-v9-regression"}
+{"text":"During campus construction, Friday check-in temporarily moves to the west-gate attendance terminal.","label":"work.attendance","source":"augmentation:boundary:generalization-v9-regression"}
+{"text":"構内工事のため、金曜の出勤打刻場所を一時的に西門端末へ変更します。","label":"work.attendance","source":"augmentation:boundary:generalization-v9-regression"}
+{"text":"周末值班表已更新，您负责周日上午时段，请确认到岗时间。","label":"work.attendance","source":"augmentation:boundary:generalization-v9-regression"}
+{"text":"The weekend duty roster was updated; you cover Sunday morning, so confirm your start time.","label":"work.attendance","source":"augmentation:boundary:generalization-v9-regression"}
+{"text":"週末当番表が更新され、日曜午前の担当になりました。出勤時刻をご確認ください。","label":"work.attendance","source":"augmentation:boundary:generalization-v9-regression"}
+{"text":"配送员已从南城网点出发，包裹预计两小时内送达。","label":"life.express","source":"augmentation:boundary:generalization-v9-regression"}
+{"text":"The courier left the South City depot and expects to deliver your parcel within two hours.","label":"life.express","source":"augmentation:boundary:generalization-v9-regression"}
+{"text":"配達員が南営業所を出発し、荷物は2時間以内に到着する予定です。","label":"life.express","source":"augmentation:boundary:generalization-v9-regression"}
+{"text":"因收件地址无人，快递已改约明日上午再次派送。","label":"life.express","source":"augmentation:boundary:generalization-v9-regression"}
+{"text":"No one was at the delivery address, so the parcel is rescheduled for tomorrow morning.","label":"life.express","source":"augmentation:boundary:generalization-v9-regression"}
+{"text":"お届け先が不在だったため、明日の午前中に再配達します。","label":"life.express","source":"augmentation:boundary:generalization-v9-regression"}
+{"text":"城市共享单车管理办法将于下月生效，完整条款已在政务网站发布。","label":"government.policy","source":"augmentation:boundary:generalization-v9-regression"}
+{"text":"The city's shared-bike regulations take effect next month; full terms are on the government website.","label":"government.policy","source":"augmentation:boundary:generalization-v9-regression"}
+{"text":"市のシェアサイクル規則は来月施行され、全文を行政サイトで公開しています。","label":"government.policy","source":"augmentation:boundary:generalization-v9-regression"}
+{"text":"新版公共充电设施收费标准已获批准，7月1日起实施。","label":"government.policy","source":"augmentation:boundary:generalization-v9-regression"}
+{"text":"The revised public charging-station fee standard was approved and begins July 1.","label":"government.policy","source":"augmentation:boundary:generalization-v9-regression"}
+{"text":"公共充電設備の新料金基準が承認され、7月1日から施行されます。","label":"government.policy","source":"augmentation:boundary:generalization-v9-regression"}
+{"text":"桌面客户端维护完成，离线文件索引将在后台重新构建。","label":"transaction.message","source":"augmentation:boundary:generalization-v9-regression"}
+{"text":"Desktop-client maintenance is complete; the offline file index will rebuild in the background.","label":"transaction.message","source":"augmentation:boundary:generalization-v9-regression"}
+{"text":"デスクトップクライアントの保守が完了し、オフライン索引をバックグラウンドで再構築します。","label":"transaction.message","source":"augmentation:boundary:generalization-v9-regression"}
+{"text":"应用更新已安装，新增附件批注和本地搜索功能。","label":"transaction.message","source":"augmentation:boundary:generalization-v9-regression"}
+{"text":"The application update installed successfully and added attachment notes plus local search.","label":"transaction.message","source":"augmentation:boundary:generalization-v9-regression"}
+{"text":"アプリ更新のインストールが完了し、添付注釈とローカル検索が追加されました。","label":"transaction.message","source":"augmentation:boundary:generalization-v9-regression"}
+{"text":"本月家庭光纤账单为178元，自动缴费将在28日扣款。","label":"carrier.billing","source":"augmentation:boundary:generalization-v9-regression"}
+{"text":"This month's home-fiber bill is $178, with autopay scheduled for the 28th.","label":"carrier.billing","source":"augmentation:boundary:generalization-v9-regression"}
+{"text":"今月の家庭向け光回線料金は178円で、28日に自動引き落とし予定です。","label":"carrier.billing","source":"augmentation:boundary:generalization-v9-regression"}
+{"text":"尾号7319信用卡在北岸书店消费246元，交易已批准。","label":"finance.consumption","source":"augmentation:boundary:generalization-v9-regression"}
+{"text":"A $246 purchase at Northbank Books was approved on the credit card ending 7319.","label":"finance.consumption","source":"augmentation:boundary:generalization-v9-regression"}
+{"text":"末尾7319のクレジットカードで北岸書店にて246円を利用し、取引が承認されました。","label":"finance.consumption","source":"augmentation:boundary:generalization-v9-regression"}
+{"text":"季度项目评审会改到周五上午，视频会议链接保持不变。","label":"work.meeting","source":"augmentation:boundary:generalization-v9-regression"}
+{"text":"The quarterly project review moved to Friday morning; its video-meeting link is unchanged.","label":"work.meeting","source":"augmentation:boundary:generalization-v9-regression"}
+{"text":"四半期プロジェクトレビューは金曜午前へ変更され、会議リンクは変わりません。","label":"work.meeting","source":"augmentation:boundary:generalization-v9-regression"}
+{"text":"办公楼公告：周六进行电梯年检，期间请使用东侧楼梯。","label":"work.announcement","source":"augmentation:boundary:generalization-v9-regression"}
+{"text":"Office notice: elevators undergo annual inspection Saturday; use the east stairwell meanwhile.","label":"work.announcement","source":"augmentation:boundary:generalization-v9-regression"}
+{"text":"社内告知：土曜にエレベーターの定期点検を行うため、東階段をご利用ください。","label":"work.announcement","source":"augmentation:boundary:generalization-v9-regression"}
+{"text":"我把你落在会议室的水杯放到前台抽屉了，走的时候拿一下。","label":"__sift_abstain__","source":"augmentation:boundary:generalization-v9-regression"}
+{"text":"I left the mug you forgot in the meeting room in reception's drawer; grab it on your way out.","label":"__sift_abstain__","source":"augmentation:boundary:generalization-v9-regression"}
+{"text":"会議室に忘れた水筒を受付の引き出しに入れておいたよ。帰りに持っていってね。","label":"__sift_abstain__","source":"augmentation:boundary:generalization-v9-regression"}
+{"text":"明晚我替你值班，你下周再帮我换回来就行。","label":"__sift_abstain__","source":"augmentation:boundary:generalization-v9-regression"}
+{"text":"I'll cover your shift tomorrow night; you can swap one back for me next week.","label":"__sift_abstain__","source":"augmentation:boundary:generalization-v9-regression"}
+{"text":"明日の夜勤は代わるよ。来週どこかで交代してくれれば大丈夫。","label":"__sift_abstain__","source":"augmentation:boundary:generalization-v9-regression"}

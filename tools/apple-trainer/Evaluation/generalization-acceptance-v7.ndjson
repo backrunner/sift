@@ -1,0 +1,60 @@
+{"text":"安全中心已撤销旧浏览器的账户访问令牌，新的登录会话需要重新验证。","label":"transaction.account_security","source":"acceptance:generalization-v7"}
+{"text":"Security center revoked the old browser token; a fresh session will require verification.","label":"transaction.account_security","source":"acceptance:generalization-v7"}
+{"text":"セキュリティセンターが古いブラウザの認証トークンを無効にし、次回ログインで再確認を求めます。","label":"transaction.account_security","source":"acceptance:generalization-v7"}
+{"text":"白金会员权益变更已确认，下个账期会按新等级计算。","label":"transaction.member","source":"acceptance:generalization-v7"}
+{"text":"The platinum member benefits update is confirmed and takes effect on the next statement cycle.","label":"transaction.member","source":"acceptance:generalization-v7"}
+{"text":"プラチナ会員の特典変更が確定し、次回の請求サイクルから適用されます。","label":"transaction.member","source":"acceptance:generalization-v7"}
+{"text":"春季家庭影音活动开启，订阅首月可减免并获赠字幕下载次数。","label":"promotion","source":"acceptance:generalization-v7"}
+{"text":"Spring home-video promotion waives part of the first subscription month and adds subtitle downloads.","label":"promotion","source":"acceptance:generalization-v7"}
+{"text":"春のホームビデオ企画で、初月料金が割引になり字幕ダウンロード回数が付きます。","label":"promotion","source":"acceptance:generalization-v7"}
+{"text":"冒充云相册客服的页面索要钱包恢复短语以解锁照片。","label":"spam","source":"acceptance:generalization-v7"}
+{"text":"A page posing as cloud-photo support asks for a wallet recovery phrase to unlock pictures.","label":"spam","source":"acceptance:generalization-v7"}
+{"text":"クラウド写真サービスを装うページが、写真のロック解除にウォレットの復元語を要求しています。","label":"spam","source":"acceptance:generalization-v7"}
+{"text":"东岳能源现金股息已扣除税款并入证券账户可用资金。","label":"finance.stock","source":"acceptance:generalization-v7"}
+{"text":"After tax withholding, the cash dividend from East Ridge Energy is available in your brokerage funds.","label":"finance.stock","source":"acceptance:generalization-v7"}
+{"text":"イーストリッジ電力の配当金から税金が差し引かれ、証券口座の資金に反映されました。","label":"finance.stock","source":"acceptance:generalization-v7"}
+{"text":"晨星稳健组合已完成赎回，结算款预计两个工作日后入账。","label":"finance.wealth","source":"acceptance:generalization-v7"}
+{"text":"The Morningstar balanced portfolio redemption completed; settlement proceeds arrive in two business days.","label":"finance.wealth","source":"acceptance:generalization-v7"}
+{"text":"モーニングスターの安定運用商品の解約が完了し、決済金は2営業日後に入金されます。","label":"finance.wealth","source":"acceptance:generalization-v7"}
+{"text":"失业补助资格已复核，下一次发放日期可在社会保险账户查看。","label":"government.social_security","source":"acceptance:generalization-v7"}
+{"text":"The unemployment-benefit review is complete; check the social-insurance account for the next payment date.","label":"government.social_security","source":"acceptance:generalization-v7"}
+{"text":"失業給付の資格確認が終わり、次回支給日は社会保険アカウントで確認できます。","label":"government.social_security","source":"acceptance:generalization-v7"}
+{"text":"电子税务局已完成企业开户地址变更，新的回执可下载。","label":"government.tax","source":"acceptance:generalization-v7"}
+{"text":"The electronic tax office finished the company address update and posted a new receipt.","label":"government.tax","source":"acceptance:generalization-v7"}
+{"text":"電子税務署が法人所在地の変更を処理し、新しい受付票を発行しました。","label":"government.tax","source":"acceptance:generalization-v7"}
+{"text":"餐馆确认订单并开始烹饪，骑手接单后会发送送达预估。","label":"life.takeaway","source":"acceptance:generalization-v7"}
+{"text":"The restaurant confirmed the order and started cooking; the courier will send an arrival estimate after pickup.","label":"life.takeaway","source":"acceptance:generalization-v7"}
+{"text":"レストランが注文を確定して調理を始めました。配達員の受取後に到着予想を送ります。","label":"life.takeaway","source":"acceptance:generalization-v7"}
+{"text":"货件已通过海关，正在前往沿海保税仓等待区域分拨。","label":"life.logistics","source":"acceptance:generalization-v7"}
+{"text":"The consignment passed customs and is headed to a coastal bonded depot for regional sorting.","label":"life.logistics","source":"acceptance:generalization-v7"}
+{"text":"貨物は税関を通過し、地域仕分けのため沿岸の保税倉庫へ向かっています。","label":"life.logistics","source":"acceptance:generalization-v7"}
+{"text":"运营商通知：语音信箱有一条新留言，号码为0755-6640。","label":"carrier.call_reminder","source":"acceptance:generalization-v7"}
+{"text":"Carrier notice: voicemail has a new message from 0755-6640.","label":"carrier.call_reminder","source":"acceptance:generalization-v7"}
+{"text":"通信会社からのお知らせ：0755-6640から留守番電話の新着メッセージがあります。","label":"carrier.call_reminder","source":"acceptance:generalization-v7"}
+{"text":"园区行政通知：周五东侧停车入口只对访客开放，员工请绕行。","label":"work.announcement","source":"acceptance:generalization-v7"}
+{"text":"Campus administration notice: the east parking entrance is visitors-only Friday; staff should use the detour.","label":"work.announcement","source":"acceptance:generalization-v7"}
+{"text":"施設総務のお知らせ：金曜は東側駐車入口を来訪者専用とし、社員は迂回してください。","label":"work.announcement","source":"acceptance:generalization-v7"}
+{"text":"年度数据合规课程已分配，请在月底前完成在线考试。","label":"work.training","source":"acceptance:generalization-v7"}
+{"text":"The annual data-compliance course is assigned; complete the online exam by month-end.","label":"work.training","source":"acceptance:generalization-v7"}
+{"text":"年次データコンプライアンス研修が割り当てられました。月末までにオンライン試験を終えてください。","label":"work.training","source":"acceptance:generalization-v7"}
+{"text":"机场快线因站台维护改用4号上车点，发车时刻不变。","label":"travel.transport","source":"acceptance:generalization-v7"}
+{"text":"Airport express uses pickup point 4 during platform maintenance; the departure time is unchanged.","label":"travel.transport","source":"acceptance:generalization-v7"}
+{"text":"空港急行はホーム整備のため4番乗り場を使用しますが、出発時刻は変わりません。","label":"travel.transport","source":"acceptance:generalization-v7"}
+{"text":"气象台发布寒潮预警，明晨山区可能降至零下。","label":"life.weather","source":"acceptance:generalization-v7"}
+{"text":"The weather office issued a cold-wave warning; mountain temperatures may fall below zero tomorrow morning.","label":"life.weather","source":"acceptance:generalization-v7"}
+{"text":"気象台が寒波注意報を発表し、明朝は山間部で氷点下になる可能性があります。","label":"life.weather","source":"acceptance:generalization-v7"}
+{"text":"应急管理部门提醒居民检查灭火器，并约定紧急集合地点。","label":"government.reminder","source":"acceptance:generalization-v7"}
+{"text":"Emergency management asks residents to check fire extinguishers and choose an emergency meeting place.","label":"government.reminder","source":"acceptance:generalization-v7"}
+{"text":"防災当局は消火器を点検し、緊急時の集合場所を決めるよう住民に呼びかけています。","label":"government.reminder","source":"acceptance:generalization-v7"}
+{"text":"医院检验中心已上传甲状腺检查报告，可在患者应用查看。","label":"life.medical","source":"acceptance:generalization-v7"}
+{"text":"The hospital lab uploaded your thyroid test report; view it in the patient app.","label":"life.medical","source":"acceptance:generalization-v7"}
+{"text":"病院の検査室が甲状腺検査の報告書を掲載しました。患者アプリで確認できます。","label":"life.medical","source":"acceptance:generalization-v7"}
+{"text":"您的高铁电子票已出票，检票二维码将在出发前显示。","label":"travel.ticketing","source":"acceptance:generalization-v7"}
+{"text":"Your high-speed rail e-ticket was issued; the gate QR code appears before departure.","label":"travel.ticketing","source":"acceptance:generalization-v7"}
+{"text":"高速鉄道の電子乗車券が発券され、出発前に改札用QRコードが表示されます。","label":"travel.ticketing","source":"acceptance:generalization-v7"}
+{"text":"尾号7314账户今日扣款89元，商户为青岚书店。","label":"finance.bank","source":"acceptance:generalization-v7"}
+{"text":"Account ending 7314 was debited $89 today at Qinglan Books.","label":"finance.bank","source":"acceptance:generalization-v7"}
+{"text":"口座末尾7314から本日89円を青嵐書店へ支払いました。","label":"finance.bank","source":"acceptance:generalization-v7"}
+{"text":"通信积分商城开放兑换，积分可换一周流量包。","label":"carrier.promotion","source":"acceptance:generalization-v7"}
+{"text":"The carrier rewards mall lets you exchange points for a one-week data pass.","label":"carrier.promotion","source":"acceptance:generalization-v7"}
+{"text":"キャリアポイントモールで、ポイントを1週間分のデータパックに交換できます。","label":"carrier.promotion","source":"acceptance:generalization-v7"}

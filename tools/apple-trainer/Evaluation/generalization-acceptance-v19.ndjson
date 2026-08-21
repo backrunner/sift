@@ -1,0 +1,45 @@
+{"text":"【星海航空】旅客认证已过期，请访问 https://verify-starsea.example 上传证件并输入银行应用验证码，否则取消座位。","label":"spam"}
+{"text":"所谓供电退款中心要求安装屏幕协助工具，由客服远程查看账户后才能退回电费。","label":"spam"}
+{"text":"海岸银行安全提醒：工作人员不会索取网银密码、短信验证码或要求远程控制手机。","label":"transaction.account_security"}
+{"text":"【飞航旅行】机票退款成功，860元已原路退回，进度可在官方订单页查看。","label":"finance.refund"}
+{"text":"东方航空订单CA7318已出票，登机二维码及乘机指南见 https://air-east.example/trip/CA7318 。","label":"travel.ticketing"}
+{"text":"预约转账已于08:15汇至尾号4702账户，电子回单可在银行交易记录中下载。","label":"finance.bank"}
+{"text":"车队商务信用卡月结单已生成，本期最低还款额于下周三到期。","label":"finance.credit_card"}
+{"text":"博物馆语音导览器已放入东厅储物柜E12，取件码为6409，请闭馆前领取。","label":"life.pickup_code"}
+{"text":"应急部门提醒：地震演练警报响起后请走楼梯前往北侧空旷集合区。","label":"government.reminder"}
+{"text":"生产数据导出申请已完成合规复核，等待平台主管批准访问期限。","label":"work.approval"}
+{"text":"对象存储签名证书将在18小时后失效，未轮换将导致夜间归档任务停止。","label":"work.alert"}
+{"text":"春季助听器保养优惠含一次听力复测，会员预约可减免服务费。","label":"promotion"}
+{"text":"海上卫星通信套餐已使用78%，剩余650MB可用至本航次结束。","label":"carrier.data_reminder"}
+{"text":"我把明天的船票放在玄关抽屉了，你下班回来记得带上。","label":"__sift_abstain__"}
+{"text":"家具订单HG2840已完成质检并安排发货，随单优惠券可用于下次购买。","label":"transaction.order"}
+{"text":"Oceanic Air says identity review expired and asks for a passport upload plus the approval code from your banking app.","label":"spam"}
+{"text":"A supposed road-toll refund desk wants gift-card redemption numbers before it can return the overpayment.","label":"spam"}
+{"text":"Harbor Bank security reminder: staff never request online-banking passwords, one-time codes, or remote phone access.","label":"transaction.account_security"}
+{"text":"Your rail-ticket refund of $124 returned to the original card; status is available in the official trip history.","label":"finance.refund"}
+{"text":"Flight EA204 is ticketed. The boarding QR and passenger guide are at https://east-air.example/trips/EA204 .","label":"travel.ticketing"}
+{"text":"The scheduled wire ran at 08:15 to account ending 4702; its bank receipt is ready in transaction history.","label":"finance.bank"}
+{"text":"The fleet business-card statement is ready, with the minimum payment due next Wednesday.","label":"finance.credit_card"}
+{"text":"The museum audio guide is in east-hall locker E12; use collection code 6409 before closing.","label":"life.pickup_code"}
+{"text":"Emergency officials advise using the stairs to reach the north assembly ground when the earthquake-drill alarm sounds.","label":"government.reminder"}
+{"text":"The production-data export passed compliance review and awaits the platform owner's approval of the access period.","label":"work.approval"}
+{"text":"The object-storage signing certificate expires in 18 hours; without rotation, nightly archive jobs will stop.","label":"work.alert"}
+{"text":"The spring hearing-aid care offer includes a hearing retest and waives part of the service fee for members.","label":"promotion"}
+{"text":"The offshore satellite plan is 78 percent used, with 650 MB remaining through the current voyage.","label":"carrier.data_reminder"}
+{"text":"I left tomorrow's ferry ticket in the hall drawer; remember to bring it when you get home from work.","label":"__sift_abstain__"}
+{"text":"Furniture order HG2840 passed inspection and is scheduled to ship; the enclosed coupon is for a future purchase.","label":"transaction.order"}
+{"text":"航空会社を装い、本人確認の期限切れとして旅券画像と銀行アプリの承認コードを送るよう求めています。","label":"spam"}
+{"text":"道路料金の返金窓口を名乗り、過払い金の返却前に商品券の引換番号を要求する連絡です。","label":"spam"}
+{"text":"港湾銀行からの注意：職員がネット銀行のパスワード、ワンタイムコード、遠隔操作を求めることはありません。","label":"transaction.account_security"}
+{"text":"鉄道乗車券の返金12,400円を元のカードへ戻しました。公式旅程履歴で状況を確認できます。","label":"finance.refund"}
+{"text":"EA204便は発券済みです。搭乗QRと案内は https://east-air.example/jp/trips/EA204 で確認できます。","label":"travel.ticketing"}
+{"text":"予約振込は8時15分に末尾4702の口座へ実行され、銀行取引履歴に電子明細を発行しました。","label":"finance.bank"}
+{"text":"法人車両カードの月次明細を発行しました。最低支払額の期限は来週水曜です。","label":"finance.credit_card"}
+{"text":"博物館の音声ガイドを東館ロッカーE12へ保管しました。受取コード6409で閉館前にお受け取りください。","label":"life.pickup_code"}
+{"text":"防災当局は地震訓練警報の後、階段で北側の屋外集合場所へ移動するよう案内しています。","label":"government.reminder"}
+{"text":"本番データの書き出し申請は法令審査を終え、アクセス期間について基盤責任者の承認待ちです。","label":"work.approval"}
+{"text":"オブジェクト保管庫の署名証明書は18時間後に失効し、未更新の場合は夜間アーカイブが停止します。","label":"work.alert"}
+{"text":"春の補聴器メンテナンス特典には聴力再検査と会員向けサービス料割引が含まれます。","label":"promotion"}
+{"text":"洋上衛星通信プランは78%使用済みで、今航海中に使える残量は650MBです。","label":"carrier.data_reminder"}
+{"text":"明日のフェリー券は玄関の引き出しに入れたよ。仕事から帰ったら忘れずに持ってきて。","label":"__sift_abstain__"}
+{"text":"家具注文HG2840は検品を終えて発送予定です。同封クーポンは次回購入時に利用できます。","label":"transaction.order"}

@@ -7,8 +7,8 @@ options:
 settings:
   SWIFT_VERSION: "6.0"
   GENERATE_INFOPLIST_FILE: YES
-  MARKETING_VERSION: "1.3"
-  CURRENT_PROJECT_VERSION: "18"
+  MARKETING_VERSION: "1.4"
+  CURRENT_PROJECT_VERSION: "21"
   SUPPORTED_PLATFORMS: "iphoneos iphonesimulator"
   TARGETED_DEVICE_FAMILY: "1"
   SUPPORTS_MACCATALYST: NO
@@ -36,6 +36,7 @@ targets:
         buildPhase: resources
     dependencies:
       - target: MessageFilterCore
+      - target: MessageFilterExtensionKit
     settings:
       CODE_SIGN_IDENTITY: Apple Development
       CODE_SIGN_STYLE: Automatic

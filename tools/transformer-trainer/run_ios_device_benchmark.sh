@@ -48,7 +48,10 @@ candidate="$(cd "$candidate" && pwd)"
 mkdir -p "$output"
 output="$(cd "$output" && pwd)"
 derived_data="$output/DerivedData"
-result_bundle="$output/TransformerDeviceTests.xcresult"
+install_result_bundle="$output/TransformerDeviceInstall.xcresult"
+prime_result_bundle="$output/TransformerDevicePrime.xcresult"
+benchmark_result_bundle="$output/TransformerDeviceBenchmark.xcresult"
+diagnostic_arguments=(-collect-test-diagnostics never)
 
 provisioning_arguments=()
 if [[ "$allow_provisioning_updates" -eq 1 ]]; then
@@ -85,16 +88,46 @@ xcrun devicectl device copy to \
   --remove-existing-content true \
   --timeout 600
 
-rm -rf "$result_bundle"
+rm -rf "$install_result_bundle"
 xcodebuild \
   -project Sift.xcodeproj \
   -scheme TransformerDeviceTests \
   -configuration Release \
   -destination "platform=iOS,id=$device" \
   -derivedDataPath "$derived_data" \
-  -resultBundlePath "$result_bundle" \
+  -resultBundlePath "$install_result_bundle" \
   EXCLUDED_SOURCE_FILE_NAMES=SiftPIIDetector.mlpackage \
   "${provisioning_arguments[@]}" \
+  "${diagnostic_arguments[@]}" \
+  -only-testing:TransformerDeviceTests/TransformerDeviceTests/testInstallCandidateWithoutFinalPathPrime \
+  test-without-building
+
+rm -rf "$prime_result_bundle"
+xcodebuild \
+  -project Sift.xcodeproj \
+  -scheme TransformerDeviceTests \
+  -configuration Release \
+  -destination "platform=iOS,id=$device" \
+  -derivedDataPath "$derived_data" \
+  -resultBundlePath "$prime_result_bundle" \
+  EXCLUDED_SOURCE_FILE_NAMES=SiftPIIDetector.mlpackage \
+  "${provisioning_arguments[@]}" \
+  "${diagnostic_arguments[@]}" \
+  -only-testing:TransformerDeviceTests/TransformerDeviceTests/testPrimeInstalledTransformerAtFinalPath \
+  test-without-building
+
+rm -rf "$benchmark_result_bundle"
+xcodebuild \
+  -project Sift.xcodeproj \
+  -scheme TransformerDeviceTests \
+  -configuration Release \
+  -destination "platform=iOS,id=$device" \
+  -derivedDataPath "$derived_data" \
+  -resultBundlePath "$benchmark_result_bundle" \
+  EXCLUDED_SOURCE_FILE_NAMES=SiftPIIDetector.mlpackage \
+  "${provisioning_arguments[@]}" \
+  "${diagnostic_arguments[@]}" \
+  -only-testing:TransformerDeviceTests/TransformerDeviceTests/testInstalledTransformerRuntimeBenchmark \
   test-without-building
 
 rm -rf "$output/DeviceEvidence"
@@ -114,9 +147,17 @@ if [[ ! -d "$evidence_output" ]]; then
 fi
 runtime_report="$evidence_output/runtime-benchmark.json"
 filter_snapshot="$evidence_output/message-filter-snapshot.json"
+installation_report="$evidence_output/installation.json"
+prime_report="$evidence_output/installation-prime.json"
 [[ -f "$runtime_report" ]] || { echo "error: runtime report was not exported" >&2; exit 1; }
 [[ -f "$filter_snapshot" ]] || { echo "error: MessageFilter snapshot was not exported" >&2; exit 1; }
+[[ -f "$installation_report" ]] || { echo "error: installation report was not exported" >&2; exit 1; }
+[[ -f "$prime_report" ]] || { echo "error: installation prime report was not exported" >&2; exit 1; }
 
+echo "installation: $installation_report"
+echo "installation prime: $prime_report"
 echo "runtime benchmark: $runtime_report"
 echo "MessageFilter snapshot: $filter_snapshot"
-echo "XCTest result: $result_bundle"
+echo "install XCTest result: $install_result_bundle"
+echo "prime XCTest result: $prime_result_bundle"
+echo "benchmark XCTest result: $benchmark_result_bundle"

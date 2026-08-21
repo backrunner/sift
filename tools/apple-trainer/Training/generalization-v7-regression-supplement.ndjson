@@ -1,0 +1,54 @@
+{"text":"安全中心撤销了旧浏览器的登录令牌，新的会话需要重新验证。","label":"transaction.account_security","source":"augmentation:boundary:generalization-v7"}
+{"text":"账户安全设置已取消旧设备授权，后续访问会要求重新登录。","label":"transaction.account_security","source":"augmentation:boundary:generalization-v7"}
+{"text":"Security settings revoked an old browser session; the next visit requires a fresh verification.","label":"transaction.account_security","source":"augmentation:boundary:generalization-v7"}
+{"text":"The account security center disabled a retired device token and will verify the next session.","label":"transaction.account_security","source":"augmentation:boundary:generalization-v7"}
+{"text":"セキュリティセンターが以前のブラウザ認証を無効にし、次のセッションで再確認します。","label":"transaction.account_security","source":"augmentation:boundary:generalization-v7"}
+{"text":"古い端末のアクセス許可を取り消したため、次回はアカウントを再認証してください。","label":"transaction.account_security","source":"augmentation:boundary:generalization-v7"}
+{"text":"白金会员权益变更已确认，新规则下个账期生效。","label":"transaction.member","source":"augmentation:boundary:generalization-v7"}
+{"text":"会员等级调整完成，新的家庭权益已计入账户。","label":"transaction.member","source":"augmentation:boundary:generalization-v7"}
+{"text":"The platinum member benefit change is confirmed and starts with the next statement cycle.","label":"transaction.member","source":"augmentation:boundary:generalization-v7"}
+{"text":"The member tier update completed and the new household benefits are now active.","label":"transaction.member","source":"augmentation:boundary:generalization-v7"}
+{"text":"プラチナ会員の特典変更が確定し、次回の請求期間から有効になります。","label":"transaction.member","source":"augmentation:boundary:generalization-v7"}
+{"text":"会員ランクの更新が完了し、新しい家族特典が反映されました。","label":"transaction.member","source":"augmentation:boundary:generalization-v7"}
+{"text":"家庭影音订阅活动首月减免，并赠送字幕下载次数。","label":"promotion","source":"augmentation:boundary:generalization-v7"}
+{"text":"家庭视频方案限时优惠，首次订阅附送离线字幕额度。","label":"promotion","source":"augmentation:boundary:generalization-v7"}
+{"text":"The home-video subscription campaign discounts the first month and adds offline subtitle credits.","label":"promotion","source":"augmentation:boundary:generalization-v7"}
+{"text":"A family video offer includes an introductory subscription price and complimentary caption downloads.","label":"promotion","source":"augmentation:boundary:generalization-v7"}
+{"text":"ホームビデオの購読企画で、初月料金が割引になり字幕券が付与されます。","label":"promotion","source":"augmentation:boundary:generalization-v7"}
+{"text":"家庭向けビデオのキャンペーンでは、初回月に特典ダウンロードが付きます。","label":"promotion","source":"augmentation:boundary:generalization-v7"}
+{"text":"失业补助复核完成，下一次待遇发放日期已更新。","label":"government.social_security","source":"augmentation:boundary:generalization-v7"}
+{"text":"社会保险账户显示新的失业待遇资格和发放安排。","label":"government.social_security","source":"augmentation:boundary:generalization-v7"}
+{"text":"The unemployment benefit eligibility check completed and the next payment date was updated.","label":"government.social_security","source":"augmentation:boundary:generalization-v7"}
+{"text":"Your social-insurance account now shows the approved benefit schedule.","label":"government.social_security","source":"augmentation:boundary:generalization-v7"}
+{"text":"失業給付の資格審査が完了し、次回支給日の情報が更新されました。","label":"government.social_security","source":"augmentation:boundary:generalization-v7"}
+{"text":"社会保険アカウントに承認済みの給付予定が表示されています。","label":"government.social_security","source":"augmentation:boundary:generalization-v7"}
+{"text":"餐馆已确认订单并开始烹饪，骑手取餐后显示预计送达。","label":"life.takeaway","source":"augmentation:boundary:generalization-v7"}
+{"text":"外卖店接单后正在备餐，配送员到店会更新时间。","label":"life.takeaway","source":"augmentation:boundary:generalization-v7"}
+{"text":"The restaurant confirmed the meal order and is cooking; pickup will refresh the delivery estimate.","label":"life.takeaway","source":"augmentation:boundary:generalization-v7"}
+{"text":"Your takeaway is being prepared and the courier will post an updated arrival time after pickup.","label":"life.takeaway","source":"augmentation:boundary:generalization-v7"}
+{"text":"レストランが食事の注文を受けて調理中です。配達員の受取後に予定時刻を更新します。","label":"life.takeaway","source":"augmentation:boundary:generalization-v7"}
+{"text":"テイクアウトの注文が確定し、配達員が受け取ると到着予想が表示されます。","label":"life.takeaway","source":"augmentation:boundary:generalization-v7"}
+{"text":"园区行政通知：东侧停车入口周五仅供访客，员工请使用西门。","label":"work.announcement","source":"augmentation:boundary:generalization-v7"}
+{"text":"公司通知调整办公园区入口，访客和员工请按新路线通行。","label":"work.announcement","source":"augmentation:boundary:generalization-v7"}
+{"text":"Campus administration says the east parking entrance is visitors-only Friday; staff should use the west gate.","label":"work.announcement","source":"augmentation:boundary:generalization-v7"}
+{"text":"A workplace notice changes the office entrance route for visitors and employees.","label":"work.announcement","source":"augmentation:boundary:generalization-v7"}
+{"text":"施設総務からの通知で、金曜は東側駐車口が来訪者専用になります。","label":"work.announcement","source":"augmentation:boundary:generalization-v7"}
+{"text":"社内告知：社員は新しい入口を利用し、来訪者は指定ゲートへ進んでください。","label":"work.announcement","source":"augmentation:boundary:generalization-v7"}
+{"text":"高铁电子票已出票，出发前可打开检票二维码。","label":"travel.ticketing","source":"augmentation:boundary:generalization-v7"}
+{"text":"您的铁路电子乘车券已生成，二维码会在闸机前显示。","label":"travel.ticketing","source":"augmentation:boundary:generalization-v7"}
+{"text":"The rail e-ticket was issued; open the gate QR code before boarding.","label":"travel.ticketing","source":"augmentation:boundary:generalization-v7"}
+{"text":"Your high-speed train ticket is ready and its boarding code will appear at the gate.","label":"travel.ticketing","source":"augmentation:boundary:generalization-v7"}
+{"text":"高速鉄道の電子乗車券が発券され、改札でQRコードを表示できます。","label":"travel.ticketing","source":"augmentation:boundary:generalization-v7"}
+{"text":"鉄道のeチケットが発行され、乗車前に改札コードを確認できます。","label":"travel.ticketing","source":"augmentation:boundary:generalization-v7"}
+{"text":"尾号8462账户扣款126元，商户为南桥文具店。","label":"finance.bank","source":"augmentation:boundary:generalization-v7"}
+{"text":"账户末尾8462今日在南桥文具消费126元，余额已更新。","label":"finance.bank","source":"augmentation:boundary:generalization-v7"}
+{"text":"Account ending 8462 was debited $126 at Nanqiao Stationery; the balance was updated.","label":"finance.bank","source":"augmentation:boundary:generalization-v7"}
+{"text":"A $126 merchant payment was posted to the account ending 8462.","label":"finance.bank","source":"augmentation:boundary:generalization-v7"}
+{"text":"口座末尾8462から南橋文具店へ126円を支払い、残高が更新されました。","label":"finance.bank","source":"augmentation:boundary:generalization-v7"}
+{"text":"口座番号末尾8462の店舗支払い126円が処理されました。","label":"finance.bank","source":"augmentation:boundary:generalization-v7"}
+{"text":"东岳能源股息已进入证券资金账户，税后可用余额已更新。","label":"finance.stock","source":"augmentation:boundary:generalization-v7"}
+{"text":"持仓现金分红已结算并记入证券账户余额。","label":"finance.stock","source":"augmentation:boundary:generalization-v7"}
+{"text":"East Ridge Energy's dividend was settled into the brokerage cash account after withholding.","label":"finance.stock","source":"augmentation:boundary:generalization-v7"}
+{"text":"The holding's cash distribution is now available in the securities account.","label":"finance.stock","source":"augmentation:boundary:generalization-v7"}
+{"text":"イーストリッジ電力の配当金が証券口座に入金され、利用可能残高が更新されました。","label":"finance.stock","source":"augmentation:boundary:generalization-v7"}
+{"text":"保有株式の現金配当が決済され、証券資金に反映されています。","label":"finance.stock","source":"augmentation:boundary:generalization-v7"}

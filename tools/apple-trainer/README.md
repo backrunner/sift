@@ -46,7 +46,7 @@ merchant promotions, game offers, rewards malls, carrier points, and factual
 points notifications. It is never merged into training rows; both pipeline
 trainers evaluate it after validation to catch regressions at these boundaries.
 
-`--algorithm maxent` is the validated default for the current 52-label SMS
+`--algorithm maxent` is the validated default for the current 53-label SMS
 corpus: it trains in seconds, produces a tiny model, and outperforms Create ML
 BERT transfer learning on the local validation splits. Use `--algorithm bert`
 or `--algorithm auto` only for comparison runs. Use `--split-seed` to repeat

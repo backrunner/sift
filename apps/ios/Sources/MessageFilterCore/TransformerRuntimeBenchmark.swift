@@ -103,10 +103,15 @@ public struct TransformerRuntimeBenchmarkReport: Codable, Hashable, Sendable {
     public let artifactIdentity: ModelArtifactIdentity?
     public let deviceModel: String
     public let osVersion: String
+    public let processIdentifier: Int32?
+    public let processUptimeSeconds: Double?
     public let computeUnits: String
     public let warmupIterations: Int
     public let measuredIterations: Int
+    public let tokenizerInitializationMilliseconds: Double
     public let coldLoadMilliseconds: Double
+    public let firstInferenceMilliseconds: Double
+    public let coldPathMilliseconds: Double
     public let p50LatencyMilliseconds: Double
     public let p95LatencyMilliseconds: Double
     public let p99LatencyMilliseconds: Double
@@ -138,6 +143,7 @@ public enum TransformerRuntimeBenchmark {
         artifactIdentity: ModelArtifactIdentity? = nil,
         computeUnits: String = "all",
         baselinePhysicalFootprintBytes: UInt64? = nil,
+        tokenizerInitializationMilliseconds: Double = 0,
         warmupIterations: Int = 10,
         measuredIterations: Int = 100
     ) async throws -> TransformerRuntimeBenchmarkReport {
@@ -156,16 +162,32 @@ public enum TransformerRuntimeBenchmark {
         let coldLoadMilliseconds = milliseconds(loadStart.duration(to: clock.now))
         let postLoadFootprint = currentPhysicalFootprintBytes()
         var firstExecutionPeakFootprint = postLoadFootprint
+        var firstInferenceMilliseconds: Double?
 
-        for index in 0..<warmupIterations {
-            let request = requests[index % requests.count]
+        if warmupIterations > 0 {
+            let request = requests[0]
+            let firstInferenceStartedAt = clock.now
             autoreleasepool {
                 _ = classifier.classify(sender: request.sender, body: request.body)
             }
+            firstInferenceMilliseconds = milliseconds(firstInferenceStartedAt.duration(to: clock.now))
             firstExecutionPeakFootprint = max(
                 firstExecutionPeakFootprint,
                 currentPhysicalFootprintBytes()
             )
+        }
+
+        if warmupIterations > 1 {
+            for index in 1..<warmupIterations {
+                let request = requests[index % requests.count]
+                autoreleasepool {
+                    _ = classifier.classify(sender: request.sender, body: request.body)
+                }
+                firstExecutionPeakFootprint = max(
+                    firstExecutionPeakFootprint,
+                    currentPhysicalFootprintBytes()
+                )
+            }
         }
 
         let postWarmupFootprint = currentPhysicalFootprintBytes()
@@ -180,12 +202,18 @@ public enum TransformerRuntimeBenchmark {
             autoreleasepool {
                 _ = classifier.classify(sender: request.sender, body: request.body)
             }
-            durations.append(milliseconds(start.duration(to: clock.now)))
+            let duration = milliseconds(start.duration(to: clock.now))
+            durations.append(duration)
             let footprint = currentPhysicalFootprintBytes()
+            if firstInferenceMilliseconds == nil {
+                firstInferenceMilliseconds = duration
+                firstExecutionPeakFootprint = max(firstExecutionPeakFootprint, footprint)
+            }
             footprintSampleTotal += footprint
             steadyStatePeakFootprint = max(steadyStatePeakFootprint, footprint)
         }
         durations.sort()
+        let resolvedFirstInferenceMilliseconds = firstInferenceMilliseconds ?? 0
         let finalInferenceFootprint = currentPhysicalFootprintBytes()
         steadyStatePeakFootprint = max(steadyStatePeakFootprint, finalInferenceFootprint)
         let peakFootprint = max(firstExecutionPeakFootprint, steadyStatePeakFootprint)
@@ -203,10 +231,17 @@ public enum TransformerRuntimeBenchmark {
             artifactIdentity: artifactIdentity,
             deviceModel: hardwareIdentifier(),
             osVersion: ProcessInfo.processInfo.operatingSystemVersionString,
+            processIdentifier: ProcessInfo.processInfo.processIdentifier,
+            processUptimeSeconds: ProcessInfo.processInfo.systemUptime,
             computeUnits: computeUnits,
             warmupIterations: warmupIterations,
             measuredIterations: measuredIterations,
+            tokenizerInitializationMilliseconds: tokenizerInitializationMilliseconds,
             coldLoadMilliseconds: coldLoadMilliseconds,
+            firstInferenceMilliseconds: resolvedFirstInferenceMilliseconds,
+            coldPathMilliseconds: tokenizerInitializationMilliseconds
+                + coldLoadMilliseconds
+                + resolvedFirstInferenceMilliseconds,
             p50LatencyMilliseconds: percentile(0.50, values: durations),
             p95LatencyMilliseconds: percentile(0.95, values: durations),
             p99LatencyMilliseconds: percentile(0.99, values: durations),

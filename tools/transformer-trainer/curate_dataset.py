@@ -32,11 +32,20 @@ from collections import Counter, defaultdict
 from dataclasses import dataclass, field
 from pathlib import Path
 
+# Keep the export and curation paths on the same conservative second-pass
+# redaction rules.  The import is intentionally local to the repository so
+# this script remains dependency-free beyond the Python standard library.
+_PII_TRAINER_DIR = Path(__file__).resolve().parents[1] / "pii-trainer"
+if str(_PII_TRAINER_DIR) not in sys.path:
+    sys.path.insert(0, str(_PII_TRAINER_DIR))
+from privacy_redaction import is_remote_source, residual_sensitive_kinds, sanitize_text  # noqa: E402
+
 from model_contract import model_labels
 
 CORE_LANGUAGES = ("zh", "en", "ja")
 SUPPORTED_LANGUAGES = ("zh", "en", "ja", "es", "pt", "fr", "de", "ru", "ko", "id", "vi", "th")
 PLACEHOLDER_PATTERN = re.compile(r"\{\{(PHONE|URL|EMAIL|ADDRESS|CARD|ID|ORDER_ID|AMOUNT|CODE|PLATE|NAME)\}\}")
+ANY_PLACEHOLDER_PATTERN = re.compile(r"\{\{[^{}\n]{1,64}\}\}")
 
 
 @dataclass
@@ -60,6 +69,10 @@ class Report:
     kept: int = 0
     rejected: Counter = field(default_factory=Counter)
     rehydrated_rows: int = 0
+    redacted_rows: int = 0
+    redaction_kinds: Counter = field(default_factory=Counter)
+    privacy_rejected: int = 0
+    privacy_redaction_version: str = "privacy-redaction-v1"
     matrix: dict[str, dict[str, int]] = field(default_factory=dict)
     source_counts: dict[str, int] = field(default_factory=dict)
     source_label_language: dict[str, int] = field(default_factory=dict)
@@ -205,6 +218,53 @@ def load_rows(paths: list[Path], report: Report) -> list[Row]:
     return rows
 
 
+def rejection_record(row: Row, reason: str, **extra: object) -> dict:
+    """Build a rejection record without re-persisting remote raw text."""
+    record: dict[str, object] = {
+        "label": row.label,
+        "source": row.source,
+        "language": row.language,
+        "reason": reason,
+        **extra,
+    }
+    if is_remote_source(row.source):
+        record["textHash"] = hashlib.sha256(row.text.encode("utf-8")).hexdigest()
+        record["textLength"] = len(row.text)
+    else:
+        record["text"] = row.text
+    return record
+
+
+def append_rejection(rejected_sink: list[dict], row: Row, reason: str, **extra: object) -> None:
+    """Append a rejection while preserving the remote-text privacy boundary."""
+    rejected_sink.append(rejection_record(row, reason, **extra))
+
+
+def redact_remote_row(row: Row, report: Report, rejected_sink: list[dict]) -> bool:
+    """Apply a second pass to CloudKit rows and reject residual high-risk PII.
+
+    Returns ``False`` when the row must not enter any downstream corpus.  The
+    rejected sink receives only a hash and length for remote rows, never their
+    text.
+    """
+    if not is_remote_source(row.source):
+        return True
+
+    result = sanitize_text(row.text)
+    if result.changed:
+        row.text = result.text
+        report.redacted_rows += 1
+        report.redaction_kinds.update(result.kinds)
+
+    residual = residual_sensitive_kinds(row.text)
+    if residual:
+        report.rejected["unredacted-pii"] += 1
+        report.privacy_rejected += 1
+        rejected_sink.append(rejection_record(row, "unredacted-pii", residualKinds=list(residual)))
+        return False
+    return True
+
+
 # --- Language detection (script ranges + Latin stopword scoring) ------------
 
 LATIN_MARKERS: dict[str, tuple[set[str], str]] = {
@@ -263,7 +323,34 @@ def rehydrate_placeholders(text: str, language: str, rng: "_Rng") -> str:
     """Replaces sanitizer tokens ({{PHONE}}, {{CODE}}, …) with plausible fake
     values so contributed samples match the raw-SMS distribution the filter
     sees at inference time."""
-    def value_for(token: str) -> str:
+    def social_context(before: str) -> str | None:
+        context = before[-48:].casefold()
+        markers = [
+            (max(context.rfind("qq"), context.rfind("qq号")), "qq"),
+            (max(context.rfind("微信"), context.rfind("wechat")), "wechat"),
+            (
+                max(
+                    context.rfind("line"),
+                    context.rfind("telegram"),
+                    context.rfind("discord"),
+                    context.rfind("whatsapp"),
+                    context.rfind("微博"),
+                    context.rfind("小红书"),
+                    context.rfind("抖音"),
+                    context.rfind("快手"),
+                    context.rfind("知乎"),
+                    context.rfind("facebook"),
+                    context.rfind("instagram"),
+                    context.rfind("tiktok"),
+                    context.rfind("twitter"),
+                ),
+                "social",
+            ),
+        ]
+        position, kind = max(markers, key=lambda item: item[0])
+        return kind if position >= 0 else None
+
+    def value_for(token: str, before: str) -> str:
         if token == "PHONE":
             if language == "zh":
                 return f"1{rng.next_int(30, 99)}{rng.next_int(10000000, 99999999)}"
@@ -283,6 +370,13 @@ def rehydrate_placeholders(text: str, language: str, rng: "_Rng") -> str:
         if token == "CARD":
             return " ".join(str(rng.next_int(1000, 9999)) for _ in range(4))
         if token == "ID":
+            social_kind = social_context(before)
+            if social_kind == "qq":
+                return str(rng.next_int(100000, 9999999999))
+            if social_kind == "wechat":
+                return rng.choice(["wxid_demo" + str(rng.next_int(100, 9999)), "demo_user_" + str(rng.next_int(10, 9999))])
+            if social_kind == "social":
+                return rng.choice(["safe_handle_" + str(rng.next_int(10, 9999)), "demo_tag_" + str(rng.next_int(10, 9999))])
             if language == "zh":
                 body = f"11010{rng.next_int(1, 9)}19{rng.next_int(60, 99)}0{rng.next_int(1, 9)}{rng.next_int(10, 28)}{rng.next_int(100, 999)}"
                 weights = (7, 9, 10, 5, 8, 4, 2, 1, 6, 3, 7, 9, 10, 5, 8, 4, 2)
@@ -347,7 +441,7 @@ def rehydrate_placeholders(text: str, language: str, rng: "_Rng") -> str:
             return rng.choice(["John", "Sarah", "Alex", "Maria"])
         return token
 
-    return PLACEHOLDER_PATTERN.sub(lambda match: value_for(match.group(1)), text)
+    return PLACEHOLDER_PATTERN.sub(lambda match: value_for(match.group(1), text[:match.start()]), text)
 
 
 # --- Rule-tier filters --------------------------------------------------------
@@ -357,8 +451,8 @@ def normalize(text: str) -> str:
 
 
 def is_placeholder_only(text: str) -> bool:
-    residual = PLACEHOLDER_PATTERN.sub("", text)
-    return bool(PLACEHOLDER_PATTERN.search(text)) and not any(character.isalnum() for character in residual)
+    residual = ANY_PLACEHOLDER_PATTERN.sub("", text)
+    return bool(ANY_PLACEHOLDER_PATTERN.search(text)) and not any(character.isalnum() for character in residual)
 
 
 def near_duplicate_signature(text: str) -> str:
@@ -470,10 +564,26 @@ def apply_rule_tier(
 
     prepared: list[Row] = []
     for row in rows:
+        # Compare external holdout signatures before redaction changes dynamic
+        # values (for example a verification code) so a sanitized holdout can
+        # never re-enter training under a different placeholder/rehydrated form.
+        pre_redaction_text = normalize(row.text)
+        pre_redaction_signature = near_duplicate_signature(pre_redaction_text)
+        if pre_redaction_text.lower() in holdout_exact:
+            report.rejected["holdout-exact"] += 1
+            append_rejection(rejected_sink, row, "holdout-exact")
+            continue
+        if pre_redaction_signature in holdout_signatures:
+            report.rejected["holdout-near"] += 1
+            append_rejection(rejected_sink, row, "holdout-near")
+            continue
+        if not redact_remote_row(row, report, rejected_sink):
+            continue
         text = normalize(row.text)
         if not text or row.label not in valid_labels:
-            report.rejected["unknown-label" if text else "empty"] += 1
-            rejected_sink.append({"text": row.text, "label": row.label, "source": row.source, "reason": "unknown-label"})
+            rejection_reason = "unknown-label" if text else "empty"
+            report.rejected[rejection_reason] += 1
+            append_rejection(rejected_sink, row, rejection_reason)
             continue
         assessment_reason = assessment_rejection_reason(
             row,
@@ -482,23 +592,25 @@ def apply_rule_tier(
         )
         if assessment_reason is not None:
             report.rejected[assessment_reason] += 1
-            rejected_sink.append({
-                "text": row.text,
-                "label": row.label,
-                "source": row.source,
-                "reason": assessment_reason,
-            })
+            append_rejection(rejected_sink, row, assessment_reason)
             continue
         if is_placeholder_only(text):
             report.rejected["placeholder-only"] += 1
-            rejected_sink.append({"text": row.text, "label": row.label, "source": row.source, "reason": "placeholder-only"})
+            append_rejection(rejected_sink, row, "placeholder-only")
             continue
         row.text = text
         if row.language not in SUPPORTED_LANGUAGES:
             row.language = detect_language(text)
-        if PLACEHOLDER_PATTERN.search(text):
+        if ANY_PLACEHOLDER_PATTERN.search(text):
             row.text = normalize(rehydrate_placeholders(text, row.language, stable_rng(text)))
             report.rehydrated_rows += 1
+            # Placeholders are an intermediate privacy representation only.
+            # Never let one reach a model corpus if a future token is added
+            # without a corresponding reverse-redaction value.
+            if ANY_PLACEHOLDER_PATTERN.search(row.text):
+                report.rejected["unrehydrated-placeholder"] += 1
+                append_rejection(rejected_sink, row, "unrehydrated-placeholder", language=row.language)
+                continue
         prepared.append(row)
         text_to_labels[row.text.lower()].add(row.label)
         signature_to_labels[near_duplicate_signature(row.text)].add(row.label)
@@ -550,7 +662,7 @@ def apply_rule_tier(
             kept.append(row)
         else:
             report.rejected[reason.split(":")[0]] += 1
-            rejected_sink.append({"text": row.text, "label": row.label, "source": row.source, "language": row.language, "reason": reason})
+            append_rejection(rejected_sink, row, reason, language=row.language)
     return kept
 
 
@@ -645,10 +757,13 @@ def apply_model_tier(
             kept.append(row)
             continue
         report.rejected[reason] += 1
-        rejected_sink.append({
-            "text": row.text, "label": row.label, "source": row.source,
-            "language": row.language, "reason": reason, "margin": round(margin, 4),
-        })
+        append_rejection(
+            rejected_sink,
+            row,
+            reason,
+            language=row.language,
+            margin=round(margin, 4),
+        )
     return kept
 
 
@@ -679,14 +794,13 @@ def apply_source_caps(
         kept.extend(bucket[:limit])
         for row in bucket[limit:]:
             report.rejected["source-cap"] += 1
-            rejected_sink.append({
-                "text": row.text,
-                "label": row.label,
-                "source": row.source,
-                "language": row.language,
-                "reason": "source-cap",
-                "limit": limit,
-            })
+            append_rejection(
+                rejected_sink,
+                row,
+                "source-cap",
+                language=row.language,
+                limit=limit,
+            )
     return kept
 
 
@@ -771,11 +885,24 @@ def main() -> None:
     print(f"loaded {len(rows)} rows from {len(arguments.inputs)} inputs")
 
     if arguments.audit_only:
+        audited_rows: list[Row] = []
         for row in rows:
+            if not redact_remote_row(row, report, rejected_sink):
+                continue
             row.text = normalize(row.text)
             if row.language not in SUPPORTED_LANGUAGES:
                 row.language = detect_language(row.text)
-        rows = [row for row in rows if row.label in valid_labels]
+            if ANY_PLACEHOLDER_PATTERN.search(row.text):
+                row.text = normalize(rehydrate_placeholders(row.text, row.language, stable_rng(row.text)))
+                report.rehydrated_rows += 1
+                if ANY_PLACEHOLDER_PATTERN.search(row.text):
+                    report.rejected["unrehydrated-placeholder"] += 1
+                    report.privacy_rejected += 1
+                    append_rejection(rejected_sink, row, "unrehydrated-placeholder", language=row.language)
+                    continue
+            if row.label in valid_labels:
+                audited_rows.append(row)
+        rows = audited_rows
         build_matrix(rows, valid_labels, report)
         build_quality_report(rows, report)
         audit_core_coverage(report, arguments.min_core_rows)
@@ -835,6 +962,13 @@ def main() -> None:
     print(f"rejected {sum(report.rejected.values())} rows: {dict(report.rejected)}")
     if report.rehydrated_rows:
         print(f"rehydrated sanitizer placeholders in {report.rehydrated_rows} rows")
+    if report.redacted_rows:
+        print(
+            f"second-pass redacted {report.redacted_rows} remote rows: "
+            f"{dict(report.redaction_kinds)}"
+        )
+    if report.privacy_rejected:
+        print(f"privacy-rejected {report.privacy_rejected} remote rows with residual sensitive values")
     if arguments.audit or arguments.strict_audit:
         print_audit(report, arguments.min_core_rows)
     if arguments.strict_audit and report.audit_gaps:

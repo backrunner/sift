@@ -1,0 +1,60 @@
+{"text":"商户撤销已确认，465元将在两个结算日内退回原支付账户。","label":"finance.refund","source":"acceptance:generalization-v10"}
+{"text":"The merchant reversal is confirmed; $465 returns to the original payment account within two settlement days.","label":"finance.refund","source":"acceptance:generalization-v10"}
+{"text":"加盟店の取消処理が確定し、465円を2決済日以内に元の支払口座へ戻します。","label":"finance.refund","source":"acceptance:generalization-v10"}
+{"text":"白金信用卡本期最低还款额为780元，自动还款日是下周二。","label":"finance.credit_card","source":"acceptance:generalization-v10"}
+{"text":"The minimum payment on your platinum card is $780, with autopay scheduled next Tuesday.","label":"finance.credit_card","source":"acceptance:generalization-v10"}
+{"text":"プラチナカードの最低支払額は780円で、自動引落日は来週火曜です。","label":"finance.credit_card","source":"acceptance:generalization-v10"}
+{"text":"尾号3810卡完成一笔地铁闸机支付，金额6元。","label":"finance.consumption","source":"acceptance:generalization-v10"}
+{"text":"A $6 transit-gate purchase completed on the card ending 3810.","label":"finance.consumption","source":"acceptance:generalization-v10"}
+{"text":"末尾3810のカードで地下鉄改札の6円決済が完了しました。","label":"finance.consumption","source":"acceptance:generalization-v10"}
+{"text":"国际漫游月结单为286元，费用将在28日从通信账户扣缴。","label":"carrier.billing","source":"acceptance:generalization-v10"}
+{"text":"Your international-roaming statement is $286 and will debit the telecom account on the 28th.","label":"carrier.billing","source":"acceptance:generalization-v10"}
+{"text":"国際ローミングの月額請求は286円で、28日に通信口座から引き落とします。","label":"carrier.billing","source":"acceptance:generalization-v10"}
+{"text":"运营商今晚迁移SIM配置平台，期间补卡服务暂停四十分钟。","label":"carrier.service","source":"acceptance:generalization-v10"}
+{"text":"The carrier migrates its SIM provisioning platform tonight; replacement service pauses for forty minutes.","label":"carrier.service","source":"acceptance:generalization-v10"}
+{"text":"通信会社は今夜SIM設定基盤を移行し、再発行サービスを40分停止します。","label":"carrier.service","source":"acceptance:generalization-v10"}
+{"text":"供水公司发布煮沸提醒，西区管网冲洗完成前请勿直接饮用。","label":"life.utility","source":"acceptance:generalization-v10"}
+{"text":"The water utility issued a boil notice for the west district until network flushing is complete.","label":"life.utility","source":"acceptance:generalization-v10"}
+{"text":"水道局は西地区の管洗浄が終わるまで煮沸して飲むよう案内しています。","label":"life.utility","source":"acceptance:generalization-v10"}
+{"text":"快件因站点关闭改由青湖网点派送，预计明日上午送达。","label":"life.express","source":"acceptance:generalization-v10"}
+{"text":"Your parcel was rerouted after a depot closure and should arrive tomorrow morning.","label":"life.express","source":"acceptance:generalization-v10"}
+{"text":"営業所閉鎖のため荷物を青湖拠点へ迂回し、明朝配達する予定です。","label":"life.express","source":"acceptance:generalization-v10"}
+{"text":"冷藏包裹已存入生鲜柜B7，取货码为6314，请于今晚前领取。","label":"life.pickup_code","source":"acceptance:generalization-v10"}
+{"text":"A chilled parcel is in fresh-food locker B7; collect it tonight with code 6314.","label":"life.pickup_code","source":"acceptance:generalization-v10"}
+{"text":"冷蔵荷物を生鮮ロッカーB7に保管しました。受取コード6314で今夜までにお受け取りください。","label":"life.pickup_code","source":"acceptance:generalization-v10"}
+{"text":"放射科已上传影像复核结论，可在患者门户查看医生批注。","label":"life.medical","source":"acceptance:generalization-v10"}
+{"text":"Radiology uploaded the imaging review; the clinician's notes are in the patient portal.","label":"life.medical","source":"acceptance:generalization-v10"}
+{"text":"放射線科が画像再確認結果を登録し、患者ポータルで医師の注記を確認できます。","label":"life.medical","source":"acceptance:generalization-v10"}
+{"text":"法院调解平台已收取答辩材料，线上会议时间将在排期后通知。","label":"government.court","source":"acceptance:generalization-v10"}
+{"text":"The court mediation portal received the response filing and will send the online-session time after scheduling.","label":"government.court","source":"acceptance:generalization-v10"}
+{"text":"裁判所の調停ポータルが答弁書を受領し、オンライン期日は日程確定後に通知します。","label":"government.court","source":"acceptance:generalization-v10"}
+{"text":"交警部门通知：山海隧道周六清晨封闭检测，请大型车辆改走外环。","label":"government.traffic","source":"acceptance:generalization-v10"}
+{"text":"Traffic police will close Shanhai Tunnel early Saturday for inspection; heavy vehicles should use the ring road.","label":"government.traffic","source":"acceptance:generalization-v10"}
+{"text":"交通警察は土曜早朝に山海トンネルを点検閉鎖し、大型車を環状線へ迂回させます。","label":"government.traffic","source":"acceptance:generalization-v10"}
+{"text":"应急部门提醒：社区疏散演练鸣笛时请沿绿色标识前往东广场。","label":"government.reminder","source":"acceptance:generalization-v10"}
+{"text":"Emergency services ask residents to follow green signs to the east square when the evacuation-drill siren sounds.","label":"government.reminder","source":"acceptance:generalization-v10"}
+{"text":"防災当局は避難訓練のサイレン後、緑の表示に沿って東広場へ移動するよう案内しています。","label":"government.reminder","source":"acceptance:generalization-v10"}
+{"text":"生产消息队列剩余容量低于一小时，若未扩容将暂停接收订单事件。","label":"work.alert","source":"acceptance:generalization-v10"}
+{"text":"The production message queue has under one hour of capacity and may stop accepting order events.","label":"work.alert","source":"acceptance:generalization-v10"}
+{"text":"本番メッセージキューの残り容量は1時間未満で、未拡張の場合は注文イベントを停止します。","label":"work.alert","source":"acceptance:generalization-v10"}
+{"text":"采购申请PR-418已到财务复核节点，请确认成本中心后审批。","label":"work.approval","source":"acceptance:generalization-v10"}
+{"text":"Purchase request PR-418 reached finance review; approve it after confirming the cost center.","label":"work.approval","source":"acceptance:generalization-v10"}
+{"text":"購買申請PR-418が財務確認に進みました。原価部門を確認して承認してください。","label":"work.approval","source":"acceptance:generalization-v10"}
+{"text":"跨区站会改到周四十点，原会议室已释放并更新视频入口。","label":"work.meeting","source":"acceptance:generalization-v10"}
+{"text":"The cross-region stand-up moved to Thursday at ten; the room was released and the video link updated.","label":"work.meeting","source":"acceptance:generalization-v10"}
+{"text":"地域横断の朝会は木曜10時へ変更され、会議室を解放して動画リンクを更新しました。","label":"work.meeting","source":"acceptance:generalization-v10"}
+{"text":"账户已撤销遗失安全密钥，下一次登录需使用新通行密钥。","label":"transaction.account_security","source":"acceptance:generalization-v10"}
+{"text":"The lost security key was revoked; your next sign-in requires the new passkey.","label":"transaction.account_security","source":"acceptance:generalization-v10"}
+{"text":"紛失したセキュリティキーを無効にし、次回ログインでは新しいパスキーが必要です。","label":"transaction.account_security","source":"acceptance:generalization-v10"}
+{"text":"预售咖啡机订单已完成尾款支付，仓库将在上市日按顺序发货。","label":"transaction.order","source":"acceptance:generalization-v10"}
+{"text":"The preorder balance for your coffee machine is paid; the warehouse ships in launch-day order.","label":"transaction.order","source":"acceptance:generalization-v10"}
+{"text":"予約購入したコーヒーマシンの残金決済が完了し、発売日に倉庫から順次発送します。","label":"transaction.order","source":"acceptance:generalization-v10"}
+{"text":"跨海轮渡电子票已出票，车辆请从3号口核验二维码进港。","label":"travel.ticketing","source":"acceptance:generalization-v10"}
+{"text":"Your cross-bay ferry e-ticket is issued; vehicles enter gate 3 for QR verification.","label":"travel.ticketing","source":"acceptance:generalization-v10"}
+{"text":"湾横断フェリーの電子乗船券を発行しました。車両は3番口でQRを確認して入港してください。","label":"travel.ticketing","source":"acceptance:generalization-v10"}
+{"text":"家庭网络安全险限时试算，完成报价可领取路由器延保券。","label":"promotion","source":"acceptance:generalization-v10"}
+{"text":"Limited home cyber-insurance quote offer includes an extended router-warranty voucher.","label":"promotion","source":"acceptance:generalization-v10"}
+{"text":"家庭向けサイバー保険の期間限定見積で、ルーター延長保証券が付きます。","label":"promotion","source":"acceptance:generalization-v10"}
+{"text":"冒充法院调解员的人要求先转保全费到个人账户，否则立即冻结资产。","label":"spam","source":"acceptance:generalization-v10"}
+{"text":"Someone posing as a court mediator demands a preservation fee to a personal account or threatens an immediate asset freeze.","label":"spam","source":"acceptance:generalization-v10"}
+{"text":"裁判所の調停員を装い、資産凍結を避けるため個人口座へ保全費を送るよう要求しています。","label":"spam","source":"acceptance:generalization-v10"}

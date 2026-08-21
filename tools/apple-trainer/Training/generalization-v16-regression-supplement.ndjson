@@ -1,0 +1,276 @@
+{"text":"期刊审稿酬金已汇入登记的薪资账户，本次收入明细可在财务中心下载。","label":"finance.income","source":"augmentation:boundary:generalization-v16"}
+{"text":"版权平台已结算本季度稿费，款项作为收入存入尾号5086账户。","label":"finance.income","source":"augmentation:boundary:generalization-v16"}
+{"text":"The journal-review stipend was deposited to your registered payroll account; its income statement is available in Finance.","label":"finance.income","source":"augmentation:boundary:generalization-v16"}
+{"text":"The publishing platform settled this quarter's royalties as income to account ending 5086.","label":"finance.income","source":"augmentation:boundary:generalization-v16"}
+{"text":"学術誌の査読謝礼を登録給与口座へ入金し、財務画面に収入明細を掲載しました。","label":"finance.income","source":"augmentation:boundary:generalization-v16"}
+{"text":"出版サービスが今四半期の印税を精算し、末尾5086の口座へ収入として入金しました。","label":"finance.income","source":"augmentation:boundary:generalization-v16"}
+{"text":"可转债到期兑付完成，本金与最后一期利息已进入证券账户。","label":"finance.stock","source":"augmentation:boundary:generalization-v16"}
+{"text":"持有的指数基金完成现金分红，红利已记入券商资金余额。","label":"finance.stock","source":"augmentation:boundary:generalization-v16"}
+{"text":"Your convertible note matured; principal and final interest were credited to the brokerage account.","label":"finance.stock","source":"augmentation:boundary:generalization-v16"}
+{"text":"The index fund paid its cash distribution into your broker cash balance.","label":"finance.stock","source":"augmentation:boundary:generalization-v16"}
+{"text":"転換社債の満期償還が完了し、元本と最終利息を証券口座へ入金しました。","label":"finance.stock","source":"augmentation:boundary:generalization-v16"}
+{"text":"保有インデックスファンドの現金分配金を証券会社の預り金へ反映しました。","label":"finance.stock","source":"augmentation:boundary:generalization-v16"}
+{"text":"两次酒店住宿的奖励积分已补登，会员余额增加至18,260分。","label":"transaction.points","source":"augmentation:boundary:generalization-v16"}
+{"text":"志愿服务里程兑换完成，新增的社区积分已进入个人账户。","label":"transaction.points","source":"augmentation:boundary:generalization-v16"}
+{"text":"Reward points from two hotel stays were posted, raising your member balance to 18,260.","label":"transaction.points","source":"augmentation:boundary:generalization-v16"}
+{"text":"Your volunteer miles were converted and the new community points added to your account.","label":"transaction.points","source":"augmentation:boundary:generalization-v16"}
+{"text":"ホテル2滞在分の特典ポイントを追記し、会員残高は18,260になりました。","label":"transaction.points","source":"augmentation:boundary:generalization-v16"}
+{"text":"ボランティア活動マイルの交換が完了し、地域ポイントを個人残高へ加算しました。","label":"transaction.points","source":"augmentation:boundary:generalization-v16"}
+{"text":"水族馆家庭年卡续费成功，所有绑定成员的入馆资格已延长一年。","label":"transaction.member","source":"augmentation:boundary:generalization-v16"}
+{"text":"创客空间季度会籍已更新，新门禁权限从下周一生效。","label":"transaction.member","source":"augmentation:boundary:generalization-v16"}
+{"text":"Your aquarium family membership renewed, extending admission for every linked member by one year.","label":"transaction.member","source":"augmentation:boundary:generalization-v16"}
+{"text":"The makerspace quarterly membership was updated; new access privileges begin Monday.","label":"transaction.member","source":"augmentation:boundary:generalization-v16"}
+{"text":"水族館の家族年会員を更新し、登録済み全員の入館資格を1年間延長しました。","label":"transaction.member","source":"augmentation:boundary:generalization-v16"}
+{"text":"メイカースペースの四半期会員を更新し、新しい入室権限は月曜から有効です。","label":"transaction.member","source":"augmentation:boundary:generalization-v16"}
+{"text":"隐私数据副本已生成完毕，压缩包会在账户中心保留五天。","label":"transaction.message","source":"augmentation:boundary:generalization-v16"}
+{"text":"跨设备笔记迁移完成，旧客户端现在只保留只读副本。","label":"transaction.message","source":"augmentation:boundary:generalization-v16"}
+{"text":"Your privacy-data copy is ready; the archive remains in the account center for five days.","label":"transaction.message","source":"augmentation:boundary:generalization-v16"}
+{"text":"Cross-device note migration finished, leaving the legacy client with a read-only copy.","label":"transaction.message","source":"augmentation:boundary:generalization-v16"}
+{"text":"プライバシーデータのコピー作成が完了し、圧縮ファイルをアカウント画面で5日間保管します。","label":"transaction.message","source":"augmentation:boundary:generalization-v16"}
+{"text":"端末間ノート移行が完了し、旧アプリには読取専用の複製のみ残ります。","label":"transaction.message","source":"augmentation:boundary:generalization-v16"}
+{"text":"海外包裹已通过边境检验并交给本地配送站，预计明日下午送达。","label":"life.express","source":"augmentation:boundary:generalization-v16"}
+{"text":"快件因山区道路管制改由西谷网点派送，新的送达日期为周一。","label":"life.express","source":"augmentation:boundary:generalization-v16"}
+{"text":"The overseas parcel passed border inspection and reached the local depot for delivery tomorrow afternoon.","label":"life.express","source":"augmentation:boundary:generalization-v16"}
+{"text":"A mountain-road closure rerouted your shipment through West Valley depot for Monday delivery.","label":"life.express","source":"augmentation:boundary:generalization-v16"}
+{"text":"海外小包は国境検査を通過して地域営業所へ入り、明日午後に配達予定です。","label":"life.express","source":"augmentation:boundary:generalization-v16"}
+{"text":"山間道路の規制で荷物を西谷営業所へ迂回し、月曜にお届けします。","label":"life.express","source":"augmentation:boundary:generalization-v16"}
+{"text":"海水淡化供水管周二进行耐压检测，滨海园区将低压运行三小时。","label":"life.utility","source":"augmentation:boundary:generalization-v16"}
+{"text":"工业蒸汽管网年度冲洗期间，东区热力供应将在凌晨暂停。","label":"life.utility","source":"augmentation:boundary:generalization-v16"}
+{"text":"The desalinated-water main receives a pressure test Tuesday, reducing coastal-park supply for three hours.","label":"life.utility","source":"augmentation:boundary:generalization-v16"}
+{"text":"Annual flushing of the industrial steam network pauses east-district heat service overnight.","label":"life.utility","source":"augmentation:boundary:generalization-v16"}
+{"text":"淡水化給水管は火曜に耐圧試験を行い、臨海地区では3時間低圧になります。","label":"life.utility","source":"augmentation:boundary:generalization-v16"}
+{"text":"産業用蒸気配管の年次洗浄中、東地区への熱供給を深夜に停止します。","label":"life.utility","source":"augmentation:boundary:generalization-v16"}
+{"text":"疫苗质控样本已装入温控箱，正在从机场仓转运至检测中心。","label":"life.logistics","source":"augmentation:boundary:generalization-v16"}
+{"text":"移植配型标本已完成医院交接，医疗物流车辆正送往区域实验室。","label":"life.logistics","source":"augmentation:boundary:generalization-v16"}
+{"text":"Vaccine quality samples entered a temperature-controlled case for transfer from the airport depot to the test center.","label":"life.logistics","source":"augmentation:boundary:generalization-v16"}
+{"text":"Transplant-matching specimens cleared hospital handoff and are travelling by medical courier to the regional lab.","label":"life.logistics","source":"augmentation:boundary:generalization-v16"}
+{"text":"ワクチン品質試料を定温箱へ収容し、空港倉庫から検査センターへ輸送中です。","label":"life.logistics","source":"augmentation:boundary:generalization-v16"}
+{"text":"移植適合検体の病院引渡しが完了し、医療物流車で地域検査室へ搬送しています。","label":"life.logistics","source":"augmentation:boundary:generalization-v16"}
+{"text":"细胞学复核报告已签发，专科医生可在诊疗档案中查看结论。","label":"life.medical","source":"augmentation:boundary:generalization-v16"}
+{"text":"放射科完成核磁影像判读，复诊时可由主治医生调阅结果。","label":"life.medical","source":"augmentation:boundary:generalization-v16"}
+{"text":"The cytology review report was signed and is available to your specialist in the clinical record.","label":"life.medical","source":"augmentation:boundary:generalization-v16"}
+{"text":"Radiology completed the MRI interpretation for your clinician to review at follow-up.","label":"life.medical","source":"augmentation:boundary:generalization-v16"}
+{"text":"細胞診再確認報告を発行し、専門医が診療記録から所見を確認できます。","label":"life.medical","source":"augmentation:boundary:generalization-v16"}
+{"text":"放射線科がMRI画像の読影を完了し、再診時に担当医が結果を参照できます。","label":"life.medical","source":"augmentation:boundary:generalization-v16"}
+{"text":"森林生态旅舍确认周末住宿，前台将在抵达时核验预订人证件。","label":"travel.tourism","source":"augmentation:boundary:generalization-v16"}
+{"text":"温泉町民宿已保留家庭房三晚，入住说明附在预订详情中。","label":"travel.tourism","source":"augmentation:boundary:generalization-v16"}
+{"text":"The forest eco-lodge confirmed your weekend stay and will verify the booking guest at reception.","label":"travel.tourism","source":"augmentation:boundary:generalization-v16"}
+{"text":"The hot-spring guesthouse held a family room for three nights; check-in instructions are in booking details.","label":"travel.tourism","source":"augmentation:boundary:generalization-v16"}
+{"text":"森林エコロッジの週末宿泊を確定し、到着時に受付で予約者を確認します。","label":"travel.tourism","source":"augmentation:boundary:generalization-v16"}
+{"text":"温泉街の民宿で家族室を3泊確保し、宿泊案内を予約詳細へ掲載しました。","label":"travel.tourism","source":"augmentation:boundary:generalization-v16"}
+{"text":"登山电车因轨道结冰停运，游客中心每二十分钟发一班接驳车。","label":"travel.transport","source":"augmentation:boundary:generalization-v16"}
+{"text":"港区水上巴士因潮位过低取消，车票可改乘沿岸公交。","label":"travel.transport","source":"augmentation:boundary:generalization-v16"}
+{"text":"The mountain tram stopped for icy rails; a replacement coach leaves the visitor center every twenty minutes.","label":"travel.transport","source":"augmentation:boundary:generalization-v16"}
+{"text":"Low tide cancelled the harbor water bus, and passengers may use the coastal bus instead.","label":"travel.transport","source":"augmentation:boundary:generalization-v16"}
+{"text":"登山電車は線路凍結で運休し、観光案内所から20分間隔で代行バスを運行します。","label":"travel.transport","source":"augmentation:boundary:generalization-v16"}
+{"text":"干潮で港内水上バスを欠航し、乗客は海岸路線バスへ振替できます。","label":"travel.transport","source":"augmentation:boundary:generalization-v16"}
+{"text":"海岛夜班船客舱票已出票，请在东港检票口扫描电子乘船证。","label":"travel.ticketing","source":"augmentation:boundary:generalization-v16"}
+{"text":"冰川观景齿轨铁路车票已确认，二维码可在山谷站进闸。","label":"travel.ticketing","source":"augmentation:boundary:generalization-v16"}
+{"text":"Your overnight island-ferry cabin ticket was issued; scan the electronic boarding pass at East Harbor.","label":"travel.ticketing","source":"augmentation:boundary:generalization-v16"}
+{"text":"The glacier-view cog-rail ticket is confirmed, with a QR code for the valley-station gate.","label":"travel.ticketing","source":"augmentation:boundary:generalization-v16"}
+{"text":"島行き夜行船の客室券を発行しました。東港改札で電子乗船証を読み取ってください。","label":"travel.ticketing","source":"augmentation:boundary:generalization-v16"}
+{"text":"氷河展望登山鉄道の乗車券を確定し、谷駅改札でQRを利用できます。","label":"travel.ticketing","source":"augmentation:boundary:generalization-v16"}
+{"text":"灾备数据库复制延迟超过阈值，若今晚未恢复将影响切换演练。","label":"work.alert","source":"augmentation:boundary:generalization-v16"}
+{"text":"制品仓库的加密证书明晨到期，未更新会阻止构建上传。","label":"work.alert","source":"augmentation:boundary:generalization-v16"}
+{"text":"Disaster-recovery database replication exceeded its lag threshold and may block tonight's failover drill.","label":"work.alert","source":"augmentation:boundary:generalization-v16"}
+{"text":"The artifact repository encryption certificate expires tomorrow morning and will block build uploads unless renewed.","label":"work.alert","source":"augmentation:boundary:generalization-v16"}
+{"text":"災害復旧データベースの複製遅延が上限を超え、今夜の切替訓練に影響する可能性があります。","label":"work.alert","source":"augmentation:boundary:generalization-v16"}
+{"text":"成果物保管庫の暗号証明書は明朝失効し、更新しないとビルドを送信できません。","label":"work.alert","source":"augmentation:boundary:generalization-v16"}
+{"text":"海事通信号码有一条未接语音留言，自动转写已保存到运营商应用。","label":"carrier.call_reminder","source":"augmentation:boundary:generalization-v16"}
+{"text":"车载副线收到新的可视语音信箱，录音和文字内容均可查看。","label":"carrier.call_reminder","source":"augmentation:boundary:generalization-v16"}
+{"text":"Your maritime line has an unheard voicemail, with its automatic transcript saved in the carrier app.","label":"carrier.call_reminder","source":"augmentation:boundary:generalization-v16"}
+{"text":"The vehicle companion line received new visual voicemail with both recording and transcript available.","label":"carrier.call_reminder","source":"augmentation:boundary:generalization-v16"}
+{"text":"海事通信回線に未再生の留守番電話があり、自動文字起こしを通信会社アプリへ保存しました。","label":"carrier.call_reminder","source":"augmentation:boundary:generalization-v16"}
+{"text":"車載追加回線に新しいビジュアル留守電が届き、録音と文字内容を確認できます。","label":"carrier.call_reminder","source":"augmentation:boundary:generalization-v16"}
+{"text":"运营商凌晨升级富通信路由，维护时群聊送达状态可能延迟。","label":"carrier.service","source":"augmentation:boundary:generalization-v16"}
+{"text":"移动网络将更新语音留言存储服务，切换期间旧录音可能暂时不可播放。","label":"carrier.service","source":"augmentation:boundary:generalization-v16"}
+{"text":"The carrier upgrades rich-messaging routing overnight, which may delay group-chat delivery status during maintenance.","label":"carrier.service","source":"augmentation:boundary:generalization-v16"}
+{"text":"The mobile network is updating voicemail storage, and old recordings may be briefly unavailable during migration.","label":"carrier.service","source":"augmentation:boundary:generalization-v16"}
+{"text":"通信会社は深夜にRCS経路を更新し、保守中はグループメッセージの配信表示が遅れる場合があります。","label":"carrier.service","source":"augmentation:boundary:generalization-v16"}
+{"text":"携帯網は留守番電話保管サービスを更新し、移行中は過去の録音を一時再生できません。","label":"carrier.service","source":"augmentation:boundary:generalization-v16"}
+{"text":"企业主套餐新增物联网副卡可免三个月月租，并获赠设备流量。","label":"carrier.promotion","source":"augmentation:boundary:generalization-v16"}
+{"text":"现有用户开通海上通信附加包，可享首季折扣和应急通话时长。","label":"carrier.promotion","source":"augmentation:boundary:generalization-v16"}
+{"text":"Business-plan customers adding an IoT companion SIM receive three free months and device data.","label":"carrier.promotion","source":"augmentation:boundary:generalization-v16"}
+{"text":"Existing subscribers activating the maritime add-on receive a first-quarter discount and emergency call minutes.","label":"carrier.promotion","source":"augmentation:boundary:generalization-v16"}
+{"text":"法人主契約にIoT追加SIMを加えると、3か月分の基本料と端末用データが無料です。","label":"carrier.promotion","source":"augmentation:boundary:generalization-v16"}
+{"text":"既存利用者が海上通信オプションを申込むと、初回3か月割引と緊急通話分が付きます。","label":"carrier.promotion","source":"augmentation:boundary:generalization-v16"}
+{"text":"城市档案馆装帧体验课限时报名，双人预约可免一份工具租赁费。","label":"promotion","source":"augmentation:boundary:generalization-v16"}
+{"text":"社区天文课程推出早鸟价，报名家庭套票加赠一次观测活动。","label":"promotion","source":"augmentation:boundary:generalization-v16"}
+{"text":"The city archive's bookbinding workshop has limited registration, with one tool-rental fee waived for pairs.","label":"promotion","source":"augmentation:boundary:generalization-v16"}
+{"text":"The community astronomy course offers early pricing and a bonus observing session with family enrollment.","label":"promotion","source":"augmentation:boundary:generalization-v16"}
+{"text":"市公文書館の製本体験は期間限定受付で、2名予約なら工具レンタル1名分が無料です。","label":"promotion","source":"augmentation:boundary:generalization-v16"}
+{"text":"地域天文講座は早期料金を設定し、家族申込には観測会1回が付きます。","label":"promotion","source":"augmentation:boundary:generalization-v16"}
+{"text":"取消未使用的潜水课程后，报名费将在三个工作日内退回原支付卡。","label":"finance.refund","source":"augmentation:boundary:generalization-v16"}
+{"text":"露营地预约作废，押金和预付余额已发起原路退款。","label":"finance.refund","source":"augmentation:boundary:generalization-v16"}
+{"text":"The unused diving course was cancelled, and its enrollment fee will return to the original card within three business days.","label":"finance.refund","source":"augmentation:boundary:generalization-v16"}
+{"text":"The campsite reservation was voided and a refund of its deposit and prepaid balance started to the original method.","label":"finance.refund","source":"augmentation:boundary:generalization-v16"}
+{"text":"未利用のダイビング講習を取消し、申込料を3営業日以内に元のカードへ返金します。","label":"finance.refund","source":"augmentation:boundary:generalization-v16"}
+{"text":"キャンプ場予約を無効にし、保証金と前払残高を元の支払方法へ払い戻します。","label":"finance.refund","source":"augmentation:boundary:generalization-v16"}
+{"text":"完成城市骑行挑战后，绿色出行积分已加入会员余额。","label":"transaction.points","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"本月四次充电服务累计的奖励分已补登到账户。","label":"transaction.points","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"博物馆参观里程已兑换为会员积分，当前余额同步更新。","label":"transaction.points","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"两段渡轮行程的常旅客分数已入账，可在积分记录查看。","label":"transaction.points","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"Green-travel points from the city cycling challenge were added to your member balance.","label":"transaction.points","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"Reward credits from four charging sessions this month were posted to your account.","label":"transaction.points","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"Your museum-visit miles were converted into member points and the balance was updated.","label":"transaction.points","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"Frequent-traveller points from two ferry journeys were posted and are visible in points history.","label":"transaction.points","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"市内サイクリング企画の環境ポイントを会員残高へ加算しました。","label":"transaction.points","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"今月4回分の充電サービス特典ポイントをアカウントへ追記しました。","label":"transaction.points","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"博物館来館マイルを会員ポイントへ交換し、残高を更新しました。","label":"transaction.points","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"フェリー2区間分の利用ポイントを加算し、履歴で確認できます。","label":"transaction.points","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"植物园家庭年票续期完成，三位成员的入园权限均已延长。","label":"transaction.member","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"社区陶艺工坊会籍已更新，新有效期从下月开始。","label":"transaction.member","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"航海俱乐部季度会员续费成功，电子会员卡已刷新。","label":"transaction.member","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"地方史档案馆读者证已续期，可继续预约阅览席位。","label":"transaction.member","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"The botanical-garden family pass renewed, extending admission for all three linked members.","label":"transaction.member","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"Your community pottery-studio membership was updated with a new term beginning next month.","label":"transaction.member","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"The sailing-club quarterly membership renewed and its digital member card was refreshed.","label":"transaction.member","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"Your local-history archive reader membership was renewed, preserving reading-room reservations.","label":"transaction.member","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"植物園の家族年間パスを更新し、登録3名の入園資格を延長しました。","label":"transaction.member","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"地域陶芸工房の会員資格を更新し、新しい期間は来月から始まります。","label":"transaction.member","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"ヨットクラブの四半期会員を更新し、電子会員証を再発行しました。","label":"transaction.member","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"郷土資料館の閲覧会員を更新し、閲覧席を引き続き予約できます。","label":"transaction.member","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"照片库迁移已完成，旧设备上的副本现在仅供读取。","label":"transaction.message","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"账户活动归档已经生成，下载链接将在安全中心保留六天。","label":"transaction.message","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"桌面端消息索引重建完毕，搜索与跨设备同步已恢复。","label":"transaction.message","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"加密备忘录导出成功，文件可从个人控制台获取。","label":"transaction.message","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"Photo-library migration finished, leaving the copy on the old device read-only.","label":"transaction.message","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"Your account-activity archive is ready, with its download link retained in Security for six days.","label":"transaction.message","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"Desktop message indexing finished, restoring search and cross-device synchronization.","label":"transaction.message","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"The encrypted notes export completed and its file is available from your personal console.","label":"transaction.message","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"写真ライブラリの移行が完了し、旧端末のコピーは読取専用になりました。","label":"transaction.message","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"アカウント操作履歴の保管ファイルを作成し、安全画面で6日間取得できます。","label":"transaction.message","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"デスクトップ版のメッセージ索引再構築が終わり、検索と端末同期を再開しました。","label":"transaction.message","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"暗号化メモの書き出しが成功し、個人管理画面からファイルを取得できます。","label":"transaction.message","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"跨境快件完成动植物检疫，已转入南城配送中心。","label":"life.express","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"包裹通过进口查验后交给末端快递员，预计周二投递。","label":"life.express","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"山区封路使快件改由河谷营业点派送，送达时间顺延一天。","label":"life.express","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"国际邮件已清关并离开机场处理站，正在前往收件城市。","label":"life.express","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"The cross-border shipment passed quarantine and entered South City delivery depot.","label":"life.express","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"After import inspection, the parcel was handed to the final-mile courier for Tuesday delivery.","label":"life.express","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"A mountain closure rerouted the package through Valley depot, delaying delivery by one day.","label":"life.express","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"The international mail cleared customs and left the airport processing center for the destination city.","label":"life.express","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"国際荷物は動植物検疫を通過し、南市配送センターへ入りました。","label":"life.express","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"輸入検査後の荷物を地域配達員へ引き渡し、火曜にお届けする予定です。","label":"life.express","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"山道通行止めで荷物を谷営業所へ迂回し、配達を1日延期します。","label":"life.express","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"国際郵便は通関後に空港処理所を出発し、宛先地域へ輸送中です。","label":"life.express","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"雨水回用管线检修期间，科技园景观供水将暂停半天。","label":"life.utility","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"区域供暖公司进行换热站压力试验，西区暖气会短暂停止。","label":"life.utility","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"燃气公用事业将测试南区调压设施，结束后自动恢复供气。","label":"life.utility","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"海水冷却管网清洗时，港区制冷服务将在凌晨中断两小时。","label":"life.utility","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"Recycled-rainwater maintenance pauses landscape supply to the technology park for half a day.","label":"life.utility","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"The district-heating utility is pressure-testing a heat station, briefly pausing west-zone service.","label":"life.utility","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"The gas utility tests South District regulators and will restore supply automatically afterward.","label":"life.utility","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"Cleaning the seawater-cooling network interrupts harbor cooling service for two hours overnight.","label":"life.utility","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"雨水再利用管の保守中、技術団地の景観用水を半日停止します。","label":"life.utility","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"地域暖房会社が熱交換所の圧力試験を行い、西地区の暖房を一時停止します。","label":"life.utility","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"ガス事業者は南地区の圧力設備を試験し、終了後に供給を自動復旧します。","label":"life.utility","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"海水冷却配管の洗浄中、港地区の冷房を深夜2時間停止します。","label":"life.utility","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"新生儿筛查样本已装入温控箱，从社区医院运往中心实验室。","label":"life.logistics","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"病理蜡块完成交接，医疗专车正在送往会诊医院。","label":"life.logistics","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"临床试验血样已进入机场冷链仓，等待实验室车辆提取。","label":"life.logistics","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"供移植评估的组织样本正在低温转运，运输记录无异常。","label":"life.logistics","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"Newborn-screening samples entered a temperature-controlled case for transfer from the community hospital to the central lab.","label":"life.logistics","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"The pathology blocks completed handoff and are travelling by medical courier to the consulting hospital.","label":"life.logistics","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"Clinical-trial blood samples reached the airport cold-chain depot and await laboratory collection.","label":"life.logistics","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"Tissue samples for transplant assessment are moving under refrigeration with no transport exception.","label":"life.logistics","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"新生児検査試料を定温箱へ収容し、地域病院から中央検査室へ輸送しています。","label":"life.logistics","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"病理ブロックの引渡しが完了し、医療便で診断先の病院へ搬送中です。","label":"life.logistics","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"治験用血液試料が空港低温倉庫へ入り、検査室車両の集荷を待っています。","label":"life.logistics","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"移植評価用組織を低温輸送中で、輸送記録に異常はありません。","label":"life.logistics","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"超声检查结论已审核，主治医生可在复诊时查看报告。","label":"life.medical","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"细胞检测报告已发布，医院应用内可查看医生解读。","label":"life.medical","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"睡眠呼吸监测结果已写入健康档案，专科门诊可调阅。","label":"life.medical","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"眼底影像判读完成，复查建议已附在临床报告中。","label":"life.medical","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"Your ultrasound result was reviewed and is available to the clinician at follow-up.","label":"life.medical","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"The cellular-analysis report was released with its physician interpretation in the hospital app.","label":"life.medical","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"Sleep-apnea monitoring results entered your health record for the specialist clinic.","label":"life.medical","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"Retinal-image interpretation finished, with follow-up advice attached to the clinical report.","label":"life.medical","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"超音波検査結果を確認し、再診時に担当医が報告書を閲覧できます。","label":"life.medical","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"細胞検査報告を公開し、病院アプリに医師所見を掲載しました。","label":"life.medical","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"睡眠時呼吸検査結果を健康記録へ登録し、専門外来で参照できます。","label":"life.medical","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"眼底画像の読影が完了し、診療報告に再検査案内を添付しました。","label":"life.medical","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"冷藏药品已存入社区诊所保管柜D2，请凭领取口令4073取走。","label":"life.pickup_code","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"实验室试剂盒放在科研楼冷柜K5，提取码6814今日有效。","label":"life.pickup_code","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"胰岛素包已送达医院恒温柜A9，请用取件码2368开柜。","label":"life.pickup_code","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"生物样本容器已放入检测站冰柜，领取编号7541。","label":"life.pickup_code","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"Refrigerated medicine is in clinic locker D2; use collection PIN 4073 to retrieve it.","label":"life.pickup_code","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"The laboratory reagent kit is in research-building refrigerator K5; access code 6814 is valid today.","label":"life.pickup_code","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"Your insulin package reached hospital temperature locker A9; open it with pickup code 2368.","label":"life.pickup_code","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"The biosample container is in the testing-station freezer with collection number 7541.","label":"life.pickup_code","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"冷蔵薬を診療所ロッカーD2へ保管しました。受取番号4073でお受け取りください。","label":"life.pickup_code","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"検査試薬箱を研究棟冷蔵庫K5へ入れました。本日の引取コードは6814です。","label":"life.pickup_code","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"インスリン包を病院定温ロッカーA9へ届けました。受取番号2368で開けてください。","label":"life.pickup_code","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"生体試料容器を検査所冷凍庫へ保管しました。受領番号は7541です。","label":"life.pickup_code","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"观光齿轨列车因山体落石停运，山麓站提供替代巴士。","label":"travel.transport","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"机场捷运信号检修，旅客需在中央站换乘临时接驳车。","label":"travel.transport","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"港湾水上巴士受浓雾影响暂停，沿岸公交接受原船票换乘。","label":"travel.transport","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"山谷缆索车因强风关闭，每半小时安排一班代行车辆。","label":"travel.transport","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"The scenic cog railway is suspended after a rockfall, with replacement buses at the base station.","label":"travel.transport","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"Airport-rail signal maintenance requires passengers to change to a temporary shuttle at Central Station.","label":"travel.transport","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"Dense fog suspended the harbor water bus, and coastal buses accept the original ferry ticket.","label":"travel.transport","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"High winds closed the valley funicular, with substitute vehicles running every thirty minutes.","label":"travel.transport","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"観光登山鉄道は落石で運休し、山麓駅から代行バスを運行します。","label":"travel.transport","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"空港連絡鉄道は信号保守のため、中央駅で臨時連絡バスへお乗り換えください。","label":"travel.transport","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"濃霧で港内水上バスを運休し、沿岸バスで元の乗船券を利用できます。","label":"travel.transport","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"渓谷ケーブルカーは強風で停止し、30分間隔で代行車を運行します。","label":"travel.transport","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"岛际夜船卧铺票已出票，电子乘船证可在西码头检票。","label":"travel.ticketing","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"火山观景登山铁路往返票已签发，请在山谷站扫描二维码。","label":"travel.ticketing","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"跨境列车软卧车票确认成功，座位与车厢信息已更新。","label":"travel.ticketing","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"海岸观光电车一日票已生成，可从中央总站进闸。","label":"travel.ticketing","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"Your overnight inter-island ferry berth ticket was issued for electronic boarding at West Pier.","label":"travel.ticketing","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"The volcano-view mountain railway return ticket was issued with a QR code for Valley Station.","label":"travel.ticketing","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"Your cross-border train sleeper ticket is confirmed with updated berth and carriage details.","label":"travel.ticketing","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"A one-day coastal sightseeing tram pass was generated for entry at Central Terminal.","label":"travel.ticketing","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"島間夜行フェリー寝台券を発行し、西埠頭で電子乗船証を利用できます。","label":"travel.ticketing","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"火山展望登山鉄道の往復券を発行しました。谷駅でQRをご提示ください。","label":"travel.ticketing","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"国際列車の寝台券を確定し、寝台番号と車両情報を更新しました。","label":"travel.ticketing","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"海岸観光路面電車の一日券を発行し、中央ターミナルから入場できます。","label":"travel.ticketing","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"对象存储写入延迟持续超标，今晚的灾备任务可能无法按时完成。","label":"work.alert","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"部署签名密钥将在十二小时后失效，未轮换会阻止生产发布。","label":"work.alert","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"备份数据库复制落后阈值，故障切换演练存在中断风险。","label":"work.alert","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"构建制品仓库容量不足，新的流水线可能停止上传。","label":"work.alert","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"Object-storage write latency remains above threshold and may prevent tonight's recovery job from finishing.","label":"work.alert","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"The deployment signing key expires in twelve hours and will block production releases unless rotated.","label":"work.alert","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"Backup-database replication exceeded its lag threshold, putting the failover exercise at risk.","label":"work.alert","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"The build-artifact repository is low on capacity and new pipelines may stop uploading.","label":"work.alert","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"オブジェクトストレージの書込遅延が上限を超え、今夜の災害復旧処理が遅れる可能性があります。","label":"work.alert","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"配備署名鍵は12時間後に失効し、更新しないと本番公開を実行できません。","label":"work.alert","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"バックアップDBの複製遅延が閾値を超え、切替訓練に中断リスクがあります。","label":"work.alert","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"ビルド成果物保管庫の容量が不足し、新しい処理が送信を停止する可能性があります。","label":"work.alert","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"家事法庭已受理未成年人监护变更，调解时间将在排期后通知。","label":"government.court","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"海事法院登记了货损证据清单，下次远程听证日期待定。","label":"government.court","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"遗嘱认证法庭收到补充财产文件，书记处将发送审理安排。","label":"government.court","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"劳动法庭确认调解申请，双方会收到线上出席方式。","label":"government.court","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"Family court accepted the guardianship change and will notify you when mediation is scheduled.","label":"government.court","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"The maritime court logged the cargo-damage evidence list, with the next remote hearing date pending.","label":"government.court","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"Probate court received supplemental estate documents and its clerk will send the hearing schedule.","label":"government.court","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"The employment tribunal confirmed mediation and will send remote-attendance instructions to both parties.","label":"government.court","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"家庭裁判所が後見変更を受理し、調停日程確定後に通知します。","label":"government.court","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"海事裁判所が貨物損害の証拠一覧を登録し、次回遠隔審理日は調整中です。","label":"government.court","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"遺言検認裁判所が追加遺産資料を受領し、書記官から審理予定を送付します。","label":"government.court","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"労働審判所が調停申立てを確認し、双方へオンライン出席方法を案内します。","label":"government.court","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"残障生活津贴年度复核通过，调整后的待遇下月起计入社保记录。","label":"government.social_security","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"照护补助资格重新认证完成，新给付金额会显示在社会保障账户。","label":"government.social_security","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"工伤补偿年度评估已结束，待遇变更将写入公共福利历史。","label":"government.social_security","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"育儿津贴资格确认成功，下一期补助按更新标准发放。","label":"government.social_security","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"Your disability-living allowance passed annual review, with the adjusted benefit entering social-security records next month.","label":"government.social_security","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"Caregiver-support recertification finished, and the new payment appears in your public-benefits account.","label":"government.social_security","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"The annual workplace-injury compensation assessment ended, with changes recorded in benefits history.","label":"government.social_security","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"Childcare-allowance eligibility was confirmed and the next benefit uses the updated rate.","label":"government.social_security","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"障害生活手当の年次確認が完了し、調整後の給付を来月から社会保障記録へ反映します。","label":"government.social_security","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"介護支援手当の資格再確認が終わり、新しい給付額を公的福利口座へ掲載します。","label":"government.social_security","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"労災補償の年次評価が完了し、待遇変更を給付履歴へ記録します。","label":"government.social_security","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"育児手当の資格確認が完了し、次回から更新後の基準で支給します。","label":"government.social_security","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"历史建筑修复体验开放预约，双人报名可减免一份材料包费用。","label":"promotion","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"社区皮划艇课程推出早鸟套餐，家庭报名加赠安全训练。","label":"promotion","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"家用雨水回收系统春季保养优惠，年度方案包含一次滤芯检测。","label":"promotion","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"地方剧院会员周购票享折扣，并额外获得后台参观名额。","label":"promotion","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"The heritage-restoration workshop waives one materials pack when two people register together.","label":"promotion","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"The community kayaking course offers early family pricing with a bonus safety session.","label":"promotion","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"A spring offer for home rainwater systems includes one filter inspection with annual maintenance.","label":"promotion","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"Local-theatre members receive ticket savings this week plus a backstage-tour place.","label":"promotion","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"歴史建築修復体験は2名同時申込で材料セット1名分が無料です。","label":"promotion","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"地域カヤック講座は家族向け早期料金に安全講習1回を追加します。","label":"promotion","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"家庭用雨水再利用設備の春季企画で、年間保守にフィルター点検1回が付きます。","label":"promotion","source":"augmentation:boundary:generalization-v16-r2"}
+{"text":"地域劇場の会員週間では入場券を割引し、舞台裏見学枠も提供します。","label":"promotion","source":"augmentation:boundary:generalization-v16-r2"}

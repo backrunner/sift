@@ -31,21 +31,29 @@ public struct TransformerRuntimeProfile: Codable, Hashable, Sendable {
 
     public let computeUnits: String
     public let modelType: String
+    /// Numeric precision used by the exported Core ML graph. Optional so
+    /// legacy manifests retain their original canonical payload.
+    public let computePrecision: String?
+    /// Warm inference target used to qualify a release artifact. MessageFilter
+    /// runtime fallback timing is controlled separately by MessageFilterTimingPolicy.
     public let inferenceBudgetMilliseconds: Int
 
     public init(
         computeUnits: String = "cpuOnly",
         modelType: String = "mlProgram",
-        inferenceBudgetMilliseconds: Int = 500
+        inferenceBudgetMilliseconds: Int = 500,
+        computePrecision: String? = nil
     ) {
         self.computeUnits = computeUnits
         self.modelType = modelType
+        self.computePrecision = computePrecision
         self.inferenceBudgetMilliseconds = inferenceBudgetMilliseconds
     }
 
     private enum CodingKeys: String, CodingKey {
         case computeUnits
         case modelType
+        case computePrecision
         case inferenceBudgetMilliseconds
         case transformerBudgetMilliseconds
     }
@@ -54,6 +62,7 @@ public struct TransformerRuntimeProfile: Codable, Hashable, Sendable {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         self.computeUnits = try container.decodeIfPresent(String.self, forKey: .computeUnits) ?? "all"
         self.modelType = try container.decodeIfPresent(String.self, forKey: .modelType) ?? "mlProgram"
+        self.computePrecision = try container.decodeIfPresent(String.self, forKey: .computePrecision)
         self.inferenceBudgetMilliseconds = try container.decodeIfPresent(
             Int.self,
             forKey: .inferenceBudgetMilliseconds
@@ -67,6 +76,7 @@ public struct TransformerRuntimeProfile: Codable, Hashable, Sendable {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(computeUnits, forKey: .computeUnits)
         try container.encode(modelType, forKey: .modelType)
+        try container.encodeIfPresent(computePrecision, forKey: .computePrecision)
         try container.encode(inferenceBudgetMilliseconds, forKey: .inferenceBudgetMilliseconds)
     }
 }
@@ -130,6 +140,78 @@ public struct TransformerValidationMetrics: Codable, Hashable, Sendable {
     )
 }
 
+/// Immutable provenance for a student produced by teacher-student distillation.
+/// This is part of the signed release payload so a release cannot silently
+/// change its teacher or distillation recipe after selection.
+public struct TransformerDistillationProvenance: Codable, Hashable, Sendable {
+    public static let requiredTeacherLayers = 22
+    public static let requiredStudentLayers = 12
+    public static let requiredTemperature = 2.0
+    public static let requiredDistillAlpha = 0.7
+
+    public let teacherCheckpointSHA256: String
+    public let teacherLayers: Int
+    public let studentLayers: Int
+    public let temperature: Double
+    public let distillAlpha: Double
+
+    public init(
+        teacherCheckpointSHA256: String,
+        teacherLayers: Int,
+        studentLayers: Int,
+        temperature: Double,
+        distillAlpha: Double
+    ) {
+        self.teacherCheckpointSHA256 = teacherCheckpointSHA256
+        self.teacherLayers = teacherLayers
+        self.studentLayers = studentLayers
+        self.temperature = temperature
+        self.distillAlpha = distillAlpha
+    }
+
+    /// The release contract for the Sift 1.4 student. Keep this stricter than
+    /// the general trainer sanity checks so an eligible release cannot silently
+    /// change its teacher depth or distillation recipe.
+    public var isReleaseQualified: Bool {
+        guard
+            teacherLayers == Self.requiredTeacherLayers,
+            studentLayers == Self.requiredStudentLayers,
+            abs(temperature - Self.requiredTemperature) < 0.000001,
+            abs(distillAlpha - Self.requiredDistillAlpha) < 0.000001,
+            teacherCheckpointSHA256.count == 64,
+            teacherCheckpointSHA256.unicodeScalars.allSatisfy({ scalar in
+                (48...57).contains(scalar.value) || (97...102).contains(scalar.value)
+            })
+        else {
+            return false
+        }
+        return true
+    }
+}
+
+/// Immutable model-selection rules shared by remote downloads and installed
+/// model discovery. Older releases remain readable through the compatibility
+/// catalog; the current Sift 1.4 line must be the qualified distilled student.
+public enum TransformerSignalReleaseContract {
+    public static let distilledReleaseSequence = 4
+    public static let distilledMinimumAppBuild = 19
+
+    public static func accepts(_ manifest: TransformerModelManifest) -> Bool {
+        guard manifest.releaseSequence >= distilledReleaseSequence else {
+            return true
+        }
+        guard
+            manifest.minimumAppBuild >= distilledMinimumAppBuild,
+            manifest.algorithm == "teacher-student-distillation",
+            let distillation = manifest.distillation,
+            distillation.isReleaseQualified
+        else {
+            return false
+        }
+        return true
+    }
+}
+
 /// Release metadata for the downloadable transformer Core ML model.
 public struct TransformerModelManifest: Codable, Hashable, Sendable {
     public let schemaVersion: Int
@@ -141,6 +223,7 @@ public struct TransformerModelManifest: Codable, Hashable, Sendable {
     public let runtimeProfile: TransformerRuntimeProfile
     public let quantizationProfile: TransformerQuantizationProfile
     public let validationMetrics: TransformerValidationMetrics
+    public let distillation: TransformerDistillationProvenance?
     public let version: String
     public let trainedAt: String
     public let algorithm: String
@@ -189,7 +272,8 @@ public struct TransformerModelManifest: Codable, Hashable, Sendable {
         signature: String? = nil,
         remoteBaseURL: String? = nil,
         remoteArtifacts: [TransformerRemoteArtifact],
-        downloadBytes: Int64
+        downloadBytes: Int64,
+        distillation: TransformerDistillationProvenance? = nil
     ) {
         self.schemaVersion = schemaVersion
         self.releaseSequence = releaseSequence
@@ -200,6 +284,7 @@ public struct TransformerModelManifest: Codable, Hashable, Sendable {
         self.runtimeProfile = runtimeProfile
         self.quantizationProfile = quantizationProfile
         self.validationMetrics = validationMetrics
+        self.distillation = distillation
         self.version = version
         self.trainedAt = trainedAt
         self.algorithm = algorithm
@@ -259,7 +344,48 @@ public struct TransformerModelManifest: Codable, Hashable, Sendable {
             signature: nil,
             remoteBaseURL: remoteBaseURL,
             remoteArtifacts: remoteArtifacts,
-            downloadBytes: downloadBytes
+            downloadBytes: downloadBytes,
+            distillation: distillation
+        )
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.sortedKeys, .withoutEscapingSlashes]
+        return (try? encoder.encode(unsigned)) ?? Data()
+    }
+
+    /// Canonical payload used by manifests published before distillation
+    /// provenance was added to the signed contract. It is only used as a
+    /// migration fallback when verifying an already-published manifest.
+    public func legacyCanonicalPayload() -> Data {
+        let unsigned = TransformerModelManifest(
+            schemaVersion: schemaVersion,
+            releaseSequence: releaseSequence,
+            modelABI: modelABI,
+            minimumAppBuild: minimumAppBuild,
+            maximumAppBuild: maximumAppBuild,
+            minimumOSVersion: minimumOSVersion,
+            runtimeProfile: runtimeProfile,
+            quantizationProfile: quantizationProfile,
+            validationMetrics: validationMetrics,
+            version: version,
+            trainedAt: trainedAt,
+            algorithm: algorithm,
+            backbone: backbone,
+            languages: languages,
+            labels: labels,
+            maxSequenceLength: maxSequenceLength,
+            doLowerCase: doLowerCase,
+            tokenizerKind: tokenizerKind,
+            tokenizerArtifact: tokenizerArtifact,
+            modelArtifact: modelArtifact,
+            sha256: sha256,
+            taxonomyHash: taxonomyHash,
+            tokenizerSHA256: tokenizerSHA256,
+            keyID: keyID,
+            signature: nil,
+            remoteBaseURL: remoteBaseURL,
+            remoteArtifacts: remoteArtifacts,
+            downloadBytes: downloadBytes,
+            distillation: nil
         )
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.sortedKeys, .withoutEscapingSlashes]
@@ -269,6 +395,7 @@ public struct TransformerModelManifest: Codable, Hashable, Sendable {
     private enum CodingKeys: String, CodingKey {
         case schemaVersion, releaseSequence, modelABI, minimumAppBuild, maximumAppBuild, minimumOSVersion
         case runtimeProfile, quantizationProfile, validationMetrics
+        case distillation
         case version, trainedAt, algorithm, backbone, languages, labels, maxSequenceLength, doLowerCase
         case tokenizerKind, tokenizerArtifact, modelArtifact, sha256, taxonomyHash, tokenizerSHA256
         case keyID, signature, remoteBaseURL, remoteArtifacts, downloadBytes
@@ -288,6 +415,10 @@ public struct TransformerModelManifest: Codable, Hashable, Sendable {
             ?? .legacyInt8
         self.validationMetrics = try container.decodeIfPresent(TransformerValidationMetrics.self, forKey: .validationMetrics)
             ?? .unavailable
+        self.distillation = try container.decodeIfPresent(
+            TransformerDistillationProvenance.self,
+            forKey: .distillation
+        )
         self.version = try container.decode(String.self, forKey: .version)
         self.trainedAt = try container.decode(String.self, forKey: .trainedAt)
         self.algorithm = try container.decode(String.self, forKey: .algorithm)
@@ -426,6 +557,37 @@ public enum TransformerUpdateState: Hashable, Sendable {
     case failed(String)
 }
 
+struct TransformerClassifierLoadAttempt: Sendable {
+    let classifier: (any MessageClassifier)?
+    let tokenizerMilliseconds: Int
+    let modelInitializationMilliseconds: Int
+}
+
+public struct SignalModelInstallationPrimeMetrics: Codable, Hashable, Sendable {
+    public let artifactIdentity: ModelArtifactIdentity
+    public let succeeded: Bool
+    public let totalMilliseconds: Int
+    public let tokenizerMilliseconds: Int
+    public let modelInitializationMilliseconds: Int
+    public let inferenceMilliseconds: Int
+
+    public init(
+        artifactIdentity: ModelArtifactIdentity,
+        succeeded: Bool,
+        totalMilliseconds: Int,
+        tokenizerMilliseconds: Int,
+        modelInitializationMilliseconds: Int,
+        inferenceMilliseconds: Int
+    ) {
+        self.artifactIdentity = artifactIdentity
+        self.succeeded = succeeded
+        self.totalMilliseconds = totalMilliseconds
+        self.tokenizerMilliseconds = tokenizerMilliseconds
+        self.modelInitializationMilliseconds = modelInitializationMilliseconds
+        self.inferenceMilliseconds = inferenceMilliseconds
+    }
+}
+
 public enum TransformerClassifierLoader {
     public static let defaultResourceName = "SiftSignalModel"
     public static let legacyResourceNames = ["SiftTransformerClassifier"]
@@ -439,6 +601,14 @@ public enum TransformerClassifierLoader {
         fileManager: FileManager = .default,
         validateChecksums: Bool = true
     ) -> InstalledTransformerModel? {
+        #if os(iOS)
+        // Never accept the per-process Application Support fallback on iOS.
+        // The app and extension can share Signal only through the entitled
+        // App Group container.
+        guard ModelSelectionStore.sharedContainerURL(fileManager: fileManager) != nil else {
+            return nil
+        }
+        #endif
         let resourceNames = resourceName == defaultResourceName
             ? compatibleResourceNames
             : [resourceName]
@@ -483,35 +653,144 @@ public enum TransformerClassifierLoader {
         resourceName: String = defaultResourceName,
         confidenceThreshold: Double = 0.5
     ) -> (any MessageClassifier)? {
+        guard let installed = installedModel(
+            resourceName: resourceName,
+            fileManager: .default,
+            validateChecksums: false
+        ) else {
+            return nil
+        }
+        return downloaded(
+            installed: installed,
+            fallbackResourceName: resourceName,
+            confidenceThreshold: confidenceThreshold
+        )
+    }
+
+    static func downloaded(
+        installed: InstalledTransformerModel,
+        fallbackResourceName: String = defaultResourceName,
+        confidenceThreshold: Double = 0.5
+    ) -> (any MessageClassifier)? {
+        loadDownloaded(
+            installed: installed,
+            fallbackResourceName: fallbackResourceName,
+            confidenceThreshold: confidenceThreshold
+        ).classifier
+    }
+
+    /// Loads the already validated model from its final active URL and runs one
+    /// synthetic prediction so Core ML can persist path-specific specialization
+    /// artifacts before the MessageFilter extension is launched. The classifier
+    /// is released before this method returns; message handling never repeats
+    /// this installation-time prime.
+    @discardableResult
+    public static func primeInstalledModel(
+        resourceName: String = defaultResourceName,
+        fileManager: FileManager = .default
+    ) -> SignalModelInstallationPrimeMetrics? {
+        #if canImport(CoreML)
+        let clock = ContinuousClock()
+        let startedAt = clock.now
+        guard let installed = installedModel(
+            resourceName: resourceName,
+            fileManager: fileManager,
+            validateChecksums: false
+        ) else {
+            return nil
+        }
+        return autoreleasepool {
+            let attempt = loadDownloaded(
+                installed: installed,
+                fallbackResourceName: resourceName
+            )
+            guard let classifier = attempt.classifier as? any FailureReportingMessageClassifier else {
+                return SignalModelInstallationPrimeMetrics(
+                    artifactIdentity: installed.manifest.artifactIdentity,
+                    succeeded: false,
+                    totalMilliseconds: messageFilterMilliseconds(startedAt.duration(to: clock.now)),
+                    tokenizerMilliseconds: attempt.tokenizerMilliseconds,
+                    modelInitializationMilliseconds: attempt.modelInitializationMilliseconds,
+                    inferenceMilliseconds: 0
+                )
+            }
+            let inferenceStartedAt = clock.now
+            let succeeded = switch classifier.classificationResult(
+                sender: nil,
+                body: "验证码 482913"
+            ) {
+            case .success:
+                true
+            case .failure:
+                false
+            }
+            return SignalModelInstallationPrimeMetrics(
+                artifactIdentity: installed.manifest.artifactIdentity,
+                succeeded: succeeded,
+                totalMilliseconds: messageFilterMilliseconds(startedAt.duration(to: clock.now)),
+                tokenizerMilliseconds: attempt.tokenizerMilliseconds,
+                modelInitializationMilliseconds: attempt.modelInitializationMilliseconds,
+                inferenceMilliseconds: messageFilterMilliseconds(inferenceStartedAt.duration(to: clock.now))
+            )
+        }
+        #else
+        return nil
+        #endif
+    }
+
+    static func loadDownloaded(
+        installed: InstalledTransformerModel,
+        fallbackResourceName: String = defaultResourceName,
+        confidenceThreshold: Double = 0.5
+    ) -> TransformerClassifierLoadAttempt {
         #if canImport(CoreML)
         guard
-            let installed = installedModel(
-                resourceName: resourceName,
-                fileManager: .default,
-                validateChecksums: false
-            ),
             installed.manifest.tokenizerKind == "bpe",
             installed.tokenizerURL.pathExtension == "siftbpe"
         else {
-            return nil
+            return TransformerClassifierLoadAttempt(
+                classifier: nil,
+                tokenizerMilliseconds: 0,
+                modelInitializationMilliseconds: 0
+            )
         }
 
-        do {
-            let tokenizer = try makeTokenizer(manifest: installed.manifest, tokenizerURL: installed.tokenizerURL)
-            let compiledURL: URL
-            if installed.modelURL.pathExtension == "mlmodelc" {
-                compiledURL = installed.modelURL
-            } else {
-                let cachedURL = TransformerModelStore.compiledModelURL(
-                    resourceName: installedResourceName(for: installed, fallback: resourceName),
-                    in: installed.directoryURL
+        let compiledURL: URL
+        if installed.modelURL.pathExtension == "mlmodelc" {
+            compiledURL = installed.modelURL
+        } else {
+            let cachedURL = TransformerModelStore.compiledModelURL(
+                resourceName: installedResourceName(for: installed, fallback: fallbackResourceName),
+                in: installed.directoryURL
+            )
+            guard FileManager.default.fileExists(atPath: cachedURL.path) else {
+                return TransformerClassifierLoadAttempt(
+                    classifier: nil,
+                    tokenizerMilliseconds: 0,
+                    modelInitializationMilliseconds: 0
                 )
-                guard FileManager.default.fileExists(atPath: cachedURL.path) else {
-                    return nil
-                }
-                compiledURL = cachedURL
             }
-            return try TransformerTextClassifier(
+            compiledURL = cachedURL
+        }
+
+        let clock = ContinuousClock()
+        let tokenizerStartedAt = clock.now
+        let tokenizer: any TextTokenizing
+        do {
+            tokenizer = try makeTokenizer(manifest: installed.manifest, tokenizerURL: installed.tokenizerURL)
+        } catch {
+            return TransformerClassifierLoadAttempt(
+                classifier: nil,
+                tokenizerMilliseconds: messageFilterMilliseconds(tokenizerStartedAt.duration(to: clock.now)),
+                modelInitializationMilliseconds: 0
+            )
+        }
+        let tokenizerMilliseconds = messageFilterMilliseconds(tokenizerStartedAt.duration(to: clock.now))
+
+        let modelStartedAt = clock.now
+        let classifier: TransformerTextClassifier
+        do {
+            classifier = try TransformerTextClassifier(
                 modelURL: compiledURL,
                 tokenizer: tokenizer,
                 labels: installed.manifest.labels,
@@ -519,10 +798,26 @@ public enum TransformerClassifierLoader {
                 computeUnits: installed.manifest.runtimeProfile.computeUnits
             )
         } catch {
-            return nil
+            return TransformerClassifierLoadAttempt(
+                classifier: nil,
+                tokenizerMilliseconds: tokenizerMilliseconds,
+                modelInitializationMilliseconds: messageFilterMilliseconds(
+                    modelStartedAt.duration(to: clock.now)
+                )
+            )
         }
+        let modelInitializationMilliseconds = messageFilterMilliseconds(modelStartedAt.duration(to: clock.now))
+        return TransformerClassifierLoadAttempt(
+            classifier: classifier,
+            tokenizerMilliseconds: tokenizerMilliseconds,
+            modelInitializationMilliseconds: modelInitializationMilliseconds
+        )
         #else
-        return nil
+        return TransformerClassifierLoadAttempt(
+            classifier: nil,
+            tokenizerMilliseconds: 0,
+            modelInitializationMilliseconds: 0
+        )
         #endif
     }
 
@@ -688,7 +983,7 @@ public enum TransformerModelContract {
 /// of shape `[1, maxSequenceLength]` and is exported either as a Core ML
 /// classifier (predicted label + probability dictionary) or as a plain
 /// `probabilities` tensor matched against the manifest's label order.
-public final class TransformerTextClassifier: MessageClassifier, @unchecked Sendable {
+public final class TransformerTextClassifier: FailureReportingMessageClassifier, @unchecked Sendable {
     private let model: MLModel
     private let tokenizer: any TextTokenizing
     private let labels: [String]
@@ -708,6 +1003,7 @@ public final class TransformerTextClassifier: MessageClassifier, @unchecked Send
             throw CocoaError(.featureUnsupported)
         }
         configuration.computeUnits = resolvedComputeUnits
+        configuration.modelDisplayName = "Sift Signal"
         self.model = try MLModel(contentsOf: modelURL, configuration: configuration)
         self.tokenizer = tokenizer
         self.labels = labels
@@ -729,6 +1025,18 @@ public final class TransformerTextClassifier: MessageClassifier, @unchecked Send
     }
 
     public func classify(sender: String?, body: String) -> ClassificationDecision {
+        switch classificationResult(sender: sender, body: body) {
+        case let .success(decision):
+            return decision
+        case .failure:
+            return fallbackDecision(confidence: 0)
+        }
+    }
+
+    public func classificationResult(
+        sender: String?,
+        body: String
+    ) -> Result<ClassificationDecision, MessageClassifierInferenceFailure> {
         do {
             let encoded = tokenizer.tokenizeText(body)
             var features: [String: MLFeatureValue] = [
@@ -740,21 +1048,24 @@ public final class TransformerTextClassifier: MessageClassifier, @unchecked Send
 
             let output = try model.prediction(from: MLDictionaryFeatureProvider(dictionary: features))
             guard let best = bestPrediction(from: output) else {
-                return fallbackDecision(confidence: 0)
+                return .failure(.invalidOutput)
+            }
+            guard best.confidence.isFinite, (0...1).contains(best.confidence) else {
+                return .failure(.invalidOutput)
             }
 
             if TransformerModelContract.isAbstainLabel(best.label) {
-                return ModelOutputContract.abstentionDecision(confidence: best.confidence)
+                return .success(ModelOutputContract.abstentionDecision(confidence: best.confidence))
             }
 
-            guard
-                let leaf = SiftTaxonomy.leaf(id: best.label),
-                best.confidence >= confidenceThreshold
-            else {
-                return fallbackDecision(confidence: best.confidence)
+            guard let leaf = SiftTaxonomy.leaf(id: best.label) else {
+                return .failure(.invalidOutput)
+            }
+            guard best.confidence >= confidenceThreshold else {
+                return .success(fallbackDecision(confidence: best.confidence))
             }
 
-            return ClassificationDecision(
+            return .success(ClassificationDecision(
                 labelID: leaf.id,
                 labelTitle: leaf.title,
                 groupID: leaf.groupId,
@@ -762,9 +1073,9 @@ public final class TransformerTextClassifier: MessageClassifier, @unchecked Send
                 confidence: best.confidence,
                 systemAction: leaf.systemAction,
                 source: .model
-            )
+            ))
         } catch {
-            return fallbackDecision(confidence: 0)
+            return .failure(.predictionFailed)
         }
     }
 

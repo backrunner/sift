@@ -11,11 +11,13 @@
  *   pnpm export:training -- --env production --out ../../build/remote-training.ndjson
  */
 
+import { createHash } from "node:crypto";
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import process from "node:process";
 import { queryAllRecords, type CloudKitRecord } from "./cloudkit-request.ts";
+import { residualSensitiveKinds, sanitizeText } from "./privacy-redaction.ts";
 
 interface ExportOptions {
   container: string;
@@ -33,6 +35,7 @@ interface ExportOptions {
 interface TrainingRow {
   readonly text: string;
   readonly label: string;
+  readonly source: string;
   readonly textLanguage: string | null;
   readonly predictedLabel: string | null;
   readonly predictedConfidence: number | null;
@@ -66,6 +69,9 @@ Options:
 }
 
 function parseArguments(argv: readonly string[]): ExportOptions {
+  // pnpm passes a literal `--` when forwarding script arguments. Accept it so
+  // direct invocations and the pipeline use the same parser.
+  const forwardedArguments = argv[0] === "--" ? argv.slice(1) : argv;
   const options: ExportOptions = {
     container: process.env.CLOUDKIT_CONTAINER ?? "iCloud.com.alkinum.sift",
     environment: (process.env.CLOUDKIT_ENV as ExportOptions["environment"]) ?? "development",
@@ -79,10 +85,10 @@ function parseArguments(argv: readonly string[]): ExportOptions {
     maxLength: 500,
   };
 
-  for (let index = 0; index < argv.length; index += 1) {
-    const flag = argv[index];
+  for (let index = 0; index < forwardedArguments.length; index += 1) {
+    const flag = forwardedArguments[index];
     const next = (): string => {
-      const value = argv[index + 1];
+      const value = forwardedArguments[index + 1];
       if (value === undefined) {
         throw new Error(`Missing value after ${flag}`);
       }
@@ -214,10 +220,28 @@ async function main(): Promise<void> {
   let unknownLabel = 0;
   let badLength = 0;
   let duplicates = 0;
+  let privacyRejected = 0;
+  let redactedRows = 0;
+  const redactionKinds = new Map<string, number>();
+  const source = `cloudkit:${options.environment}`;
 
   for (const record of records) {
-    const text = normalizeText(fieldString(record, "text") ?? "");
+    const rawText = normalizeText(fieldString(record, "text") ?? "");
     const label = fieldString(record, "label") ?? "";
+
+    const sanitized = sanitizeText(rawText);
+    const residual = residualSensitiveKinds(sanitized.text);
+    if (residual.length > 0) {
+      privacyRejected += 1;
+      continue;
+    }
+    if (sanitized.changed) {
+      redactedRows += 1;
+      for (const kind of sanitized.kinds) {
+        redactionKinds.set(kind, (redactionKinds.get(kind) ?? 0) + 1);
+      }
+    }
+    const text = sanitized.text;
 
     if (!validLabels.has(label)) {
       unknownLabel += 1;
@@ -239,6 +263,7 @@ async function main(): Promise<void> {
         ? {
             text,
             label,
+            source,
             labelGroup: fieldString(record, "labelGroup"),
             locale: fieldString(record, "locale"),
             textLanguage: fieldString(record, "textLanguage"),
@@ -248,11 +273,15 @@ async function main(): Promise<void> {
             agreement: fieldNumber(record, "agreement"),
             schemaVersion: fieldNumber(record, "schemaVersion"),
             createdAt: fieldNumber(record, "createdAt"),
-            recordName: record.recordName,
+            // The CloudKit record name is an operational identifier. Keep
+            // only a one-way digest in raw audit output, never the identity
+            // bearing value itself.
+            recordNameHash: createHash("sha256").update(record.recordName, "utf8").digest("hex"),
           }
         : {
             text,
             label,
+            source,
             textLanguage: fieldString(record, "textLanguage"),
             predictedLabel: fieldString(record, "predictedLabel"),
             predictedConfidence: fieldNumber(record, "predictedConfidence"),
@@ -276,7 +305,8 @@ async function main(): Promise<void> {
 
   console.log(`fetched records: ${records.length}`);
   console.log(`exported rows:   ${rows.length}`);
-  console.log(`skipped:         ${unknownLabel} unknown-label, ${badLength} bad-length, ${duplicates} duplicate`);
+  console.log(`skipped:         ${unknownLabel} unknown-label, ${badLength} bad-length, ${duplicates} duplicate, ${privacyRejected} residual-sensitive`);
+  console.log(`second-pass:     ${redactedRows} rows redacted (${JSON.stringify(Object.fromEntries(redactionKinds))})`);
   console.log(`output:          ${options.outPath}`);
   console.log("label distribution:");
   for (const [label, count] of [...distribution.entries()].sort((a, b) => b[1] - a[1])) {
