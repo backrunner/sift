@@ -75,14 +75,13 @@ candidate fails quality gates.
   retraining from scratch. When labels are added, shared classifier rows are
   migrated by label id and only new rows start from fresh weights.
 
-The published `signal-v4-generalization-v50-r32-distilled-12l` target (channel
-release `signal-v4-generalization-v50-r32-distilled-12l-metadata-v2`) uses the
-current 53-label contract, so its signed catalog entry is
-`releaseSequence = 4` with `minimumAppBuild = 19`. The channel top level
-remains on release sequence 2 for legacy single-release parsers; build 16--18
-select sequence 3 and build 19 and newer select sequence 4 from the signed
-`compatibleReleases` catalog. Build 15 and earlier must never receive the
-expanded label contract.
+The published `signal-v4-generalization-v50-r32-distilled-12l` target uses the
+current 53-label contract and is isolated at the Sift 1.4 channel
+`channels/v3/SiftSignalModel.channel.json`; its signed release entry is
+`releaseSequence = 4` with `minimumAppBuild = 19`. The legacy Sift 1.3 channel
+`channels/v2/SiftSignalModel.channel.json` is frozen at sequence 3, so build
+16--18 continue to receive only the 52-label-compatible model. Build 15 and
+earlier must never receive the expanded label contract.
 
 Tool requirements per stage: `swift` (fetch-public, train-classic), `pnpm`
 (fetch-remote), `uv` (prune, train-transformer, and curate when the model filter
