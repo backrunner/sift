@@ -1,4 +1,5 @@
 export const siteUrl = 'https://sift.alkinum.io';
+export const appStoreUrl = 'https://apps.apple.com/app/id6788805739';
 
 export const navItems = [
   { label: '功能', href: '/#features' },

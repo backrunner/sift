@@ -2,6 +2,7 @@
   import InboxScene from '$lib/InboxScene.svelte';
   import SiteFooter from '$lib/SiteFooter.svelte';
   import SiteHeader from '$lib/SiteHeader.svelte';
+  import { appStoreUrl } from '$lib/site';
 </script>
 
 <svelte:head>
@@ -28,6 +29,20 @@
         默认不上传短信内容，收件箱清爽一点，你也少被打断。
       </p>
       <div class="hero-actions">
+        <a
+          class="app-store-link"
+          href={appStoreUrl}
+          target="_blank"
+          rel="noreferrer"
+          aria-label="在 App Store 下载 Sift"
+        >
+          <img
+            src="/download-on-the-app-store.svg"
+            alt="Download on the App Store"
+            width="120"
+            height="40"
+          />
+        </a>
         <a class="primary-link" href="#features">看功能介绍</a>
         <a class="secondary-link" href="#data">数据和高级版</a>
       </div>
