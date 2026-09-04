@@ -97,7 +97,9 @@ targets:
       GENERATE_INFOPLIST_FILE: NO
       INFOPLIST_FILE: SiftApp/Info.plist
       ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
-      SIFT_SIGNAL_MODEL_CHANNEL_URL: https://sift.alkinum.io/models/channels/v2/SiftSignalModel.channel.json
+      SIFT_SIGNAL_MODEL_CHANNEL_URL: https://sift.alkinum.io/models/channels/v3/SiftSignalModel.channel.json
+      SIFT_SIGNAL_MODEL_CHANNEL_NAMESPACE: v3
+      SIFT_SIGNAL_MODEL_MINIMUM_RELEASE_SEQUENCE: 4
       SIFT_SIGNAL_MODEL_PUBLIC_KEY_ID: release-2026
       SIFT_SIGNAL_MODEL_PUBLIC_KEY: "EWT4wUWJG73N72DqkoNZ8MoDZYlYWPN7YrkL6QgjQKY="
       SIFT_APP_STORE_URL: https://apps.apple.com/app/id6788805739

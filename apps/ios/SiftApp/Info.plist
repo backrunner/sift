@@ -40,6 +40,10 @@
 	<integer>108748513</integer>
 	<key>SiftSignalModelChannelURL</key>
 	<string>$(SIFT_SIGNAL_MODEL_CHANNEL_URL)</string>
+	<key>SiftSignalModelChannelNamespace</key>
+	<string>$(SIFT_SIGNAL_MODEL_CHANNEL_NAMESPACE)</string>
+	<key>SiftSignalModelMinimumReleaseSequence</key>
+	<integer>$(SIFT_SIGNAL_MODEL_MINIMUM_RELEASE_SEQUENCE)</integer>
 	<key>SiftSignalModelPublicKeys</key>
 	<dict>
 		<!-- Release builds inject the Ed25519 key through the signing configuration. -->

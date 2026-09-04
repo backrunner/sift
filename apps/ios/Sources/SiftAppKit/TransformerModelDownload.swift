@@ -284,6 +284,8 @@ public final class TransformerModelDownloadClient: TransformerModelDownloading, 
     private let channelURL: URL?
     private let manifestVerifier: TransformerManifestVerifier?
     private let appBuild: Int
+    private let channelNamespace: String?
+    private let minimumReleaseSequence: Int
     private let operatingSystemVersion: OperatingSystemVersion
     private let estimatedByteCount: Int64?
     private let resourceName: String
@@ -299,6 +301,8 @@ public final class TransformerModelDownloadClient: TransformerModelDownloading, 
     public init(
         manifestURL: URL,
         estimatedByteCount: Int64? = nil,
+        channelNamespace: String? = nil,
+        minimumReleaseSequence: Int = 0,
         resourceName: String = TransformerClassifierLoader.defaultResourceName,
         session: URLSession = .shared,
         networkConditionChecker: any TransformerNetworkConditionChecking = PathNetworkConditionChecker(),
@@ -310,6 +314,8 @@ public final class TransformerModelDownloadClient: TransformerModelDownloading, 
         self.channelURL = nil
         self.manifestVerifier = nil
         self.appBuild = 0
+        self.channelNamespace = channelNamespace
+        self.minimumReleaseSequence = minimumReleaseSequence
         self.operatingSystemVersion = ProcessInfo.processInfo.operatingSystemVersion
         self.estimatedByteCount = estimatedByteCount
         self.resourceName = resourceName
@@ -324,6 +330,8 @@ public final class TransformerModelDownloadClient: TransformerModelDownloading, 
         channelURL: URL,
         publicKeys: [String: String],
         appBuild: Int,
+        channelNamespace: String? = nil,
+        minimumReleaseSequence: Int = 0,
         operatingSystemVersion: OperatingSystemVersion = ProcessInfo.processInfo.operatingSystemVersion,
         estimatedByteCount: Int64? = nil,
         resourceName: String = TransformerClassifierLoader.defaultResourceName,
@@ -337,6 +345,8 @@ public final class TransformerModelDownloadClient: TransformerModelDownloading, 
         self.channelURL = channelURL
         self.manifestVerifier = TransformerManifestVerifier(publicKeys: publicKeys)
         self.appBuild = appBuild
+        self.channelNamespace = channelNamespace
+        self.minimumReleaseSequence = minimumReleaseSequence
         self.operatingSystemVersion = operatingSystemVersion
         self.estimatedByteCount = estimatedByteCount
         self.resourceName = resourceName
@@ -361,6 +371,8 @@ public final class TransformerModelDownloadClient: TransformerModelDownloading, 
         }.first
 
         let keyID = bundle.object(forInfoDictionaryKey: "SiftSignalModelPublicKeyID") as? String ?? "release-2026"
+        let channelNamespace = bundle.object(forInfoDictionaryKey: "SiftSignalModelChannelNamespace") as? String
+        let minimumReleaseSequence = (bundle.object(forInfoDictionaryKey: "SiftSignalModelMinimumReleaseSequence") as? NSNumber)?.intValue ?? 0
         let configuredKey = bundle.object(forInfoDictionaryKey: "SiftSignalModelPublicKey") as? String
         let dictionaryKeys = bundle.object(forInfoDictionaryKey: "SiftSignalModelPublicKeys") as? [String: String] ?? [:]
         var publicKeys = dictionaryKeys
@@ -377,6 +389,8 @@ public final class TransformerModelDownloadClient: TransformerModelDownloading, 
             channelURL: channelURL,
             publicKeys: publicKeys,
             appBuild: appBuild,
+            channelNamespace: channelNamespace,
+            minimumReleaseSequence: minimumReleaseSequence,
             estimatedByteCount: estimatedBytes,
             backgroundSessionIdentifierPrefix: "io.alkinum.sift.signal-download",
             diagnosticLogStore: MessageFilterDiagnosticLogStore()
@@ -388,8 +402,12 @@ public final class TransformerModelDownloadClient: TransformerModelDownloading, 
         let releaseURL: URL
         let manifest: TransformerModelManifest
         if let channelURL, let manifestVerifier {
+            guard Self.channelURL(channelURL, matchesNamespace: channelNamespace) else {
+                throw TransformerModelDownloadError.invalidChannelManifest
+            }
             let channel = try await fetchChannel(at: channelURL, verifier: manifestVerifier)
             let releases = try manifestVerifier.verifiedReleases(in: channel)
+                .filter { $0.releaseSequence >= minimumReleaseSequence }
             let installedManifest = TransformerClassifierLoader.manifest()
             guard let compatibleRelease = Self.latestCompatibleRelease(
                 in: releases,
@@ -452,8 +470,12 @@ public final class TransformerModelDownloadClient: TransformerModelDownloading, 
             return .failed(TransformerModelDownloadError.missingRemoteManifestURL.localizedDescription)
         }
         do {
+            guard Self.channelURL(channelURL, matchesNamespace: channelNamespace) else {
+                throw TransformerModelDownloadError.invalidChannelManifest
+            }
             let channel = try await fetchChannel(at: channelURL, verifier: manifestVerifier)
             let releases = try manifestVerifier.verifiedReleases(in: channel)
+                .filter { $0.releaseSequence >= minimumReleaseSequence }
             let currentModelABI = currentIdentity?.variant == .transformer ? currentIdentity?.modelABI : nil
             let currentReleaseSequence = currentIdentity?.releaseSequence ?? 0
             return Self.updateState(
@@ -523,6 +545,15 @@ public final class TransformerModelDownloadClient: TransformerModelDownloading, 
         channelABI: String
     ) -> Int {
         currentModelABI == channelABI ? currentReleaseSequence : 0
+    }
+
+    /// The channel namespace is part of the app-line configuration. A v1.4
+    /// build pointed at the legacy v2 URL must fail closed before parsing its
+    /// metadata, even though the older release may otherwise pass build checks.
+    static func channelURL(_ url: URL, matchesNamespace namespace: String?) -> Bool {
+        guard let namespace, !namespace.isEmpty else { return true }
+        let expectedSuffix = "/channels/\(namespace)/SiftSignalModel.channel.json"
+        return url.path.hasSuffix(expectedSuffix)
     }
 
     static func latestCompatibleRelease(

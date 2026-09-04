@@ -1082,6 +1082,18 @@ func transformerReleaseSequenceRestartsOnlyAcrossModelABIMigration() {
 }
 
 @Test
+func transformerChannelNamespaceRejectsAnotherAppLine() {
+    #expect(TransformerModelDownloadClient.channelURL(
+        URL(string: "https://sift.alkinum.io/models/channels/v3/SiftSignalModel.channel.json")!,
+        matchesNamespace: "v3"
+    ))
+    #expect(!TransformerModelDownloadClient.channelURL(
+        URL(string: "https://sift.alkinum.io/models/channels/v2/SiftSignalModel.channel.json")!,
+        matchesNamespace: "v3"
+    ))
+}
+
+@Test
 func transformerCatalogSelectsLatestReleaseCompatibleWithCurrentAppBuild() throws {
     let release2 = TransformerChannelManifestV2(
         releaseSequence: 2,
