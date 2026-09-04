@@ -4,6 +4,10 @@ import MessageFilterCore
 @testable import SiftAppKit
 import Testing
 
+#if canImport(CloudKit)
+import CloudKit
+#endif
+
 private let remoteSamplePrivacyConsentKey = "Sift.hasAcceptedRemoteSamplePrivacy"
 
 @Test
@@ -101,6 +105,120 @@ func remoteSubmitFailureKeepsVisibleFeedback() async throws {
     #expect(model.toastCenter.toast == nil)
     #expect(model.lastReceiptToken == nil)
 }
+
+#if canImport(CloudKit)
+@MainActor
+@Suite("Remote submission error mapping")
+struct RemoteSubmissionErrorMappingTests {
+    @MainActor
+    private func feedbackMessage(for error: any Error & Sendable, suiteName: String) async throws -> String? {
+        let defaults = try #require(UserDefaults(suiteName: suiteName))
+        defaults.set(true, forKey: remoteSamplePrivacyConsentKey)
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        let model = SiftAppModel(
+            remoteSampleClient: MockRemoteSampleClient(result: .failure(error)),
+            appDefaults: defaults
+        )
+        model.submissionDestination = .remote
+        model.submissionText = "您的验证码为 123456，请勿告知他人。"
+
+        model.submitSample()
+        try await waitUntil { model.isSubmittingSample == false && model.sampleSubmissionFeedback != nil }
+        return model.sampleSubmissionFeedback?.message
+    }
+
+    @Test
+    func networkUnavailableKeepsGenericCopy() async throws {
+        let message = try await feedbackMessage(
+            for: CKError(CKError.Code.networkUnavailable),
+            suiteName: "SiftTests.remoteError.networkUnavailable.\(UUID().uuidString)"
+        )
+        #expect(message == "网络不可用，样本未提交")
+    }
+
+    @Test
+    func networkFailureWithoutUnderlyingFallsBackToRequestFailed() async throws {
+        let message = try await feedbackMessage(
+            for: CKError(CKError.Code.networkFailure),
+            suiteName: "SiftTests.remoteError.networkFailure.\(UUID().uuidString)"
+        )
+        #expect(message == "网络请求失败，样本未提交，请稍后重试")
+    }
+
+    @Test
+    func networkFailureSurfacesUnderlyingURLError() async throws {
+        let message = try await feedbackMessage(
+            for: CKError(
+                CKError.Code.networkFailure,
+                userInfo: [NSUnderlyingErrorKey: URLError(.dnsLookupFailed)]
+            ),
+            suiteName: "SiftTests.remoteError.dnsFailure.\(UUID().uuidString)"
+        )
+        #expect(message == "无法连接 iCloud 服务器，样本未提交")
+    }
+
+    @Test
+    func partialFailureUnwrapsInnerCloudKitError() async throws {
+        let message = try await feedbackMessage(
+            for: CKError(
+                CKError.Code.partialFailure,
+                userInfo: [CKPartialErrorsByItemIDKey: ["SmsSample": CKError(CKError.Code.notAuthenticated)]]
+            ),
+            suiteName: "SiftTests.remoteError.partialFailure.\(UUID().uuidString)"
+        )
+        #expect(message == "请先在系统设置中登录 iCloud，再匿名共享样本")
+    }
+
+    @Test
+    func invalidArgumentsReportsConfigurationIssue() async throws {
+        let message = try await feedbackMessage(
+            for: CKError(CKError.Code.invalidArguments),
+            suiteName: "SiftTests.remoteError.invalidArguments.\(UUID().uuidString)"
+        )
+        #expect(message == "iCloud 配置异常，样本未提交，请更新 App 或联系支持（12）")
+    }
+
+    @Test
+    func serverResponseLostReportsUnknownOutcome() async throws {
+        let message = try await feedbackMessage(
+            for: CKError(CKError.Code.serverResponseLost),
+            suiteName: "SiftTests.remoteError.responseLost.\(UUID().uuidString)"
+        )
+        #expect(message == "iCloud 响应中断，样本提交结果未知，请稍后确认")
+    }
+
+    @Test
+    func topLevelURLErrorKeepsTimeoutCopy() async throws {
+        let message = try await feedbackMessage(
+            for: URLError(.timedOut),
+            suiteName: "SiftTests.remoteError.timeout.\(UUID().uuidString)"
+        )
+        #expect(message == "提交超时，请稍后重试")
+    }
+
+    @Test
+    func diagnosticDescriptionUnwrapsUnderlyingAndPartialErrors() {
+        let error = CKError(
+            CKError.Code.partialFailure,
+            userInfo: [
+                CKPartialErrorsByItemIDKey: [
+                    "SmsSample": CKError(
+                        CKError.Code.networkFailure,
+                        userInfo: [NSUnderlyingErrorKey: URLError(.networkConnectionLost)]
+                    )
+                ]
+            ]
+        )
+        let description = SiftAppModel.errorDiagnosticDescription(error)
+        #expect(description.contains(CKErrorDomain))
+        #expect(description.contains(NSURLErrorDomain))
+        #expect(description.contains("(2)"))
+        #expect(description.contains("(4)"))
+        #expect(description.contains("(-1005)"))
+    }
+}
+#endif
 
 @MainActor
 @Test

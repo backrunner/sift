@@ -52,6 +52,23 @@
         }
       }
     },
+    "iCloud 响应中断，样本%@结果未知，请稍后确认" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iCloud stopped responding; the sample %@ result is unknown. Please check again later"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iCloudの応答が中断されました。サンプルの%@結果は不明です。後ほどご確認ください"
+          }
+        }
+      }
+    },
     "iCloud 存储配额不足，样本未%@" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -222,6 +239,23 @@
         }
       }
     },
+    "iCloud 配置异常，样本未%@，请更新 App 或联系支持（%lld）" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iCloud configuration error; the sample was not %1$@. Please update the app or contact support (%2$lld)"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iCloudの設定エラーのため、サンプルを%1$@できませんでした。Appを更新するかサポートにお問い合わせください（%2$lld）"
+          }
+        }
+      }
+    },
     "一次购买，永久使用" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -303,6 +337,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "更新をダウンロード"
+          }
+        }
+      }
+    },
+    "与 iCloud 的安全连接失败，样本未%@" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Secure connection to iCloud failed; the sample was not %@"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iCloudへの安全な接続に失敗したため、サンプルを%@できませんでした"
           }
         }
       }
@@ -609,6 +660,40 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "互換性"
+          }
+        }
+      }
+    },
+    "操作已取消，样本未%@" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Operation cancelled; the sample was not %@"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "操作がキャンセルされたため、サンプルを%@できませんでした"
+          }
+        }
+      }
+    },
+    "无法连接 iCloud 服务器，样本未%@" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Could not reach the iCloud server; the sample was not %@"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iCloudサーバーに接続できないため、サンプルを%@できませんでした"
           }
         }
       }
@@ -2398,6 +2483,23 @@
         }
       }
     },
+    "样本内容超出 iCloud 限制，未%@" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The sample exceeds iCloud limits and was not %@"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "サンプルがiCloudの制限を超えているため、%@できませんでした"
+          }
+        }
+      }
+    },
     "样本匿名存储于 iCloud，你可以随时导出或彻底抹除。" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -2564,6 +2666,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "サンプルはマスキング後に匿名で送信され、いつでも消去できます。プライバシーは常にご自身で管理できます。"
+          }
+        }
+      }
+    },
+    "样本记录不存在或已被删除" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The sample record does not exist or was already deleted"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "サンプルレコードが存在しないか、すでに削除されています"
           }
         }
       }
@@ -3414,6 +3533,40 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "ネットワークに接続できません。確認して再度お試しください"
+          }
+        }
+      }
+    },
+    "网络请求失败，样本未%@，请稍后重试" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Network request failed; the sample was not %@. Please try again later"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ネットワークリクエストに失敗したため、サンプルを%@できませんでした。後ほどお試しください"
+          }
+        }
+      }
+    },
+    "网络连接中断，样本未%@，请重试" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Connection lost; the sample was not %@. Please try again"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "接続が中断されたため、サンプルを%@できませんでした。もう一度お試しください"
           }
         }
       }
