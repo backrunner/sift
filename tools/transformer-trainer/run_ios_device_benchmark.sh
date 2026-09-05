@@ -125,7 +125,7 @@ xcodebuild \
   -derivedDataPath "$derived_data" \
   -resultBundlePath "$benchmark_result_bundle" \
   EXCLUDED_SOURCE_FILE_NAMES=SiftPIIDetector.mlpackage \
-  "${provisioning_arguments[@]}" \
+  "${provisioning_arguments[@]+${provisioning_arguments[@]}}" \
   "${diagnostic_arguments[@]}" \
   -only-testing:TransformerDeviceTests/TransformerDeviceTests/testInstalledTransformerRuntimeBenchmark \
   test-without-building
