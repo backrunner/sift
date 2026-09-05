@@ -144,6 +144,71 @@ private func transformerSnapshot(
     )
 }
 
+private final class StageRecorder: @unchecked Sendable {
+    private let lock = NSLock()
+    private var stages: [MessageFilterStage] = []
+
+    func record(_ stage: MessageFilterStage) { lock.withLock { stages.append(stage) } }
+    func values() -> [MessageFilterStage] { lock.withLock { stages } }
+}
+
+private struct StageCheckingLoader: TransformerRuntimeLoading {
+    let recorder: StageRecorder
+
+    @concurrent
+    func loadTransformer(identity: ModelArtifactIdentity) async -> TransformerRuntimeLoadResult {
+        Issue.record("The engine dropped its stage observer")
+        return TransformerRuntimeLoadResult(classifier: nil)
+    }
+
+    @concurrent
+    func loadTransformer(
+        identity: ModelArtifactIdentity,
+        observer: MessageFilterStageObserver?
+    ) async -> TransformerRuntimeLoadResult {
+        #expect(recorder.values() == [.signalLoadStarted])
+        observer?(.modelLoadStarted)
+        observer?(.modelLoaded)
+        return TransformerRuntimeLoadResult(classifier: FixedClassifier(labelID: "promotion"))
+    }
+}
+
+@Test
+func filterStagesPrecedeLoadingAndEndAfterDecision() async {
+    let recorder = StageRecorder()
+    let identity = ModelArtifactIdentity(variant: .transformer, modelABI: "test", releaseSequence: 1, sha256: "test")
+    let engine = MessageFilterEngine(
+        transformerLoader: StageCheckingLoader(recorder: recorder), transformerDeviceSupport: .supported
+    )
+    let result = await engine.classify(
+        MessageFilterRequest(sender: nil, body: "sample"), configuration: transformerSnapshot(identity: identity),
+        observer: { recorder.record($0) }
+    )
+    #expect(result.systemAction == .promotion)
+    #expect(recorder.values() == [
+        .signalLoadStarted, .modelLoadStarted, .modelLoaded, .signalReady,
+        .signalInferenceStarted, .signalInferenceFinished, .decisionReady,
+    ])
+}
+
+@Test
+func unavailableSignalRecordsClassicFallbackBeforeCompletion() async {
+    let recorder = StageRecorder()
+    let identity = ModelArtifactIdentity(variant: .transformer, modelABI: "test", releaseSequence: 1, sha256: "test")
+    let engine = MessageFilterEngine(
+        classicClassifier: FixedClassifier(labelID: "spam"),
+        transformerLoader: RecordingRuntimeLoader(recorder: RuntimeLoadRecorder(), unavailable: true),
+        transformerDeviceSupport: .supported
+    )
+    let result = await engine.classify(
+        MessageFilterRequest(sender: nil, body: "sample"), configuration: transformerSnapshot(identity: identity),
+        observer: { recorder.record($0) }
+    )
+    #expect(result.fallbackReason == .transformerUnavailable)
+    #expect(result.systemAction == .junk)
+    #expect(recorder.values() == [.signalLoadStarted, .classicStarted, .decisionReady])
+}
+
 @Test
 func messageFilterTimingPolicyAllowsColdSignalStartup() {
     #expect(MessageFilterTimingPolicy.signalAttemptBudget == .seconds(5))

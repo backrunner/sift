@@ -5,6 +5,60 @@ import MessageFilterExtensionKit
 import Testing
 
 @Test
+func unfinishedRequestStagesRemainExportableBeforeAnyCompletion() throws {
+    let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+    defer { try? FileManager.default.removeItem(at: directory) }
+    let store = MessageFilterDiagnosticLogStore(directoryURL: directory)
+    let requestID = UUID()
+    let memory = MessageFilterMemorySnapshot(
+        physicalFootprintBytes: 18_000_000,
+        processPeakPhysicalFootprintBytes: 20_000_000,
+        availableMemoryBytes: 5_000_000
+    )
+    for stage in [MessageFilterStage.queryReceived, .modelLoadStarted] {
+        #expect(store.record(MessageFilterStageLogRecord(
+            requestID: requestID, processIdentifier: 123,
+            bundleIdentifier: "com.alkinum.sift.MessageFilterExtension", appBuild: "test",
+            stage: stage, elapsedMilliseconds: 2, configuration: .classicDefault, memory: memory
+        )))
+    }
+    // Reopen the store, as the containing app does after the extension exits.
+    let data = try MessageFilterDiagnosticLogStore(directoryURL: directory)
+        .exportData(metadata: diagnosticExportMetadata(identity: .classic))
+    let decoder = JSONDecoder()
+    decoder.dateDecodingStrategy = .iso8601
+    let stages = try data.split(separator: 0x0A).dropFirst().map {
+        try decoder.decode(MessageFilterStageLogRecord.self, from: Data($0))
+    }
+    #expect(stages.map(\.stage) == [.queryReceived, .modelLoadStarted])
+    #expect(stages.allSatisfy { $0.requestID == requestID && $0.memory == memory })
+    let text = String(decoding: data, as: UTF8.self)
+    for key in ["sender", "body", "phone", "deviceIdentifier", "accountIdentifier"] {
+        #expect(text.contains("\"\(key)\"") == false)
+    }
+}
+
+@Test
+func defaultStageRecorderWritesWithoutEnablingDeveloperMode() throws {
+    let suiteName = "SiftStageDiagnostics.\(UUID().uuidString)"
+    let defaults = try #require(UserDefaults(suiteName: suiteName))
+    defer { defaults.removePersistentDomain(forName: suiteName) }
+    let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+    defer { try? FileManager.default.removeItem(at: directory) }
+    let store = MessageFilterDiagnosticLogStore(directoryURL: directory)
+    let recorder = MessageFilterOSLogDiagnosticsRecorder(
+        performanceStore: MessageFilterPerformanceEvidenceStore(defaults: defaults), diagnosticLogStore: store
+    )
+    let observer = recorder.stageObserver(requestID: UUID(), configuration: .classicDefault)
+    observer(.queryReceived)
+    observer(.modelLoadStarted)
+    let data = try store.exportData(metadata: diagnosticExportMetadata(identity: .classic))
+    #expect(String(decoding: data, as: UTF8.self).contains("modelLoadStarted"))
+    // Stage breadcrumbs must not inflate successful-classification counters.
+    #expect(MessageFilterPerformanceEvidenceStore(defaults: defaults).snapshot().releases.isEmpty)
+}
+
+@Test
 func diagnosticLogsSeparateRegularAndDeveloperDetailsWithoutMessageContent() throws {
     let directoryURL = FileManager.default.temporaryDirectory
         .appendingPathComponent("SiftDiagnosticTests-\(UUID().uuidString)", isDirectory: true)

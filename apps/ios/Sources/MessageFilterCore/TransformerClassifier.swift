@@ -197,6 +197,14 @@ public enum TransformerSignalReleaseContract {
     public static let distilledMinimumAppBuild = 19
 
     public static func accepts(_ manifest: TransformerModelManifest) -> Bool {
+        if manifest.modelABI == MappedTokenEmbedding.modelABI {
+            guard manifest.minimumAppBuild >= MappedTokenEmbedding.minimumAppBuild,
+                  manifest.releaseSequence >= 5,
+                  manifest.modelArtifact.hasSuffix(".mlpackage"),
+                  manifest.remoteArtifacts.contains(where: {
+                      $0.path == manifest.modelArtifact + "/" + MappedTokenEmbedding.relativePath
+                  }) else { return false }
+        }
         guard manifest.releaseSequence >= distilledReleaseSequence else {
             return true
         }
@@ -741,9 +749,35 @@ public enum TransformerClassifierLoader {
     static func loadDownloaded(
         installed: InstalledTransformerModel,
         fallbackResourceName: String = defaultResourceName,
-        confidenceThreshold: Double = 0.5
+        confidenceThreshold: Double = 0.5,
+        observer: MessageFilterStageObserver? = nil
     ) -> TransformerClassifierLoadAttempt {
         #if canImport(CoreML)
+        // Drain Foundation/Core ML initialization temporaries before prediction.
+        return autoreleasepool {
+            loadDownloadedWithinPool(
+                installed: installed,
+                fallbackResourceName: fallbackResourceName,
+                confidenceThreshold: confidenceThreshold,
+                observer: observer
+            )
+        }
+        #else
+        return TransformerClassifierLoadAttempt(
+            classifier: nil,
+            tokenizerMilliseconds: 0,
+            modelInitializationMilliseconds: 0
+        )
+        #endif
+    }
+
+    #if canImport(CoreML)
+    private static func loadDownloadedWithinPool(
+        installed: InstalledTransformerModel,
+        fallbackResourceName: String,
+        confidenceThreshold: Double,
+        observer: MessageFilterStageObserver?
+    ) -> TransformerClassifierLoadAttempt {
         guard
             installed.manifest.tokenizerKind == "bpe",
             installed.tokenizerURL.pathExtension == "siftbpe"
@@ -774,6 +808,7 @@ public enum TransformerClassifierLoader {
         }
 
         let clock = ContinuousClock()
+        observer?(.tokenizerLoadStarted)
         let tokenizerStartedAt = clock.now
         let tokenizer: any TextTokenizing
         do {
@@ -786,7 +821,9 @@ public enum TransformerClassifierLoader {
             )
         }
         let tokenizerMilliseconds = messageFilterMilliseconds(tokenizerStartedAt.duration(to: clock.now))
+        observer?(.tokenizerLoaded)
 
+        observer?(.modelLoadStarted)
         let modelStartedAt = clock.now
         let classifier: TransformerTextClassifier
         do {
@@ -795,7 +832,8 @@ public enum TransformerClassifierLoader {
                 tokenizer: tokenizer,
                 labels: installed.manifest.labels,
                 confidenceThreshold: confidenceThreshold,
-                computeUnits: installed.manifest.runtimeProfile.computeUnits
+                computeUnits: installed.manifest.runtimeProfile.computeUnits,
+                embeddingURL: installed.embeddingURL
             )
         } catch {
             return TransformerClassifierLoadAttempt(
@@ -807,19 +845,14 @@ public enum TransformerClassifierLoader {
             )
         }
         let modelInitializationMilliseconds = messageFilterMilliseconds(modelStartedAt.duration(to: clock.now))
+        observer?(.modelLoaded)
         return TransformerClassifierLoadAttempt(
             classifier: classifier,
             tokenizerMilliseconds: tokenizerMilliseconds,
             modelInitializationMilliseconds: modelInitializationMilliseconds
         )
-        #else
-        return TransformerClassifierLoadAttempt(
-            classifier: nil,
-            tokenizerMilliseconds: 0,
-            modelInitializationMilliseconds: 0
-        )
-        #endif
     }
+    #endif
 
     public static func isDownloadedModelAvailable(
         resourceName: String = defaultResourceName,
@@ -926,7 +959,8 @@ public enum TransformerClassifierLoader {
             tokenizer: tokenizer,
             labels: installed.manifest.labels,
             confidenceThreshold: 0,
-            computeUnits: installed.manifest.runtimeProfile.computeUnits
+            computeUnits: installed.manifest.runtimeProfile.computeUnits,
+            embeddingURL: installed.embeddingURL
         )
         let smokeBodies = [
             "您的验证码是 482913，请勿泄露。",
@@ -983,20 +1017,24 @@ public enum TransformerModelContract {
 /// of shape `[1, maxSequenceLength]` and is exported either as a Core ML
 /// classifier (predicted label + probability dictionary) or as a plain
 /// `probabilities` tensor matched against the manifest's label order.
-public final class TransformerTextClassifier: FailureReportingMessageClassifier, @unchecked Sendable {
+public final class TransformerTextClassifier: StageReportingMessageClassifier, @unchecked Sendable {
+    // A shared cached model must not allocate overlapping prediction workspaces.
+    private let predictionLock = NSLock()
     private let model: MLModel
     private let tokenizer: any TextTokenizing
     private let labels: [String]
     private let confidenceThreshold: Double
     private let inputIDsName: String
     private let attentionMaskName: String?
+    private let embedding: MappedTokenEmbedding?
 
     public init(
         modelURL: URL,
         tokenizer: any TextTokenizing,
         labels: [String],
         confidenceThreshold: Double = 0.5,
-        computeUnits: String = "all"
+        computeUnits: String = "all",
+        embeddingURL: URL? = nil
     ) throws {
         let configuration = MLModelConfiguration()
         guard let resolvedComputeUnits = Self.computeUnits(named: computeUnits) else {
@@ -1010,8 +1048,19 @@ public final class TransformerTextClassifier: FailureReportingMessageClassifier,
         self.confidenceThreshold = confidenceThreshold
 
         let inputs = model.modelDescription.inputDescriptionsByName
-        self.inputIDsName = inputs.keys.first { $0.lowercased().contains("input") } ?? "input_ids"
+        self.inputIDsName = inputs["input_ids"] != nil ? "input_ids"
+            : (inputs.keys.first { $0 != MappedTokenEmbedding.inputName && $0.lowercased().contains("input") } ?? "input_ids")
         self.attentionMaskName = inputs.keys.first { $0.lowercased().contains("mask") }
+        self.embedding = try embeddingURL.map { try MappedTokenEmbedding(url: $0) }
+        if let embedding {
+            guard let constraint = inputs[MappedTokenEmbedding.inputName]?.multiArrayConstraint,
+                  constraint.dataType == .float32, constraint.shape.count == 3,
+                  constraint.shape[0].intValue == 1, constraint.shape[2].intValue == embedding.width else {
+                throw CocoaError(.fileReadCorruptFile)
+            }
+        } else if inputs[MappedTokenEmbedding.inputName] != nil {
+            throw CocoaError(.fileReadNoSuchFile)
+        }
     }
 
     private static func computeUnits(named identifier: String) -> MLComputeUnits? {
@@ -1037,16 +1086,56 @@ public final class TransformerTextClassifier: FailureReportingMessageClassifier,
         sender: String?,
         body: String
     ) -> Result<ClassificationDecision, MessageClassifierInferenceFailure> {
+        classificationResult(sender: sender, body: body, observer: nil)
+    }
+
+    public func classificationResult(
+        sender: String?,
+        body: String,
+        observer: MessageFilterStageObserver?
+    ) -> Result<ClassificationDecision, MessageClassifierInferenceFailure> {
+        predictionLock.lock()
+        defer { predictionLock.unlock() }
+        return autoreleasepool {
+            predictionResult(body: body, observer: observer)
+        }
+    }
+
+    private func predictionResult(
+        body: String,
+        observer: MessageFilterStageObserver?
+    ) -> Result<ClassificationDecision, MessageClassifierInferenceFailure> {
         do {
+            observer?(.tokenizationStarted)
             let encoded = tokenizer.tokenizeText(body)
+            observer?(.tokenizationFinished)
             var features: [String: MLFeatureValue] = [
                 inputIDsName: MLFeatureValue(multiArray: try multiArray(from: encoded.inputIDs))
             ]
             if let attentionMaskName {
                 features[attentionMaskName] = MLFeatureValue(multiArray: try multiArray(from: encoded.attentionMask))
             }
+            if let embedding {
+                observer?(.embeddingStarted)
+                let tensor = try MLMultiArray(
+                    shape: [1, NSNumber(value: encoded.inputIDs.count), NSNumber(value: embedding.width)],
+                    dataType: .float32
+                )
+                guard tensor.strides[2].intValue == 1,
+                      tensor.strides[1].intValue == embedding.width else {
+                    throw CocoaError(.fileReadCorruptFile)
+                }
+                try embedding.decode(tokenIDs: encoded.inputIDs, into: UnsafeMutableBufferPointer(
+                    start: tensor.dataPointer.assumingMemoryBound(to: Float.self), count: tensor.count
+                ))
+                features[MappedTokenEmbedding.inputName] = MLFeatureValue(multiArray: tensor)
+                observer?(.embeddingFinished)
+            }
 
-            let output = try model.prediction(from: MLDictionaryFeatureProvider(dictionary: features))
+            let provider = try MLDictionaryFeatureProvider(dictionary: features)
+            observer?(.predictionStarted)
+            let output = try model.prediction(from: provider)
+            observer?(.predictionFinished)
             guard let best = bestPrediction(from: output) else {
                 return .failure(.invalidOutput)
             }

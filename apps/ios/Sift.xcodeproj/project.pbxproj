@@ -34,6 +34,7 @@
 		632A870ACC0BF0C36277286E /* Taxonomy.swift in Sources */ = {isa = PBXBuildFile; fileRef = E646B03461B9CD0523D39416 /* Taxonomy.swift */; };
 		65B875A017896AFF7F8E87EE /* SiftPIIDetector.mlmodelc in Resources */ = {isa = PBXBuildFile; fileRef = 75A5FB46D77336AF0F57DA8A /* SiftPIIDetector.mlmodelc */; };
 		68E9C0CAAEE4F4719B65EBDD /* ModelManifest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6552BE571000D043A0B5FEC8 /* ModelManifest.swift */; };
+		74F7D98E3AB4959B5D3BF9EB /* MappedTokenEmbedding.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0697BD401D2134F6EECAA8A9 /* MappedTokenEmbedding.swift */; };
 		7786BF200DE97ADA7FF253C9 /* MessageFilterCore.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = DE9062B3BA12FA49279965C9 /* MessageFilterCore.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		7A0ACE2C8B8F199047B3270A /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = F3453A1235E4C653C2B05667 /* PrivacyInfo.xcprivacy */; };
 		80EA440A0B3377EEBF648BA7 /* Classifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 91A2208F6DF258C04BFA1DBF /* Classifier.swift */; };
@@ -205,6 +206,7 @@
 /* Begin PBXFileReference section */
 		03A3CC79E2485F5F94485559 /* SiftSMSClassifier.manifest.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = SiftSMSClassifier.manifest.json; sourceTree = "<group>"; };
 		03EADA2502AEE010EE20F4F5 /* SiftPIIDetector.manifest.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = SiftPIIDetector.manifest.json; sourceTree = "<group>"; };
+		0697BD401D2134F6EECAA8A9 /* MappedTokenEmbedding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MappedTokenEmbedding.swift; sourceTree = "<group>"; };
 		11B4806EA8A49EA7B49DFE06 /* SiftAppKit.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = SiftAppKit.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		188D3402D6C10DAE8AE2CF7F /* SubmissionHistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubmissionHistoryView.swift; sourceTree = "<group>"; };
 		1A71CD9ED836EF882CA66B67 /* TextTokenizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextTokenizer.swift; sourceTree = "<group>"; };
@@ -368,6 +370,7 @@
 				DF848914EC70ED6F39C774C3 /* CoreMLBridge.swift */,
 				61BA7115BCE9701E5EDF98E5 /* DeveloperMode.swift */,
 				2F94E7D7E6D9B2D3624A6493 /* FeatureHasher.swift */,
+				0697BD401D2134F6EECAA8A9 /* MappedTokenEmbedding.swift */,
 				3992F041CBC4AE7AFC4B3556 /* MessageFilterEngine.swift */,
 				27DA7D06EC28D68B6A037EB8 /* MessageModels.swift */,
 				6552BE571000D043A0B5FEC8 /* ModelManifest.swift */,
@@ -715,6 +718,7 @@
 				C97F06BC823C58D4E211ABB5 /* CoreMLBridge.swift in Sources */,
 				945FC8E44DDDD6079CA0E1D2 /* DeveloperMode.swift in Sources */,
 				1A2430A7C99CA6258D6305A4 /* FeatureHasher.swift in Sources */,
+				74F7D98E3AB4959B5D3BF9EB /* MappedTokenEmbedding.swift in Sources */,
 				FB8A70D83AC111E0CA411B4A /* MessageFilterEngine.swift in Sources */,
 				BD98F94128FED4D69A01C995 /* MessageModels.swift in Sources */,
 				68E9C0CAAEE4F4719B65EBDD /* ModelManifest.swift in Sources */,

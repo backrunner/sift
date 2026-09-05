@@ -372,7 +372,9 @@ public final class TransformerModelDownloadClient: TransformerModelDownloading, 
 
         let keyID = bundle.object(forInfoDictionaryKey: "SiftSignalModelPublicKeyID") as? String ?? "release-2026"
         let channelNamespace = bundle.object(forInfoDictionaryKey: "SiftSignalModelChannelNamespace") as? String
-        let minimumReleaseSequence = (bundle.object(forInfoDictionaryKey: "SiftSignalModelMinimumReleaseSequence") as? NSNumber)?.intValue ?? 0
+        let minimumSequenceValue = bundle.object(forInfoDictionaryKey: "SiftSignalModelMinimumReleaseSequence")
+        let minimumReleaseSequence = (minimumSequenceValue as? NSNumber)?.intValue
+            ?? Int(minimumSequenceValue as? String ?? "") ?? 0
         let configuredKey = bundle.object(forInfoDictionaryKey: "SiftSignalModelPublicKey") as? String
         let dictionaryKeys = bundle.object(forInfoDictionaryKey: "SiftSignalModelPublicKeys") as? [String: String] ?? [:]
         var publicKeys = dictionaryKeys

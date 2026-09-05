@@ -9,6 +9,10 @@ import Darwin
 import OSLog
 #endif
 
+#if os(iOS)
+import os
+#endif
+
 public enum MessageFilterLatencyBucket: String, Codable, Hashable, Sendable {
     case under150Milliseconds
     case under250Milliseconds
@@ -55,6 +59,8 @@ public enum MessageFilterLatencyBucket: String, Codable, Hashable, Sendable {
 }
 
 public struct MessageFilterDiagnosticEvent: Codable, Hashable, Sendable {
+    public let requestID: UUID?
+    public let processIdentifier: Int32?
     public let requestedArtifactIdentity: ModelArtifactIdentity
     public let artifactIdentity: ModelArtifactIdentity
     public let latencyBucket: MessageFilterLatencyBucket
@@ -92,8 +98,12 @@ public struct MessageFilterDiagnosticEvent: Codable, Hashable, Sendable {
         decisionSource: ClassificationSource? = nil,
         systemAction: SystemAction? = nil,
         systemSubAction: SystemSubAction? = nil,
-        appGroupContainerAvailable: Bool = true
+        appGroupContainerAvailable: Bool = true,
+        requestID: UUID? = nil,
+        processIdentifier: Int32? = nil
     ) {
+        self.requestID = requestID
+        self.processIdentifier = processIdentifier
         let requestedArtifactIdentity = requestedArtifactIdentity ?? artifactIdentity
         self.requestedArtifactIdentity = requestedArtifactIdentity
         self.artifactIdentity = artifactIdentity
@@ -294,8 +304,30 @@ public final class MessageFilterPerformanceEvidenceStore: @unchecked Sendable {
     }
 }
 
+public struct MessageFilterMemorySnapshot: Codable, Hashable, Sendable {
+    public let physicalFootprintBytes: UInt64
+    public let processPeakPhysicalFootprintBytes: UInt64
+    public let availableMemoryBytes: UInt64?
+
+    public init(
+        physicalFootprintBytes: UInt64,
+        processPeakPhysicalFootprintBytes: UInt64,
+        availableMemoryBytes: UInt64?
+    ) {
+        self.physicalFootprintBytes = physicalFootprintBytes
+        self.processPeakPhysicalFootprintBytes = processPeakPhysicalFootprintBytes
+        self.availableMemoryBytes = availableMemoryBytes
+    }
+}
+
 public enum MessageFilterProcessMetrics {
     public static func currentPhysicalFootprintBytes() -> UInt64 {
+        memorySnapshot().physicalFootprintBytes
+    }
+
+    public static func memorySnapshot() -> MessageFilterMemorySnapshot {
+        var footprint: UInt64 = 0
+        var peak: UInt64 = 0
         #if canImport(Darwin)
         var info = task_vm_info_data_t()
         var count = mach_msg_type_number_t(MemoryLayout<task_vm_info_data_t>.size / MemoryLayout<integer_t>.size)
@@ -304,10 +336,23 @@ public enum MessageFilterProcessMetrics {
                 task_info(mach_task_self_, task_flavor_t(TASK_VM_INFO), $0, &count)
             }
         }
-        return result == KERN_SUCCESS ? info.phys_footprint : 0
-        #else
-        return 0
+        if result == KERN_SUCCESS {
+            footprint = info.phys_footprint
+            peak = UInt64(max(info.ledger_phys_footprint_peak, 0))
+        }
         #endif
+        #if os(iOS)
+        // A point-in-time dirty-memory allowance, not total device free RAM.
+        // Zero can also mean the API has no applicable app limit.
+        let available: UInt64? = UInt64(os_proc_available_memory())
+        #else
+        let available: UInt64? = nil
+        #endif
+        return MessageFilterMemorySnapshot(
+            physicalFootprintBytes: footprint,
+            processPeakPhysicalFootprintBytes: peak,
+            availableMemoryBytes: available
+        )
     }
 }
 
@@ -333,8 +378,11 @@ public struct MessageFilterOSLogDiagnosticsRecorder: MessageFilterDiagnosticsRec
     public func record(_ event: MessageFilterDiagnosticEvent) {
         performanceStore.record(event)
         let detailedLoggingEnabled = DeveloperModeStore.isEnabled()
-        diagnosticLogStore.record(event, includesDetails: detailedLoggingEnabled)
+        let persisted = diagnosticLogStore.record(event, includesDetails: detailedLoggingEnabled)
         #if canImport(OSLog)
+        if !persisted {
+            logger.error("diagnostic_write_failed record=message_filter_event")
+        }
         if detailedLoggingEnabled {
             let actualArtifactIdentity: ModelArtifactIdentity? = switch event.executionPath {
             case .classic, .signal:
@@ -349,6 +397,65 @@ public struct MessageFilterOSLogDiagnosticsRecorder: MessageFilterDiagnosticsRec
             logger.notice(
                 "selected=\(event.selectedVariant.rawValue, privacy: .public) path=\(event.executionPath.rawValue, privacy: .public) latency=\(event.latencyBucket.rawValue, privacy: .public) cold=\(event.isColdStart) signal_access=\(event.signalTiming?.accessKind.rawValue ?? "none", privacy: .public) signal_load_ms=\(event.signalTiming?.totalLoadMilliseconds ?? -1) signal_wait_ms=\(event.signalTiming?.queryWaitMilliseconds ?? -1) signal_inference_ms=\(event.signalTiming?.inferenceMilliseconds ?? -1) fallback=\(event.fallbackReason.rawValue, privacy: .public) error=\(event.errorCode ?? "none", privacy: .public) app_group=\(event.appGroupContainerAvailable)"
             )
+        }
+        #endif
+    }
+
+    public func stageObserver(
+        requestID: UUID,
+        configuration: FilterConfigurationSnapshot
+    ) -> MessageFilterStageObserver {
+        let startedAt = ContinuousClock().now
+        let processIdentifier = ProcessInfo.processInfo.processIdentifier
+        let bundleIdentifier = Bundle.main.bundleIdentifier ?? "unknown"
+        let appBuild = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "unknown"
+        return { stage in
+            // Logging must not leave autoreleased encoding/file objects alive
+            // across the following model allocation.
+            #if canImport(ObjectiveC)
+            autoreleasepool {
+                recordStage(stage, requestID: requestID, processIdentifier: processIdentifier,
+                            bundleIdentifier: bundleIdentifier, appBuild: appBuild,
+                            startedAt: startedAt, configuration: configuration)
+            }
+            #else
+            recordStage(stage, requestID: requestID, processIdentifier: processIdentifier,
+                        bundleIdentifier: bundleIdentifier, appBuild: appBuild,
+                        startedAt: startedAt, configuration: configuration)
+            #endif
+        }
+    }
+
+    private func recordStage(
+        _ stage: MessageFilterStage,
+        requestID: UUID,
+        processIdentifier: Int32,
+        bundleIdentifier: String,
+        appBuild: String,
+        startedAt: ContinuousClock.Instant,
+        configuration: FilterConfigurationSnapshot
+    ) {
+        let record = MessageFilterStageLogRecord(
+            requestID: requestID,
+            processIdentifier: processIdentifier,
+            bundleIdentifier: bundleIdentifier,
+            appBuild: appBuild,
+            stage: stage,
+            elapsedMilliseconds: Int(startedAt.duration(to: ContinuousClock().now) / .milliseconds(1)),
+            configuration: configuration,
+            memory: MessageFilterProcessMetrics.memorySnapshot()
+        )
+        #if canImport(OSLog)
+        logger.notice(
+            "request=\(requestID.uuidString, privacy: .public) pid=\(processIdentifier) stage=\(stage.rawValue, privacy: .public) elapsed_ms=\(record.elapsedMilliseconds) footprint=\(record.memory.physicalFootprintBytes) process_peak=\(record.memory.processPeakPhysicalFootprintBytes) available=\(record.memory.availableMemoryBytes ?? 0)"
+        )
+        #endif
+        // Persist before the next expensive phase, so a process kill cannot
+        // erase all evidence of an otherwise unfinished request.
+        let persisted = diagnosticLogStore.record(record)
+        #if canImport(OSLog)
+        if !persisted {
+            logger.error("diagnostic_write_failed record=message_filter_stage")
         }
         #endif
     }
