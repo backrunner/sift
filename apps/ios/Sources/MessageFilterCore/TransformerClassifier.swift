@@ -1041,6 +1041,12 @@ public final class TransformerTextClassifier: StageReportingMessageClassifier, @
             throw CocoaError(.featureUnsupported)
         }
         configuration.computeUnits = resolvedComputeUnits
+        // Signal always supplies the fixed [1, 96] token shape. Tell Core ML
+        // shape switching is rare so specialization can avoid retaining the
+        // fast shape-switching workspace used by flexible-input models.
+        var optimizationHints = MLOptimizationHints()
+        optimizationHints.reshapeFrequency = .infrequent
+        configuration.optimizationHints = optimizationHints
         configuration.modelDisplayName = "Sift Signal"
         self.model = try MLModel(contentsOf: modelURL, configuration: configuration)
         self.tokenizer = tokenizer
