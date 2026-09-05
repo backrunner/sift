@@ -109,7 +109,11 @@ def parse_arguments() -> argparse.Namespace:
     parser.add_argument("--model-dir", type=Path, required=True, help="directory containing the exported transformer artifacts")
     parser.add_argument("--selection", type=Path, required=True, help="selected-candidate.json produced by the quantization gate")
     parser.add_argument("--release-id", default=None, help="immutable release directory name; defaults to manifest version")
-    parser.add_argument("--channel-path", default="channels/v2/SiftSignalModel.channel.json")
+    parser.add_argument(
+        "--channel-path",
+        default="channels/v3/SiftSignalModel.channel.json",
+        help="mutable channel pointer path for the current app line (legacy v2 remains frozen)",
+    )
     parser.add_argument(
         "--compatible-release-manifest-url",
         action="append",
@@ -253,6 +257,7 @@ def main() -> None:
     manifest_path = model_dir / f"{args.model_name}.manifest.json"
     manifest = read_manifest(manifest_path)
     verify_selected_candidate(args.selection.expanduser().resolve(), manifest, model_dir)
+    validate_channel_path_for_release(args.channel_path, manifest)
     release_id = args.release_id or require_string(manifest, "version")
     ensure_safe_relative_path(release_id)
     release_prefix = f"releases/{release_id}"
@@ -319,7 +324,21 @@ def main() -> None:
             include_artifacts=not bool(args.reuse_artifacts_base_url),
         )
 
-        print_channel_summary(channel)
+    print_channel_summary(channel)
+
+
+def validate_channel_path_for_release(channel_path: str, manifest: dict[str, Any]) -> None:
+    """Keep release generations isolated at the publisher boundary."""
+    normalized = channel_path.strip("/")
+    release_sequence = int(manifest.get("releaseSequence", 0))
+    if normalized.startswith("channels/v2/") and release_sequence >= 4:
+        raise SystemExit(
+            "error: sequence 4+ releases must use the current-app channels/v3 (or newer) namespace"
+        )
+    if normalized.startswith("channels/v3/") and release_sequence < 4:
+        raise SystemExit(
+            "error: legacy sequence 1-3 releases must remain in the legacy channels/v2 namespace"
+        )
         print_plan(items, base_url)
 
         if args.write_manifest and not args.dry_run:

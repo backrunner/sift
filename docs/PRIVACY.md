@@ -65,6 +65,23 @@ periodically and after a manual pull-to-refresh, is updated immediately after
 you submit or erase a sample, and is cleared when you erase all submitted data
 or delete the app.
 
+## Local filter diagnostics
+
+The app keeps bounded, rotating diagnostic files in the App Group cache,
+excluded from backup (one active file and up to three 512 KiB archives).
+They record timestamps, app/model versions, execution stages, elapsed time,
+process memory use and peak, available process memory, and filtering outcomes.
+Random identifiers are generated separately for each filter request; the local
+process number helps compare a run with an iOS termination report. These are
+not device, account, sender, or persistent user identifiers. Diagnostic records
+contain no message text or phone numbers. Developer details can additionally
+include category, confidence, model identity, and system routing actions.
+
+Diagnostics are local and are not sent to CloudKit or used as training samples.
+They leave the device only when the user explicitly exports and shares them,
+or retrieves them using development tools. A missing completion record is
+evidence of an unfinished observation, not proof of a crash or a specific SMS.
+
 ## Apple review checklist
 
 - Keep the in-app privacy notice visible before remote submission.

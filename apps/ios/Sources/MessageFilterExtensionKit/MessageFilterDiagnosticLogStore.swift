@@ -22,6 +22,8 @@ public struct MessageFilterDiagnosticLogRecord: Codable, Hashable, Sendable {
     public static let currentSchemaVersion = 2
 
     public let recordType: String
+    public let requestID: UUID?
+    public let processIdentifier: Int32?
     public let schemaVersion: Int
     public let recordedAt: Date
     public let selectedVariant: ModelVariant
@@ -41,6 +43,8 @@ public struct MessageFilterDiagnosticLogRecord: Codable, Hashable, Sendable {
         includesDetails: Bool
     ) {
         self.recordType = "message_filter_event"
+        self.requestID = event.requestID
+        self.processIdentifier = event.processIdentifier
         self.schemaVersion = Self.currentSchemaVersion
         self.recordedAt = recordedAt
         self.selectedVariant = event.selectedVariant
@@ -74,6 +78,48 @@ public struct MessageFilterDiagnosticLogRecord: Codable, Hashable, Sendable {
                 physicalFootprintBytes: event.physicalFootprintBytes
             )
             : nil
+    }
+}
+
+public struct MessageFilterStageLogRecord: Codable, Hashable, Sendable {
+    public let recordType: String
+    public let schemaVersion: Int
+    public let recordedAt: Date
+    public let requestID: UUID
+    public let processIdentifier: Int32
+    public let bundleIdentifier: String
+    public let appBuild: String
+    public let stage: MessageFilterStage
+    public let elapsedMilliseconds: Int
+    public let selectedVariant: ModelVariant
+    public let requestedArtifactIdentity: ModelArtifactIdentity
+    public let configurationGeneration: UInt64
+    public let memory: MessageFilterMemorySnapshot
+
+    public init(
+        requestID: UUID,
+        processIdentifier: Int32,
+        bundleIdentifier: String,
+        appBuild: String,
+        stage: MessageFilterStage,
+        elapsedMilliseconds: Int,
+        configuration: FilterConfigurationSnapshot,
+        memory: MessageFilterMemorySnapshot,
+        recordedAt: Date = .now
+    ) {
+        self.recordType = "message_filter_stage"
+        self.schemaVersion = 1
+        self.recordedAt = recordedAt
+        self.requestID = requestID
+        self.processIdentifier = processIdentifier
+        self.bundleIdentifier = bundleIdentifier
+        self.appBuild = appBuild
+        self.stage = stage
+        self.elapsedMilliseconds = elapsedMilliseconds
+        self.selectedVariant = configuration.selectedVariant
+        self.requestedArtifactIdentity = configuration.modelArtifactIdentity
+        self.configurationGeneration = configuration.generation
+        self.memory = memory
     }
 }
 
@@ -212,6 +258,22 @@ public final class MessageFilterDiagnosticLogStore: @unchecked Sendable {
 
     public var isAvailable: Bool {
         directoryURL != nil
+    }
+
+    @discardableResult
+    public func record(_ record: MessageFilterStageLogRecord) -> Bool {
+        guard let directoryURL else { return false }
+        do {
+            var data = try Self.encoder().encode(record)
+            data.append(0x0A)
+            try withLockedDirectory(directoryURL) {
+                try rotateIfNeeded(forAdditionalByteCount: data.count, in: directoryURL)
+                try append(data, to: activeLogURL(in: directoryURL))
+            }
+            return true
+        } catch {
+            return false
+        }
     }
 
     @discardableResult

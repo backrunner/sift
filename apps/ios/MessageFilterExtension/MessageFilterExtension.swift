@@ -59,6 +59,9 @@ final class MessageFilterExtension: ILMessageFilterExtension, ILMessageFilterQue
             body: queryRequest.messageBody ?? ""
         )
         let configuration = FilterConfigurationSnapshotStore.load()
+        let requestID = UUID()
+        let observer = diagnostics.stageObserver(requestID: requestID, configuration: configuration)
+        observer(.queryReceived)
         let hasSharedContainer = appGroupContainerAvailable
         let isColdStart = Self.sessionTracker.beginQuery()
         let clock = ContinuousClock()
@@ -72,6 +75,7 @@ final class MessageFilterExtension: ILMessageFilterExtension, ILMessageFilterQue
                 return
             }
             if gate.complete((.none, .none)) {
+                observer(.watchdogResponded)
                 diagnostics.record(MessageFilterDiagnosticEvent(
                     artifactIdentity: configuration.modelArtifactIdentity,
                     latencyBucket: MessageFilterLatencyBucket(elapsed: startedAt.duration(to: clock.now)),
@@ -84,12 +88,14 @@ final class MessageFilterExtension: ILMessageFilterExtension, ILMessageFilterQue
                     selectedVariant: configuration.selectedVariant,
                     configurationGeneration: configuration.generation,
                     executionPath: .noDecision,
-                    appGroupContainerAvailable: hasSharedContainer
+                    appGroupContainerAvailable: hasSharedContainer,
+                    requestID: requestID,
+                    processIdentifier: ProcessInfo.processInfo.processIdentifier
                 ))
             }
         }
         Task { [engine, diagnostics] in
-            let result = await engine.classify(request, configuration: configuration)
+            let result = await engine.classify(request, configuration: configuration, observer: observer)
             let route = MessageFilterActionMapper.extensionRoute(for: result)
             let didComplete = gate.complete((
                 MessageFilterActionMapper.filterAction(for: route.action),
@@ -97,6 +103,7 @@ final class MessageFilterExtension: ILMessageFilterExtension, ILMessageFilterQue
             ))
             watchdogTask.cancel()
             if didComplete {
+                observer(.responseSubmitted)
                 diagnostics.record(MessageFilterDiagnosticEvent(
                     artifactIdentity: result.modelArtifactIdentity,
                     latencyBucket: MessageFilterLatencyBucket(elapsed: startedAt.duration(to: clock.now)),
@@ -115,7 +122,9 @@ final class MessageFilterExtension: ILMessageFilterExtension, ILMessageFilterQue
                     decisionSource: result.decision.source,
                     systemAction: result.systemAction,
                     systemSubAction: result.systemSubAction,
-                    appGroupContainerAvailable: hasSharedContainer
+                    appGroupContainerAvailable: hasSharedContainer,
+                    requestID: requestID,
+                    processIdentifier: ProcessInfo.processInfo.processIdentifier
                 ))
             }
         }

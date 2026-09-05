@@ -29,11 +29,20 @@ from upload_transformer_model import (
     verify_http,
     verify_reused_remote_artifacts,
     validate_release_profile,
+    validate_channel_path_for_release,
     release_signature_matches,
 )
 
 
 class UploadTransformerModelTests(unittest.TestCase):
+    def test_channel_namespace_matches_release_generation(self) -> None:
+        validate_channel_path_for_release("channels/v2/SiftSignalModel.channel.json", {"releaseSequence": 3})
+        validate_channel_path_for_release("channels/v3/SiftSignalModel.channel.json", {"releaseSequence": 4})
+        with self.assertRaisesRegex(SystemExit, r"sequence 4\+ releases"):
+            validate_channel_path_for_release("channels/v2/SiftSignalModel.channel.json", {"releaseSequence": 4})
+        with self.assertRaisesRegex(SystemExit, "legacy sequence"):
+            validate_channel_path_for_release("channels/v3/SiftSignalModel.channel.json", {"releaseSequence": 3})
+
     def valid_report(self, profile_id: str, artifact_sha: str, download_bytes: int) -> dict:
         return {
             "profileID": profile_id,

@@ -176,6 +176,28 @@ a {
   margin-top: 32px;
 }
 
+.app-store-link {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  border-radius: 8px;
+  transition:
+    box-shadow 180ms ease,
+    transform 180ms ease;
+}
+
+.app-store-link img {
+  display: block;
+  width: 132px;
+  height: auto;
+}
+
+.app-store-link:hover,
+.app-store-link:focus-visible {
+  box-shadow: 0 12px 26px rgba(23, 23, 20, 0.2);
+  transform: translateY(-2px);
+}
+
 .primary-link,
 .secondary-link {
   display: inline-flex;
@@ -869,6 +891,11 @@ a {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 10px;
     margin-top: 28px;
+  }
+
+  .app-store-link {
+    grid-column: 1 / -1;
+    justify-self: start;
   }
 
   .primary-link,

@@ -122,6 +122,9 @@ public struct TransformerRuntimeBenchmarkReport: Codable, Hashable, Sendable {
     public let averagePhysicalFootprintBytes: UInt64
     public let steadyStatePeakPhysicalFootprintBytes: UInt64
     public let peakPhysicalFootprintBytes: UInt64
+    /// Kernel high-water mark for the whole process, captured before compute
+    /// plan inspection. Compare in fresh processes; this is not a sampled peak.
+    public let processLifetimePeakPhysicalFootprintBytes: UInt64?
     public let finalPhysicalFootprintBytes: UInt64
     public let postLoadPhysicalFootprintIncreaseBytes: UInt64
     public let firstExecutionPeakPhysicalFootprintIncreaseBytes: UInt64
@@ -142,6 +145,7 @@ public enum TransformerRuntimeBenchmark {
         requests: [MessageFilterRequest],
         artifactIdentity: ModelArtifactIdentity? = nil,
         computeUnits: String = "all",
+        embeddingURL: URL? = nil,
         baselinePhysicalFootprintBytes: UInt64? = nil,
         tokenizerInitializationMilliseconds: Double = 0,
         warmupIterations: Int = 10,
@@ -157,7 +161,8 @@ public enum TransformerRuntimeBenchmark {
             modelURL: modelURL,
             tokenizer: tokenizer,
             labels: labels,
-            computeUnits: computeUnits
+            computeUnits: computeUnits,
+            embeddingURL: embeddingURL
         )
         let coldLoadMilliseconds = milliseconds(loadStart.duration(to: clock.now))
         let postLoadFootprint = currentPhysicalFootprintBytes()
@@ -218,6 +223,7 @@ public enum TransformerRuntimeBenchmark {
         steadyStatePeakFootprint = max(steadyStatePeakFootprint, finalInferenceFootprint)
         let peakFootprint = max(firstExecutionPeakFootprint, steadyStatePeakFootprint)
         let averageFootprint = footprintSampleTotal / UInt64(measuredIterations)
+        let lifetimePeak = currentLifetimePeakPhysicalFootprintBytes()
 
         // MLComputePlan inspection is release evidence, not part of the extension's
         // inference path. Keep its allocations out of inference peak and drift.
@@ -252,6 +258,7 @@ public enum TransformerRuntimeBenchmark {
             averagePhysicalFootprintBytes: averageFootprint,
             steadyStatePeakPhysicalFootprintBytes: steadyStatePeakFootprint,
             peakPhysicalFootprintBytes: peakFootprint,
+            processLifetimePeakPhysicalFootprintBytes: lifetimePeak,
             finalPhysicalFootprintBytes: finalInferenceFootprint,
             postLoadPhysicalFootprintIncreaseBytes: positiveDifference(postLoadFootprint, baselineFootprint),
             firstExecutionPeakPhysicalFootprintIncreaseBytes: positiveDifference(
@@ -295,6 +302,17 @@ public enum TransformerRuntimeBenchmark {
         #else
         return 0
         #endif
+    }
+
+    public static func currentLifetimePeakPhysicalFootprintBytes() -> UInt64 {
+        var info = task_vm_info_data_t()
+        var count = mach_msg_type_number_t(MemoryLayout<task_vm_info_data_t>.size / MemoryLayout<integer_t>.size)
+        let result = withUnsafeMutablePointer(to: &info) { pointer in
+            pointer.withMemoryRebound(to: integer_t.self, capacity: Int(count)) {
+                task_info(mach_task_self_, task_flavor_t(TASK_VM_INFO), $0, &count)
+            }
+        }
+        return result == KERN_SUCCESS ? UInt64(max(0, info.ledger_phys_footprint_peak)) : 0
     }
 
     private static func signedDifference(_ lhs: UInt64, _ rhs: UInt64) -> Int64 {

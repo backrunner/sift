@@ -7,6 +7,10 @@ import Observation
 import CloudKit
 #endif
 
+#if canImport(OSLog)
+import OSLog
+#endif
+
 public enum SubmissionDestination: String, CaseIterable, Identifiable, Sendable {
     case local
     case remote
@@ -2415,6 +2419,7 @@ public final class SiftAppModel {
     }
 
     private func remoteSubmissionErrorMessage(for error: Error) -> String {
+        Self.logRemoteSampleError(error, operation: "submit")
         if let message = cloudKitSampleErrorMessage(for: error, action: String(localized: "提交")) {
             return message
         }
@@ -2422,10 +2427,57 @@ public final class SiftAppModel {
     }
 
     private func remoteDeletionErrorMessage(for error: Error) -> String {
+        Self.logRemoteSampleError(error, operation: "delete")
         if let message = cloudKitSampleErrorMessage(for: error, action: String(localized: "删除")) {
             return message
         }
         return String(localized: "删除失败：\(error.localizedDescription)")
+    }
+
+    #if canImport(OSLog)
+    private nonisolated static let remoteSampleLogger = Logger(subsystem: "com.alkinum.sift", category: "samples")
+    #endif
+
+    /// Records the full error chain (including CloudKit partial failures and
+    /// underlying URLErrors) so TestFlight failures are diagnosable from
+    /// Console.app. Sample text is never logged — only error domains, codes,
+    /// and system-provided descriptions.
+    private nonisolated static func logRemoteSampleError(_ error: Error, operation: String) {
+        #if canImport(OSLog)
+        remoteSampleLogger.error("remote sample \(operation, privacy: .public) failed: \(Self.errorDiagnosticDescription(error), privacy: .public)")
+        #endif
+    }
+
+    nonisolated static func errorDiagnosticDescription(_ error: Error) -> String {
+        var parts: [String] = []
+        func describe(_ error: Error, depth: Int) {
+            guard depth < 8 else { return }
+            let nsError = error as NSError
+            var part = "\(nsError.domain)(\(nsError.code))"
+            let description = nsError.localizedDescription
+            if !description.isEmpty {
+                part += ": \(description)"
+            }
+            parts.append(part)
+            #if canImport(CloudKit)
+            if
+                let ckError = error as? CKError,
+                ckError.code == .partialFailure,
+                let partialErrors = nsError.userInfo[CKPartialErrorsByItemIDKey] as? [AnyHashable: Any]
+            {
+                for value in partialErrors.values {
+                    if let inner = value as? Error {
+                        describe(inner, depth: depth + 1)
+                    }
+                }
+            }
+            #endif
+            if let underlying = nsError.userInfo[NSUnderlyingErrorKey] as? Error {
+                describe(underlying, depth: depth + 1)
+            }
+        }
+        describe(error, depth: 0)
+        return parts.joined(separator: " -> ")
     }
 
     /// Shared CloudKit error copy. Returns nil when the error is not one of
@@ -2446,37 +2498,86 @@ public final class SiftAppModel {
 
         #if canImport(CloudKit)
         if let ckError = error as? CKError {
+            // Batch saves report a partial failure that wraps the real
+            // per-record errors; unwrap and map the first meaningful one.
+            if
+                ckError.code == .partialFailure,
+                let partialErrors = ckError.userInfo[CKPartialErrorsByItemIDKey] as? [AnyHashable: Any]
+            {
+                for value in partialErrors.values {
+                    guard let inner = value as? Error else { continue }
+                    if let message = cloudKitSampleErrorMessage(for: inner, action: action) {
+                        return message
+                    }
+                }
+            }
             switch ckError.code {
             case .notAuthenticated:
                 return String(localized: "请先在系统设置中登录 iCloud，再匿名共享样本")
-            case .networkUnavailable, .networkFailure:
+            case .networkUnavailable:
                 return String(localized: "网络不可用，样本未\(action)")
+            case .networkFailure:
+                // CloudKit wraps every transport-level failure in
+                // networkFailure; the URLError underneath says which one.
+                if
+                    let urlError = ckError.userInfo[NSUnderlyingErrorKey] as? URLError,
+                    let message = urlErrorMessage(for: urlError, action: action)
+                {
+                    return message
+                }
+                return String(localized: "网络请求失败，样本未\(action)，请稍后重试")
             case .requestRateLimited, .zoneBusy:
                 return String(localized: "操作过于频繁，请稍后重试")
             case .quotaExceeded:
                 return String(localized: "iCloud 存储配额不足，样本未\(action)")
             case .serviceUnavailable:
                 return String(localized: "iCloud 服务暂不可用，请稍后重试")
+            case .serverResponseLost:
+                return String(localized: "iCloud 响应中断，样本\(action)结果未知，请稍后确认")
             case .permissionFailure:
                 return String(localized: "iCloud 权限不足，样本未\(action)")
+            case .managedAccountRestricted:
+                return String(localized: "此设备的 iCloud 账户受限，无法\(action)样本")
+            case .unknownItem:
+                return String(localized: "样本记录不存在或已被删除")
+            case .invalidArguments, .badContainer, .missingEntitlement, .serverRejectedRequest, .incompatibleVersion:
+                return String(localized: "iCloud 配置异常，样本未\(action)，请更新 App 或联系支持（\(ckError.code.rawValue)）")
+            case .limitExceeded:
+                return String(localized: "样本内容超出 iCloud 限制，未\(action)")
+            case .operationCancelled:
+                return String(localized: "操作已取消，样本未\(action)")
             default:
                 return String(localized: "\(action)失败：iCloud 返回错误（\(ckError.code.rawValue)）")
             }
         }
-
-        if let urlError = error as? URLError {
-            switch urlError.code {
-            case .timedOut:
-                return String(localized: "\(action)超时，请稍后重试")
-            case .notConnectedToInternet, .networkConnectionLost:
-                return String(localized: "网络不可用，样本未\(action)")
-            default:
-                break
-            }
-        }
         #endif
 
+        if let urlError = error as? URLError, let message = urlErrorMessage(for: urlError, action: action) {
+            return message
+        }
+
         return nil
+    }
+
+    /// Maps transport-level failures to distinct copy. Used both for top-level
+    /// URLErrors and for the underlying error inside `CKError.networkFailure`.
+    private func urlErrorMessage(for urlError: URLError, action: String) -> String? {
+        switch urlError.code {
+        case .timedOut:
+            return String(localized: "\(action)超时，请稍后重试")
+        case .notConnectedToInternet, .dataNotAllowed, .internationalRoamingOff:
+            return String(localized: "网络不可用，样本未\(action)")
+        case .networkConnectionLost:
+            return String(localized: "网络连接中断，样本未\(action)，请重试")
+        case .cannotFindHost, .dnsLookupFailed, .cannotConnectToHost:
+            return String(localized: "无法连接 iCloud 服务器，样本未\(action)")
+        case .secureConnectionFailed, .serverCertificateHasBadDate, .serverCertificateUntrusted,
+             .serverCertificateHasUnknownRoot, .serverCertificateNotYetValid,
+             .clientCertificateRejected, .clientCertificateRequired:
+            return String(localized: "与 iCloud 的安全连接失败，样本未\(action)")
+        default:
+            return nil
+        }
     }
 
     private func defaultRuleName(for pattern: String) -> String {

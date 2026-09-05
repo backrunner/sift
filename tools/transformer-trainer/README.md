@@ -425,10 +425,12 @@ uv run train_mmbert.py --input ../../build/public-corpus.ndjson \
   --num-epochs 0 --max-rows 80 --max-length 8 --truncate-layers 1
 ```
 
-The publisher verifies and preserves the existing signed compatibility
-catalog. Its top-level release remains readable by legacy apps, while current
-apps verify `compatibleReleases` and choose the newest release allowed by their
-app build, OS, ABI, and installed release sequence. Use
+The publisher writes the current app-line channel (default
+`channels/v3/SiftSignalModel.channel.json`) and keeps immutable release
+artifacts under versioned directories. The legacy `channels/v2` pointer is
+frozen for Sift 1.3 and must not be updated with newer label contracts. Current
+apps verify the signed channel and choose the release allowed by their app
+build, OS, ABI, and installed release sequence. Use
 `--compatible-release-manifest-url` only to bootstrap an older immutable
 release into the catalog; never use `--no-preserve-channel-history` for a
 production upload.

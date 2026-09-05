@@ -283,11 +283,16 @@ are recorded above; do not reuse the legacy v15 artifacts.
 
 ### 2.5 Upload The Premium Sift Signal Model
 
-The app reads the manifest first when a Premium user switches to the transformer:
+The current app line reads the manifest first when a Premium user switches to the transformer:
 
 ```text
-https://sift.alkinum.io/models/channels/v2/SiftSignalModel.channel.json
+https://sift.alkinum.io/models/channels/v3/SiftSignalModel.channel.json
 ```
+
+The legacy Sift 1.3 build continues to use the frozen `channels/v2` pointer,
+which contains only releases compatible with build 18. Keep immutable model
+artifacts under separate release directories and never add a newer release to
+the legacy channel.
 
 After accepting a training run, publish the selected candidate and its signed
 compatibility catalog to the public directory behind that URL. The channel's
@@ -302,7 +307,7 @@ custom domain or Worker/Pages route.
 - Recommended R2 object key prefix: `models/`.
 - Public base URL used by the app: `https://sift.alkinum.io/models`.
 - These must map one-to-one so
-  `models/channels/v2/SiftSignalModel.channel.json` is publicly reachable.
+  `models/channels/v3/SiftSignalModel.channel.json` is publicly reachable.
 
 Credentials must not be committed. Copy the dotenv sample and provide real
 values locally or via CI secrets:

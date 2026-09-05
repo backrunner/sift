@@ -68,6 +68,7 @@ final class TransformerDeviceTests: XCTestCase {
             requests: Self.benchmarkRequests,
             artifactIdentity: installed.manifest.artifactIdentity,
             computeUnits: computeUnits,
+            embeddingURL: installed.embeddingURL,
             baselinePhysicalFootprintBytes: processBaseline,
             tokenizerInitializationMilliseconds: tokenizerInitializationMilliseconds,
             warmupIterations: 20,
@@ -134,8 +135,10 @@ final class TransformerDeviceTests: XCTestCase {
         installed: InstalledTransformerModel,
         warmQueryCount: Int
     ) async throws -> MessageFilterPerformanceEvidenceSnapshot {
-        let evidenceStore = MessageFilterPerformanceEvidenceStore()
-        evidenceStore.reset()
+        let suiteName = "SiftDeviceBenchmark.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        let evidenceStore = MessageFilterPerformanceEvidenceStore(defaults: defaults)
         let configuration = FilterConfigurationSnapshot(
             generation: 1,
             selectedVariant: .transformer,

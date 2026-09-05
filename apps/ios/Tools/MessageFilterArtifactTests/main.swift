@@ -462,7 +462,12 @@ private func makeRuntimeContext(
     let classifier = try TransformerTextClassifier(
         modelURL: compiledURL,
         tokenizer: tokenizer,
-        labels: manifest.labels
+        labels: manifest.labels,
+        computeUnits: manifest.runtimeProfile.computeUnits,
+        embeddingURL: MappedTokenEmbedding.url(
+            modelURL: arguments.manifest.deletingLastPathComponent().appendingPathComponent(manifest.modelArtifact),
+            modelABI: manifest.modelABI
+        )
     )
     let identity = manifest.artifactIdentity
     return RuntimeContext(
@@ -700,6 +705,10 @@ private func run() async throws {
             requests: readableCases().map { MessageFilterRequest(sender: $0.sender, body: $0.body) },
             artifactIdentity: manifest.artifactIdentity,
             computeUnits: arguments.benchmarkComputeUnits ?? manifest.runtimeProfile.computeUnits,
+            embeddingURL: MappedTokenEmbedding.url(
+                modelURL: arguments.manifest.deletingLastPathComponent().appendingPathComponent(manifest.modelArtifact),
+                modelABI: manifest.modelABI
+            ),
             baselinePhysicalFootprintBytes: baselinePhysicalFootprintBytes,
             tokenizerInitializationMilliseconds: tokenizerInitializationMilliseconds,
             warmupIterations: 20,
@@ -766,6 +775,11 @@ private func run() async throws {
             labels: manifest.labels,
             requests: readableCases().map { MessageFilterRequest(sender: $0.sender, body: $0.body) },
             artifactIdentity: runtime.identity,
+            computeUnits: manifest.runtimeProfile.computeUnits,
+            embeddingURL: MappedTokenEmbedding.url(
+                modelURL: arguments.manifest.deletingLastPathComponent().appendingPathComponent(manifest.modelArtifact),
+                modelABI: manifest.modelABI
+            ),
             baselinePhysicalFootprintBytes: baselinePhysicalFootprintBytes,
             tokenizerInitializationMilliseconds: tokenizerInitializationMilliseconds,
             warmupIterations: 10,

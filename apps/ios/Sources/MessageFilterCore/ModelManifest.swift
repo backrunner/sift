@@ -103,7 +103,7 @@ public enum TransformerManifestCompatibility: Hashable, Sendable {
 
 public struct TransformerManifestVerifier: Sendable {
     public static let supportedSchemaVersion = 2
-    public static let supportedModelABIs: Set<String> = ["sift-signal-v1"]
+    public static let supportedModelABIs: Set<String> = ["sift-signal-v1", MappedTokenEmbedding.modelABI]
 
     private let publicKeys: [String: String]
 

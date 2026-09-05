@@ -419,6 +419,54 @@ func messageFilterMilliseconds(_ duration: Duration) -> Int {
 public protocol TransformerRuntimeLoading: Sendable {
     @concurrent
     func loadTransformer(identity: ModelArtifactIdentity) async -> TransformerRuntimeLoadResult
+
+    @concurrent
+    func loadTransformer(
+        identity: ModelArtifactIdentity,
+        observer: MessageFilterStageObserver?
+    ) async -> TransformerRuntimeLoadResult
+}
+
+public extension TransformerRuntimeLoading {
+    @concurrent
+    func loadTransformer(
+        identity: ModelArtifactIdentity,
+        observer: MessageFilterStageObserver?
+    ) async -> TransformerRuntimeLoadResult {
+        await loadTransformer(identity: identity)
+    }
+}
+
+public enum MessageFilterStage: String, Codable, Sendable {
+    case queryReceived
+    case signalLoadStarted
+    case tokenizerLoadStarted
+    case tokenizerLoaded
+    case modelLoadStarted
+    case modelLoaded
+    case signalReady
+    case signalInferenceStarted
+    case tokenizationStarted
+    case tokenizationFinished
+    case embeddingStarted
+    case embeddingFinished
+    case predictionStarted
+    case predictionFinished
+    case signalInferenceFinished
+    case classicStarted
+    case decisionReady
+    case responseSubmitted
+    case watchdogResponded
+}
+
+public typealias MessageFilterStageObserver = @Sendable (MessageFilterStage) -> Void
+
+public protocol StageReportingMessageClassifier: FailureReportingMessageClassifier {
+    func classificationResult(
+        sender: String?,
+        body: String,
+        observer: MessageFilterStageObserver?
+    ) -> Result<ClassificationDecision, MessageClassifierInferenceFailure>
 }
 
 public struct InstalledTransformerRuntimeLoader: TransformerRuntimeLoading {
@@ -426,6 +474,14 @@ public struct InstalledTransformerRuntimeLoader: TransformerRuntimeLoading {
 
     @concurrent
     public func loadTransformer(identity: ModelArtifactIdentity) async -> TransformerRuntimeLoadResult {
+        await loadTransformer(identity: identity, observer: nil)
+    }
+
+    @concurrent
+    public func loadTransformer(
+        identity: ModelArtifactIdentity,
+        observer: MessageFilterStageObserver?
+    ) async -> TransformerRuntimeLoadResult {
         let clock = ContinuousClock()
         let artifactStartedAt = clock.now
         guard identity.variant == .transformer else {
@@ -445,7 +501,7 @@ public struct InstalledTransformerRuntimeLoader: TransformerRuntimeLoading {
             )
         }
         let artifactMilliseconds = messageFilterMilliseconds(artifactStartedAt.duration(to: clock.now))
-        let attempt = TransformerClassifierLoader.loadDownloaded(installed: installed)
+        let attempt = TransformerClassifierLoader.loadDownloaded(installed: installed, observer: observer)
         return TransformerRuntimeLoadResult(
             classifier: attempt.classifier,
             phaseMetrics: SignalModelLoadPhaseMetrics(
@@ -510,12 +566,15 @@ private actor TransformerRuntime {
         self.cacheReleaseHandler = cacheReleaseHandler
     }
 
-    func acquire(for requestedIdentity: ModelArtifactIdentity) async -> Access {
+    func acquire(
+        for requestedIdentity: ModelArtifactIdentity,
+        observer: MessageFilterStageObserver?
+    ) async -> Access {
         activeRequestCount += 1
         cancelIdleEviction()
         let clock = ContinuousClock()
         let startedAt = clock.now
-        let resolution = await resolve(for: requestedIdentity)
+        let resolution = await resolve(for: requestedIdentity, observer: observer)
         return Access(
             classifier: resolution.classifier,
             timing: SignalModelTimingMetrics(
@@ -560,7 +619,10 @@ private actor TransformerRuntime {
         requestCacheRelease(reason: .memoryPressure)
     }
 
-    private func resolve(for requestedIdentity: ModelArtifactIdentity) async -> Resolution {
+    private func resolve(
+        for requestedIdentity: ModelArtifactIdentity,
+        observer: MessageFilterStageObserver?
+    ) async -> Resolution {
         if let cached, cached.identity == requestedIdentity {
             return Resolution(
                 classifier: cached.classifier,
@@ -584,7 +646,8 @@ private actor TransformerRuntime {
             let clock = ContinuousClock()
             let task = Task.detached(priority: .userInitiated) {
                 let startedAt = clock.now
-                let result = await loader.loadTransformer(identity: requestedIdentity)
+                observer?(.signalLoadStarted)
+                let result = await loader.loadTransformer(identity: requestedIdentity, observer: observer)
                 return LoadCompletion(
                     result: result,
                     totalLoadMilliseconds: messageFilterMilliseconds(startedAt.duration(to: clock.now))
@@ -734,8 +797,10 @@ public actor MessageFilterEngine {
     public func classify(
         _ request: MessageFilterRequest,
         configuration: FilterConfigurationSnapshot,
-        transformerBudget: Duration = MessageFilterEngine.defaultTransformerBudget
+        transformerBudget: Duration = MessageFilterEngine.defaultTransformerBudget,
+        observer: MessageFilterStageObserver? = nil
     ) async -> MessageFilterResult {
+        defer { observer?(.decisionReady) }
         if let ruleDecision = ruleDecision(for: request, rules: configuration.rules) {
             return result(
                 decision: ruleDecision,
@@ -749,24 +814,27 @@ public actor MessageFilterEngine {
             return classifyWithClassic(
                 request,
                 configuration: configuration,
-                fallbackReason: .configurationMismatch
+                fallbackReason: .configurationMismatch,
+                observer: observer
             )
         }
         guard configuration.selectedVariant == .transformer else {
-            return classifyWithClassic(request, configuration: configuration, fallbackReason: .none)
+            return classifyWithClassic(request, configuration: configuration, fallbackReason: .none, observer: observer)
         }
         guard transformerDeviceSupport.isSupported else {
             return classifyWithClassic(
                 request,
                 configuration: configuration,
-                fallbackReason: .unsupportedDevice
+                fallbackReason: .unsupportedDevice,
+                observer: observer
             )
         }
 
         let transformerOutcome = await raceTransformer(
             request: request,
             identity: configuration.modelArtifactIdentity,
-            budget: transformerBudget
+            budget: transformerBudget,
+            observer: observer
         )
 
         switch transformerOutcome {
@@ -786,7 +854,8 @@ public actor MessageFilterEngine {
                 request,
                 configuration: configuration,
                 fallbackReason: .transformerUnavailable,
-                signalTiming: signalTiming
+                signalTiming: signalTiming,
+                observer: observer
             )
         case let .inferenceFailed(failure, signalTiming):
             return classifyWithClassic(
@@ -794,13 +863,15 @@ public actor MessageFilterEngine {
                 configuration: configuration,
                 fallbackReason: .transformerInferenceFailed,
                 errorCode: "signal_\(failure.rawValue)",
-                signalTiming: signalTiming
+                signalTiming: signalTiming,
+                observer: observer
             )
         case .timedOut:
             return classifyWithClassic(
                 request,
                 configuration: configuration,
-                fallbackReason: .transformerTimedOut
+                fallbackReason: .transformerTimedOut,
+                observer: observer
             )
         }
     }
@@ -815,7 +886,8 @@ public actor MessageFilterEngine {
     private func raceTransformer(
         request: MessageFilterRequest,
         identity: ModelArtifactIdentity,
-        budget: Duration
+        budget: Duration,
+        observer: MessageFilterStageObserver?
     ) async -> TransformerOutcome {
         let (stream, continuation) = AsyncStream<TransformerOutcome>.makeStream(
             // This is a race, not a progress stream. Preserve whichever path
@@ -824,7 +896,7 @@ public actor MessageFilterEngine {
         )
         let runtime = transformerRuntime
         let inference = Task.detached(priority: .userInitiated) {
-            let access = await runtime.acquire(for: identity)
+            let access = await runtime.acquire(for: identity, observer: observer)
             guard let classifier = access.classifier else {
                 let wasCancelled = Task.isCancelled
                 await runtime.finishAccess(
@@ -839,15 +911,22 @@ public actor MessageFilterEngine {
                 await runtime.finishAccess(releaseReason: .attemptTimedOut)
                 return
             }
+            observer?(.signalReady)
             let clock = ContinuousClock()
             let inferenceStartedAt = clock.now
+            observer?(.signalInferenceStarted)
             let outcome: TransformerOutcome
             let failureReleaseReason: SignalModelCacheReleaseReason?
             if let failureReportingClassifier = classifier as? any FailureReportingMessageClassifier {
-                switch failureReportingClassifier.classificationResult(
-                    sender: request.sender,
-                    body: request.body
-                ) {
+                let prediction: Result<ClassificationDecision, MessageClassifierInferenceFailure>
+                if let tracingClassifier = classifier as? any StageReportingMessageClassifier {
+                    prediction = tracingClassifier.classificationResult(
+                        sender: request.sender, body: request.body, observer: observer
+                    )
+                } else {
+                    prediction = failureReportingClassifier.classificationResult(sender: request.sender, body: request.body)
+                }
+                switch prediction {
                 case let .success(decision):
                     let timing = access.timing.recordingInference(
                         milliseconds: messageFilterMilliseconds(inferenceStartedAt.duration(to: clock.now))
@@ -869,6 +948,7 @@ public actor MessageFilterEngine {
                 outcome = .decision(decision, timing)
                 failureReleaseReason = nil
             }
+            observer?(.signalInferenceFinished)
             let wasCancelled = Task.isCancelled
             await runtime.finishAccess(
                 releaseReason: wasCancelled ? .attemptTimedOut : failureReleaseReason
@@ -901,8 +981,10 @@ public actor MessageFilterEngine {
         configuration: FilterConfigurationSnapshot,
         fallbackReason: MessageFilterFallbackReason,
         errorCode: String? = nil,
-        signalTiming: SignalModelTimingMetrics? = nil
+        signalTiming: SignalModelTimingMetrics? = nil,
+        observer: MessageFilterStageObserver? = nil
     ) -> MessageFilterResult {
+        observer?(.classicStarted)
         let decision = ClassificationPipeline(classifier: resolvedClassicClassifier())
             .classify(sender: request.sender, body: request.body, rules: [])
             .applying(categoryMappings: configuration.categoryMappings)

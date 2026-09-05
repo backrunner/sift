@@ -11,6 +11,10 @@ public struct InstalledTransformerModel: Hashable, Sendable {
     public let tokenizerURL: URL
     public let modelURL: URL
 
+    public var embeddingURL: URL? {
+        MappedTokenEmbedding.url(modelURL: modelURL, modelABI: manifest.modelABI)
+    }
+
     public init(
         manifest: TransformerModelManifest,
         directoryURL: URL,
@@ -132,6 +136,11 @@ public enum TransformerModelStore {
             manifest.tokenizerKind == "bpe",
             tokenizerURL.pathExtension == "siftbpe"
         else {
+            return nil
+        }
+
+        if let embeddingURL = MappedTokenEmbedding.url(modelURL: modelURL, modelABI: manifest.modelABI),
+           !fileManager.fileExists(atPath: embeddingURL.path) {
             return nil
         }
 
