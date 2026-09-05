@@ -68,7 +68,7 @@ xcodebuild \
   -destination "platform=iOS,id=$device" \
   -derivedDataPath "$derived_data" \
   EXCLUDED_SOURCE_FILE_NAMES=SiftPIIDetector.mlpackage \
-  "${provisioning_arguments[@]}" \
+  "${provisioning_arguments[@]+${provisioning_arguments[@]}}" \
   build-for-testing
 
 app_path="$derived_data/Build/Products/Release-iphoneos/SiftApp.app"
@@ -97,7 +97,7 @@ xcodebuild \
   -derivedDataPath "$derived_data" \
   -resultBundlePath "$install_result_bundle" \
   EXCLUDED_SOURCE_FILE_NAMES=SiftPIIDetector.mlpackage \
-  "${provisioning_arguments[@]}" \
+  "${provisioning_arguments[@]+${provisioning_arguments[@]}}" \
   "${diagnostic_arguments[@]}" \
   -only-testing:TransformerDeviceTests/TransformerDeviceTests/testInstallCandidateWithoutFinalPathPrime \
   test-without-building
@@ -111,7 +111,7 @@ xcodebuild \
   -derivedDataPath "$derived_data" \
   -resultBundlePath "$prime_result_bundle" \
   EXCLUDED_SOURCE_FILE_NAMES=SiftPIIDetector.mlpackage \
-  "${provisioning_arguments[@]}" \
+  "${provisioning_arguments[@]+${provisioning_arguments[@]}}" \
   "${diagnostic_arguments[@]}" \
   -only-testing:TransformerDeviceTests/TransformerDeviceTests/testPrimeInstalledTransformerAtFinalPath \
   test-without-building
