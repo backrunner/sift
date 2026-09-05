@@ -285,6 +285,27 @@ No probe or replacement Sift app was installed, and the TestFlight app and its
 downloaded model were not changed. Actual incoming SMS with the debugger
 detached, including cold starts and bursts, remains the required memory gate.
 
+The development build was subsequently installed with the existing Sift
+development profiles and the same standalone runner was executed on the
+physical phone. With CPU-only Core ML and 1,000 predictions, it measured:
+
+| iPhone 17 metric | Existing sequence 4 | Mapped FP16 scales |
+| --- | ---: | ---: |
+| Model load | 873.7 ms | 183.5 ms |
+| First prediction | 24.3 ms | 19.4 ms |
+| Warm P95 | 5.51 ms | 6.06 ms |
+| First execution peak | 22.15 MiB | 22.07 MiB |
+| Kernel lifetime peak | 23.80 MiB | 23.70 MiB |
+| Failed predictions | 0 | 0 |
+
+The candidate reduces the measured lifetime peak by about 0.10 MiB and cold
+model loading by about 79%. The peak remains within roughly 0.30 MiB of the
+24 MiB Jetsam value, so this is insufficient headroom to call the
+IdentityLookup extension safe under all OS scheduling and framework states.
+The host-side extension-chain burst still completed 10,030 transformer
+requests with no watchdogs or inference errors; that process has a different
+memory budget and does not replace a real incoming SMS test.
+
 The final code passed Swift build, all 242 Swift tests, CoreSmokeTests, a generic
 iOS app/extension build, and all 138 trainer Python tests in the trainer venv.
 The decoder tests cover signed nibble order, FP16/FP32 scales, repeated rows,

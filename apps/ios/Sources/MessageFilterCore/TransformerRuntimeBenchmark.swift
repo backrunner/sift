@@ -108,6 +108,8 @@ public struct TransformerRuntimeBenchmarkReport: Codable, Hashable, Sendable {
     public let computeUnits: String
     public let warmupIterations: Int
     public let measuredIterations: Int
+    /// Includes warmup attempts. Older reports omit this field.
+    public let failedInferenceCount: Int?
     public let tokenizerInitializationMilliseconds: Double
     public let coldLoadMilliseconds: Double
     public let firstInferenceMilliseconds: Double
@@ -157,23 +159,33 @@ public enum TransformerRuntimeBenchmark {
         let clock = ContinuousClock()
         let baselineFootprint = baselinePhysicalFootprintBytes ?? currentPhysicalFootprintBytes()
         let loadStart = clock.now
-        let classifier = try TransformerTextClassifier(
-            modelURL: modelURL,
-            tokenizer: tokenizer,
-            labels: labels,
-            computeUnits: computeUnits,
-            embeddingURL: embeddingURL
-        )
+        // Match installation/runtime loading: drain Core ML initialization
+        // temporaries before prediction, but retain the classifier for sampling.
+        let classifier = try autoreleasepool {
+            try TransformerTextClassifier(
+                modelURL: modelURL,
+                tokenizer: tokenizer,
+                labels: labels,
+                computeUnits: computeUnits,
+                embeddingURL: embeddingURL
+            )
+        }
         let coldLoadMilliseconds = milliseconds(loadStart.duration(to: clock.now))
         let postLoadFootprint = currentPhysicalFootprintBytes()
         var firstExecutionPeakFootprint = postLoadFootprint
         var firstInferenceMilliseconds: Double?
+        var failedInferenceCount = 0
+        func predict(_ request: MessageFilterRequest) {
+            if case .failure = classifier.classificationResult(sender: request.sender, body: request.body) {
+                failedInferenceCount += 1
+            }
+        }
 
         if warmupIterations > 0 {
             let request = requests[0]
             let firstInferenceStartedAt = clock.now
             autoreleasepool {
-                _ = classifier.classify(sender: request.sender, body: request.body)
+                predict(request)
             }
             firstInferenceMilliseconds = milliseconds(firstInferenceStartedAt.duration(to: clock.now))
             firstExecutionPeakFootprint = max(
@@ -186,7 +198,7 @@ public enum TransformerRuntimeBenchmark {
             for index in 1..<warmupIterations {
                 let request = requests[index % requests.count]
                 autoreleasepool {
-                    _ = classifier.classify(sender: request.sender, body: request.body)
+                    predict(request)
                 }
                 firstExecutionPeakFootprint = max(
                     firstExecutionPeakFootprint,
@@ -205,7 +217,7 @@ public enum TransformerRuntimeBenchmark {
             let request = requests[index % requests.count]
             let start = clock.now
             autoreleasepool {
-                _ = classifier.classify(sender: request.sender, body: request.body)
+                predict(request)
             }
             let duration = milliseconds(start.duration(to: clock.now))
             durations.append(duration)
@@ -224,6 +236,9 @@ public enum TransformerRuntimeBenchmark {
         let peakFootprint = max(firstExecutionPeakFootprint, steadyStatePeakFootprint)
         let averageFootprint = footprintSampleTotal / UInt64(measuredIterations)
         let lifetimePeak = currentLifetimePeakPhysicalFootprintBytes()
+        // Optimized builds may otherwise release the model after the last
+        // prediction, reporting the unloaded footprint as "final" memory.
+        withExtendedLifetime(classifier) {}
 
         // MLComputePlan inspection is release evidence, not part of the extension's
         // inference path. Keep its allocations out of inference peak and drift.
@@ -242,6 +257,7 @@ public enum TransformerRuntimeBenchmark {
             computeUnits: computeUnits,
             warmupIterations: warmupIterations,
             measuredIterations: measuredIterations,
+            failedInferenceCount: failedInferenceCount,
             tokenizerInitializationMilliseconds: tokenizerInitializationMilliseconds,
             coldLoadMilliseconds: coldLoadMilliseconds,
             firstInferenceMilliseconds: resolvedFirstInferenceMilliseconds,

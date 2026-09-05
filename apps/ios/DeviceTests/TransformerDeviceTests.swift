@@ -77,6 +77,7 @@ final class TransformerDeviceTests: XCTestCase {
 
         XCTAssertEqual(report.artifactIdentity, installed.manifest.artifactIdentity)
         XCTAssertEqual(report.measuredIterations, measuredIterations)
+        XCTAssertEqual(report.failedInferenceCount, 0)
         XCTAssertGreaterThan(report.computePlan.costedOperationCount, 0)
         if computeUnits == "cpuOnly" {
             XCTAssertFalse(report.computePlan.accelerationVerified)
