@@ -38,6 +38,7 @@
 		7786BF200DE97ADA7FF253C9 /* MessageFilterCore.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = DE9062B3BA12FA49279965C9 /* MessageFilterCore.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		7A0ACE2C8B8F199047B3270A /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = F3453A1235E4C653C2B05667 /* PrivacyInfo.xcprivacy */; };
 		80EA440A0B3377EEBF648BA7 /* Classifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 91A2208F6DF258C04BFA1DBF /* Classifier.swift */; };
+		8AB47F70C62BC00B80CD0EA2 /* TransformerDownloadCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6BC78597D5179D6547704BBF /* TransformerDownloadCoordinator.swift */; };
 		8BB645CC14EFDD4FF2C4F3A3 /* PrivacySanitizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85A81258E948F5F731486B23 /* PrivacySanitizer.swift */; };
 		90BAA06D8F6CF6F489207F3F /* MessageFilterDiagnosticLogStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B42E1156BF9FC2BB88D77C6 /* MessageFilterDiagnosticLogStore.swift */; };
 		9432635D3D3C7B4052D34978 /* PIIDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7618B89E17DF7C4ABFB2C888 /* PIIDetector.swift */; };
@@ -66,6 +67,7 @@
 		DA1BE1AFA1A47145D8E20860 /* SiftSMSClassifier.mlmodel in Sources */ = {isa = PBXBuildFile; fileRef = 20B9AC80820B87C5D1C1A9F4 /* SiftSMSClassifier.mlmodel */; };
 		DA9E0BDA7A47D675C779EB6E /* TransformerClassifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 484100600463D6DE7C77A4EC /* TransformerClassifier.swift */; };
 		DDFD20E0EC444C5DF500978C /* PremiumViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = B01E8E89CED9145777F73B53 /* PremiumViews.swift */; };
+		DEFBA384B5F66A38D9375529 /* ModelDisplayVersion.swift in Sources */ = {isa = PBXBuildFile; fileRef = 282890CEE84FE7456AB164D7 /* ModelDisplayVersion.swift */; };
 		E574C4CEE788C88CC6F7283D /* BPETokenizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3EB4AEB1B78C380B40F692D /* BPETokenizer.swift */; };
 		E698229663809AC1761A38C1 /* MessageFilterCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DE9062B3BA12FA49279965C9 /* MessageFilterCore.framework */; };
 		EBB916001952F59808045D0F /* SubmissionHistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 188D3402D6C10DAE8AE2CF7F /* SubmissionHistoryView.swift */; };
@@ -213,6 +215,7 @@
 		1C7ABA6DEF13A9B99018FAE9 /* TransformerRuntimeBenchmark.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransformerRuntimeBenchmark.swift; sourceTree = "<group>"; };
 		20B9AC80820B87C5D1C1A9F4 /* SiftSMSClassifier.mlmodel */ = {isa = PBXFileReference; lastKnownFileType = file.mlmodel; path = SiftSMSClassifier.mlmodel; sourceTree = "<group>"; };
 		27DA7D06EC28D68B6A037EB8 /* MessageModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessageModels.swift; sourceTree = "<group>"; };
+		282890CEE84FE7456AB164D7 /* ModelDisplayVersion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelDisplayVersion.swift; sourceTree = "<group>"; };
 		2AD0B23B094B7F19C398D6C6 /* WordPieceTokenizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WordPieceTokenizer.swift; sourceTree = "<group>"; };
 		2B42E1156BF9FC2BB88D77C6 /* MessageFilterDiagnosticLogStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessageFilterDiagnosticLogStore.swift; sourceTree = "<group>"; };
 		2B97F0AAEE63E8477A369B76 /* CloudKitSampleClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudKitSampleClient.swift; sourceTree = "<group>"; };
@@ -230,6 +233,7 @@
 		61BA7115BCE9701E5EDF98E5 /* DeveloperMode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeveloperMode.swift; sourceTree = "<group>"; };
 		6552BE571000D043A0B5FEC8 /* ModelManifest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelManifest.swift; sourceTree = "<group>"; };
 		68E31588A615F637BCA1A72A /* SiftPIIDetector.vocab.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = SiftPIIDetector.vocab.txt; sourceTree = "<group>"; };
+		6BC78597D5179D6547704BBF /* TransformerDownloadCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransformerDownloadCoordinator.swift; sourceTree = "<group>"; };
 		6CBD4DFE2D496DF56947A303 /* MessageFilterExtensionKit.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = MessageFilterExtensionKit.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		753C8AF04FE9FA5CE3C68EC1 /* RuleEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RuleEngine.swift; sourceTree = "<group>"; };
 		75A5FB46D77336AF0F57DA8A /* SiftPIIDetector.mlmodelc */ = {isa = PBXFileReference; path = SiftPIIDetector.mlmodelc; sourceTree = "<group>"; };
@@ -373,6 +377,7 @@
 				0697BD401D2134F6EECAA8A9 /* MappedTokenEmbedding.swift */,
 				3992F041CBC4AE7AFC4B3556 /* MessageFilterEngine.swift */,
 				27DA7D06EC28D68B6A037EB8 /* MessageModels.swift */,
+				282890CEE84FE7456AB164D7 /* ModelDisplayVersion.swift */,
 				6552BE571000D043A0B5FEC8 /* ModelManifest.swift */,
 				C29F041CB845ED5477E6AC11 /* ModelSelection.swift */,
 				7618B89E17DF7C4ABFB2C888 /* PIIDetector.swift */,
@@ -434,6 +439,7 @@
 				F43A09AA5745101A244CF132 /* SiftAppModel.swift */,
 				49D7FE397BA0808616CA19CE /* SiftRootView.swift */,
 				188D3402D6C10DAE8AE2CF7F /* SubmissionHistoryView.swift */,
+				6BC78597D5179D6547704BBF /* TransformerDownloadCoordinator.swift */,
 				7A2F30DFD01633E2520EBBAA /* TransformerModelDownload.swift */,
 			);
 			name = SiftAppKit;
@@ -721,6 +727,7 @@
 				74F7D98E3AB4959B5D3BF9EB /* MappedTokenEmbedding.swift in Sources */,
 				FB8A70D83AC111E0CA411B4A /* MessageFilterEngine.swift in Sources */,
 				BD98F94128FED4D69A01C995 /* MessageModels.swift in Sources */,
+				DEFBA384B5F66A38D9375529 /* ModelDisplayVersion.swift in Sources */,
 				68E9C0CAAEE4F4719B65EBDD /* ModelManifest.swift in Sources */,
 				1FC39F0616712256D1C1B9F4 /* ModelSelection.swift in Sources */,
 				9432635D3D3C7B4052D34978 /* PIIDetector.swift in Sources */,
@@ -787,6 +794,7 @@
 				13988EDB6F5E1DCE2DA7FD70 /* SiftAppModel.swift in Sources */,
 				F5F35629D1518DB8FBB4D0E8 /* SiftRootView.swift in Sources */,
 				EBB916001952F59808045D0F /* SubmissionHistoryView.swift in Sources */,
+				8AB47F70C62BC00B80CD0EA2 /* TransformerDownloadCoordinator.swift in Sources */,
 				AAC82133210D1D4DAA00A4F6 /* TransformerModelDownload.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
