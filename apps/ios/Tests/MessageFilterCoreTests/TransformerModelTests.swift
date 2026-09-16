@@ -631,7 +631,7 @@ func transformerLoaderFindsLegacyInstalledResource() throws {
 }
 
 @Test
-func transformerActivationRemovesReplacedModelBackup() throws {
+func transformerActivationPreservesOldGenerationAndAtomicallySelectsNewOne() throws {
     let root = FileManager.default.temporaryDirectory
         .appendingPathComponent("sift-transformer-activation-\(UUID().uuidString)", isDirectory: true)
     defer { try? FileManager.default.removeItem(at: root) }
@@ -646,9 +646,20 @@ func transformerActivationRemovesReplacedModelBackup() throws {
 
     try TransformerModelStore.activate(stagedDirectory: staged, fileManager: fileManager)
 
-    #expect(try Data(contentsOf: active.appendingPathComponent("generation")) == Data("new".utf8))
+    let installed = TransformerModelStore.modelDirectory(fileManager: fileManager)
+    #expect(installed != active)
+    #expect(try Data(contentsOf: installed.appendingPathComponent("generation")) == Data("new".utf8))
+    #expect(try Data(contentsOf: active.appendingPathComponent("generation")) == Data("old".utf8))
     #expect(!fileManager.fileExists(atPath: staged.path))
     #expect(!fileManager.fileExists(atPath: backup.path))
+
+    #expect(throws: (any Error).self) {
+        try TransformerModelStore.activate(stagedDirectory: staged, fileManager: fileManager)
+    }
+    #expect(TransformerModelStore.modelDirectory(fileManager: fileManager) == installed)
+    try TransformerModelStore.remove(fileManager: fileManager)
+    #expect(!fileManager.fileExists(atPath: installed.path))
+    #expect(!fileManager.fileExists(atPath: active.path))
 }
 
 @Test
@@ -666,6 +677,67 @@ func transformerModelStoreCountsInstalledFileBytes() throws {
     )
 
     #expect(try TransformerModelStore.directoryByteCount(at: directory) == 3_072)
+}
+
+@Test
+func transformerGenerationsResolveCompleteArtifactsByIdentity() throws {
+    let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+    defer { try? FileManager.default.removeItem(at: root) }
+    let fileManager = TemporaryContainerFileManager(rootURL: root)
+    let staging = TransformerModelStore.stagingDirectory(fileManager: fileManager)
+    func install(_ sequence: Int) throws -> InstalledTransformerModel {
+        try fileManager.createDirectory(at: staging, withIntermediateDirectories: true)
+        let modelData = Data("model-\(sequence)".utf8)
+        let tokenizerData = Data("tokenizer-\(sequence)".utf8)
+        try modelData.write(to: staging.appendingPathComponent("model.mlmodel"))
+        try tokenizerData.write(to: staging.appendingPathComponent("tokens.siftbpe"))
+        let manifest = TransformerModelManifest(
+            schemaVersion: 2, releaseSequence: sequence, modelABI: "sift-signal-v1",
+            version: "test-\(sequence)", trainedAt: "2026-09-05", algorithm: "test",
+            backbone: "test", languages: ["zh", "en", "ja"], labels: ["spam"],
+            maxSequenceLength: 8, doLowerCase: false, tokenizerKind: "bpe",
+            tokenizerArtifact: "tokens.siftbpe", modelArtifact: "model.mlmodel",
+            sha256: TransformerManifestVerifier(publicKeys: [:]).checksum(for: modelData),
+            taxonomyHash: "test", remoteArtifacts: [], downloadBytes: 0
+        )
+        try JSONEncoder().encode(manifest).write(to: TransformerModelStore.manifestURL(in: staging))
+        try TransformerModelStore.activate(stagedDirectory: staging, fileManager: fileManager)
+        return try #require(TransformerModelStore.installedModel(fileManager: fileManager, validateChecksums: false))
+    }
+    let old = try install(1)
+    let new = try install(2)
+    #expect(old.directoryURL != new.directoryURL)
+    let resolved = try #require(TransformerClassifierLoader.installedModel(
+        fileManager: fileManager, validateChecksums: false, identity: old.manifest.artifactIdentity
+    ))
+    #expect(resolved.directoryURL == old.directoryURL)
+    #expect(try Data(contentsOf: resolved.modelURL) == Data("model-1".utf8))
+    #expect(try Data(contentsOf: resolved.tokenizerURL) == Data("tokenizer-1".utf8))
+    #expect(try Data(contentsOf: new.modelURL) == Data("model-2".utf8))
+    #expect(try Data(contentsOf: new.tokenizerURL) == Data("tokenizer-2".utf8))
+    #expect(new.directoryURL.pathComponents.contains(TransformerModelStore.runtimeNamespace))
+    #expect(TransformerClassifierLoader.installedModel(
+        fileManager: fileManager, validateChecksums: false,
+        identity: ModelArtifactIdentity(variant: .transformer, modelABI: "unknown", releaseSequence: 1, sha256: "unknown")
+    ) == nil)
+}
+
+@Test
+func modelDisplayVersionsAreIndependentOfArtifactIdentifiers() throws {
+    func manifest(version: String, displayVersion: String? = nil) -> ModelManifest {
+        ModelManifest(version: version, trainedAt: "2026-09-05", taxonomyHash: "taxonomy",
+                      featureHasherVersion: "test", sha256: String(repeating: "a", count: 64),
+                      modelURL: nil, displayVersion: displayVersion)
+    }
+    let baseline = manifest(version: "maxent-generalization-v50-seed29-r32")
+    #expect(ModelDisplayVersion.classic(baseline) == "1.0")
+    #expect(ModelDisplayVersion.classic(manifest(version: "training-id", displayVersion: "1.2")) == "1.2")
+    #expect(ModelDisplayVersion.classic(manifest(version: "training-id", displayVersion: "too-long-and-invalid")) == "aaaaaaaa")
+    #expect(ModelDisplayVersion.transformer(modelABI: "sift-signal-v1", releaseSequence: 4) == "1.4")
+    #expect(ModelDisplayVersion.transformer(modelABI: MappedTokenEmbedding.modelABI, releaseSequence: 5) == "2.5")
+    #expect(baseline.version == "maxent-generalization-v50-seed29-r32")
+    let encoded = try JSONEncoder().encode(manifest(version: "full", displayVersion: "1.2"))
+    #expect(try JSONDecoder().decode(ModelManifest.self, from: encoded).displayVersion == "1.2")
 }
 
 @Test

@@ -217,6 +217,33 @@ private struct MockTransformerUpdateChecker: TransformerModelUpdateChecking {
     }
 }
 
+private actor SuspendedTransformerUpdateChecker: TransformerModelUpdateChecking {
+    let gate: SuspendedTransformerDownloadGate
+    let state: TransformerUpdateState
+
+    init(gate: SuspendedTransformerDownloadGate, state: TransformerUpdateState) {
+        self.gate = gate
+        self.state = state
+    }
+
+    func checkForUpdate(currentIdentity: ModelArtifactIdentity?) async -> TransformerUpdateState {
+        await gate.suspend()
+        return state
+    }
+}
+
+private struct AppUpdateRequiredDownloader: TransformerModelDownloading {
+    func prepareDownload() async throws -> TransformerModelDownloadPlan {
+        throw TransformerModelDownloadError.appUpdateRequired
+    }
+
+    func download(_ plan: TransformerModelDownloadPlan,
+                  progress: @Sendable @escaping (TransformerModelDownloadProgress) -> Void,
+                  phase: @Sendable @escaping (TransformerModelDownloadWorkPhase) -> Void) async throws {
+        Issue.record("An incompatible model must never start downloading")
+    }
+}
+
 private actor NetworkConditionRecorder {
     private(set) var callCount = 0
 
@@ -847,7 +874,8 @@ func automaticTransformerUpdateUsesSilentBackgroundDownloadOnWiFi() async throws
     #expect(await downloadRecorder.modes() == [.automatic])
     #expect(model.selectedModelVariant == .transformer)
     #expect(model.isShowingMeteredTransformerDownloadConfirmation == false)
-    #expect(model.transformerDownloadProgress == nil)
+    try await waitFor { !model.isAutomaticTransformerUpdateActive }
+    #expect(!model.isTransformerDownloadActive)
 }
 
 @MainActor
@@ -967,6 +995,80 @@ func cancelledAutomaticTransformerUpdateCannotClearItsReplacement() async throws
     #expect(await gate.count() == 2)
     #expect(model.selectedModelVariant == .transformer)
     await gate.release(2)
+}
+
+@MainActor
+@Test
+func firstTransformerDownloadRequiringNewAppShowsStorePrompt() async throws {
+    let suiteName = "SiftTests.modelUpdate.firstDownload.\(UUID().uuidString)"
+    let defaults = try #require(UserDefaults(suiteName: suiteName))
+    defer { defaults.removePersistentDomain(forName: suiteName) }
+    let model = SiftAppModel(
+        premiumBackend: MockPremiumBackend(entitled: true, outcome: .cancelled),
+        transformerAvailabilityOverride: false, transformerDownloadedOverride: false,
+        transformerDeviceSupportOverride: .supported,
+        transformerDownloader: AppUpdateRequiredDownloader(),
+        modelSelectionDefaults: defaults, appDefaults: defaults
+    )
+    try await waitForPremiumRefresh(model)
+    model.selectModelVariant(.transformer)
+    try await waitFor { model.isShowingTransformerAppUpdatePrompt }
+    #expect(model.isTransformerAppUpdateRequired)
+    #expect(!model.isTransformerUpdateBusy)
+    #expect(model.selectedModelVariant == .classic)
+    #expect(model.transformerUpdateStatusText != nil)
+    #expect(model.appStoreURL.absoluteString == "https://apps.apple.com/app/id6788805739")
+    model.isShowingTransformerAppUpdatePrompt = false
+    model.downloadTransformerUpdate()
+    #expect(model.isShowingTransformerAppUpdatePrompt)
+}
+
+@MainActor
+@Test
+func staleUpdateCheckCannotPublishDuringDownload() async throws {
+    let suiteName = "SiftTests.modelUpdate.staleCheck.\(UUID().uuidString)"
+    let defaults = try #require(UserDefaults(suiteName: suiteName))
+    defer { defaults.removePersistentDomain(forName: suiteName) }
+    let checkGate = SuspendedTransformerDownloadGate()
+    let downloadGate = SuspendedTransformerDownloadGate()
+    let model = SiftAppModel(
+        premiumBackend: MockPremiumBackend(entitled: true, outcome: .cancelled),
+        transformerAvailabilityOverride: false, transformerDownloadedOverride: false,
+        transformerDeviceSupportOverride: .supported,
+        transformerDownloader: SuspendedTransformerDownloader(plan: mockTransformerDownloadPlan(), gate: downloadGate),
+        transformerUpdateChecker: SuspendedTransformerUpdateChecker(gate: checkGate, state: .current),
+        modelSelectionDefaults: defaults, appDefaults: defaults
+    )
+    try await waitForPremiumRefresh(model)
+    model.checkForTransformerUpdate(force: true)
+    try await waitForSuspendedTransformerDownload(checkGate, count: 1)
+    model.selectModelVariant(.transformer)
+    try await waitForSuspendedTransformerDownload(downloadGate, count: 1)
+    await checkGate.release(1)
+    model.checkForTransformerUpdate(force: true)
+    #expect(model.transformerUpdateState == .unknown)
+    #expect(model.transformerUpdateStatusText == nil)
+    #expect(await checkGate.count() == 1)
+    model.cancelPendingTransformerDownload()
+    await downloadGate.release(1)
+}
+
+@Test
+func futureInferenceABIAndSchemaGuideOldClientsToAppUpdate() {
+    for schema in [2, 3] {
+        let channel = TransformerChannelManifestV2(
+            schemaVersion: schema, releaseSequence: 1, releaseID: "future-model",
+            releaseManifestURL: "https://example.com/release.json",
+            releaseManifestSHA256: String(repeating: "a", count: 64), modelABI: "future-abi",
+            minimumAppBuild: 99, maximumAppBuild: .max, minimumOSVersion: "18.0", keyID: "test"
+        )
+        let state = TransformerModelDownloadClient.updateState(
+            for: [channel], verifier: TransformerManifestVerifier(publicKeys: [:]), appBuild: 21,
+            operatingSystemVersion: OperatingSystemVersion(majorVersion: 18, minorVersion: 0, patchVersion: 0),
+            currentModelABI: "sift-signal-v1", currentReleaseSequence: 4
+        )
+        #expect(state == .requiresAppUpdate(channel))
+    }
 }
 
 @MainActor
@@ -1391,7 +1493,17 @@ func selectedSignalRemainsUsableWhileInteractiveUpdateDownloads() async throws {
     #expect(model.isTransformerDownloadActive)
     #expect(model.isTransformerModelAvailable)
 
+    #expect(model.transformerUpdateStatusText == nil)
+    #expect(model.transformerUpdateReleaseID == nil)
+    #expect(!model.hasCompatibleTransformerUpdate)
+    model.checkForTransformerUpdate(force: true)
+    model.downloadTransformerUpdate()
+    #expect(model.transformerUpdateState == .updateAvailable(release))
+    #expect(await gate.count() == 1)
+
     model.cancelPendingTransformerDownload()
+    #expect(model.hasCompatibleTransformerUpdate)
+    #expect(model.transformerUpdateStatusText != nil)
     await gate.release(1)
 }
 

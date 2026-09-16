@@ -187,6 +187,7 @@ private enum TransformerDownloadUIUpdate: Sendable {
 public final class SiftAppModel {
     public var modelDate: String = "2026-05-06"
     public var modelVersion: String = "corpus-0.1"
+    public private(set) var modelVersionForDisplay: String = "0.1"
     public private(set) var selectedModelVariant: ModelVariant
     public private(set) var isRestoringInitialModelVariant: Bool
     public private(set) var transformerDeviceSupport: TransformerDeviceSupport
@@ -202,6 +203,8 @@ public final class SiftAppModel {
     public private(set) var transformerDownloadProgress: TransformerModelDownloadProgress?
     public private(set) var pendingTransformerDownloadPlan: TransformerModelDownloadPlan?
     public private(set) var transformerUpdateState: TransformerUpdateState = .unknown
+    public private(set) var isAutomaticTransformerUpdateActive = false
+    public private(set) var isTransformerAppUpdateRequired = false
     public var isShowingMeteredTransformerDownloadConfirmation: Bool = false
     public var isShowingTransformerAppUpdatePrompt: Bool = false
     public var submissionDestination: SubmissionDestination = .local
@@ -313,7 +316,13 @@ public final class SiftAppModel {
     private var transformerDownloadTask: Task<Void, Never>?
 
     @ObservationIgnored
+    private var transformerDownloadRequestID: UUID?
+
+    @ObservationIgnored
     private var transformerUpdateCheckTask: Task<Void, Never>?
+
+    @ObservationIgnored
+    private var transformerUpdateCheckRequestID: UUID?
 
     @ObservationIgnored
     private var automaticTransformerUpdateTask: Task<Void, Never>?
@@ -565,6 +574,7 @@ public final class SiftAppModel {
     }
 
     public var hasCompatibleTransformerUpdate: Bool {
+        guard !isTransformerUpdateBusy else { return false }
         if case .updateAvailable = transformerUpdateState {
             return isTransformerModelDownloaded
         }
@@ -572,6 +582,7 @@ public final class SiftAppModel {
     }
 
     public var transformerUpdateReleaseID: String? {
+        guard !isTransformerUpdateBusy else { return nil }
         switch transformerUpdateState {
         case let .updateAvailable(channel), let .requiresAppUpdate(channel), let .incompatible(channel):
             return channel.releaseID
@@ -588,6 +599,10 @@ public final class SiftAppModel {
     }
 
     public var transformerUpdateStatusText: String? {
+        guard !isTransformerUpdateBusy else {
+            return nil
+        }
+        if isTransformerAppUpdateRequired { return String(localized: "需要更新 App") }
         switch transformerUpdateState {
         case .unknown, .checking, .current, .incompatible, .failed:
             return nil
@@ -600,6 +615,9 @@ public final class SiftAppModel {
 
     public func checkForTransformerUpdate(force: Bool = false) {
         guard premium.isUnlocked, isTransformerDeviceSupported else {
+            return
+        }
+        guard !isTransformerUpdateBusy else {
             return
         }
         guard transformerUpdateCheckTask == nil, let transformerUpdateChecker else {
@@ -616,22 +634,32 @@ public final class SiftAppModel {
         }
         transformerUpdateState = .checking
         let identity = installedTransformerIdentity
+        let requestID = UUID()
+        transformerUpdateCheckRequestID = requestID
         transformerUpdateCheckTask = Task { [weak self] in
             guard let self else { return }
             let state = await transformerUpdateChecker.checkForUpdate(currentIdentity: identity)
+            guard !Task.isCancelled, self.transformerUpdateCheckRequestID == requestID else { return }
             self.transformerUpdateCheckTask = nil
-            guard !Task.isCancelled else { return }
+            self.transformerUpdateCheckRequestID = nil
+            guard !self.isTransformerUpdateBusy, self.installedTransformerIdentity == identity else { return }
             transformerUpdateState = state
+            isTransformerAppUpdateRequired = false
             appDefaults.set(Date(), forKey: Self.transformerUpdateLastCheckKey)
         }
     }
 
     public func downloadTransformerUpdate() {
+        guard !isTransformerUpdateBusy else { return }
         guard isTransformerDeviceSupported else {
             showTransformerUnsupportedMessage()
             return
         }
         guard premium.isUnlocked else {
+            return
+        }
+        if isTransformerAppUpdateRequired {
+            isShowingTransformerAppUpdatePrompt = true
             return
         }
         switch transformerUpdateState {
@@ -759,6 +787,12 @@ public final class SiftAppModel {
         if variant == .transformer, !premium.isUnlocked {
             // 高级版付费项:未解锁时打开购买引导,而不是直接切换。
             isShowingPaywall = true
+            return
+        }
+        guard !isTransformerUpdateBusy || (variant == .classic && isAutomaticTransformerUpdateActive) else { return }
+        if variant == .transformer, !isTransformerModelAvailable,
+           isTransformerAppUpdateRequired {
+            isShowingTransformerAppUpdatePrompt = true
             return
         }
         if variant == .transformer, !isTransformerModelAvailable {
@@ -951,6 +985,26 @@ public final class SiftAppModel {
         }
     }
 
+    public var isTransformerUpdateBusy: Bool {
+        isTransformerDownloadActive || isAutomaticTransformerUpdateActive
+            || transformerDownloadPhase == .waitingForTrafficConfirmation
+    }
+
+    public var transformerUpdateVersionForDisplay: String? {
+        guard !isTransformerUpdateBusy else { return nil }
+        switch transformerUpdateState {
+        case let .updateAvailable(channel), let .requiresAppUpdate(channel), let .incompatible(channel):
+            return ModelDisplayVersion.transformer(modelABI: channel.modelABI, releaseSequence: channel.releaseSequence)
+        case .unknown, .checking, .current, .failed:
+            return nil
+        }
+    }
+
+    public var installedTransformerDisplayVersion: String? {
+        guard let identity = installedTransformerIdentity else { return nil }
+        return ModelDisplayVersion.transformer(modelABI: identity.modelABI, releaseSequence: identity.releaseSequence)
+    }
+
     public var transformerDownloadProgressText: String? {
         guard let progress = transformerDownloadProgress else {
             return nil
@@ -1035,6 +1089,7 @@ public final class SiftAppModel {
     public func cancelPendingTransformerDownload() {
         transformerDownloadTask?.cancel()
         transformerDownloadTask = nil
+        transformerDownloadRequestID = nil
         pendingTransformerDownloadPlan = nil
         transformerDownloadProgress = nil
         transformerDownloadPhase = isTransformerModelAvailable ? .ready : .notDownloaded
@@ -1046,7 +1101,7 @@ public final class SiftAppModel {
             showTransformerUnsupportedMessage()
             return
         }
-        guard transformerDownloadTask == nil else {
+        guard transformerDownloadTask == nil, !isTransformerUpdateBusy else {
             return
         }
         guard let transformerDownloader else {
@@ -1057,6 +1112,8 @@ public final class SiftAppModel {
         }
 
         cancelAutomaticTransformerUpdate()
+        cancelTransformerUpdateCheck()
+        isTransformerAppUpdateRequired = false
 
         transformerDownloadPhase = .checking
         transformerDownloadProgress = nil
@@ -1101,6 +1158,8 @@ public final class SiftAppModel {
 
         pendingTransformerDownloadPlan = plan
         transformerDownloadPhase = .downloading
+        let requestID = UUID()
+        transformerDownloadRequestID = requestID
         transformerDownloadTask = Task { [weak self] in
             guard let self else { return }
             let (updateStream, updateContinuation) = AsyncStream<TransformerDownloadUIUpdate>.makeStream(
@@ -1108,7 +1167,7 @@ public final class SiftAppModel {
             )
             let updateConsumer = Task { @MainActor [weak self] in
                 for await update in updateStream {
-                    guard let self else {
+                    guard let self, self.transformerDownloadRequestID == requestID else {
                         return
                     }
                     switch update {
@@ -1173,6 +1232,7 @@ public final class SiftAppModel {
         if error as? TransformerModelDownloadError == .appUpdateRequired {
             transformerDownloadPhase = isTransformerModelAvailable ? .ready : .notDownloaded
             transformerDownloadTask = nil
+            isTransformerAppUpdateRequired = true
             isShowingTransformerAppUpdatePrompt = true
             return
         }
@@ -1188,6 +1248,7 @@ public final class SiftAppModel {
             premium.isUnlocked,
             isTransformerDeviceSupported,
             isTransformerModelAvailable,
+            !isTransformerUpdateBusy,
             transformerDownloadTask == nil,
             automaticTransformerUpdateTask == nil,
             let transformerDownloader,
@@ -1209,9 +1270,11 @@ public final class SiftAppModel {
         }
 
         let identity = installedTransformerIdentity
+        cancelTransformerUpdateCheck()
         let networkChecker = transformerNetworkConditionChecker
         let requestID = UUID()
         automaticTransformerUpdateRequestID = requestID
+        isAutomaticTransformerUpdateActive = true
         automaticTransformerUpdateTask = Task(priority: .utility) { [weak self] in
             guard let self else { return }
             let networkCondition = await networkChecker.currentCondition()
@@ -1231,6 +1294,7 @@ public final class SiftAppModel {
                 return
             }
             self.transformerUpdateState = state
+            self.isTransformerAppUpdateRequired = false
             self.appDefaults.set(Date(), forKey: Self.transformerUpdateLastCheckKey)
             guard case .updateAvailable = state else {
                 self.finishAutomaticTransformerUpdate(requestID)
@@ -1238,6 +1302,7 @@ public final class SiftAppModel {
             }
 
             do {
+                self.transformerDownloadPhase = .checking
                 let plan = try await transformerDownloader.prepareDownload().forAutomaticUpdate()
                 guard
                     self.isAutomaticTransformerUpdateCurrent(requestID, expectedIdentity: identity),
@@ -1246,10 +1311,24 @@ public final class SiftAppModel {
                     self.finishAutomaticTransformerUpdate(requestID)
                     return
                 }
+                self.pendingTransformerDownloadPlan = plan
+                self.transformerDownloadProgress = nil
+                self.transformerDownloadPhase = .downloading
                 try await transformerDownloader.download(
                     plan,
-                    progress: { _ in },
-                    phase: { _ in }
+                    progress: { [weak self] progress in
+                        Task { @MainActor in
+                            guard let self, self.automaticTransformerUpdateRequestID == requestID,
+                                  self.transformerDownloadPhase == .downloading else { return }
+                            self.transformerDownloadProgress = progress
+                        }
+                    },
+                    phase: { [weak self] phase in
+                        Task { @MainActor in
+                            guard let self, self.automaticTransformerUpdateRequestID == requestID else { return }
+                            self.transformerDownloadPhase = phase == .installing ? .installing : .downloading
+                        }
+                    }
                 )
                 guard self.isAutomaticTransformerUpdateCurrent(requestID, expectedIdentity: identity) else {
                     self.finishAutomaticTransformerUpdate(requestID)
@@ -1304,12 +1383,25 @@ public final class SiftAppModel {
         guard automaticTransformerUpdateRequestID == requestID else { return }
         automaticTransformerUpdateTask = nil
         automaticTransformerUpdateRequestID = nil
+        isAutomaticTransformerUpdateActive = false
+        transformerDownloadPhase = isTransformerModelAvailable ? .ready : .notDownloaded
     }
 
     private func cancelAutomaticTransformerUpdate() {
         automaticTransformerUpdateTask?.cancel()
         automaticTransformerUpdateTask = nil
         automaticTransformerUpdateRequestID = nil
+        if isAutomaticTransformerUpdateActive {
+            isAutomaticTransformerUpdateActive = false
+            transformerDownloadPhase = isTransformerModelAvailable ? .ready : .notDownloaded
+        }
+    }
+
+    private func cancelTransformerUpdateCheck() {
+        transformerUpdateCheckTask?.cancel()
+        transformerUpdateCheckTask = nil
+        transformerUpdateCheckRequestID = nil
+        if transformerUpdateState == .checking { transformerUpdateState = .unknown }
     }
 
     fileprivate func updateTransformerDownloadProgress(_ progress: TransformerModelDownloadProgress) {
@@ -1355,11 +1447,17 @@ public final class SiftAppModel {
             if let manifest = BundledModelManifest.load() {
                 modelDate = Self.displayDate(for: manifest.trainedAt)
                 modelVersion = manifest.version
+                modelVersionForDisplay = ModelDisplayVersion.classic(manifest)
             }
         case .transformer:
             if let installedTransformerVersion, let installedTransformerTrainedAt {
                 modelDate = Self.displayDate(for: installedTransformerTrainedAt)
                 modelVersion = installedTransformerVersion
+                if let identity = installedTransformerIdentity {
+                    modelVersionForDisplay = ModelDisplayVersion.transformer(
+                        modelABI: identity.modelABI, releaseSequence: identity.releaseSequence
+                    )
+                }
             }
         }
     }

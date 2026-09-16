@@ -32,6 +32,9 @@ public struct InstalledTransformerModel: Hashable, Sendable {
 
 public enum TransformerModelStore {
     public static let directoryName = "TransformerModels"
+    // Bump whenever the client inference contract changes incompatibly. Old
+    // app/extension processes must never discover or overwrite this runtime.
+    public static let runtimeNamespace = "runtime-v2"
 
     public static func baseDirectory(
         appGroupIdentifier: String = ModelSelectionStore.appGroupIdentifier,
@@ -42,14 +45,25 @@ public enum TransformerModelStore {
         return root
             .appendingPathComponent("Sift", isDirectory: true)
             .appendingPathComponent(directoryName, isDirectory: true)
+            .appendingPathComponent(runtimeNamespace, isDirectory: true)
     }
 
     public static func modelDirectory(
         resourceName: String = TransformerClassifierLoader.defaultResourceName,
         fileManager: FileManager = .default
     ) -> URL {
-        baseDirectory(fileManager: fileManager)
-            .appendingPathComponent(resourceName, isDirectory: true)
+        let root = resourceDirectory(resourceName: resourceName, fileManager: fileManager)
+        let pointer = root.appendingPathComponent("active.json")
+        if let data = try? Data(contentsOf: pointer),
+           let generation = try? JSONDecoder().decode(String.self, from: data),
+           UUID(uuidString: generation) != nil {
+            return root.appendingPathComponent(generation, isDirectory: true)
+        }
+        return root
+    }
+
+    private static func resourceDirectory(resourceName: String, fileManager: FileManager) -> URL {
+        baseDirectory(fileManager: fileManager).appendingPathComponent(resourceName, isDirectory: true)
     }
 
     public static func stagingDirectory(
@@ -109,15 +123,34 @@ public enum TransformerModelStore {
     public static func installedModel(
         resourceName: String = TransformerClassifierLoader.defaultResourceName,
         fileManager: FileManager = .default,
-        validateChecksums: Bool = true
+        validateChecksums: Bool = true,
+        identity: ModelArtifactIdentity? = nil
     ) -> InstalledTransformerModel? {
         let directory = modelDirectory(resourceName: resourceName, fileManager: fileManager)
-        return model(
+        let active = model(
             in: directory,
             resourceName: resourceName,
             fileManager: fileManager,
             validateChecksums: validateChecksums
         )
+        guard let identity else { return active }
+        if active?.manifest.artifactIdentity == identity { return active }
+        // A request can have captured the old configuration immediately before
+        // activation. Resolve all of its resources from that same generation.
+        let root = resourceDirectory(resourceName: resourceName, fileManager: fileManager)
+        let generations = (try? fileManager.contentsOfDirectory(
+            at: root, includingPropertiesForKeys: nil
+        )) ?? []
+        for generation in generations where UUID(uuidString: generation.lastPathComponent) != nil {
+            if let candidate = model(in: generation, resourceName: resourceName,
+                                     fileManager: fileManager, validateChecksums: false),
+               candidate.manifest.artifactIdentity == identity {
+                return validateChecksums
+                    ? model(in: generation, resourceName: resourceName, fileManager: fileManager)
+                    : candidate
+            }
+        }
+        return nil
     }
 
     public static func model(
@@ -130,6 +163,8 @@ public enum TransformerModelStore {
         guard
             let data = try? Data(contentsOf: manifestURL),
             let manifest = try? JSONDecoder().decode(TransformerModelManifest.self, from: data),
+            TransformerManifestVerifier.supportedModelABIs.contains(manifest.modelABI)
+                || (manifest.schemaVersion == 1 && manifest.modelABI == "legacy-mmbert-v1"),
             TransformerSignalReleaseContract.accepts(manifest),
             let tokenizerURL = tokenizerURL(for: manifest, in: directory, fileManager: fileManager),
             let modelURL = artifactURL(named: manifest.modelArtifact, in: directory, fileManager: fileManager),
@@ -138,6 +173,14 @@ public enum TransformerModelStore {
         else {
             return nil
         }
+
+        #if os(iOS)
+        guard let build = Int(Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? ""),
+              build >= manifest.minimumAppBuild, build <= manifest.maximumAppBuild,
+              TransformerManifestVerifier.isOperatingSystem(
+                ProcessInfo.processInfo.operatingSystemVersion, atLeast: manifest.minimumOSVersion
+              ) else { return nil }
+        #endif
 
         if let embeddingURL = MappedTokenEmbedding.url(modelURL: modelURL, modelABI: manifest.modelABI),
            !fileManager.fileExists(atPath: embeddingURL.path) {
@@ -170,37 +213,28 @@ public enum TransformerModelStore {
         resourceName: String = TransformerClassifierLoader.defaultResourceName,
         fileManager: FileManager = .default
     ) throws {
-        let activeDirectory = modelDirectory(resourceName: resourceName, fileManager: fileManager)
-        let parent = activeDirectory.deletingLastPathComponent()
-        try fileManager.createDirectory(at: parent, withIntermediateDirectories: true)
-
-        let backup = previousModelDirectory(resourceName: resourceName, fileManager: fileManager)
-        let hadActive = fileManager.fileExists(atPath: activeDirectory.path)
-        if fileManager.fileExists(atPath: backup.path) {
-            try fileManager.removeItem(at: backup)
-        }
-        if hadActive {
-            try fileManager.moveItem(at: activeDirectory, to: backup)
-        }
-
+        let root = resourceDirectory(resourceName: resourceName, fileManager: fileManager)
+        try fileManager.createDirectory(at: root, withIntermediateDirectories: true)
+        let generation = UUID().uuidString
+        let destination = root.appendingPathComponent(generation, isDirectory: true)
+        try fileManager.moveItem(at: stagedDirectory, to: destination)
         do {
-            try fileManager.moveItem(at: stagedDirectory, to: activeDirectory)
+            try JSONEncoder().encode(generation).write(
+                to: root.appendingPathComponent("active.json"), options: .atomic
+            )
         } catch {
-            if hadActive, fileManager.fileExists(atPath: backup.path) {
-                try? fileManager.moveItem(at: backup, to: activeDirectory)
-            }
+            try? fileManager.moveItem(at: destination, to: stagedDirectory)
             throw error
         }
-        if fileManager.fileExists(atPath: backup.path) {
-            try? fileManager.removeItem(at: backup)
-        }
+        // Retain generations until explicit model cleanup: another process
+        // can still have Core ML or an embedding mmap open at its original URL.
     }
 
     public static func remove(
         resourceName: String = TransformerClassifierLoader.defaultResourceName,
         fileManager: FileManager = .default
     ) throws {
-        let directory = modelDirectory(resourceName: resourceName, fileManager: fileManager)
+        let directory = resourceDirectory(resourceName: resourceName, fileManager: fileManager)
         let previous = previousModelDirectory(resourceName: resourceName, fileManager: fileManager)
         let resumeData = downloadResumeDataDirectory(resourceName: resourceName, fileManager: fileManager)
         if fileManager.fileExists(atPath: directory.path) {
@@ -212,6 +246,10 @@ public enum TransformerModelStore {
         if fileManager.fileExists(atPath: resumeData.path) {
             try fileManager.removeItem(at: resumeData)
         }
+        let staging = stagingDirectory(resourceName: resourceName, fileManager: fileManager)
+        if fileManager.fileExists(atPath: staging.path) {
+            try fileManager.removeItem(at: staging)
+        }
     }
 
     @concurrent
@@ -219,7 +257,7 @@ public enum TransformerModelStore {
         resourceName: String = TransformerClassifierLoader.defaultResourceName
     ) async -> Int64? {
         let fileManager = FileManager.default
-        let directory = modelDirectory(resourceName: resourceName, fileManager: fileManager)
+        let directory = resourceDirectory(resourceName: resourceName, fileManager: fileManager)
         return try? directoryByteCount(at: directory, fileManager: fileManager)
     }
 

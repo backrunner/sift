@@ -488,7 +488,7 @@ public struct InstalledTransformerRuntimeLoader: TransformerRuntimeLoading {
             return TransformerRuntimeLoadResult(classifier: nil)
         }
         guard
-            let installed = TransformerClassifierLoader.installedModel(validateChecksums: false),
+            let installed = TransformerClassifierLoader.installedModel(validateChecksums: false, identity: identity),
             installed.manifest.artifactIdentity == identity
         else {
             return TransformerRuntimeLoadResult(

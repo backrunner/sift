@@ -10,6 +10,7 @@ public struct ModelManifest: Codable, Hashable, Sendable {
     public let modelURL: String?
     public let signature: String?
     public let publicKeyID: String?
+    public let displayVersion: String?
 
     public init(
         version: String,
@@ -19,7 +20,8 @@ public struct ModelManifest: Codable, Hashable, Sendable {
         sha256: String,
         modelURL: String?,
         signature: String? = nil,
-        publicKeyID: String? = nil
+        publicKeyID: String? = nil,
+        displayVersion: String? = nil
     ) {
         self.version = version
         self.trainedAt = trainedAt
@@ -29,6 +31,7 @@ public struct ModelManifest: Codable, Hashable, Sendable {
         self.modelURL = modelURL
         self.signature = signature
         self.publicKeyID = publicKeyID
+        self.displayVersion = displayVersion
     }
 
     public func canonicalPayload() -> Data {
@@ -39,7 +42,8 @@ public struct ModelManifest: Codable, Hashable, Sendable {
             "featureHasherVersion": featureHasherVersion,
             "sha256": sha256,
             "modelURL": modelURL,
-            "publicKeyID": publicKeyID
+            "publicKeyID": publicKeyID,
+            "displayVersion": displayVersion
         ]
         let sorted = payload.sorted { $0.key < $1.key }
         let json = sorted.reduce(into: [String: String]()) { result, pair in
@@ -200,10 +204,10 @@ public struct TransformerManifestVerifier: Sendable {
         currentReleaseSequence: Int
     ) -> TransformerManifestCompatibility {
         guard channel.schemaVersion == Self.supportedSchemaVersion else {
-            return .unsupportedSchema
+            return appBuild < channel.minimumAppBuild ? .appBuildTooOld : .unsupportedSchema
         }
         guard Self.supportedModelABIs.contains(channel.modelABI) else {
-            return .unsupportedABI
+            return appBuild < channel.minimumAppBuild ? .appBuildTooOld : .unsupportedABI
         }
         guard appBuild >= channel.minimumAppBuild else {
             return .appBuildTooOld
@@ -261,7 +265,7 @@ public struct TransformerManifestVerifier: Sendable {
         }
     }
 
-    private static func isOperatingSystem(
+    static func isOperatingSystem(
         _ version: OperatingSystemVersion,
         atLeast minimumVersion: String
     ) -> Bool {
