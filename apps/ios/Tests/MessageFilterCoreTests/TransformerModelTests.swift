@@ -710,7 +710,7 @@ func transformerGenerationsResolveCompleteArtifactsByIdentity() throws {
     let resolved = try #require(TransformerClassifierLoader.installedModel(
         fileManager: fileManager, validateChecksums: false, identity: old.manifest.artifactIdentity
     ))
-    #expect(resolved.directoryURL == old.directoryURL)
+    #expect(resolved.directoryURL.resolvingSymlinksInPath() == old.directoryURL.resolvingSymlinksInPath())
     #expect(try Data(contentsOf: resolved.modelURL) == Data("model-1".utf8))
     #expect(try Data(contentsOf: resolved.tokenizerURL) == Data("tokenizer-1".utf8))
     #expect(try Data(contentsOf: new.modelURL) == Data("model-2".utf8))
