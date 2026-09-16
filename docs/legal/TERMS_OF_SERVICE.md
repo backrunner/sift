@@ -6,8 +6,8 @@ These Terms of Service ("Terms") govern your use of the Sift iOS application
 ("the App") and its optional anonymous sample contribution feature. By
 downloading or using the App you agree to
 these Terms and to the
-[Privacy Policy](https://sift.alkinum.io/privacy).
-The public copy of these Terms is served at `https://sift.alkinum.io/terms`.
+[Privacy Policy](https://sift.alkinum.com/privacy).
+The public copy of these Terms is served at `https://sift.alkinum.com/terms`.
 
 If you obtained the App through the Apple App Store, Apple's standard
 Licensed Application End User License Agreement also applies to the extent it

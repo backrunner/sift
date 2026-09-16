@@ -253,6 +253,7 @@ private struct DashboardHero: View {
 private struct ModelPickerView: View {
     @Bindable var model: SiftAppModel
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.openURL) private var openURL
     @State private var isShowingTransformerDetails = false
 
     var body: some View {
@@ -288,8 +289,7 @@ private struct ModelPickerView: View {
                         if isBlockedByDevice {
                             model.showTransformerUnsupportedMessage()
                         } else if variant == .transformer, model.premium.isUnlocked,
-                           model.isTransformerModelDownloaded,
-                           model.transformerUpdateReleaseID != nil {
+                           model.transformerUpdateReleaseID != nil || model.isTransformerAppUpdateRequired {
                             isShowingTransformerDetails = true
                         } else {
                             model.selectModelVariant(variant)
@@ -300,7 +300,8 @@ private struct ModelPickerView: View {
                     }
                     .disabled(
                         model.isSwitchingModelVariant
-                            || (model.isTransformerDownloadActive && variant == .classic)
+                            || (model.isTransformerUpdateBusy
+                                && !(variant == .classic && model.isAutomaticTransformerUpdateActive))
                     )
                     .frame(maxWidth: .infinity)
                 }
@@ -351,6 +352,18 @@ private struct ModelPickerView: View {
         } message: {
             Text(model.meteredTransformerDownloadMessage)
         }
+        .alert(
+            String(localized: "请先更新 Sift"),
+            isPresented: $model.isShowingTransformerAppUpdatePrompt
+        ) {
+            Button(String(localized: "前往 App Store")) {
+                openURL(model.appStoreURL)
+            }
+            Button(String(localized: "取消"), role: .cancel) {}
+        } message: {
+            Text(String(localized: "最新的 Sift Signal 需要新版 App。更新 App 后即可继续下载模型。"))
+        }
+        .task { model.checkForTransformerUpdate() }
         .navigationTitle(String(localized: "选择模型"))
         .toolbarTitleDisplayMode(.inline)
         .toolbar {
@@ -572,7 +585,6 @@ private struct ModelVariantCard: View {
 
 private struct TransformerModelDetailView: View {
     @Bindable var model: SiftAppModel
-    @Environment(\.openURL) private var openURL
 
     var body: some View {
         ScrollView {
@@ -588,6 +600,12 @@ private struct TransformerModelDetailView: View {
                 Divider()
 
                 VStack(alignment: .leading, spacing: 10) {
+                    if let version = model.installedTransformerDisplayVersion {
+                        modelDetailRow(String(localized: "当前版本"), value: version)
+                    }
+                    if let version = model.transformerUpdateVersionForDisplay {
+                        modelDetailRow(String(localized: "最新版本"), value: version)
+                    }
                     if let size = model.transformerUpdateDownloadSizeText {
                         modelDetailRow(String(localized: "下载大小"), value: size)
                     }
@@ -603,17 +621,6 @@ private struct TransformerModelDetailView: View {
         .background(AtmosphericBackground())
         .navigationTitle(String(localized: "模型详情"))
         .toolbarTitleDisplayMode(.inline)
-        .alert(
-            String(localized: "请先更新 Sift"),
-            isPresented: $model.isShowingTransformerAppUpdatePrompt
-        ) {
-            Button(String(localized: "前往 App Store")) {
-                openURL(model.appStoreURL)
-            }
-            Button(String(localized: "取消"), role: .cancel) {}
-        } message: {
-            Text(String(localized: "最新的 Sift Signal 需要新版 App。更新 App 后即可继续下载模型。"))
-        }
     }
 
     private func modelDetailRow(_ title: String, value: String) -> some View {
@@ -629,7 +636,7 @@ private struct TransformerModelDetailView: View {
 
     @ViewBuilder
     private var updateAction: some View {
-        if model.isTransformerDownloadActive {
+        if model.isTransformerUpdateBusy {
             HStack(spacing: 10) {
                 ProgressView()
                 Text(model.transformerDownloadProgressText ?? String(localized: "正在下载…"))
@@ -637,6 +644,8 @@ private struct TransformerModelDetailView: View {
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 12)
+        } else if model.isTransformerAppUpdateRequired {
+            appUpdateButton
         } else if model.hasCompatibleTransformerUpdate {
             Button {
                 model.downloadTransformerUpdate()
@@ -647,20 +656,38 @@ private struct TransformerModelDetailView: View {
             .buttonStyle(.borderedProminent)
             .controlSize(.large)
         } else if case .requiresAppUpdate = model.transformerUpdateState {
-            Button {
-                model.downloadTransformerUpdate()
-            } label: {
-                Label(String(localized: "更新 App"), systemImage: "arrow.up.circle.fill")
-                    .frame(maxWidth: .infinity)
-            }
-            .buttonStyle(.borderedProminent)
-            .controlSize(.large)
-        } else {
+            appUpdateButton
+        } else if case .current = model.transformerUpdateState {
             Label(String(localized: "已是最新版本"), systemImage: "checkmark.circle.fill")
                 .foregroundStyle(Color.siftMint)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 12)
+        } else if case .incompatible = model.transformerUpdateState {
+            Text(String(localized: "此模型与当前设备不兼容"))
+                .foregroundStyle(.secondary)
+        } else if case .updateAvailable = model.transformerUpdateState {
+            Button(String(localized: "下载")) { model.selectModelVariant(.transformer) }
+                .buttonStyle(.borderedProminent)
+        } else if case .checking = model.transformerUpdateState {
+            ProgressView(String(localized: "正在检查模型更新…"))
+        } else {
+            VStack(spacing: 12) {
+                Text(String(localized: "暂时无法检查更新"))
+                    .foregroundStyle(.secondary)
+                Button(String(localized: "重试")) { model.checkForTransformerUpdate(force: true) }
+            }
         }
+    }
+
+    private var appUpdateButton: some View {
+        Button {
+            model.downloadTransformerUpdate()
+        } label: {
+            Label(String(localized: "更新 App"), systemImage: "arrow.up.circle.fill")
+                .frame(maxWidth: .infinity)
+        }
+        .buttonStyle(.borderedProminent)
+        .controlSize(.large)
     }
 }
 
@@ -675,6 +702,8 @@ private struct InterceptionSetupPanel: View {
     @Bindable var model: SiftAppModel
     @Environment(\.openURL) private var openURL
     @State private var didOpenSettings = false
+    @State private var isOpeningSettings = false
+    @State private var isShowingSettingsError = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -687,19 +716,19 @@ private struct InterceptionSetupPanel: View {
                 SetupStepRow(
                     index: "1",
                     title: String(localized: "打开系统设置"),
-                    detail: String(localized: "进入 iPhone 的设置应用。")
+                    detail: String(localized: "如未直达，请进入「设置」→「App」→「信息」。")
                 )
 
                 SetupStepRow(
                     index: "2",
-                    title: String(localized: "找到信息"),
-                    detail: String(localized: "进入「信息」里的未知与垃圾信息。")
+                    title: String(localized: "找到信息过滤"),
+                    detail: String(localized: "打开「未知与垃圾信息」（部分系统版本显示为「未知发件人」）。")
                 )
 
                 SetupStepRow(
                     index: "3",
                     title: String(localized: "启用 Sift"),
-                    detail: String(localized: "打开筛选并允许 Sift 参与拦截。")
+                    detail: String(localized: "在「短信过滤」中选择 Sift，并在系统提示中允许。")
                 )
             }
 
@@ -708,17 +737,15 @@ private struct InterceptionSetupPanel: View {
                     title: String(localized: "前往设置"),
                     icon: "gearshape.fill",
                     style: .secondary,
-                    isEnabled: settingsURL != nil
+                    isEnabled: settingsHomeURL != nil && !isOpeningSettings
                 ) {
-                    guard let url = settingsURL else { return }
-                    didOpenSettings = true
-                    openURL(url)
+                    openFilterSettings()
                 }
 
                 ActionButton(
-                    title: String(localized: "已完成"),
+                    title: String(localized: "已启用 Sift"),
                     style: didOpenSettings ? .primary : .neutral,
-                    isEnabled: didOpenSettings
+                    isEnabled: didOpenSettings && !isOpeningSettings
                 ) {
                     model.hasConfirmedFilterSetup = true
                 }
@@ -726,14 +753,64 @@ private struct InterceptionSetupPanel: View {
         }
         .padding(18)
         .cardSurface()
+        .alert(String(localized: "无法打开设置"), isPresented: $isShowingSettingsError) {
+            Button(String(localized: "关闭"), role: .cancel) {}
+        } message: {
+            Text(String(localized: "如未直达，请进入「设置」→「App」→「信息」。"))
+        }
     }
 
-    private var settingsURL: URL? {
+    private func openFilterSettings() {
+        guard let settingsHomeURL, !isOpeningSettings else { return }
+        isOpeningSettings = true
+        Task { @MainActor in
+            defer { isOpeningSettings = false }
+            let accepted = await MessageFilterSettingsNavigation.open(settingsHomeURL: settingsHomeURL) { url in
+                await withCheckedContinuation { continuation in
+                    openURL(url) { accepted in
+                        continuation.resume(returning: accepted)
+                    }
+                }
+            }
+            // URL acceptance does not report whether the user enabled the extension.
+            if accepted {
+                didOpenSettings = true
+            } else {
+                isShowingSettingsError = true
+            }
+        }
+    }
+
+    private var settingsHomeURL: URL? {
         #if canImport(UIKit)
-        URL(string: UIApplication.openSettingsURLString)
+        // App-prefs has no public API, but this is the system Settings root;
+        // UIApplication.openSettingsURLString would incorrectly open Sift's page.
+        URL(string: "App-prefs:")
         #else
         nil
         #endif
+    }
+}
+
+@MainActor
+enum MessageFilterSettingsNavigation {
+    static func open(
+        settingsHomeURL: URL,
+        openURL: @MainActor (URL) async -> Bool
+    ) async -> Bool {
+        // iOS 18+ uses the Messages bundle ID. These undocumented routes are
+        // best-effort; keep the Settings root and manual steps as fallback.
+        let urls = [
+            URL(string: "App-prefs:root=MESSAGES&path=FILTER_UNKNOWN_SENDERS")!,
+            URL(string: "App-prefs:root=MESSAGES")!,
+            settingsHomeURL
+        ]
+        for url in urls {
+            if await openURL(url) {
+                return true
+            }
+        }
+        return false
     }
 }
 
@@ -760,7 +837,7 @@ private struct SetupStepRow: View {
                 Text(detail)
                     .font(.caption)
                     .foregroundStyle(.secondary)
-                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
             }
 
             Spacer(minLength: 0)

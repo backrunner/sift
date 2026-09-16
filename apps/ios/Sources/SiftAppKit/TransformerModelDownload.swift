@@ -217,8 +217,10 @@ public struct TransformerModelStoreRemover: TransformerModelRemoving {
 
     @concurrent
     public func removeInstalledModel() async throws {
-        for resourceName in TransformerClassifierLoader.compatibleResourceNames {
-            try TransformerModelStore.remove(resourceName: resourceName)
+        try await TransformerDownloadCoordinator.shared.run {
+            for resourceName in TransformerClassifierLoader.compatibleResourceNames {
+                try TransformerModelStore.remove(resourceName: resourceName)
+            }
         }
     }
 }
@@ -664,6 +666,18 @@ public final class TransformerModelDownloadClient: TransformerModelDownloading, 
         progress: @Sendable @escaping (TransformerModelDownloadProgress) -> Void,
         phase: @Sendable @escaping (TransformerModelDownloadWorkPhase) -> Void
     ) async throws {
+        try await TransformerDownloadCoordinator.shared.run { [self] in
+            try await performDownload(plan, progress: progress, phase: phase)
+        }
+    }
+
+    @concurrent
+    private func performDownload(
+        _ plan: TransformerModelDownloadPlan,
+        progress: @Sendable @escaping (TransformerModelDownloadProgress) -> Void,
+        phase: @Sendable @escaping (TransformerModelDownloadWorkPhase) -> Void
+    ) async throws {
+        try Task.checkCancellation()
         phase(.downloading)
         let staging = TransformerModelStore.stagingDirectory(resourceName: resourceName, fileManager: fileManager)
         try prepareStagingDirectory(staging, for: plan.manifest)
@@ -759,14 +773,8 @@ public final class TransformerModelDownloadClient: TransformerModelDownloading, 
             if let primeMetrics {
                 diagnosticLogStore?.record(primeMetrics)
             }
-            if resourceName == TransformerClassifierLoader.defaultResourceName {
-                for legacyResourceName in TransformerClassifierLoader.legacyResourceNames {
-                    try? TransformerModelStore.remove(
-                        resourceName: legacyResourceName,
-                        fileManager: fileManager
-                    )
-                }
-            }
+            // Old generations and resource names may still be in use by the
+            // extension. Only explicit model cleanup removes them.
             let resumeDirectory = TransformerModelStore.downloadResumeDataDirectory(
                 resourceName: resourceName,
                 fileManager: fileManager
@@ -931,7 +939,7 @@ public final class TransformerModelDownloadClient: TransformerModelDownloading, 
             progress: progress,
             backgroundSessionIdentifier: backgroundSessionIdentifierPrefix.map {
                 let policy = plan.allowsMeteredNetwork ? "metered" : "wifi"
-                return "\($0).\(policy).\(artifact.sha256.prefix(24))"
+                return "\($0).\(TransformerModelStore.runtimeNamespace).\(policy).\(artifact.sha256.prefix(24))"
             },
             allowsMeteredNetwork: plan.allowsMeteredNetwork,
             isDiscretionary: plan.mode == .automatic

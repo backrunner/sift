@@ -5,7 +5,7 @@ description: Terms that apply when using Sift, Premium, and optional cloud featu
 
 **Effective date: July 15, 2026**
 
-These Terms of Service ("Terms") govern your use of the Sift iOS application ("the App") and its optional anonymous sample contribution feature. By downloading or using the App, you agree to these Terms and the [Privacy Policy](/privacy). The public copy of these Terms is served at `https://sift.alkinum.io/en/terms`.
+These Terms of Service ("Terms") govern your use of the Sift iOS application ("the App") and its optional anonymous sample contribution feature. By downloading or using the App, you agree to these Terms and the [Privacy Policy](/privacy). The public copy of these Terms is served at `https://sift.alkinum.com/en/terms`.
 
 If you obtained the App through the Apple App Store, Apple's standard Licensed Application End User License Agreement also applies to the extent it does not conflict with these Terms. Apple is a third-party beneficiary entitled to enforce that agreement.
 

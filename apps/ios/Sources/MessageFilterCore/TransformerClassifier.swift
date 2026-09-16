@@ -607,7 +607,8 @@ public enum TransformerClassifierLoader {
     public static func installedModel(
         resourceName: String = defaultResourceName,
         fileManager: FileManager = .default,
-        validateChecksums: Bool = true
+        validateChecksums: Bool = true,
+        identity: ModelArtifactIdentity? = nil
     ) -> InstalledTransformerModel? {
         #if os(iOS)
         // Never accept the per-process Application Support fallback on iOS.
@@ -624,7 +625,8 @@ public enum TransformerClassifierLoader {
             if let installed = TransformerModelStore.installedModel(
                 resourceName: candidateResourceName,
                 fileManager: fileManager,
-                validateChecksums: validateChecksums
+                validateChecksums: validateChecksums,
+                identity: identity
             ) {
                 return installed
             }

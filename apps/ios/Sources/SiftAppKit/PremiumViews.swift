@@ -755,7 +755,8 @@ struct SettingsView: View {
                 tint: .siftMint
             ) {
                 VStack(alignment: .trailing, spacing: 2) {
-                    Text(model.modelVersion)
+                    Text(model.modelVersionForDisplay)
+                        .accessibilityValue(model.modelVersion)
                         .font(.callout.monospacedDigit())
                         .foregroundStyle(.secondary)
                         .lineLimit(1)

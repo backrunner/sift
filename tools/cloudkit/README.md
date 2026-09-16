@@ -15,6 +15,29 @@ into the framework-neutral `{"text": ..., "label": ...}` NDJSON corpus used by
 
 ## Usage
 
+For this checkout, `tools/cloudkit/export-training-local.sh` loads the ignored
+repository-root `.env.cloudkit.local` and exports directly to
+`build/pipeline/remote-training.ndjson`. It can be invoked from any directory.
+The local file uses shell assignments for `CLOUDKIT_KEY_ID`,
+`CLOUDKIT_PRIVATE_KEY`, `CLOUDKIT_CONTAINER`, and `CLOUDKIT_ENV`. Keep its mode
+at `600`; store only the private-key path there, with the key itself outside
+the repository. Use `$HOME` unquoted or inside double quotes when specifying
+the path. Neither credentials nor machine-specific paths belong in git.
+
+To use the same local configuration with the existing pipeline, run from the
+repository root:
+
+```bash
+set -a
+. ./.env.cloudkit.local
+set +a
+pnpm pipeline -- fetch-remote --require-remote --cloudkit-env production
+```
+
+The wrapper performs a full export unless `--since` is explicitly supplied.
+An incremental export replaces its output file, so write it to a separate
+`--out` path before merging it with a complete corpus.
+
 ```bash
 export CLOUDKIT_KEY_ID=<key id from the console>
 export CLOUDKIT_PRIVATE_KEY=~/.keys/sift-ck.pem

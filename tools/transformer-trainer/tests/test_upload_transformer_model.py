@@ -226,6 +226,31 @@ class UploadTransformerModelTests(unittest.TestCase):
 
             verify_selected_candidate(selection_path, manifest, root)
 
+    def test_upload_guard_skip_device_evidence_requires_selection_marker(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            selection_path, manifest = self.selection_fixture(root)
+            selection = json.loads(selection_path.read_text(encoding="utf-8"))
+            report_path = Path(selection["reportPath"])
+            report = json.loads(report_path.read_text(encoding="utf-8"))
+            report["deviceMetrics"] = {}
+            report_path.write_text(json.dumps(report), encoding="utf-8")
+            selection["reportSHA256"] = hashlib.sha256(report_path.read_bytes()).hexdigest()
+            selection_path.write_text(json.dumps(selection), encoding="utf-8")
+
+            with self.assertRaisesRegex(SystemExit, "execution evidence"):
+                verify_selected_candidate(selection_path, manifest, root)
+            with self.assertRaisesRegex(SystemExit, "deviceEvidenceSkipped"):
+                verify_selected_candidate(
+                    selection_path, manifest, root, skip_device_evidence=True
+                )
+
+            selection["deviceEvidenceSkipped"] = True
+            selection_path.write_text(json.dumps(selection), encoding="utf-8")
+            verify_selected_candidate(
+                selection_path, manifest, root, skip_device_evidence=True
+            )
+
     def test_upload_guard_requires_a_bound_gate_for_distilled_student(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

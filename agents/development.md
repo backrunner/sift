@@ -2,7 +2,7 @@
 
 ## Environment
 
-Use macOS with Xcode 16 (Swift 6), pnpm 10, uv (Python 3.10-3.12), and
+Use macOS with Xcode 16 (Swift 6), pnpm 12.3.4, uv (Python 3.10-3.12), and
 XcodeGen. After `pnpm install`, TypeScript tooling is ready. For iOS, run
 `cd apps/ios && swift build`.
 

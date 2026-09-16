@@ -53,7 +53,9 @@ inputs, so any stage can be re-run in isolation; artifacts live under
   maxent`) because it is the validated high-accuracy, tiny-model baseline for
   the current 53-label SMS corpus; pass `--algorithm-classic bert` or `auto`
   only for comparison runs. Use `--split-seed-classic` to repeat validation
-  on alternate deterministic per-label holdout splits.
+  on alternate deterministic per-label holdout splits. Pass
+  `--display-version-classic 1.1` to stamp the short numeric version the app
+  shows in Settings; without it the UI falls back to a sha256 prefix.
 - `train-transformer` fine-tunes `jhu-clsp/mmBERT-small` by default, picks
   cuda (NVIDIA/ROCm) → mps (Apple Silicon) → cpu automatically, always writes
   a resumable checkpoint, and emits

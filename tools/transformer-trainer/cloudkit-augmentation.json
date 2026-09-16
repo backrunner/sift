@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "minimumSemanticChange": 0.04,
+  "replacementRules": [
+    {"id":"carrier-brand-zh","labels":["carrier.service","carrier.data_reminder","carrier.billing","carrier.promotion"],"languages":["zh"],"replacements":[["中国电信","电信运营商"],["温馨提示","温馨提醒"],["建议您","请您"]]},
+    {"id":"promotion-cta-zh","labels":["promotion","spam"],"languages":["zh"],"replacements":[["点击链接","打开链接"],["拒收请回复","如需退订请回复"],["专属福利","会员福利"],["数量有限","名额有限"]]},
+    {"id":"government-notice-zh","labels":["government.notice","government.reminder"],"languages":["zh"],"replacements":[["提示您","提醒您"],["请勿","请不要"],["主动请申报","请主动申报"]]},
+    {"id":"finance-transaction-zh","labels":["finance.refund","finance.credit_card","finance.consumption"],"languages":["zh"],"replacements":[["退款成功","退回款项已到账"],["付款成功","支付已完成"],["金额","交易金额"]]},
+    {"id":"spam-loan-zh","labels":["spam"],"languages":["zh"],"replacements":[["成功通过至钱包","已发放至钱包"],["拒收请回复","不再接收请回复"],["关注","订阅"]]}
+  ]
+}

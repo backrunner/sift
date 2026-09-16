@@ -868,6 +868,38 @@
         }
       }
     },
+    "已启用 Sift" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I've Enabled Sift"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Siftを有効にしました"
+          }
+        }
+      }
+    },
+    "无法打开设置" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unable to Open Settings"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "設定を開けません"
+          }
+        }
+      }
+    },
     "前往设置" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1803,19 +1835,19 @@
         }
       }
     },
-    "打开筛选并允许 Sift 参与拦截。" : {
+    "在「短信过滤」中选择 Sift，并在系统提示中允许。" : {
       "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Turn on filtering and allow Sift to screen messages."
+            "value" : "Select Sift under SMS Filtering, then allow it in the system prompt."
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "フィルタリングをオンにして、Siftによる振り分けを許可します。"
+            "value" : "「SMSフィルタリング」でSiftを選び、確認画面で許可します。"
           }
         }
       }
@@ -1837,19 +1869,19 @@
         }
       }
     },
-    "找到信息" : {
+    "找到信息过滤" : {
       "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Find Messages"
+            "value" : "Find Message Filtering"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "「メッセージ」を探す"
+            "value" : "メッセージのフィルタ設定を開く"
           }
         }
       }
@@ -4166,36 +4198,36 @@
         }
       }
     },
-    "进入 iPhone 的设置应用。" : {
+    "如未直达，请进入「设置」→「App」→「信息」。" : {
       "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Open the Settings app on your iPhone."
+            "value" : "If the filter settings do not open directly, go to Settings → Apps → Messages."
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "iPhoneの設定アプリを開きます。"
+            "value" : "直接開かない場合は、「設定」→「アプリ」→「メッセージ」に進みます。"
           }
         }
       }
     },
-    "进入「信息」里的未知与垃圾信息。" : {
+    "打开「未知与垃圾信息」（部分系统版本显示为「未知发件人」）。" : {
       "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Go to Messages → Unknown & Spam."
+            "value" : "Open Unknown & Spam (called Unknown Senders on some iOS versions)."
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "「メッセージ」の「不明な差出人とフィルタ」に進みます。"
+            "value" : "「不明な差出人とフィルタ」（iOSのバージョンによっては「不明な差出人」）を開きます。"
           }
         }
       }

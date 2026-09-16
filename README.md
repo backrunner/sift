@@ -77,7 +77,7 @@ pnpm export:training
 
 ```text
 apps/ios                  SwiftUI app and IdentityLookup extension
-apps/site                 SvelteKit/svedocs public website for sift.alkinum.io
+apps/site                 SvelteKit/svedocs public website for sift.alkinum.com
 packages/taxonomy         50-leaf multilingual taxonomy source of truth
 tools/apple-trainer       Create ML trainer and multilingual synthetic corpus
 tools/transformer-trainer mmBERT/Core ML trainer and data curation tools
