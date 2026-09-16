@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 2,
+  "releaseSequence": 4,
+  "releaseID": "signal-v4-generalization-v50-r32-distilled-12l-metadata-v2",
+  "releaseManifestURL": "https://sift.alkinum.io/models/releases/signal-v4-generalization-v50-r32-distilled-12l-metadata-v2/SiftSignalModel.manifest.json",
+  "releaseManifestSHA256": "3c8f9b22ac97c4a1e2e4a53b3476af9d4dc3570587a52c6a402589db9f2ff60e",
+  "modelABI": "sift-signal-v1",
+  "minimumAppBuild": 19,
+  "maximumAppBuild": 2147483647,
+  "minimumOSVersion": "18.0",
+  "downloadBytes": 108748513,
+  "keyID": "release-2026",
+  "signature": "h9SHd8R2ECPIMWEnZiimR0IOzjD9lvZtTlJdSckCY5GpaXYP+kjsB2Wrz0Vkultu5TiGJZM8PrZMY1x5rCjjAg=="
+}

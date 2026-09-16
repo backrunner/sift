@@ -7,10 +7,14 @@
   "compatibility_flags": [
     "nodejs_compat"
   ],
-  "workers_dev": true,
+  "workers_dev": false,
   "routes": [
     {
       "pattern": "sift.alkinum.io",
+      "custom_domain": true
+    },
+    {
+      "pattern": "sift.alkinum.com",
       "custom_domain": true
     }
   ],
@@ -32,5 +36,20 @@
   "observability": {
     "enabled": true,
     "head_sampling_rate": 1
-  }
+  },
+  "preview_urls": false,
+  "vars": {
+    "ONFIRE_PRODUCT_ID": "3faedfa1-43cc-41ef-a001-ea001848ee8e",
+    "ONFIRE_TICKET_TYPES": "{\"problem\":\"7f4f456a-ad9d-4028-b561-de3b2b79f343\",\"premium\":\"c95f77dc-e265-49ea-a2a9-45c68f633120\",\"question\":\"c91f1da6-563f-4075-8edf-e7df88e02db8\",\"privacy\":\"7821f465-8784-4575-b04b-c456f7057be7\"}"
+  },
+  "ratelimits": [
+    {
+      "name": "SUPPORT_RATE_LIMIT",
+      "namespace_id": "24090802",
+      "simple": {
+        "limit": 5,
+        "period": 60
+      }
+    }
+  ]
 }

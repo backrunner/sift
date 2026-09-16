@@ -52,7 +52,7 @@ identities.
   `tools/cloudkit/export-training-set.ts`, so deleted samples drop out of all
   future exports.
 - Transparency: the public privacy policy is served at
-  `https://sift.alkinum.io/privacy`.
+  `https://sift.alkinum.com/privacy`.
 
 ## Local submission-history cache
 
@@ -89,9 +89,9 @@ evidence of an unfinished observation, not proof of a crash or a specific SMS.
   so the privacy policy is easy to reach even before the user chooses remote
   contribution.
 - Set the App Store Connect privacy policy URL to
-  `https://sift.alkinum.io/privacy`.
+  `https://sift.alkinum.com/privacy`.
 - Link to
-  `https://sift.alkinum.io/terms`
+  `https://sift.alkinum.com/terms`
   wherever product or store metadata needs Terms of Service.
 - Keep `PrivacyInfo.xcprivacy` in the app/framework bundles because the app uses
   `UserDefaults` for preferences, consent, custom rules, model selection, and
@@ -119,5 +119,26 @@ Training exports authenticate with a CloudKit server-to-server key. Keep the
 private key PEM outside the repository and pass it via `$CLOUDKIT_PRIVATE_KEY`.
 
 The public legal pages are served by the Svelte site under `apps/site` at
-`https://sift.alkinum.io/privacy` and `https://sift.alkinum.io/terms`. The
+`https://sift.alkinum.com/privacy` and `https://sift.alkinum.com/terms`. The
 Markdown documents in `docs/legal/` remain the repository source copy.
+
+## Website support (2026-09-08)
+
+When you voluntarily submit the website support form, we process your email,
+subject, message, preferred language, and any optional app version, iOS version,
+or iPhone model you enter. Requests are stored in our OnFire support service
+hosted on Cloudflare and accessed by authorized support staff to handle and
+follow up on your request. This service is separate from anonymous CloudKit
+training contributions and does not automatically upload SMS or diagnostic logs.
+Please do not submit real SMS messages, phone numbers, verification codes,
+Apple ID credentials, or payment details.
+
+The form uses Cloudflare Turnstile, which processes browser, device, and network
+signals for abuse prevention; the website also uses your IP address to limit
+submission attempts. See [Cloudflare's privacy policy](https://www.cloudflare.com/privacypolicy/).
+Support processing is based on handling your requested service and our legitimate
+interest in responding to requests and preventing abuse, as applicable. Support
+records are retained as needed to resolve requests and meet legal obligations.
+You can request access or deletion through the support form or
+[support@alkinum.io](mailto:support@alkinum.io); we may need to verify your request.
+App controls for deleting contributed samples do not delete support tickets.

@@ -5,7 +5,7 @@ export default defineConfig({
     name: 'Sift',
     title: 'Sift',
     description: '让短信少打扰一点，隐私留在 iPhone 上。',
-    url: 'https://sift.alkinum.io'
+    url: 'https://sift.alkinum.com'
   },
   content: {
     root: 'content',

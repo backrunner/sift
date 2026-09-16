@@ -1,4 +1,4 @@
-export const siteUrl = 'https://sift.alkinum.io';
+export const siteUrl = 'https://sift.alkinum.com';
 export const appStoreUrl = 'https://apps.apple.com/app/id6788805739';
 
 export const navItems = [

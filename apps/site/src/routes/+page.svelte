@@ -2,18 +2,19 @@
   import InboxScene from '$lib/InboxScene.svelte';
   import SiteFooter from '$lib/SiteFooter.svelte';
   import SiteHeader from '$lib/SiteHeader.svelte';
-  import { appStoreUrl } from '$lib/site';
+  import { appStoreUrl, siteUrl } from '$lib/site';
 </script>
 
 <svelte:head>
   <title>Sift · 让短信少打扰一点</title>
+  <link rel="canonical" href={`${siteUrl}/`} />
   <meta
     name="description"
     content="Sift 在 iPhone 本地整理短信，默认不上传短信内容。垃圾、推广、验证码和重要通知，各归各位。"
   />
   <meta property="og:title" content="Sift" />
   <meta property="og:description" content="让短信少打扰一点，隐私留在 iPhone 上。" />
-  <meta property="og:url" content="https://sift.alkinum.io/" />
+  <meta property="og:url" content={`${siteUrl}/`} />
 </svelte:head>
 
 <SiteHeader />

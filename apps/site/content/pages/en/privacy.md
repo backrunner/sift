@@ -3,18 +3,18 @@ title: Sift Privacy Policy
 description: How Sift handles SMS, optional sample contributions, and iCloud data.
 ---
 
-**Effective date: July 17, 2026**
+**Effective date: September 8, 2026**
 
-This Privacy Policy describes how Sift ("the App", "we", "us") handles information when you use the Sift iOS application and its optional cloud features. Sift is designed to be **local-first**: SMS filtering, custom rules, and on-device personalization all run on your device by default.
+This Privacy Policy describes how Sift ("the App", "we", "us") handles information when you use the Sift iOS application and its optional cloud features, or contact website support. Sift is designed to be **local-first**: SMS filtering, custom rules, and on-device personalization all run on your device by default.
 
-The public copy of this policy is served at `https://sift.alkinum.io/privacy`. If this document and the in-app summary ever differ, this document controls.
+The public copy of this policy is served at `https://sift.alkinum.com/privacy`. If this document and the in-app summary ever differ, this document controls.
 
 ## 1. Summary
 
 - SMS messages are classified **on your device**. Message content is never sent to us as part of filtering.
 - Contributing training samples is **strictly opt-in**, gated by an explicit consent toggle, sanitized before upload, and reversible. You can delete your most recent submission or **erase everything you ever submitted** inside the App (Settings → Data & Privacy).
 - The optional Premium upgrade is a one-time purchase processed entirely by Apple. We never see your payment details.
-- We do not run our own servers, use third-party analytics or advertising SDKs, or sell data.
+- The App does not use third-party analytics or advertising SDKs, and we do not sell data. Website support uses OnFire and Cloudflare as described below.
 
 ## 2. Information processed on your device only
 
@@ -38,6 +38,27 @@ If, and only if, you enable anonymous contribution and submit a sample, the App 
 - the classifier version, a payload schema version, a coarse language or region tag (for example `zh-CN`), and a client timestamp.
 
 The payload contains **no** sender information, phone number, account identifier, device identifier, advertising identifier, or precise location. Submitting requires an iCloud session on your device, which is an Apple platform requirement. Apple's CloudKit internally associates the record with its creator; we use that association solely so **you** can delete your own records, and training exports never read creator identities.
+
+### Website support
+
+When you voluntarily submit the website support form, we process your email,
+subject, message, preferred language, and any optional app version, iOS version,
+or iPhone model you enter. Requests are stored in our OnFire support service
+hosted on Cloudflare and accessed by authorized support staff to handle and
+follow up on your request. This service is separate from anonymous CloudKit
+training contributions and does not automatically upload SMS or diagnostic logs.
+Please do not submit real SMS messages, phone numbers, verification codes,
+Apple ID credentials, or payment details.
+
+The form uses Cloudflare Turnstile, which processes browser, device, and network
+signals for abuse prevention; the website also uses your IP address to limit
+submission attempts. See [Cloudflare's privacy policy](https://www.cloudflare.com/privacypolicy/).
+Support processing is based on handling your requested service and our legitimate
+interest in responding to requests and preventing abuse, as applicable. Support
+records are retained as needed to resolve requests and meet legal obligations.
+You can request access or deletion through the support form or
+[support@alkinum.io](mailto:support@alkinum.io); we may need to verify your request.
+App controls for deleting contributed samples do not delete support tickets.
 
 ## 4. Purchases
 
@@ -67,7 +88,7 @@ For anything else, including complaints, contact **privacy@sift.alkinum.io**. Yo
 
 ## 8. International transfers
 
-Contributed samples are stored in Apple's CloudKit infrastructure, which may process data in multiple regions under Apple's data-transfer safeguards. We do not operate independent servers.
+Contributed samples are stored in Apple's CloudKit infrastructure, which may process data in multiple regions under Apple's data-transfer safeguards. Website support data may be processed in multiple regions through Cloudflare under its applicable data-transfer safeguards.
 
 ## 9. Children
 
