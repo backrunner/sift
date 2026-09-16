@@ -55,6 +55,14 @@ def parse_arguments() -> argparse.Namespace:
             "When omitted, distillation-gate*.json is discovered beside --reports."
         ),
     )
+    parser.add_argument(
+        "--skip-device-evidence",
+        action="store_true",
+        help=(
+            "waive all release-device (deviceMetrics) gates for a release that ships without "
+            "physical-device evidence; the selection records deviceEvidenceSkipped"
+        ),
+    )
     parser.add_argument("--out", type=Path, required=True, help="selected-candidate.json output")
     return parser.parse_args()
 
@@ -139,7 +147,7 @@ def gate_for_report(
     return None, failures[0] if failures else "no matching gate"
 
 
-def candidate_failures(report: dict[str, Any], fp16: dict[str, Any]) -> list[str]:
+def candidate_failures(report: dict[str, Any], fp16: dict[str, Any], *, skip_device_evidence: bool = False) -> list[str]:
     metrics = report.get("metrics", {})
     actions = report.get("messageFilterActions", {})
     device = report.get("deviceMetrics", {})
@@ -185,28 +193,29 @@ def candidate_failures(report: dict[str, Any], fp16: dict[str, Any]) -> list[str
         "readableCases",
     )
 
-    require(bool(device.get("runtimeExecutionVerified")), "runtimeExecutionVerified")
-    require(device.get("peakPhysicalFootprintBytes", 0) > 0, "peakPhysicalFootprintBytes")
-    require(device.get("peakPhysicalFootprintIncreaseBytes", float("inf")) <= 256 * 1024 * 1024, "peakPhysicalFootprintIncreaseBytes")
-    require(
-        device.get("averagePhysicalFootprintIncreaseBytes", float("inf")) <= 256 * 1024 * 1024,
-        "averagePhysicalFootprintIncreaseBytes",
-    )
-    require(device.get("p95LatencyMilliseconds", 0) > 0, "p95LatencyMilliseconds")
-    require(device.get("p95LatencyMilliseconds", float("inf")) <= 150, "p95Latency")
-    require(device.get("p99LatencyMilliseconds", float("inf")) <= 250, "p99Latency")
-    require(device.get("extensionColdP95Milliseconds", float("inf")) <= 750, "extensionColdP95")
-    require(device.get("extensionColdP99Milliseconds", float("inf")) <= 900, "extensionColdP99")
-    require(device.get("extensionColdMaximumMilliseconds", float("inf")) < 1000, "extensionColdMaximum")
-    require(device.get("extensionWarmP95Milliseconds", float("inf")) <= 150, "extensionWarmP95")
-    require(device.get("extensionWarmP99Milliseconds", float("inf")) <= 250, "extensionWarmP99")
-    if device.get("computeUnits") != "cpuOnly":
-        require(device.get("contentionFallbackP99Milliseconds", float("inf")) <= 600, "contentionFallbackP99")
-    require(device.get("jetsamCount", 1) == 0, "jetsamCount")
-    require(device.get("memoryDriftBytes", float("inf")) <= 16 * 1024 * 1024, "memoryDriftBytes")
-    require(device.get("memoryDriftFraction", float("inf")) <= 0.10, "memoryDriftFraction")
-    require(bool(device.get("stressConditionsPassed")), "stressConditionsPassed")
-    if device.get("computeUnits") == "cpuOnly":
+    if not skip_device_evidence:
+        require(bool(device.get("runtimeExecutionVerified")), "runtimeExecutionVerified")
+        require(device.get("peakPhysicalFootprintBytes", 0) > 0, "peakPhysicalFootprintBytes")
+        require(device.get("peakPhysicalFootprintIncreaseBytes", float("inf")) <= 256 * 1024 * 1024, "peakPhysicalFootprintIncreaseBytes")
+        require(
+            device.get("averagePhysicalFootprintIncreaseBytes", float("inf")) <= 256 * 1024 * 1024,
+            "averagePhysicalFootprintIncreaseBytes",
+        )
+        require(device.get("p95LatencyMilliseconds", 0) > 0, "p95LatencyMilliseconds")
+        require(device.get("p95LatencyMilliseconds", float("inf")) <= 150, "p95Latency")
+        require(device.get("p99LatencyMilliseconds", float("inf")) <= 250, "p99Latency")
+        require(device.get("extensionColdP95Milliseconds", float("inf")) <= 750, "extensionColdP95")
+        require(device.get("extensionColdP99Milliseconds", float("inf")) <= 900, "extensionColdP99")
+        require(device.get("extensionColdMaximumMilliseconds", float("inf")) < 1000, "extensionColdMaximum")
+        require(device.get("extensionWarmP95Milliseconds", float("inf")) <= 150, "extensionWarmP95")
+        require(device.get("extensionWarmP99Milliseconds", float("inf")) <= 250, "extensionWarmP99")
+        if device.get("computeUnits") != "cpuOnly":
+            require(device.get("contentionFallbackP99Milliseconds", float("inf")) <= 600, "contentionFallbackP99")
+        require(device.get("jetsamCount", 1) == 0, "jetsamCount")
+        require(device.get("memoryDriftBytes", float("inf")) <= 16 * 1024 * 1024, "memoryDriftBytes")
+        require(device.get("memoryDriftFraction", float("inf")) <= 0.10, "memoryDriftFraction")
+        require(bool(device.get("stressConditionsPassed")), "stressConditionsPassed")
+    if skip_device_evidence or device.get("computeUnits") == "cpuOnly":
         require(report.get("downloadBytes", float("inf")) <= 0.75 * fp16.get("downloadBytes", 0), "fp16ResourceReduction")
     else:
         require(
@@ -228,6 +237,8 @@ def select_candidate(
     profiles: dict[str, dict[str, Any]],
     reports: list[dict[str, Any]],
     distillation_gate: Path | str | dict[str, Any] | list[Path] | list[dict[str, Any]] | None = None,
+    *,
+    skip_device_evidence: bool = False,
 ) -> dict[str, Any]:
     """Select a release candidate, requiring a bound gate for distilled reports."""
     by_id = {report.get("profileID"): report for report in reports}
@@ -257,7 +268,7 @@ def select_candidate(
     qat_required: set[str] = set()
 
     def evaluate_report(profile_id: str, report: dict[str, Any], *, qat: bool = False) -> None:
-        failures = candidate_failures(report, fp16)
+        failures = candidate_failures(report, fp16, skip_device_evidence=skip_device_evidence)
         gate, gate_failure = gate_for_report(
             report,
             gates,
@@ -302,10 +313,12 @@ def select_candidate(
         detail = ", ".join(f"{key}: {'/'.join(value)}" for key, value in sorted(rejected.items()))
         raise SystemExit(f"error: no int8/int4 candidate passed all release gates ({detail})")
 
-    eligible = within_five_percent(eligible, lambda item: item["deviceMetrics"]["peakPhysicalFootprintIncreaseBytes"])
+    if not skip_device_evidence:
+        eligible = within_five_percent(eligible, lambda item: item["deviceMetrics"]["peakPhysicalFootprintIncreaseBytes"])
     eligible = within_five_percent(eligible, lambda item: item["downloadBytes"])
-    eligible = within_five_percent(eligible, lambda item: item["deviceMetrics"]["extensionColdP95Milliseconds"])
-    eligible = within_five_percent(eligible, lambda item: item["deviceMetrics"]["p95LatencyMilliseconds"])
+    if not skip_device_evidence:
+        eligible = within_five_percent(eligible, lambda item: item["deviceMetrics"]["extensionColdP95Milliseconds"])
+        eligible = within_five_percent(eligible, lambda item: item["deviceMetrics"]["p95LatencyMilliseconds"])
     eligible.sort(key=lambda item: (-item["metrics"]["promotionAccuracy"], item["profileID"]))
     winner = eligible[0]
     selection = {
@@ -316,6 +329,8 @@ def select_candidate(
         "reportPath": winner["_reportPath"],
         "rejectedCandidates": rejected,
     }
+    if skip_device_evidence:
+        selection["deviceEvidenceSkipped"] = True
     gate = winner.get("_distillationGate")
     if gate is not None:
         gate_sha = gate.get("_gateSHA256")
@@ -340,6 +355,7 @@ def main() -> None:
         load_profiles(arguments.profiles),
         reports,
         load_distillation_gates(gate_paths),
+        skip_device_evidence=arguments.skip_device_evidence,
     )
     arguments.out.parent.mkdir(parents=True, exist_ok=True)
     arguments.out.write_text(json.dumps(selection, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")

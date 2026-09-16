@@ -236,6 +236,11 @@ def parse_arguments() -> argparse.Namespace:
     training = parser.add_argument_group("training")
     training.add_argument("--version-classic", default="maxent-generalization-v50-seed29-r32")
     training.add_argument(
+        "--display-version-classic",
+        default=None,
+        help="short numeric version shown in the app UI for the classic model (e.g. 1.1); forwarded to the trainer's --display-version",
+    )
+    training.add_argument(
         "--algorithm-classic",
         choices=["maxent", "bert", "auto"],
         default="maxent",
@@ -534,6 +539,8 @@ def stage_train_classic(arguments: argparse.Namespace) -> None:
         "--version", arguments.version_classic,
         "--test-input", str(PROMOTION_TEST_SET),
     ]
+    if arguments.display_version_classic:
+        command += ["--display-version", arguments.display_version_classic]
     run(command, cwd=APPLE_TRAINER)
     run(
         [

@@ -210,6 +210,22 @@ class QuantizationCandidateSelectionTests(unittest.TestCase):
 
         self.assertIn("readableCases", failures)
 
+    def test_skip_device_evidence_waives_device_gates_and_records_waiver(self) -> None:
+        baseline = report("fp32-baseline", footprint=200, download=300, latency=20)
+        candidate = report("w4a32-block16-ptq", footprint=100, download=100, latency=10)
+        candidate["deviceMetrics"] = {}
+
+        self.assertIn("runtimeExecutionVerified", candidate_failures(candidate, baseline))
+        self.assertEqual(candidate_failures(candidate, baseline, skip_device_evidence=True), [])
+
+        selection = select_candidate(
+            self.profiles,
+            self.attach_report_paths([baseline, candidate]),
+            skip_device_evidence=True,
+        )
+        self.assertEqual(selection["profileID"], "w4a32-block16-ptq")
+        self.assertTrue(selection["deviceEvidenceSkipped"])
+
     def test_missing_device_evidence_does_not_trigger_qat(self) -> None:
         baseline = report("fp32-baseline", footprint=200, download=300, latency=20)
         candidate = report("w4a32-block16-ptq", footprint=100, download=100, latency=10)

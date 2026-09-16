@@ -163,6 +163,14 @@ def parse_arguments() -> argparse.Namespace:
     parser.add_argument("--manifest-cache-control", default=DEFAULT_MANIFEST_CACHE_CONTROL)
     parser.add_argument("--write-manifest", action="store_true", help="also update the manifest inside --model-dir")
     parser.add_argument(
+        "--skip-device-evidence",
+        action="store_true",
+        help=(
+            "waive the physical-device (deviceMetrics) gates; only valid when the selection "
+            "was produced with --skip-device-evidence and records deviceEvidenceSkipped"
+        ),
+    )
+    parser.add_argument(
         "--env-file",
         type=Path,
         default=None,
@@ -256,7 +264,12 @@ def main() -> None:
 
     manifest_path = model_dir / f"{args.model_name}.manifest.json"
     manifest = read_manifest(manifest_path)
-    verify_selected_candidate(args.selection.expanduser().resolve(), manifest, model_dir)
+    verify_selected_candidate(
+        args.selection.expanduser().resolve(),
+        manifest,
+        model_dir,
+        skip_device_evidence=args.skip_device_evidence,
+    )
     validate_channel_path_for_release(args.channel_path, manifest)
     release_id = args.release_id or require_string(manifest, "version")
     ensure_safe_relative_path(release_id)
@@ -324,21 +337,6 @@ def main() -> None:
             include_artifacts=not bool(args.reuse_artifacts_base_url),
         )
 
-    print_channel_summary(channel)
-
-
-def validate_channel_path_for_release(channel_path: str, manifest: dict[str, Any]) -> None:
-    """Keep release generations isolated at the publisher boundary."""
-    normalized = channel_path.strip("/")
-    release_sequence = int(manifest.get("releaseSequence", 0))
-    if normalized.startswith("channels/v2/") and release_sequence >= 4:
-        raise SystemExit(
-            "error: sequence 4+ releases must use the current-app channels/v3 (or newer) namespace"
-        )
-    if normalized.startswith("channels/v3/") and release_sequence < 4:
-        raise SystemExit(
-            "error: legacy sequence 1-3 releases must remain in the legacy channels/v2 namespace"
-        )
         print_plan(items, base_url)
 
         if args.write_manifest and not args.dry_run:
@@ -346,6 +344,7 @@ def validate_channel_path_for_release(channel_path: str, manifest: dict[str, Any
             print(f"updated manifest: {manifest_path}")
 
         if args.dry_run:
+            print_channel_summary(channel)
             return
 
         channel_items = [item for item in items if item.path == args.channel_path]
@@ -373,6 +372,22 @@ def validate_channel_path_for_release(channel_path: str, manifest: dict[str, Any
             upload_remote_items(channel_items, args)
             if args.verify_http:
                 verify_http(channel_items, base_url)
+
+    print_channel_summary(channel)
+
+
+def validate_channel_path_for_release(channel_path: str, manifest: dict[str, Any]) -> None:
+    """Keep release generations isolated at the publisher boundary."""
+    normalized = channel_path.strip("/")
+    release_sequence = int(manifest.get("releaseSequence", 0))
+    if normalized.startswith("channels/v2/") and release_sequence >= 4:
+        raise SystemExit(
+            "error: sequence 4+ releases must use the current-app channels/v3 (or newer) namespace"
+        )
+    if normalized.startswith("channels/v3/") and release_sequence < 4:
+        raise SystemExit(
+            "error: legacy sequence 1-3 releases must remain in the legacy channels/v2 namespace"
+        )
 
 
 def normalize_base_url(value: str | None) -> str:
@@ -560,12 +575,23 @@ def validate_manifest_artifacts(manifest: dict[str, Any], model_dir: Path) -> No
             raise SystemExit(f"error: remote artifact byte count mismatch: {path}")
 
 
-def verify_selected_candidate(selection_path: Path, manifest: dict[str, Any], model_dir: Path) -> None:
+def verify_selected_candidate(
+    selection_path: Path,
+    manifest: dict[str, Any],
+    model_dir: Path,
+    *,
+    skip_device_evidence: bool = False,
+) -> None:
     if not selection_path.exists():
         raise SystemExit(f"error: selected candidate file not found: {selection_path}")
     selection = read_manifest(selection_path)
     if selection.get("schemaVersion") != 1:
         raise SystemExit("error: unsupported selected candidate schema")
+    if skip_device_evidence and selection.get("deviceEvidenceSkipped") is not True:
+        raise SystemExit(
+            "error: --skip-device-evidence requires a selection produced with "
+            "--skip-device-evidence (deviceEvidenceSkipped marker missing)"
+        )
     selected_sha = selection.get("artifactSHA256")
     manifest_sha = manifest.get("sha256")
     profile_id = manifest.get("quantizationProfile", {}).get("identifier")
@@ -599,17 +625,18 @@ def verify_selected_candidate(selection_path: Path, manifest: dict[str, Any], mo
     metrics = report.get("metrics", {})
     actions = report.get("messageFilterActions", {})
     device = report.get("deviceMetrics", {})
-    if device.get("runtimeExecutionVerified") is not True:
-        raise SystemExit("error: candidate lacks matching CPU or accelerator execution evidence")
-    if device.get("peakPhysicalFootprintIncreaseBytes", float("inf")) > 256 * 1024 * 1024:
-        raise SystemExit("error: release-device peak memory increase gate failed")
-    if device.get("averagePhysicalFootprintIncreaseBytes", float("inf")) > 256 * 1024 * 1024:
-        raise SystemExit("error: release-device average memory increase gate failed")
-    if (
-        device.get("p95LatencyMilliseconds", float("inf")) > 150
-        or device.get("p99LatencyMilliseconds", float("inf")) > 250
-    ):
-        raise SystemExit("error: release-device runtime latency gate failed")
+    if not skip_device_evidence:
+        if device.get("runtimeExecutionVerified") is not True:
+            raise SystemExit("error: candidate lacks matching CPU or accelerator execution evidence")
+        if device.get("peakPhysicalFootprintIncreaseBytes", float("inf")) > 256 * 1024 * 1024:
+            raise SystemExit("error: release-device peak memory increase gate failed")
+        if device.get("averagePhysicalFootprintIncreaseBytes", float("inf")) > 256 * 1024 * 1024:
+            raise SystemExit("error: release-device average memory increase gate failed")
+        if (
+            device.get("p95LatencyMilliseconds", float("inf")) > 150
+            or device.get("p99LatencyMilliseconds", float("inf")) > 250
+        ):
+            raise SystemExit("error: release-device runtime latency gate failed")
     if actions.get("rulesOverrideRate", 0) < 1.0:
         raise SystemExit("error: MessageFilter rules override gate failed")
     if metrics.get("fixedAccuracy", 0) < 0.99:
@@ -634,27 +661,28 @@ def verify_selected_candidate(selection_path: Path, manifest: dict[str, Any], mo
         raise SystemExit("error: MessageFilter promotion false-positive gate failed")
     if actions.get("scamJunkRecall", 0) < 1.0:
         raise SystemExit("error: MessageFilter scam recall gate failed")
-    if (
-        device.get("extensionColdP95Milliseconds", float("inf")) > 750
-        or device.get("extensionColdP99Milliseconds", float("inf")) > 900
-        or device.get("extensionColdMaximumMilliseconds", float("inf")) >= 1000
-        or device.get("extensionWarmP95Milliseconds", float("inf")) > 150
-        or device.get("extensionWarmP99Milliseconds", float("inf")) > 250
-        or (
-            device.get("computeUnits") != "cpuOnly"
-            and device.get("contentionFallbackP99Milliseconds", float("inf")) > 600
-        )
-    ):
-        raise SystemExit("error: MessageFilter device latency gate failed")
-    if device.get("jetsamCount", 1) != 0:
-        raise SystemExit("error: MessageFilter jetsam gate failed")
-    if (
-        device.get("memoryDriftBytes", float("inf")) > 16 * 1024 * 1024
-        or device.get("memoryDriftFraction", float("inf")) > 0.10
-    ):
-        raise SystemExit("error: MessageFilter memory drift gate failed")
-    if device.get("stressConditionsPassed") is not True:
-        raise SystemExit("error: MessageFilter stress-condition gate failed")
+    if not skip_device_evidence:
+        if (
+            device.get("extensionColdP95Milliseconds", float("inf")) > 750
+            or device.get("extensionColdP99Milliseconds", float("inf")) > 900
+            or device.get("extensionColdMaximumMilliseconds", float("inf")) >= 1000
+            or device.get("extensionWarmP95Milliseconds", float("inf")) > 150
+            or device.get("extensionWarmP99Milliseconds", float("inf")) > 250
+            or (
+                device.get("computeUnits") != "cpuOnly"
+                and device.get("contentionFallbackP99Milliseconds", float("inf")) > 600
+            )
+        ):
+            raise SystemExit("error: MessageFilter device latency gate failed")
+        if device.get("jetsamCount", 1) != 0:
+            raise SystemExit("error: MessageFilter jetsam gate failed")
+        if (
+            device.get("memoryDriftBytes", float("inf")) > 16 * 1024 * 1024
+            or device.get("memoryDriftFraction", float("inf")) > 0.10
+        ):
+            raise SystemExit("error: MessageFilter memory drift gate failed")
+        if device.get("stressConditionsPassed") is not True:
+            raise SystemExit("error: MessageFilter stress-condition gate failed")
     if not model_dir.is_dir():
         raise SystemExit(f"error: candidate directory is not a directory: {model_dir}")
 

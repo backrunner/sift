@@ -64,6 +64,7 @@ struct TrainerArguments {
     var outputDirectory: URL?
     var taxonomyURL: URL?
     var version = "0.1.0"
+    var displayVersion: String?
     var modelName = "SiftSMSClassifier"
     var algorithm: AlgorithmChoice = .auto
     var validationFraction = 0.15
@@ -110,6 +111,12 @@ struct TrainerArguments {
                 arguments.taxonomyURL = URL(fileURLWithPath: try value(after: token).expandedPath)
             case "--version":
                 arguments.version = try value(after: token)
+            case "--display-version":
+                let version = try value(after: token)
+                guard version.range(of: #"^[0-9]{1,4}(\.[0-9]{1,4}){0,2}$"#, options: .regularExpression) != nil else {
+                    throw TrainerError.invalidArgument("--display-version must be a short numeric version, e.g. 1.1")
+                }
+                arguments.displayVersion = version
             case "--model-name":
                 arguments.modelName = try value(after: token)
             case "--algorithm":
@@ -247,6 +254,7 @@ enum TrainerError: Error, CustomStringConvertible {
       --out <dir>                 Output directory. Defaults to <repo>/build/apple-model.
       --taxonomy <path>           Taxonomy JSON. Defaults to <repo>/packages/taxonomy/taxonomy.json.
       --version <version>         Model version written into metadata and manifest.
+      --display-version <number>  Short user-facing release version, e.g. 1.1.
       --model-name <name>         Base artifact name. Defaults to SiftSMSClassifier.
       --algorithm <auto|bert|maxent>
                                   auto prefers Create ML BERT transfer learning, then falls back to MaxEnt.
@@ -292,6 +300,7 @@ struct PublicCorpusRow: Hashable, Sendable {
 
 struct ReleaseManifest: Encodable {
     let version: String
+    let displayVersion: String?
     let trainedAt: String
     let taxonomyHash: String
     let featureHasherVersion: String
@@ -446,6 +455,7 @@ enum SiftAppleTrainer {
 
         let manifest = ReleaseManifest(
             version: arguments.version,
+            displayVersion: arguments.displayVersion,
             trainedAt: isoTimestamp(),
             taxonomyHash: try sha256(ofFile: taxonomyURL),
             featureHasherVersion: "create-ml-text-v1",

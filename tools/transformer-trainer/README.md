@@ -102,6 +102,55 @@ entry is sequence 4; builds 16--18 continue to resolve the sequence 3 entry.
 The Premium artifact is uploaded dynamically and must not be added to
 `GeneratedModels/` or any Xcode resource phase.
 
+## Experimental mapped FP16 compute
+
+CloudKit-only expansion can be reproduced with the reviewed
+`cloudkit-augmentation.json` replacement rules. It intentionally adds only
+small semantic variants of observed carrier, promotion, finance, government,
+and loan wording; it does not inject the broad boundary catalog. Keep the
+result separate until a model review accepts the new rows.
+
+`export_mapped_precision.py` lowers an existing mapped W4A32 model without
+changing its tokenizer, embedding rows, sequence length, layers, or labels.
+Run it with the trainer venv, from this directory:
+
+```bash
+.venv/bin/python export_mapped_precision.py \
+  --source ../../build/diagnostics/mapped-embedding-20260905/fp16-scales \
+  --output ../../build/experiments/signal-mapped-finite16 \
+  --profile finite16
+.venv/bin/python validate_mapped_embeddings.py \
+  --source /path/to/qualified-original-w4a32 \
+  --candidate ../../build/experiments/signal-mapped-finite16 \
+  --checkpoint /path/to/local-student-checkpoint \
+  --output ../../build/experiments/finite16-holdouts.json
+```
+
+`linear16` lowers only linear operations. `mixed16` also lowers surrounding
+operations while keeping normalization, softmax, matrix multiplication, and
+attention-score tensors in FP32. Both introduce precision-conversion nodes.
+`finite16` replaces the shared attention-mask sentinel (FP32's minimum value)
+with -10,000 before lowering all eligible operations to FP16.
+`finite16norm32` additionally keeps normalization and softmax in FP32.
+The finite sentinel avoids conversion to negative infinity and the resulting
+non-finite softmax on fully masked padding-query rows. The exporter rejects a
+changed graph if the sentinel is missing or used outside mask selection.
+This changes numerical behavior; label agreement alone does not certify it.
+
+All profiles clear validation scores and signatures and remain
+`releaseEligible: false`. They must pass the production Swift action/readable
+suite and physical-iPhone measurements before release qualification. The
+current optimization target is **less than 20,000,000 bytes of absolute process
+peak footprint**, including transient loading allocations, and approximately
+150 ms from tokenizer initialization through the first classification. Record
+multiple fresh process IDs and the exact artifact hash. A compiled-model cache
+may be prepared during installation, but first-specialization and cached-load
+results must be reported separately. Neither XCTest-host footprint deltas nor
+Mac results establish the IdentityLookup extension's absolute memory budget.
+
+The September 5 experiment and its outstanding device gate are recorded in
+[`docs/engineering/signal-under20-experiment.md`](../../docs/engineering/signal-under20-experiment.md).
+
 ## Historical distilled student experiment
 
 The production Signal checkpoint can be used as a frozen teacher for a smaller,
