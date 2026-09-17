@@ -745,7 +745,9 @@ private struct InterceptionSetupPanel: View {
                 ActionButton(
                     title: String(localized: "已启用 Sift"),
                     style: didOpenSettings ? .primary : .neutral,
-                    isEnabled: didOpenSettings && !isOpeningSettings
+                    // Users can enable the filter manually, including when
+                    // every Settings URL is rejected by the system.
+                    isEnabled: !isOpeningSettings
                 ) {
                     model.hasConfirmedFilterSetup = true
                 }
