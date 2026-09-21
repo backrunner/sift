@@ -73,6 +73,11 @@
             value = "1"
             isEnabled = "YES">
          </EnvironmentVariable>
+         <EnvironmentVariable
+            key = "SIFT_LIVE_MODEL_DOWNLOAD"
+            value = "$(SIFT_LIVE_MODEL_DOWNLOAD)"
+            isEnabled = "YES">
+         </EnvironmentVariable>
       </EnvironmentVariables>
    </TestAction>
    <LaunchAction

@@ -174,17 +174,34 @@ func transformerChannelRequestsForceConditionalRevalidation() throws {
 private actor SuspendedTransformerDownloadGate {
     private var callCount = 0
     private var continuations: [Int: CheckedContinuation<Void, Never>] = [:]
+    private var progressCallbacks: [Int: @Sendable (TransformerModelDownloadProgress) -> Void] = [:]
+    private var phaseCallbacks: [Int: @Sendable (TransformerModelDownloadWorkPhase) -> Void] = [:]
 
-    func suspend() async {
+    func suspend(
+        progress: (@Sendable (TransformerModelDownloadProgress) -> Void)? = nil,
+        phase: (@Sendable (TransformerModelDownloadWorkPhase) -> Void)? = nil
+    ) async {
         callCount += 1
         let call = callCount
+        progressCallbacks[call] = progress
+        phaseCallbacks[call] = phase
         await withCheckedContinuation { continuation in
             continuations[call] = continuation
         }
     }
 
+    func sendProgress(_ progress: TransformerModelDownloadProgress, call: Int) {
+        progressCallbacks[call]?(progress)
+    }
+
+    func sendPhase(_ phase: TransformerModelDownloadWorkPhase, call: Int) {
+        phaseCallbacks[call]?(phase)
+    }
+
     func release(_ call: Int) {
         continuations.removeValue(forKey: call)?.resume()
+        progressCallbacks.removeValue(forKey: call)
+        phaseCallbacks.removeValue(forKey: call)
     }
 
     func count() -> Int {
@@ -195,9 +212,11 @@ private actor SuspendedTransformerDownloadGate {
 private struct SuspendedTransformerDownloader: TransformerModelDownloading {
     let plan: TransformerModelDownloadPlan
     let gate: SuspendedTransformerDownloadGate
+    var preparationError: URLError?
 
     func prepareDownload() async throws -> TransformerModelDownloadPlan {
-        plan
+        if let preparationError { throw preparationError }
+        return plan
     }
 
     func download(
@@ -205,7 +224,7 @@ private struct SuspendedTransformerDownloader: TransformerModelDownloading {
         progress: @Sendable @escaping (TransformerModelDownloadProgress) -> Void,
         phase: @Sendable @escaping (TransformerModelDownloadWorkPhase) -> Void
     ) async throws {
-        await gate.suspend()
+        await gate.suspend(progress: progress, phase: phase)
     }
 }
 
@@ -1654,6 +1673,149 @@ func transformerDownloadRejectsManifestMissingCompactTokenizerFile() {
     #expect(throws: TransformerModelDownloadError.invalidManifestResponse) {
         try TransformerModelDownloadClient.validateManifestForDownload(manifest)
     }
+}
+
+@MainActor
+@Test
+func transformerProgressStartsAtZeroAndIgnoresCancelledDownloadCallbacks() async throws {
+    let suiteName = "SiftTests.downloadProgress.\(UUID().uuidString)"
+    let defaults = try #require(UserDefaults(suiteName: suiteName))
+    defer { defaults.removePersistentDomain(forName: suiteName) }
+    let gate = SuspendedTransformerDownloadGate()
+    let plan = mockTransformerDownloadPlan()
+    let total = try #require(plan.displayByteCount)
+    let model = SiftAppModel(
+        premiumBackend: MockPremiumBackend(entitled: true, outcome: .cancelled),
+        transformerAvailabilityOverride: false,
+        transformerDownloadedOverride: false,
+        transformerDownloader: SuspendedTransformerDownloader(plan: plan, gate: gate),
+        modelSelectionDefaults: defaults,
+        appDefaults: defaults
+    )
+    defer {
+        model.cancelPendingTransformerDownload()
+        Task { await gate.release(1); await gate.release(2) }
+    }
+    try await waitForPremiumRefresh(model)
+    model.selectModelVariant(.transformer)
+    try await waitForSuspendedTransformerDownload(gate, count: 1)
+    #expect(model.transformerDownloadProgress == .init(receivedBytes: 0, totalBytes: total))
+    #expect(model.canCancelTransformerDownload)
+
+    let quarter = TransformerModelDownloadProgress(receivedBytes: total / 4, totalBytes: total)
+    await gate.sendProgress(quarter, call: 1)
+    try await waitFor { model.transformerDownloadProgress == quarter }
+    #expect(model.transformerDownloadProgressText == "25%")
+
+    model.cancelPendingTransformerDownload()
+    #expect(model.transformerDownloadProgress == nil)
+    #expect(model.transformerDownloadPhase == .notDownloaded)
+    #expect(!model.canCancelTransformerDownload)
+
+    model.selectModelVariant(.transformer)
+    try await waitForSuspendedTransformerDownload(gate, count: 2)
+    await gate.sendPhase(.installing, call: 1)
+    await gate.sendProgress(quarter, call: 1)
+    await gate.release(1)
+    let halfway = TransformerModelDownloadProgress(receivedBytes: total / 2, totalBytes: total)
+    await gate.sendProgress(halfway, call: 2)
+    try await waitFor { model.transformerDownloadProgress == halfway }
+    #expect(model.transformerDownloadPhase == .downloading)
+
+    await gate.sendPhase(.installing, call: 2)
+    try await waitForTransformerDownloadPhase(model, .installing)
+    #expect(!model.canCancelTransformerDownload)
+    await gate.sendProgress(quarter, call: 2)
+    try await Task.sleep(for: .milliseconds(30))
+    #expect(model.transformerDownloadPhase == .installing)
+    #expect(model.transformerDownloadProgress == halfway)
+}
+
+@MainActor
+@Test
+func visibleAutomaticTransformerDownloadCanBeCancelledWithoutReplacingActiveModel() async throws {
+    let suiteName = "SiftTests.downloadCancel.\(UUID().uuidString)"
+    let defaults = try #require(UserDefaults(suiteName: suiteName))
+    defer { defaults.removePersistentDomain(forName: suiteName) }
+    ModelSelectionStore.save(.transformer, defaults: defaults)
+    let gate = SuspendedTransformerDownloadGate()
+    let release = TransformerChannelManifestV2(
+        releaseSequence: 2, releaseID: "signal-v2",
+        releaseManifestURL: "https://example.com/release.json",
+        releaseManifestSHA256: String(repeating: "a", count: 64),
+        modelABI: "sift-signal-v1", minimumAppBuild: 1, maximumAppBuild: .max,
+        minimumOSVersion: "18.0", downloadBytes: 100_000_000, keyID: "test"
+    )
+    let model = SiftAppModel(
+        premiumBackend: MockPremiumBackend(entitled: true, outcome: .cancelled),
+        transformerAvailabilityOverride: true,
+        transformerDownloadedOverride: true,
+        transformerDownloader: SuspendedTransformerDownloader(plan: mockTransformerDownloadPlan(), gate: gate),
+        transformerUpdateChecker: MockTransformerUpdateChecker(state: .updateAvailable(release)),
+        transformerNetworkConditionChecker: MockNetworkConditionChecker(
+            condition: TransformerNetworkCondition(), recorder: NetworkConditionRecorder()
+        ),
+        modelClassifierLoader: MockSiftModelClassifierLoader(),
+        modelSelectionDefaults: defaults,
+        appDefaults: defaults
+    )
+    defer {
+        model.cancelPendingTransformerDownload()
+        Task { await gate.release(1) }
+    }
+    try await waitForPremiumRefresh(model)
+    model.applicationDidBecomeActive()
+    try await waitForSuspendedTransformerDownload(gate, count: 1)
+    #expect(model.isAutomaticTransformerUpdateActive)
+    #expect(model.canCancelTransformerDownload)
+    #expect(model.transformerUpdateVersionForDisplay != nil)
+    model.cancelPendingTransformerDownload()
+    #expect(!model.isAutomaticTransformerUpdateActive)
+    #expect(!model.isTransformerUpdateBusy)
+    #expect(model.transformerDownloadPhase == .ready)
+    #expect(model.selectedModelVariant == .transformer)
+    #expect(model.isTransformerModelAvailable)
+    await gate.sendPhase(.installing, call: 1)
+    await gate.sendProgress(.init(receivedBytes: 80, totalBytes: 100), call: 1)
+    await gate.release(1)
+    try await Task.sleep(for: .milliseconds(30))
+    #expect(model.transformerDownloadPhase == .ready)
+    #expect(model.transformerDownloadProgress == nil)
+}
+
+@MainActor
+@Test(arguments: [URLError.notConnectedToInternet, .networkConnectionLost, .timedOut, .cannotConnectToHost])
+func transformerDownloadNetworkFailuresShowActionableMessages(code: URLError.Code) async throws {
+    let suiteName = "SiftTests.downloadError.\(UUID().uuidString)"
+    let defaults = try #require(UserDefaults(suiteName: suiteName))
+    defer { defaults.removePersistentDomain(forName: suiteName) }
+    let model = SiftAppModel(
+        premiumBackend: MockPremiumBackend(entitled: true, outcome: .cancelled),
+        transformerAvailabilityOverride: false,
+        transformerDownloadedOverride: false,
+        transformerDownloader: SuspendedTransformerDownloader(
+            plan: mockTransformerDownloadPlan(), gate: SuspendedTransformerDownloadGate(),
+            preparationError: URLError(code)
+        ),
+        modelSelectionDefaults: defaults,
+        appDefaults: defaults
+    )
+    try await waitForPremiumRefresh(model)
+    model.selectModelVariant(.transformer)
+    try await waitFor {
+        if case .failed = model.transformerDownloadPhase { return true }
+        return false
+    }
+    let expected: String
+    switch code {
+    case .timedOut: expected = String(localized: "下载超时，请稍后重试。")
+    case .cannotConnectToHost: expected = String(localized: "暂时无法连接下载服务器，请稍后重试。")
+    default: expected = String(localized: "网络连接已断开，请检查网络后重试。")
+    }
+    #expect(model.transformerDownloadPhase == .failed(expected))
+    #expect(!model.isTransformerUpdateBusy)
+    #expect(!model.canCancelTransformerDownload)
+    #expect(model.selectedModelVariant == .classic)
 }
 
 @MainActor

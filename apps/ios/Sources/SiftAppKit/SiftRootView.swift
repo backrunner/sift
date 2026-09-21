@@ -139,6 +139,7 @@ private struct DashboardHero: View {
     @Bindable var model: SiftAppModel
     @State private var isShowingModelPicker = false
     @State private var isShowingSettings = false
+    @ScaledMetric(relativeTo: .body) private var modelPickerHeight = 520
 
     var body: some View {
         HStack(alignment: .center, spacing: 12) {
@@ -213,8 +214,10 @@ private struct DashboardHero: View {
             NavigationStack {
                 ModelPickerView(model: model)
             }
-            .presentationDetents([.medium, .large])
+            .presentationDetents([.height(modelPickerHeight), .large])
             .presentationDragIndicator(.visible)
+            .presentationContentInteraction(.scrolls)
+            .presentationCornerRadius(28)
         }
         .sheet(isPresented: $isShowingSettings) {
             NavigationStack {
@@ -230,6 +233,12 @@ private struct DashboardHero: View {
             return model.selectedModelVariant.title
         }
         if model.isTransformerDownloadActive {
+            if model.transformerDownloadPhase == .installing {
+                return String(localized: "正在安装模型…")
+            }
+            if model.transformerDownloadPhase == .checking {
+                return String(localized: "正在准备下载…")
+            }
             if let progress = model.transformerDownloadProgressText {
                 return String(localized: "下载") + " \(progress)"
             }
@@ -281,28 +290,34 @@ private struct ModelPickerView: View {
                         downloadPhase: variant == .transformer ? model.transformerDownloadPhase : nil,
                         downloadProgress: variant == .transformer ? model.transformerDownloadProgress : nil,
                         downloadSizeText: variant == .transformer ? model.transformerDownloadByteCountText : nil,
-                        updateStatusText: variant == .transformer ? model.transformerUpdateStatusText : nil
+                        updateStatusText: variant == .transformer ? model.transformerUpdateStatusText : nil,
+                        isActionDisabled: model.isSwitchingModelVariant
+                            || (model.isTransformerUpdateBusy
+                                && !(variant == .classic && model.isAutomaticTransformerUpdateActive)),
+                        cancelDownload: variant == .transformer && model.canCancelTransformerDownload
+                            ? { model.cancelPendingTransformerDownload() } : nil
                     ) {
                         // 未购买时 selectModelVariant 会转为打开购买引导:
                         // 此时保持选择器在场,paywall 作为嵌套 sheet 叠加展示,
                         // 购买成功后用户再次点 Transformer 才开始下载/切换。
                         if isBlockedByDevice {
                             model.showTransformerUnsupportedMessage()
+                        } else if variant == .transformer, case .failed = model.transformerDownloadPhase {
+                            if model.hasCompatibleTransformerUpdate {
+                                model.downloadTransformerUpdate()
+                            } else {
+                                model.selectModelVariant(.transformer)
+                            }
                         } else if variant == .transformer, model.premium.isUnlocked,
                            model.transformerUpdateReleaseID != nil || model.isTransformerAppUpdateRequired {
                             isShowingTransformerDetails = true
                         } else {
                             model.selectModelVariant(variant)
                         }
-                        if shouldDismissAfterTap && !isShowingTransformerDetails {
+                        if shouldDismissAfterTap && !isShowingTransformerDetails && !model.isTransformerDownloadActive {
                             dismiss()
                         }
                     }
-                    .disabled(
-                        model.isSwitchingModelVariant
-                            || (model.isTransformerUpdateBusy
-                                && !(variant == .classic && model.isAutomaticTransformerUpdateActive))
-                    )
                     .frame(maxWidth: .infinity)
                 }
 
@@ -310,7 +325,7 @@ private struct ModelPickerView: View {
                     Image(systemName: "info.circle")
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(Color.siftHalo)
-                    Text(String(localized: "经典模型可通过本地样本在设备上微调；Sift Signal 模型面向多语言场景离线训练，不支持设备端微调，切换后本地微调入口将隐藏。"))
+                    Text(String(localized: "经典模型支持设备端微调。Sift Signal 下载后可离线使用，不支持设备端微调。"))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -388,198 +403,260 @@ private struct ModelVariantCard: View {
     var downloadProgress: TransformerModelDownloadProgress?
     var downloadSizeText: String?
     var updateStatusText: String?
+    var isActionDisabled: Bool = false
+    var cancelDownload: (() -> Void)?
     let action: () -> Void
 
     var body: some View {
-        Button(action: action) {
-            HStack(alignment: .center, spacing: 12) {
+        VStack(alignment: .leading, spacing: 16) {
+            HStack(alignment: .top, spacing: 12) {
                 Image(systemName: variant.symbol)
-                    .font(.headline.weight(.bold))
-                    .foregroundStyle(isSelected ? Color.siftMint : .secondary)
-                    .frame(width: 34, height: 34)
+                    .font(.system(size: 20, weight: .semibold))
+                    .foregroundStyle(isSelected ? Color.siftMint : Color.siftHalo)
+                    .frame(width: 44, height: 44)
                     .background(
-                        (isSelected ? Color.siftMint.opacity(0.14) : Color.siftInsetFill),
-                        in: RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        isSelected ? Color.siftMint.opacity(0.12) : Color.siftInsetFill,
+                        in: RoundedRectangle(cornerRadius: 12, style: .continuous)
                     )
+                    .accessibilityHidden(true)
 
-                VStack(alignment: .leading, spacing: 3) {
-                    HStack(spacing: 6) {
-                        Text(variant.title)
-                            .font(.callout.weight(.semibold))
-                            .foregroundStyle(.primary)
-                        if !isAvailable {
-                            Text(isBlockedByDevice ? String(localized: "设备不支持") : String(localized: "未内置"))
-                                .font(.caption2.weight(.semibold))
-                                .foregroundStyle(.secondary)
-                                .padding(.horizontal, 6)
-                                .padding(.vertical, 2)
-                                .background(Color.siftInsetFill, in: Capsule())
-                        }
-                    }
+                VStack(alignment: .leading, spacing: 5) {
+                    Text(variant.title)
+                        .font(.headline)
                     Text(variant.subtitle)
-                        .font(.caption)
+                        .font(.subheadline)
                         .foregroundStyle(.secondary)
-                    downloadStatusView
-                    if canShowTransformerStatus, let updateStatusText {
-                        downloadLine(
-                            icon: "arrow.down.circle.fill",
-                            text: updateStatusText,
-                            tint: Color.siftAmber,
-                            progress: nil
-                        )
-                    }
+                        .fixedSize(horizontal: false, vertical: true)
                 }
-
-                Spacer(minLength: 0)
+                .frame(maxWidth: .infinity, alignment: .leading)
 
                 if isSelected {
                     Image(systemName: "checkmark.circle.fill")
-                        .font(.headline.weight(.bold))
+                        .font(.title3)
                         .foregroundStyle(Color.siftMint)
+                        .accessibilityLabel(String(localized: "使用中"))
+                } else if isLockedByPremium {
+                    Image(systemName: "lock.fill")
+                        .foregroundStyle(Color.siftAmber)
+                        .accessibilityLabel(String(localized: "未解锁"))
                 }
             }
-            .padding(14)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .pillSurface(cornerRadius: 16, isSelected: isSelected)
-            .contentShape(Rectangle())
-            .opacity(isAvailable ? 1 : 0.55)
-        }
-        .buttonStyle(.plain)
-        .disabled(!isAvailable && !isBlockedByDevice)
-    }
 
-    @ViewBuilder
-    private var downloadStatusView: some View {
-        if isBlockedByDevice {
-            downloadLine(
-                icon: "exclamationmark.triangle.fill",
-                text: String(localized: "此设备不支持 Sift Signal 高级模型"),
-                tint: Color.siftAmber,
-                progress: nil
-            )
-        } else if isSwitchingTo {
-            downloadLine(
-                icon: nil,
-                text: String(localized: "正在切换模型…"),
-                tint: Color.siftMint,
-                progress: nil,
-                showsSpinner: true
-            )
-        } else if canShowTransformerStatus, let downloadPhase {
-            switch downloadPhase {
-            case .notDownloaded:
-                if !isLockedByPremium && !isSelected {
-                    downloadLine(
-                        icon: "arrow.down.circle",
-                        text: String(localized: "切换时下载") + downloadSizeSuffix,
-                        tint: Color.siftHalo,
-                        progress: nil
-                    )
+            if isBlockedByDevice {
+                Label(String(localized: "此设备不支持 Sift Signal 高级模型"), systemImage: "exclamationmark.triangle")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            } else if isSwitchingTo {
+                ProgressView(String(localized: "正在切换模型…"))
+                    .font(.subheadline)
+            } else if showsDownloadStatus, let downloadPhase {
+                Divider()
+                ModelDownloadStatusView(
+                    phase: downloadPhase,
+                    progress: downloadProgress,
+                    cancel: cancelDownload
+                )
+            } else if canShowTransformerStatus {
+                if let updateStatusText {
+                    Label(updateStatusText, systemImage: "arrow.down.circle")
+                        .font(.subheadline)
+                        .foregroundStyle(Color.siftHalo)
+                } else if downloadPhase == .ready && !isSelected {
+                    Label(String(localized: "已下载，可离线使用"), systemImage: "checkmark.circle")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                 }
-            case .checking:
-                downloadLine(
-                    icon: nil,
-                    text: String(localized: "正在准备下载…"),
-                    tint: Color.siftHalo,
-                    progress: nil,
-                    showsSpinner: true
+            }
+
+            if showsAction {
+                ModelDownloadActionButton(
+                    title: actionTitle,
+                    symbol: actionSymbol,
+                    sizeText: actionSizeText,
+                    action: action
                 )
-            case .waitingForTrafficConfirmation:
-                    downloadLine(
-                        icon: "exclamationmark.triangle.fill",
-                        text: String(localized: "计费网络待确认") + downloadSizeSuffix,
-                        tint: Color.siftAmber,
-                        progress: nil
-                    )
-            case .downloading:
-                downloadLine(
-                    icon: nil,
-                    text: downloadingText,
-                    tint: Color.siftMint,
-                    progress: downloadProgress?.fractionCompleted,
-                    showsSpinner: downloadProgress?.fractionCompleted == nil
-                )
-            case .installing:
-                downloadLine(
-                    icon: nil,
-                    text: String(localized: "正在安装模型…"),
-                    tint: Color.siftMint,
-                    progress: nil,
-                    showsSpinner: true
-                )
-            case .ready:
-                if !isSelected {
-                    downloadLine(
-                        icon: "checkmark.circle.fill",
-                        text: String(localized: "已下载，可离线使用"),
-                        tint: Color.siftMint,
-                        progress: nil
-                    )
-                }
-            case let .failed(message):
-                downloadLine(
-                    icon: "exclamationmark.circle.fill",
-                    text: message,
-                    tint: Color.siftAmber,
-                    progress: nil
-                )
+                .disabled(isActionDisabled || !isAvailable)
             }
         }
+        .padding(18)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .pillSurface(cornerRadius: 20, isSelected: isSelected)
     }
 
     private var canShowTransformerStatus: Bool {
         variant == .transformer && !isBlockedByDevice && !isLockedByPremium
     }
 
-    private var downloadSizeSuffix: String {
-        guard let downloadSizeText else {
-            return ""
+    private var showsDownloadStatus: Bool {
+        guard canShowTransformerStatus, let downloadPhase else { return false }
+        switch downloadPhase {
+        case .checking, .waitingForTrafficConfirmation, .downloading, .installing, .failed:
+            return true
+        case .notDownloaded, .ready:
+            return false
         }
-        return " · \(downloadSizeText)"
     }
 
-    private var downloadingText: String {
-        guard let progress = downloadProgress else {
-            return String(localized: "正在下载…")
+    private var showsAction: Bool {
+        guard !isBlockedByDevice, !isSwitchingTo else { return false }
+        if showsDownloadStatus {
+            if case .failed = downloadPhase { return true }
+            return false
         }
-        if let fraction = progress.fractionCompleted {
-            return String(localized: "正在下载") + " \(Int((fraction * 100).rounded()))%"
-        }
-        return String(localized: "正在下载") + " \(formatDownloadBytes(progress.receivedBytes))"
+        return !isSelected || updateStatusText != nil
     }
 
-    @ViewBuilder
-    private func downloadLine(
-        icon: String?,
-        text: String,
-        tint: Color,
-        progress: Double?,
-        showsSpinner: Bool = false
-    ) -> some View {
-        VStack(alignment: .leading, spacing: 5) {
-            HStack(spacing: 5) {
-                if showsSpinner {
-                    ProgressView()
-                        .controlSize(.mini)
-                        .tint(tint)
-                } else if let icon {
-                    Image(systemName: icon)
-                        .font(.caption2.weight(.bold))
+    private var actionTitle: String {
+        if isLockedByPremium { return String(localized: "解锁 Sift Signal") }
+        if case .failed = downloadPhase { return String(localized: "重试下载") }
+        if updateStatusText != nil { return String(localized: "查看更新") }
+        if variant == .classic { return String(localized: "使用经典模型") }
+        if downloadPhase == .ready { return String(localized: "使用 Sift Signal") }
+        return String(localized: "下载并使用")
+    }
+
+    private var actionSymbol: String {
+        if isLockedByPremium { return "lock.open" }
+        if case .failed = downloadPhase { return "arrow.clockwise" }
+        if updateStatusText != nil { return "arrow.right" }
+        if variant == .classic || downloadPhase == .ready { return "checkmark" }
+        return "arrow.down.circle"
+    }
+
+    private var actionSizeText: String? {
+        guard canShowTransformerStatus, downloadPhase != .ready, updateStatusText == nil else { return nil }
+        return downloadSizeText
+    }
+}
+
+/// Shared by the picker and detail page so every entry point shows the same
+/// transfer progress and keeps cancellation separate from model selection.
+private struct ModelDownloadStatusView: View {
+    let phase: TransformerModelDownloadPhase
+    let progress: TransformerModelDownloadProgress?
+    var cancel: (() -> Void)?
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(alignment: .firstTextBaseline, spacing: 12) {
+                Text(title)
+                    .font(.subheadline.weight(.semibold))
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                if phase == .downloading, let fraction = progress?.fractionCompleted {
+                    Text(fraction, format: .percent.precision(.fractionLength(0)))
+                        .font(.headline.monospacedDigit())
+                        .fixedSize()
+                        .foregroundStyle(Color.siftMint)
+                        .contentTransition(.numericText())
                 }
-                Text(text)
-                    .font(.caption2.weight(.semibold))
-                    .lineLimit(2)
+            }
+
+            if phase == .downloading {
+                if let fraction = progress?.fractionCompleted {
+                    ProgressView(value: fraction)
+                        .tint(.siftMint)
+                        .accessibilityLabel(String(localized: "模型下载进度"))
+                } else {
+                    ProgressView()
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+
+                Text(byteCountText)
+                    .font(.caption.monospacedDigit())
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            } else if phase == .checking || phase == .installing {
+                HStack(alignment: .top, spacing: 10) {
+                    ProgressView().controlSize(.small)
+                    Text(phase == .installing
+                         ? String(localized: "下载完成，正在校验并安装。")
+                         : String(localized: "正在获取模型信息…"))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            } else if case let .failed(message) = phase {
+                Text(message)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
-            .foregroundStyle(tint)
 
-            if let progress {
-                ProgressView(value: progress)
-                    .tint(tint)
-                    .controlSize(.mini)
+            if let cancel {
+                Button(action: cancel) {
+                    Text(String(localized: "取消下载"))
+                        .font(.subheadline.weight(.medium))
+                        .frame(minHeight: 44)
+                        .frame(maxWidth: .infinity)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(Color.siftMint)
+                .insetSurface(cornerRadius: 12)
             }
         }
-        .padding(.top, 3)
+        .accessibilityElement(children: .contain)
+    }
+
+    private var title: String {
+        switch phase {
+        case .checking: return String(localized: "正在准备下载…")
+        case .waitingForTrafficConfirmation: return String(localized: "计费网络待确认")
+        case .downloading: return String(localized: "正在下载")
+        case .installing: return String(localized: "正在安装模型…")
+        case .failed: return String(localized: "下载未完成")
+        case .ready: return String(localized: "已下载，可离线使用")
+        case .notDownloaded: return String(localized: "尚未下载")
+        }
+    }
+
+    private var byteCountText: String {
+        guard let progress else { return String(localized: "正在连接下载…") }
+        let received = formatDownloadBytes(progress.receivedBytes)
+        guard let total = progress.totalBytes, total > 0 else {
+            return String(format: String(localized: "已下载 %@"), received)
+        }
+        return String(format: String(localized: "%@ / %@"), received, formatDownloadBytes(total))
+    }
+}
+
+private struct ModelDownloadActionButton: View {
+    let title: String
+    let symbol: String
+    var sizeText: String?
+    let action: () -> Void
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+
+    var body: some View {
+        Button(action: action) {
+            ViewThatFits(in: .horizontal) {
+                if !dynamicTypeSize.isAccessibilitySize {
+                    HStack(spacing: 12) {
+                        Label(title, systemImage: symbol)
+                            .fixedSize()
+                        if let sizeText {
+                            Spacer(minLength: 0)
+                            Text(sizeText)
+                                .font(.subheadline.monospacedDigit())
+                                .fixedSize()
+                        }
+                    }
+                }
+                VStack(spacing: 4) {
+                    Label(title, systemImage: symbol)
+                    if let sizeText {
+                        Text(sizeText).font(.caption.monospacedDigit())
+                    }
+                }
+            }
+            .font(.subheadline.weight(.semibold))
+            .frame(maxWidth: .infinity, minHeight: 28)
+            .padding(.vertical, 2)
+        }
+        .buttonStyle(.borderedProminent)
+        .buttonBorderShape(.roundedRectangle(radius: 12))
+        .controlSize(.large)
+        .tint(.siftMint)
     }
 }
 
@@ -588,106 +665,148 @@ private struct TransformerModelDetailView: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
-                VStack(alignment: .leading, spacing: 8) {
-                    Label(String(localized: "Sift Signal"), systemImage: ModelVariant.transformer.symbol)
-                        .font(.title3.weight(.semibold))
-                    Text(String(localized: "多语言 · 不支持本地微调"))
-                        .font(.callout)
-                        .foregroundStyle(.secondary)
+            VStack(alignment: .leading, spacing: 16) {
+                VStack(alignment: .leading, spacing: 20) {
+                    HStack(alignment: .top, spacing: 14) {
+                        Image(systemName: ModelVariant.transformer.symbol)
+                            .font(.system(size: 24, weight: .semibold))
+                            .foregroundStyle(Color.siftMint)
+                            .frame(width: 52, height: 52)
+                            .background(Color.siftMint.opacity(0.12), in: RoundedRectangle(cornerRadius: 14))
+                            .accessibilityHidden(true)
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text(String(localized: "Sift Signal"))
+                                .font(.title3.weight(.semibold))
+                            Text(String(localized: "多语言 · 不支持本地微调"))
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+
+                    VStack(spacing: 14) {
+                        if let version = model.installedTransformerDisplayVersion {
+                            modelDetailRow(String(localized: "当前版本"), value: version)
+                        }
+                        if let version = model.transformerUpdateVersionForDisplay {
+                            modelDetailRow(String(localized: "最新版本"), value: version)
+                        }
+                        if let size = model.transformerDownloadByteCountText {
+                            modelDetailRow(String(localized: "下载大小"), value: size)
+                        }
+                    }
                 }
+                .padding(20)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .cardSurface()
 
-                Divider()
-
-                VStack(alignment: .leading, spacing: 10) {
-                    if let version = model.installedTransformerDisplayVersion {
-                        modelDetailRow(String(localized: "当前版本"), value: version)
-                    }
-                    if let version = model.transformerUpdateVersionForDisplay {
-                        modelDetailRow(String(localized: "最新版本"), value: version)
-                    }
-                    if let size = model.transformerUpdateDownloadSizeText {
-                        modelDetailRow(String(localized: "下载大小"), value: size)
-                    }
-                    if let status = model.transformerUpdateStatusText {
-                        modelDetailRow(String(localized: "兼容状态"), value: status)
-                    }
+                VStack(alignment: .leading, spacing: 16) {
+                    updateAction
                 }
-
-                updateAction
+                .padding(20)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .cardSurface()
             }
-            .padding(20)
+            .padding(16)
         }
+        .scrollIndicators(.hidden)
         .background(AtmosphericBackground())
         .navigationTitle(String(localized: "模型详情"))
         .toolbarTitleDisplayMode(.inline)
     }
 
     private func modelDetailRow(_ title: String, value: String) -> some View {
-        HStack(alignment: .firstTextBaseline, spacing: 12) {
-            Text(title)
-                .foregroundStyle(.secondary)
-            Spacer(minLength: 12)
-            Text(value)
-                .multilineTextAlignment(.trailing)
+        ViewThatFits(in: .horizontal) {
+            HStack(alignment: .firstTextBaseline, spacing: 16) {
+                Text(title).foregroundStyle(.secondary).fixedSize()
+                Spacer(minLength: 0)
+                Text(value).fixedSize()
+            }
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title).foregroundStyle(.secondary)
+                Text(value)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .font(.callout)
+        .font(.subheadline)
+        .accessibilityElement(children: .combine)
     }
 
     @ViewBuilder
     private var updateAction: some View {
         if model.isTransformerUpdateBusy {
-            HStack(spacing: 10) {
-                ProgressView()
-                Text(model.transformerDownloadProgressText ?? String(localized: "正在下载…"))
-                    .font(.callout.weight(.semibold))
-            }
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 12)
+            ModelDownloadStatusView(
+                phase: model.isTransformerDownloadActive || model.transformerDownloadPhase == .waitingForTrafficConfirmation
+                    ? model.transformerDownloadPhase : .checking,
+                progress: model.transformerDownloadProgress,
+                cancel: model.canCancelTransformerDownload ? { model.cancelPendingTransformerDownload() } : nil
+            )
+        } else if model.isSwitchingModelVariant {
+            ProgressView(String(localized: "正在切换模型…"))
         } else if model.isTransformerAppUpdateRequired {
             appUpdateButton
-        } else if model.hasCompatibleTransformerUpdate {
-            Button {
-                model.downloadTransformerUpdate()
-            } label: {
-                Label(String(localized: "下载更新"), systemImage: "arrow.down.circle.fill")
-                    .frame(maxWidth: .infinity)
-            }
-            .buttonStyle(.borderedProminent)
-            .controlSize(.large)
         } else if case .requiresAppUpdate = model.transformerUpdateState {
             appUpdateButton
+        } else if case .failed = model.transformerDownloadPhase {
+            ModelDownloadStatusView(phase: model.transformerDownloadPhase, progress: nil)
+            ModelDownloadActionButton(title: String(localized: "重试下载"), symbol: "arrow.clockwise") {
+                startDownload()
+            }
+        } else if model.hasCompatibleTransformerUpdate {
+            Label(String(localized: "有新版本可下载"), systemImage: "arrow.down.circle")
+                .font(.subheadline.weight(.medium))
+            ModelDownloadActionButton(
+                title: String(localized: "下载更新"),
+                symbol: "arrow.down.circle",
+                sizeText: model.transformerDownloadByteCountText
+            ) {
+                model.downloadTransformerUpdate()
+            }
+        } else if case .incompatible = model.transformerUpdateState {
+            Label(String(localized: "此模型与当前设备不兼容"), systemImage: "exclamationmark.triangle")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+        } else if !model.isTransformerModelDownloaded {
+            ModelDownloadActionButton(
+                title: String(localized: "下载并使用"),
+                symbol: "arrow.down.circle",
+                sizeText: model.transformerDownloadByteCountText
+            ) {
+                model.selectModelVariant(.transformer)
+            }
         } else if case .current = model.transformerUpdateState {
             Label(String(localized: "已是最新版本"), systemImage: "checkmark.circle.fill")
+                .font(.subheadline.weight(.medium))
                 .foregroundStyle(Color.siftMint)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 12)
-        } else if case .incompatible = model.transformerUpdateState {
-            Text(String(localized: "此模型与当前设备不兼容"))
-                .foregroundStyle(.secondary)
-        } else if case .updateAvailable = model.transformerUpdateState {
-            Button(String(localized: "下载")) { model.selectModelVariant(.transformer) }
-                .buttonStyle(.borderedProminent)
         } else if case .checking = model.transformerUpdateState {
             ProgressView(String(localized: "正在检查模型更新…"))
+                .font(.subheadline)
         } else {
-            VStack(spacing: 12) {
-                Text(String(localized: "暂时无法检查更新"))
-                    .foregroundStyle(.secondary)
-                Button(String(localized: "重试")) { model.checkForTransformerUpdate(force: true) }
+            Text(String(localized: "暂时无法检查更新"))
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+            ModelDownloadActionButton(title: String(localized: "重试"), symbol: "arrow.clockwise") {
+                model.checkForTransformerUpdate(force: true)
             }
         }
     }
 
-    private var appUpdateButton: some View {
-        Button {
+    private func startDownload() {
+        if model.hasCompatibleTransformerUpdate {
             model.downloadTransformerUpdate()
-        } label: {
-            Label(String(localized: "更新 App"), systemImage: "arrow.up.circle.fill")
-                .frame(maxWidth: .infinity)
+        } else {
+            model.selectModelVariant(.transformer)
         }
-        .buttonStyle(.borderedProminent)
-        .controlSize(.large)
+    }
+
+    private var appUpdateButton: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text(String(localized: "最新的 Sift Signal 需要新版 App。更新 App 后即可继续下载模型。"))
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+            ModelDownloadActionButton(title: String(localized: "更新 App"), symbol: "arrow.up.circle") {
+                model.downloadTransformerUpdate()
+            }
+        }
     }
 }
 
