@@ -132,6 +132,7 @@ targets:
       - DeviceTests
     dependencies:
       - target: SiftApp
+      - target: SiftAppKit
       - target: MessageFilterCore
       - target: MessageFilterExtensionKit
     settings:
@@ -163,5 +164,6 @@ schemes:
       config: Release
       environmentVariables:
         SIFT_DEVICE_BENCHMARK_HOST: "1"
+        SIFT_LIVE_MODEL_DOWNLOAD: "$(SIFT_LIVE_MODEL_DOWNLOAD)"
       targets:
         - TransformerDeviceTests

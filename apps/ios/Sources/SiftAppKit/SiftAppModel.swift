@@ -995,7 +995,6 @@ public final class SiftAppModel {
     }
 
     public var transformerUpdateVersionForDisplay: String? {
-        guard !isTransformerUpdateBusy else { return nil }
         switch transformerUpdateState {
         case let .updateAvailable(channel), let .requiresAppUpdate(channel), let .incompatible(channel):
             return ModelDisplayVersion.transformer(modelABI: channel.modelABI, releaseSequence: channel.releaseSequence)
@@ -1021,6 +1020,16 @@ public final class SiftAppModel {
 
     public var transformerDownloadByteCountText: String? {
         pendingTransformerDownloadPlan?.displayByteCount.map(Self.formatByteCount)
+            ?? transformerUpdateDownloadSizeText
+    }
+
+    public var canCancelTransformerDownload: Bool {
+        switch transformerDownloadPhase {
+        case .checking, .downloading, .waitingForTrafficConfirmation:
+            return true
+        case .notDownloaded, .installing, .ready, .failed:
+            return false
+        }
     }
 
     public var canUseRemoteSubmission: Bool {
@@ -1091,6 +1100,7 @@ public final class SiftAppModel {
     }
 
     public func cancelPendingTransformerDownload() {
+        cancelAutomaticTransformerUpdate()
         transformerDownloadTask?.cancel()
         transformerDownloadTask = nil
         transformerDownloadRequestID = nil
@@ -1161,6 +1171,9 @@ public final class SiftAppModel {
         }
 
         pendingTransformerDownloadPlan = plan
+        transformerDownloadProgress = TransformerModelDownloadProgress(
+            receivedBytes: 0, totalBytes: plan.displayByteCount
+        )
         transformerDownloadPhase = .downloading
         let requestID = UUID()
         transformerDownloadRequestID = requestID
@@ -1240,7 +1253,17 @@ public final class SiftAppModel {
             isShowingTransformerAppUpdatePrompt = true
             return
         }
-        let message = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+        let message: String
+        switch (error as? URLError)?.code {
+        case .notConnectedToInternet, .networkConnectionLost:
+            message = String(localized: "网络连接已断开，请检查网络后重试。")
+        case .timedOut:
+            message = String(localized: "下载超时，请稍后重试。")
+        case .cannotConnectToHost, .cannotFindHost, .dnsLookupFailed:
+            message = String(localized: "暂时无法连接下载服务器，请稍后重试。")
+        default:
+            message = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+        }
         transformerDownloadPhase = .failed(message)
         transformerDownloadTask = nil
         showToast(.error, message)
@@ -1318,7 +1341,9 @@ public final class SiftAppModel {
                     return
                 }
                 self.pendingTransformerDownloadPlan = plan
-                self.transformerDownloadProgress = nil
+                self.transformerDownloadProgress = TransformerModelDownloadProgress(
+                    receivedBytes: 0, totalBytes: plan.displayByteCount
+                )
                 self.transformerDownloadPhase = .downloading
                 try await transformerDownloader.download(
                     plan,
