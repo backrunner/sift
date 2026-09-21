@@ -263,58 +263,16 @@ private struct ModelPickerView: View {
     @Bindable var model: SiftAppModel
     @Environment(\.dismiss) private var dismiss
     @Environment(\.openURL) private var openURL
-    @State private var isShowingTransformerDetails = false
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 12) {
                 ForEach(model.availableModelVariants) { variant in
-                    let isBlockedByDevice = variant == .transformer && !model.isTransformerDeviceSupported
-                    let isLocked = variant == .transformer
-                        && model.isTransformerDeviceSupported
-                        && !model.premium.isUnlocked
-                    let shouldDismissAfterTap = variant == .classic
-                        || (
-                            variant == .transformer
-                                && model.isTransformerDeviceSupported
-                                && model.isTransformerModelAvailable
-                                && model.premium.isUnlocked
-                        )
-                    ModelVariantCard(
-                        variant: variant,
-                        isSelected: model.selectedModelVariant == variant,
-                        isAvailable: model.isModelVariantAvailable(variant),
-                        isLockedByPremium: isLocked,
-                        isBlockedByDevice: isBlockedByDevice,
-                        isSwitchingTo: model.modelVariantBeingLoaded == variant,
-                        downloadPhase: variant == .transformer ? model.transformerDownloadPhase : nil,
-                        downloadProgress: variant == .transformer ? model.transformerDownloadProgress : nil,
-                        downloadSizeText: variant == .transformer ? model.transformerDownloadByteCountText : nil,
-                        updateStatusText: variant == .transformer ? model.transformerUpdateStatusText : nil,
-                        isActionDisabled: model.isSwitchingModelVariant
-                            || (model.isTransformerUpdateBusy
-                                && !(variant == .classic && model.isAutomaticTransformerUpdateActive)),
-                        cancelDownload: variant == .transformer && model.canCancelTransformerDownload
-                            ? { model.cancelPendingTransformerDownload() } : nil
-                    ) {
-                        // 未购买时 selectModelVariant 会转为打开购买引导:
-                        // 此时保持选择器在场,paywall 作为嵌套 sheet 叠加展示,
-                        // 购买成功后用户再次点 Transformer 才开始下载/切换。
-                        if isBlockedByDevice {
-                            model.showTransformerUnsupportedMessage()
-                        } else if variant == .transformer, case .failed = model.transformerDownloadPhase {
-                            if model.hasCompatibleTransformerUpdate {
-                                model.downloadTransformerUpdate()
-                            } else {
-                                model.selectModelVariant(.transformer)
-                            }
-                        } else if variant == .transformer, model.premium.isUnlocked,
-                           model.transformerUpdateReleaseID != nil || model.isTransformerAppUpdateRequired {
-                            isShowingTransformerDetails = true
-                        } else {
-                            model.selectModelVariant(variant)
-                        }
-                        if shouldDismissAfterTap && !isShowingTransformerDetails && !model.isTransformerDownloadActive {
+                    ModelVariantCard(model: model, variant: variant) {
+                        // 已安装的模型始终直接切换；下载和更新由卡片内的独立操作处理。
+                        // 未解锁时保留选择器，让购买页作为嵌套 sheet 展示。
+                        model.selectModelVariant(variant)
+                        if variant == .classic || (model.premium.isUnlocked && model.isTransformerModelAvailable) {
                             dismiss()
                         }
                     }
@@ -344,9 +302,6 @@ private struct ModelPickerView: View {
         }
         .scrollIndicators(.hidden)
         .background(AtmosphericBackground())
-        .navigationDestination(isPresented: $isShowingTransformerDetails) {
-            TransformerModelDetailView(model: model)
-        }
         .sheet(isPresented: $model.isShowingPaywall) {
             NavigationStack {
                 PremiumPaywallView(model: model)
@@ -378,7 +333,7 @@ private struct ModelPickerView: View {
         } message: {
             Text(String(localized: "最新的 Sift Signal 需要新版 App。更新 App 后即可继续下载模型。"))
         }
-        .task { model.checkForTransformerUpdate() }
+        .task(id: model.premium.isUnlocked) { model.checkForTransformerUpdate() }
         .navigationTitle(String(localized: "选择模型"))
         .toolbarTitleDisplayMode(.inline)
         .toolbar {
@@ -393,144 +348,101 @@ private struct ModelPickerView: View {
 }
 
 private struct ModelVariantCard: View {
+    @Bindable var model: SiftAppModel
     let variant: ModelVariant
-    let isSelected: Bool
-    let isAvailable: Bool
-    var isLockedByPremium: Bool = false
-    var isBlockedByDevice: Bool = false
-    var isSwitchingTo: Bool = false
-    var downloadPhase: TransformerModelDownloadPhase?
-    var downloadProgress: TransformerModelDownloadProgress?
-    var downloadSizeText: String?
-    var updateStatusText: String?
-    var isActionDisabled: Bool = false
-    var cancelDownload: (() -> Void)?
-    let action: () -> Void
+    let select: () -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            HStack(alignment: .top, spacing: 12) {
-                Image(systemName: variant.symbol)
-                    .font(.system(size: 20, weight: .semibold))
-                    .foregroundStyle(isSelected ? Color.siftMint : Color.siftHalo)
-                    .frame(width: 44, height: 44)
-                    .background(
-                        isSelected ? Color.siftMint.opacity(0.12) : Color.siftInsetFill,
-                        in: RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    )
-                    .accessibilityHidden(true)
+        VStack(alignment: .leading, spacing: 0) {
+            Button(action: select) {
+                VStack(alignment: .leading, spacing: 16) {
+                    HStack(alignment: .top, spacing: 12) {
+                        Image(systemName: variant.symbol)
+                            .font(.system(size: 20, weight: .semibold))
+                            .foregroundStyle(isSelected ? Color.siftMint : Color.siftHalo)
+                            .frame(width: 44, height: 44)
+                            .background(
+                                isSelected ? Color.siftMint.opacity(0.12) : Color.siftInsetFill,
+                                in: RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            )
+                            .accessibilityHidden(true)
 
-                VStack(alignment: .leading, spacing: 5) {
-                    Text(variant.title)
-                        .font(.headline)
-                    Text(variant.subtitle)
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
+                        VStack(alignment: .leading, spacing: 5) {
+                            Text(variant.title)
+                                .font(.headline)
+                            Text(variant.subtitle)
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                            if variant == .transformer, let version = model.installedTransformerDisplayVersion {
+                                Text(version)
+                                    .font(.caption.monospacedDigit())
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+
+                        if isSelected {
+                            Image(systemName: "checkmark.circle.fill")
+                                .font(.title3)
+                                .foregroundStyle(Color.siftMint)
+                                .accessibilityLabel(String(localized: "使用中"))
+                        } else if isLockedByPremium {
+                            Image(systemName: "lock.fill")
+                                .foregroundStyle(Color.siftAmber)
+                                .accessibilityLabel(String(localized: "未解锁"))
+                        }
+                    }
+
+                    if isBlockedByDevice {
+                        Label(String(localized: "此设备不支持 Sift Signal 高级模型"), systemImage: "exclamationmark.triangle")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    } else if model.modelVariantBeingLoaded == variant {
+                        ProgressView(String(localized: "正在切换模型…"))
+                            .font(.subheadline)
+                    }
                 }
+                .padding(18)
                 .frame(maxWidth: .infinity, alignment: .leading)
-
-                if isSelected {
-                    Image(systemName: "checkmark.circle.fill")
-                        .font(.title3)
-                        .foregroundStyle(Color.siftMint)
-                        .accessibilityLabel(String(localized: "使用中"))
-                } else if isLockedByPremium {
-                    Image(systemName: "lock.fill")
-                        .foregroundStyle(Color.siftAmber)
-                        .accessibilityLabel(String(localized: "未解锁"))
-                }
+                .contentShape(Rectangle())
             }
+            .buttonStyle(.plain)
+            .disabled(!canSelect)
+            .accessibilityAddTraits(isSelected ? [.isSelected] : [])
 
-            if isBlockedByDevice {
-                Label(String(localized: "此设备不支持 Sift Signal 高级模型"), systemImage: "exclamationmark.triangle")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            } else if isSwitchingTo {
-                ProgressView(String(localized: "正在切换模型…"))
-                    .font(.subheadline)
-            } else if showsDownloadStatus, let downloadPhase {
-                Divider()
-                ModelDownloadStatusView(
-                    phase: downloadPhase,
-                    progress: downloadProgress,
-                    cancel: cancelDownload
-                )
-            } else if canShowTransformerStatus {
-                if let updateStatusText {
-                    Label(updateStatusText, systemImage: "arrow.down.circle")
-                        .font(.subheadline)
-                        .foregroundStyle(Color.siftHalo)
-                } else if downloadPhase == .ready && !isSelected {
-                    Label(String(localized: "已下载，可离线使用"), systemImage: "checkmark.circle")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-            }
-
-            if showsAction {
-                ModelDownloadActionButton(
-                    title: actionTitle,
-                    symbol: actionSymbol,
-                    sizeText: actionSizeText,
-                    action: action
-                )
-                .disabled(isActionDisabled || !isAvailable)
+            if variant == .transformer, !isBlockedByDevice, !isLockedByPremium {
+                Divider().padding(.horizontal, 18)
+                TransformerModelDownloadControls(model: model)
+                    .padding(18)
             }
         }
-        .padding(18)
         .frame(maxWidth: .infinity, alignment: .leading)
         .pillSurface(cornerRadius: 20, isSelected: isSelected)
     }
 
-    private var canShowTransformerStatus: Bool {
-        variant == .transformer && !isBlockedByDevice && !isLockedByPremium
+    private var isSelected: Bool {
+        model.selectedModelVariant == variant
     }
 
-    private var showsDownloadStatus: Bool {
-        guard canShowTransformerStatus, let downloadPhase else { return false }
-        switch downloadPhase {
-        case .checking, .waitingForTrafficConfirmation, .downloading, .installing, .failed:
-            return true
-        case .notDownloaded, .ready:
-            return false
-        }
+    private var isBlockedByDevice: Bool {
+        variant == .transformer && !model.isTransformerDeviceSupported
     }
 
-    private var showsAction: Bool {
-        guard !isBlockedByDevice, !isSwitchingTo else { return false }
-        if showsDownloadStatus {
-            if case .failed = downloadPhase { return true }
-            return false
-        }
-        return !isSelected || updateStatusText != nil
+    private var isLockedByPremium: Bool {
+        variant == .transformer && !model.premium.isUnlocked
     }
 
-    private var actionTitle: String {
-        if isLockedByPremium { return String(localized: "解锁 Sift Signal") }
-        if case .failed = downloadPhase { return String(localized: "重试下载") }
-        if updateStatusText != nil { return String(localized: "查看更新") }
-        if variant == .classic { return String(localized: "使用经典模型") }
-        if downloadPhase == .ready { return String(localized: "使用 Sift Signal") }
-        return String(localized: "下载并使用")
-    }
-
-    private var actionSymbol: String {
-        if isLockedByPremium { return "lock.open" }
-        if case .failed = downloadPhase { return "arrow.clockwise" }
-        if updateStatusText != nil { return "arrow.right" }
-        if variant == .classic || downloadPhase == .ready { return "checkmark" }
-        return "arrow.down.circle"
-    }
-
-    private var actionSizeText: String? {
-        guard canShowTransformerStatus, downloadPhase != .ready, updateStatusText == nil else { return nil }
-        return downloadSizeText
+    private var canSelect: Bool {
+        guard model.isModelVariantAvailable(variant),
+              !model.isSwitchingModelVariant, !model.isClearingTransformerModel,
+              !model.isTransformerUpdateBusy || (variant == .classic && model.isAutomaticTransformerUpdateActive)
+        else { return false }
+        return variant == .classic || isLockedByPremium || model.isTransformerModelAvailable
     }
 }
 
-/// Shared by the picker and detail page so every entry point shows the same
-/// transfer progress and keeps cancellation separate from model selection.
+/// Download controls stay separate from the tappable model row.
 private struct ModelDownloadStatusView: View {
     let phase: TransformerModelDownloadPhase
     let progress: TransformerModelDownloadProgress?
@@ -660,58 +572,19 @@ private struct ModelDownloadActionButton: View {
     }
 }
 
-private struct TransformerModelDetailView: View {
+private struct TransformerModelDownloadControls: View {
     @Bindable var model: SiftAppModel
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
-                VStack(alignment: .leading, spacing: 20) {
-                    HStack(alignment: .top, spacing: 14) {
-                        Image(systemName: ModelVariant.transformer.symbol)
-                            .font(.system(size: 24, weight: .semibold))
-                            .foregroundStyle(Color.siftMint)
-                            .frame(width: 52, height: 52)
-                            .background(Color.siftMint.opacity(0.12), in: RoundedRectangle(cornerRadius: 14))
-                            .accessibilityHidden(true)
-                        VStack(alignment: .leading, spacing: 6) {
-                            Text(String(localized: "Sift Signal"))
-                                .font(.title3.weight(.semibold))
-                            Text(String(localized: "多语言 · 不支持本地微调"))
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-
-                    VStack(spacing: 14) {
-                        if let version = model.installedTransformerDisplayVersion {
-                            modelDetailRow(String(localized: "当前版本"), value: version)
-                        }
-                        if let version = model.transformerUpdateVersionForDisplay {
-                            modelDetailRow(String(localized: "最新版本"), value: version)
-                        }
-                        if let size = model.transformerDownloadByteCountText {
-                            modelDetailRow(String(localized: "下载大小"), value: size)
-                        }
-                    }
-                }
-                .padding(20)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .cardSurface()
-
-                VStack(alignment: .leading, spacing: 16) {
-                    updateAction
-                }
-                .padding(20)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .cardSurface()
+        VStack(alignment: .leading, spacing: 14) {
+            if let version = model.transformerUpdateVersionForDisplay {
+                modelDetailRow(String(localized: "最新版本"), value: version)
             }
-            .padding(16)
+            updateAction
         }
-        .scrollIndicators(.hidden)
-        .background(AtmosphericBackground())
-        .navigationTitle(String(localized: "模型详情"))
-        .toolbarTitleDisplayMode(.inline)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .disabled(model.isSwitchingModelVariant || model.isClearingTransformerModel
+                  || !model.isModelVariantAvailable(.transformer))
     }
 
     private func modelDetailRow(_ title: String, value: String) -> some View {
@@ -740,8 +613,6 @@ private struct TransformerModelDetailView: View {
                 progress: model.transformerDownloadProgress,
                 cancel: model.canCancelTransformerDownload ? { model.cancelPendingTransformerDownload() } : nil
             )
-        } else if model.isSwitchingModelVariant {
-            ProgressView(String(localized: "正在切换模型…"))
         } else if model.isTransformerAppUpdateRequired {
             appUpdateButton
         } else if case .requiresAppUpdate = model.transformerUpdateState {
@@ -765,7 +636,7 @@ private struct TransformerModelDetailView: View {
             Label(String(localized: "此模型与当前设备不兼容"), systemImage: "exclamationmark.triangle")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
-        } else if !model.isTransformerModelDownloaded {
+        } else if !model.isTransformerModelAvailable {
             ModelDownloadActionButton(
                 title: String(localized: "下载并使用"),
                 symbol: "arrow.down.circle",
@@ -784,9 +655,11 @@ private struct TransformerModelDetailView: View {
             Text(String(localized: "暂时无法检查更新"))
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
-            ModelDownloadActionButton(title: String(localized: "重试"), symbol: "arrow.clockwise") {
+            Button(String(localized: "重试")) {
                 model.checkForTransformerUpdate(force: true)
             }
+            .buttonStyle(.plain)
+            .foregroundStyle(Color.siftMint)
         }
     }
 
@@ -803,9 +676,11 @@ private struct TransformerModelDetailView: View {
             Text(String(localized: "最新的 Sift Signal 需要新版 App。更新 App 后即可继续下载模型。"))
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
-            ModelDownloadActionButton(title: String(localized: "更新 App"), symbol: "arrow.up.circle") {
+            Button(String(localized: "更新 App")) {
                 model.downloadTransformerUpdate()
             }
+            .buttonStyle(.plain)
+            .foregroundStyle(Color.siftMint)
         }
     }
 }
