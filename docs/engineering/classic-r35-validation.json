@@ -1,0 +1,329 @@
+{
+  "schemaVersion": 1,
+  "version": "maxent-generalization-v52-full-r35",
+  "modelSHA256": "e1ba529cb8f84ef26fe4630b5b2c9925c5f45e0ef6bbf9fd6257b17a8f2d39bf",
+  "sourceModelBytes": 539242,
+  "trainingRows": 16547,
+  "trainingData": {
+    "inputSHA256": "ffe727cdd3219717f605bd0b21557a3d01af29e8fb2a3b07a78705e6fbbc9908",
+    "splitSeed": 29,
+    "validationFraction": 0
+  },
+  "allSuitesNonRegressingAgainstR32AndR34": true,
+  "suites": [
+    {
+      "name": "classification-regressions",
+      "rows": 487,
+      "sha256": "9df27460e563b5878f5397a9844babf7ebc60a6b5d593c1c41abcd21dcc69d73",
+      "rawAccuracyPercent": {
+        "r32": 98.97,
+        "r34": 98.97,
+        "r35": 98.97
+      }
+    },
+    {
+      "name": "promotion-regressions",
+      "rows": 150,
+      "sha256": "a413cf60a19654d736e11b1543ba9fbe703450430c35cf808911ead436a86902",
+      "rawAccuracyPercent": {
+        "r32": 98.0,
+        "r34": 98.67,
+        "r35": 98.67
+      }
+    },
+    {
+      "name": "billing-card-regressions",
+      "rows": 30,
+      "sha256": "68ffa6bae19374a57ad87721ce9c4b0ec98f36b7d53663bdec33a32e2900a9ad",
+      "rawAccuracyPercent": {
+        "r32": 100.0,
+        "r34": 100.0,
+        "r35": 100.0
+      }
+    },
+    {
+      "name": "conversation-regressions",
+      "rows": 30,
+      "sha256": "ed5d5d335c5df80bec62ae8865b76b656785982aa7c5e5e4496ead70e2b7759c",
+      "rawAccuracyPercent": {
+        "r32": 100.0,
+        "r34": 100.0,
+        "r35": 100.0
+      }
+    },
+    {
+      "name": "feizhu-boundary",
+      "rows": 14,
+      "sha256": "f552fc2fbc976dfdeed56849607cd614f36fc99858ee62457132ec33ea2478aa",
+      "rawAccuracyPercent": {
+        "r32": 100.0,
+        "r34": 100.0,
+        "r35": 100.0
+      }
+    },
+    {
+      "name": "cruise-ticketing-boundary",
+      "rows": 9,
+      "sha256": "024d4fa2497f8a0b06e41a2181ea1fcdf09a28cb56be84a279a0b826d8dcf8fa",
+      "rawAccuracyPercent": {
+        "r32": 100.0,
+        "r34": 100.0,
+        "r35": 100.0
+      }
+    },
+    {
+      "name": "generalization-blind-v1",
+      "rows": 37,
+      "sha256": "c154b51affdb038f60e85cc47064634c295fa6b32d680f714d15547a36241b2a",
+      "rawAccuracyPercent": {
+        "r32": 100.0,
+        "r34": 100.0,
+        "r35": 100.0
+      }
+    },
+    {
+      "name": "generalization-acceptance-v1",
+      "rows": 45,
+      "sha256": "ff6aeac8200a869883226adc5189fbf8f534467738fa48410f25b79d160ae522",
+      "rawAccuracyPercent": {
+        "r32": 97.78,
+        "r34": 100.0,
+        "r35": 100.0
+      }
+    },
+    {
+      "name": "generalization-acceptance-v2",
+      "rows": 60,
+      "sha256": "abeb4bc614e83a66c0f976ae72f6a32a09091a8c594afd72c2897640953ae70d",
+      "rawAccuracyPercent": {
+        "r32": 91.67,
+        "r34": 93.33,
+        "r35": 93.33
+      }
+    },
+    {
+      "name": "generalization-acceptance-v3",
+      "rows": 60,
+      "sha256": "98a78e5d8136fe483072e5a860726bcae3b024951e57ee83ae8282d5f4f53d14",
+      "rawAccuracyPercent": {
+        "r32": 98.33,
+        "r34": 100.0,
+        "r35": 100.0
+      }
+    },
+    {
+      "name": "generalization-acceptance-v4",
+      "rows": 60,
+      "sha256": "b62425f4add6493a2ef8911f06b9e4dc26708810bf1b509b0972d75f4b951235",
+      "rawAccuracyPercent": {
+        "r32": 96.67,
+        "r34": 98.33,
+        "r35": 98.33
+      }
+    },
+    {
+      "name": "generalization-acceptance-v5",
+      "rows": 60,
+      "sha256": "6220eea24795c6b580d3026855c6020796c2e9ca3ab1803de2cbb8ec7bbf19b9",
+      "rawAccuracyPercent": {
+        "r32": 93.33,
+        "r34": 91.67,
+        "r35": 93.33
+      }
+    },
+    {
+      "name": "generalization-acceptance-v6",
+      "rows": 60,
+      "sha256": "a0f93c39ea644bb6539a0b383b3e6794a40466c37450bfc382d0cfd8e8c5b263",
+      "rawAccuracyPercent": {
+        "r32": 100.0,
+        "r34": 100.0,
+        "r35": 100.0
+      }
+    },
+    {
+      "name": "generalization-acceptance-v7",
+      "rows": 60,
+      "sha256": "47b5eb1ebbe25e27e899aaa5c727a16be79362814c52a778e1259fe9e8cfc59c",
+      "rawAccuracyPercent": {
+        "r32": 98.33,
+        "r34": 100.0,
+        "r35": 100.0
+      }
+    },
+    {
+      "name": "generalization-acceptance-v8",
+      "rows": 60,
+      "sha256": "e6b051d0b63f0dbc417b76e2dca9c2ca25c84da16fa7c86f2743269b07067d03",
+      "rawAccuracyPercent": {
+        "r32": 100.0,
+        "r34": 100.0,
+        "r35": 100.0
+      }
+    },
+    {
+      "name": "generalization-acceptance-v9",
+      "rows": 60,
+      "sha256": "0e759f81c9792ff235ebeb7e23575068b46fd40791fd1a20896f195c27070053",
+      "rawAccuracyPercent": {
+        "r32": 95.0,
+        "r34": 95.0,
+        "r35": 95.0
+      }
+    },
+    {
+      "name": "generalization-acceptance-v10",
+      "rows": 60,
+      "sha256": "ee1c691d9c2a77c8dcc006ee25efe5878dc93919b248243c37baa84f29fb5afe",
+      "rawAccuracyPercent": {
+        "r32": 98.33,
+        "r34": 98.33,
+        "r35": 98.33
+      }
+    },
+    {
+      "name": "generalization-acceptance-v11",
+      "rows": 81,
+      "sha256": "39b72eb34dc3aa442078bafc7a6063a376de3c477ccd4c7c4decc63069647475",
+      "rawAccuracyPercent": {
+        "r32": 95.06,
+        "r34": 97.53,
+        "r35": 97.53
+      }
+    },
+    {
+      "name": "generalization-acceptance-v12",
+      "rows": 75,
+      "sha256": "eb5fef397426100c7ac238c0faf79669c361ea2657acf69bd4280814b254d8c4",
+      "rawAccuracyPercent": {
+        "r32": 98.67,
+        "r34": 100.0,
+        "r35": 100.0
+      }
+    },
+    {
+      "name": "generalization-acceptance-v13",
+      "rows": 75,
+      "sha256": "911010d18c9d39d4b865775d06d707b89a5324d2d8249f76b8b8465a769e1bcb",
+      "rawAccuracyPercent": {
+        "r32": 97.33,
+        "r34": 100.0,
+        "r35": 100.0
+      }
+    },
+    {
+      "name": "generalization-acceptance-v14",
+      "rows": 75,
+      "sha256": "87d294873544eba757f1410d83ee7d8ed01dca863b4ad6757adbd9a21590d94d",
+      "rawAccuracyPercent": {
+        "r32": 96.0,
+        "r34": 98.67,
+        "r35": 98.67
+      }
+    },
+    {
+      "name": "generalization-acceptance-v15",
+      "rows": 75,
+      "sha256": "9a5b6b1e4a3844dcbee1575fef33225fd7b02f1648363003358573ff7a299c86",
+      "rawAccuracyPercent": {
+        "r32": 98.67,
+        "r34": 100.0,
+        "r35": 100.0
+      }
+    },
+    {
+      "name": "generalization-acceptance-v16",
+      "rows": 105,
+      "sha256": "05e32276ef3816d7605f8b9830898ff8e29076eb02cf9047857fec19f13c4edc",
+      "rawAccuracyPercent": {
+        "r32": 96.19,
+        "r34": 99.05,
+        "r35": 99.05
+      }
+    },
+    {
+      "name": "generalization-acceptance-v17",
+      "rows": 24,
+      "sha256": "62849aecf5c56ebb406b282f207e986b799c3aa42f6efa7ee266e69f5d2a1de5",
+      "rawAccuracyPercent": {
+        "r32": 95.83,
+        "r34": 100.0,
+        "r35": 100.0
+      }
+    },
+    {
+      "name": "generalization-acceptance-v18",
+      "rows": 30,
+      "sha256": "9066eb8dc50ed6fb866b00f2e161fb7fb3acc95234f3416c72f4037ee0cbedff",
+      "rawAccuracyPercent": {
+        "r32": 96.67,
+        "r34": 96.67,
+        "r35": 96.67
+      }
+    },
+    {
+      "name": "generalization-acceptance-v19",
+      "rows": 45,
+      "sha256": "294c9a3c25245a5a55b120d06fbef1d827bece108f063ac32ef2bc45bf6fc10d",
+      "rawAccuracyPercent": {
+        "r32": 93.33,
+        "r34": 93.33,
+        "r35": 93.33
+      }
+    },
+    {
+      "name": "generalization-acceptance-v20",
+      "rows": 30,
+      "sha256": "bb5d06eb7aa8a5800267382ff71ec828b813e6eceea4867038a467e57377ea5b",
+      "rawAccuracyPercent": {
+        "r32": 90.0,
+        "r34": 93.33,
+        "r35": 93.33
+      }
+    }
+  ],
+  "core": {
+    "benignOrTransactionToJunk": 0,
+    "billing": {
+      "actionAccuracy": 1,
+      "count": 30,
+      "labelAccuracy": 0.9333333333333333,
+      "rawLabelAccuracy": 1
+    },
+    "confidenceThreshold": 0.62,
+    "conversation": {
+      "actionAccuracy": 1,
+      "count": 30,
+      "labelAccuracy": 1,
+      "rawLabelAccuracy": 1
+    },
+    "datasetSHA256": {
+      "billing": "68ffa6bae19374a57ad87721ce9c4b0ec98f36b7d53663bdec33a32e2900a9ad",
+      "conversation": "ed5d5d335c5df80bec62ae8865b76b656785982aa7c5e5e4496ead70e2b7759c",
+      "fixed": "9df27460e563b5878f5397a9844babf7ebc60a6b5d593c1c41abcd21dcc69d73",
+      "promotion": "a413cf60a19654d736e11b1543ba9fbe703450430c35cf808911ead436a86902"
+    },
+    "fixed": {
+      "actionAccuracy": 0.9917864476386037,
+      "count": 487,
+      "labelAccuracy": 0.971252566735113,
+      "rawLabelAccuracy": 0.9897330595482546
+    },
+    "modelBytes": 539242,
+    "modelSHA256": "e1ba529cb8f84ef26fe4630b5b2c9925c5f45e0ef6bbf9fd6257b17a8f2d39bf",
+    "promotion": {
+      "actionAccuracy": 1,
+      "count": 150,
+      "labelAccuracy": 1,
+      "rawLabelAccuracy": 0.9866666666666667
+    },
+    "suiteVersion": 2
+  },
+  "additionalGeneralization": {
+    "actionAccuracy": 1,
+    "count": 1237,
+    "labelAccuracy": 0.9991915925626516,
+    "rawLabelAccuracy": 0.9814066289409863
+  },
+  "scope": "macOS Core ML inference on established isolated regression suites; not a physical incoming-SMS test"
+}

@@ -311,12 +311,19 @@ struct ReleaseManifest: Encodable {
     let algorithm: String
     let language: String
     let labels: [String]
+    let trainingData: TrainingDataProvenance
     let trainingCount: Int
     let validationCount: Int
     let testCount: Int
     let trainingClassificationError: Double
     let validationClassificationError: Double?
     let testAccuracy: Double?
+}
+
+struct TrainingDataProvenance: Encodable {
+    let inputSHA256: String
+    let splitSeed: UInt64
+    let validationFraction: Double
 }
 
 @main
@@ -466,6 +473,11 @@ enum SiftAppleTrainer {
             algorithm: algorithmResult.algorithmName,
             language: trainingLanguage?.rawValue ?? "multilingual",
             labels: labels,
+            trainingData: TrainingDataProvenance(
+                inputSHA256: try sha256(ofFile: inputURL),
+                splitSeed: arguments.splitSeed,
+                validationFraction: arguments.validationFraction
+            ),
             trainingCount: split.training.count,
             validationCount: split.validation.count,
             testCount: testRows.count,

@@ -1,4 +1,5 @@
 import CoreML
+import CryptoKit
 import Foundation
 import MessageFilterCore
 import NaturalLanguage
@@ -81,6 +82,9 @@ private struct DatasetReport: Encodable {
 
 private struct Report: Encodable {
     let suiteVersion: Int
+    let modelSHA256: String
+    let datasetSHA256: [String: String]
+    let confidenceThreshold: Double
     let modelBytes: Int64
     let fixed: DatasetReport
     let promotion: DatasetReport
@@ -204,6 +208,14 @@ private func run() async throws {
     let unsafeJunk = fixed.unsafeJunk + promotion.unsafeJunk + billing.unsafeJunk + conversation.unsafeJunk
     let report = Report(
         suiteVersion: 2,
+        modelSHA256: try sha256(arguments.model),
+        datasetSHA256: try [
+            "fixed": sha256(arguments.fixed),
+            "promotion": sha256(arguments.promotion),
+            "billing": sha256(arguments.billing),
+            "conversation": sha256(arguments.conversation)
+        ],
+        confidenceThreshold: arguments.confidenceThreshold,
         modelBytes: modelBytes,
         fixed: fixed.report,
         promotion: promotion.report,
@@ -234,6 +246,10 @@ private func run() async throws {
     guard unsafeJunk == 0 else {
         throw SuiteError.unsafeActionGateFailed
     }
+}
+
+private func sha256(_ url: URL) throws -> String {
+    SHA256.hash(data: try Data(contentsOf: url)).map { String(format: "%02x", $0) }.joined()
 }
 
 do {

@@ -1,0 +1,9 @@
+{"text":"城际铁路运行提示：前方区间正在检修，本站发车顺延，旅客请继续在原候车区等待。","label":"travel.transport","source":"augmentation:boundary:classic-v52-rail","language":"zh"}
+{"text":"Intercity rail service update: maintenance ahead is holding departures at this station. Passengers should remain in the current waiting area.","label":"travel.transport","source":"augmentation:boundary:classic-v52-rail","language":"en"}
+{"text":"都市間鉄道の運行案内です。前方区間の保守作業で当駅の発車を見合わせています。現在の待合室でお待ちください。","label":"travel.transport","source":"augmentation:boundary:classic-v52-rail","language":"ja"}
+{"text":"铁路调度通报：动车组接受临时安全检查，发车时间推迟，检票安排暂按原计划执行。","label":"travel.transport","source":"augmentation:boundary:classic-v52-rail","language":"zh"}
+{"text":"Rail operations bulletin: a temporary safety check on the train is postponing departure. Boarding arrangements currently remain as scheduled.","label":"travel.transport","source":"augmentation:boundary:classic-v52-rail","language":"en"}
+{"text":"鉄道の運行情報：編成の臨時安全確認により発車が遅れています。乗車案内は現時点では予定どおりです。","label":"travel.transport","source":"augmentation:boundary:classic-v52-rail","language":"ja"}
+{"text":"因列车晚点提交的改签已受理，您的原车票已换为次日班次，新客票信息可在预订账户查看。","label":"travel.ticketing","source":"augmentation:boundary:classic-v52-rail","language":"zh"}
+{"text":"Your rebooking request following the train delay was accepted. The original ticket was exchanged for tomorrow's service and the new ticket is in your booking account.","label":"travel.ticketing","source":"augmentation:boundary:classic-v52-rail","language":"en"}
+{"text":"列車遅延による予約変更を受け付けました。元のきっぷを翌日の便へ交換し、新しい乗車券を予約アカウントに掲載しました。","label":"travel.ticketing","source":"augmentation:boundary:classic-v52-rail","language":"ja"}

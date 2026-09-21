@@ -1,14 +1,14 @@
 {
   "schemaVersion": 1,
-  "release": "maxent-generalization-v50-seed29-r32+pii-boundary-v8",
+  "release": "maxent-generalization-v52-full-r35+pii-boundary-v8",
   "archive": {
-    "url": "https://sift.alkinum.io/models/releases/ios-builtins/maxent-generalization-v50-seed29-r32-pii-boundary-v8.zip",
-    "sha256": "f4bc85b7d2a84371019ebf6c8d07a498dbdd56a05c22dbfd0a4e357125adc18f"
+    "url": "https://sift.alkinum.io/models/releases/ios-builtins/maxent-generalization-v52-full-r35-pii-boundary-v8.zip",
+    "sha256": "5b6584d32637049db853df42b9b0e54bd915a7c7266109b32e269da827be9a2d"
   },
   "classic": {
-    "version": "maxent-generalization-v50-seed29-r32",
-    "modelSHA256": "f16c2149e2d7ec18fb81cd6f11f12854bdd9567ed2add912e5aa830cf3899491",
-    "manifestSHA256": "2fe104ab66777d06fd7632b3f7ef5cd20670b3c7fbd220e1d6fb9183f109ce85"
+    "version": "maxent-generalization-v52-full-r35",
+    "modelSHA256": "e1ba529cb8f84ef26fe4630b5b2c9925c5f45e0ef6bbf9fd6257b17a8f2d39bf",
+    "manifestSHA256": "cba9d73a32f084420a43faddcb5c6f92292751603059aa57b1b1a73c2152cfa3"
   },
   "pii": {
     "version": "pii-boundary-v8",

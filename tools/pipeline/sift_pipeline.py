@@ -5,7 +5,9 @@ One command drives the whole flow — dataset download/refresh, CloudKit sample
 export, quality curation + coverage audit, both model trainings (with optional
 checkpoint resume), and Core ML installation into the iOS app:
 
-    python3 tools/pipeline/sift_pipeline.py all --install-ios
+    python3 tools/pipeline/sift_pipeline.py all --install-ios \
+        --version-classic NEW_VERSION \
+        --classic-baseline-model /path/to/published/SiftSMSClassifier.mlmodel
 
 Stages (run individually with `--only`, or drop some with `--skip`):
 
@@ -39,6 +41,7 @@ failed stage can be re-run in isolation.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import re
@@ -48,6 +51,8 @@ import sys
 import time
 import unicodedata
 from pathlib import Path
+
+from classic_gate import require_non_regression
 
 STAGES = ["fetch-public", "fetch-remote", "curate", "augment", "prune", "train-classic", "train-transformer", "distill-transformer", "quantize-transformer"]
 
@@ -247,6 +252,9 @@ def parse_arguments() -> argparse.Namespace:
         help="Create ML classic algorithm; maxent is the current validated default",
     )
     training.add_argument("--split-seed-classic", type=int, default=42, help="classic model holdout split seed")
+    training.add_argument("--classic-training-input", type=Path, default=None, help="reviewed Classic-only corpus; isolated against all external holdouts")
+    training.add_argument("--validation-fraction-classic", type=float, default=0.15, help="internal validation fraction; 0 trains on all leak-free rows")
+    training.add_argument("--classic-baseline-model", type=Path, default=None, help="published Classic .mlmodel matching BuiltinModels.lock.json; required for --install-ios")
     training.add_argument("--version-transformer", default="signal-v4-generalization-v50-r32-distilled-12l")
     training.add_argument("--model-abi", default="sift-signal-v1")
     training.add_argument("--backbone", default="jhu-clsp/mmBERT-small", help="transformer backbone")
@@ -527,15 +535,28 @@ def stage_prune(arguments: argparse.Namespace) -> None:
 
 def stage_train_classic(arguments: argparse.Namespace) -> None:
     require_tool("swift", "Install Xcode command line tools.")
-    if not TRAIN_SET.exists():
-        raise SystemExit(f"error: {TRAIN_SET} missing; run the augment and prune stages first")
-    require_holdout_isolation(TRAIN_SET)
+    training_set = (arguments.classic_training_input or TRAIN_SET).resolve()
+    if not training_set.exists():
+        raise SystemExit(f"error: {training_set} missing; run the augment and prune stages first")
+    require_holdout_isolation(training_set)
+    baseline_model = arguments.classic_baseline_model
+    if arguments.install_ios and baseline_model is None:
+        raise SystemExit("error: --install-ios requires --classic-baseline-model from the published built-in bundle")
+    if baseline_model is not None:
+        lock = json.loads((REPO_ROOT / "apps/ios/BuiltinModels.lock.json").read_text())
+        if not baseline_model.is_file() or hashlib.sha256(baseline_model.read_bytes()).hexdigest() != lock["classic"]["modelSHA256"]:
+            raise SystemExit("error: Classic baseline must match BuiltinModels.lock.json")
+        if baseline_model.resolve() == (CLASSIC_OUT / "SiftSMSClassifier.mlmodel").resolve():
+            raise SystemExit("error: Classic baseline must be outside the candidate output directory")
+        if arguments.install_ios and arguments.version_classic == lock["classic"]["version"]:
+            raise SystemExit("error: Classic candidate needs a new version before installation")
     command = [
         "swift", "run", "-q", "SiftAppleTrainer",
-        "--input", str(TRAIN_SET),
+        "--input", str(training_set),
         "--out", str(CLASSIC_OUT),
         "--algorithm", arguments.algorithm_classic,
         "--split-seed", str(arguments.split_seed_classic),
+        "--validation-fraction", str(arguments.validation_fraction_classic),
         "--version", arguments.version_classic,
         "--test-input", str(PROMOTION_TEST_SET),
     ]
@@ -555,6 +576,28 @@ def stage_train_classic(arguments: argparse.Namespace) -> None:
         ],
         cwd=REPO_ROOT,
     )
+    if baseline_model is not None:
+        baseline_report = CLASSIC_OUT / "published-baseline-report.json"
+        run(
+            [
+                "swift", "run", "--package-path", str(REPO_ROOT / "apps/ios"),
+                "ClassicMessageFilterArtifactTests",
+                "--model", str(baseline_model.resolve()),
+                "--fixed", str(CLASSIFICATION_TEST_SET),
+                "--promotion", str(PROMOTION_TEST_SET),
+                "--billing", str(BILLING_CARD_TEST_SET),
+                "--conversation", str(CONVERSATION_TEST_SET),
+                "--output", str(baseline_report),
+            ],
+            cwd=REPO_ROOT,
+        )
+        candidate = json.loads((CLASSIC_OUT / "classic-message-filter-report.json").read_text())
+        baseline = json.loads(baseline_report.read_text())
+        for report, model in ((baseline, baseline_model), (candidate, CLASSIC_OUT / "SiftSMSClassifier.mlmodel")):
+            if report.get("modelSHA256") != hashlib.sha256(model.read_bytes()).hexdigest():
+                raise SystemExit("error: Classic comparison report does not match its model")
+        comparison = require_non_regression(candidate, baseline)
+        (CLASSIC_OUT / "baseline-comparison.json").write_text(json.dumps(comparison, indent=2) + "\n")
     # Reuse the strictest artifact-suite slots to require every reviewed
     # boundary row to keep both its raw label and production MessageFilter
     # action. Duplicating each set here also exercises the unsafe-junk gate.

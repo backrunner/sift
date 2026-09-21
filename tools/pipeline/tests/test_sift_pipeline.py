@@ -11,6 +11,36 @@ import sift_pipeline as pipeline  # noqa: E402
 
 
 class HoldoutIsolationTests(unittest.TestCase):
+    def test_classic_install_requires_published_baseline_before_training(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            training = Path(directory) / "training.ndjson"
+            self.write_rows(training, ["A distinct training example"])
+            with (
+                patch.object(sys, "argv", ["sift_pipeline.py", "train-classic", "--install-ios"]),
+                patch.object(pipeline, "TRAIN_SET", training),
+                patch.object(pipeline, "require_tool"),
+                patch.object(pipeline, "run") as run,
+            ):
+                with self.assertRaisesRegex(SystemExit, "requires --classic-baseline-model"):
+                    pipeline.stage_train_classic(pipeline.parse_arguments())
+                run.assert_not_called()
+
+    def test_classic_install_rejects_unpublished_baseline(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            training = Path(directory) / "training.ndjson"
+            model = Path(directory) / "local-r33.mlmodel"
+            self.write_rows(training, ["A distinct training example"])
+            model.write_bytes(b"unpublished model")
+            with (
+                patch.object(sys, "argv", ["sift_pipeline.py", "train-classic", "--install-ios", "--classic-baseline-model", str(model)]),
+                patch.object(pipeline, "TRAIN_SET", training),
+                patch.object(pipeline, "require_tool"),
+                patch.object(pipeline, "run") as run,
+            ):
+                with self.assertRaisesRegex(SystemExit, "must match BuiltinModels.lock.json"):
+                    pipeline.stage_train_classic(pipeline.parse_arguments())
+                run.assert_not_called()
+
     def test_transformer_defaults_preserve_full_release_model(self) -> None:
         with patch.object(sys, "argv", ["sift_pipeline.py", "train-transformer"]):
             arguments = pipeline.parse_arguments()
