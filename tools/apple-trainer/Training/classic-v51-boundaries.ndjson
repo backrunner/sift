@@ -1,0 +1,66 @@
+{"text":"信用卡客户可在本行礼遇专区兑换新上架的厨房小电器，本周兑换所需积分下调。","label":"promotion","source":"augmentation:boundary:classic-v51","language":"zh"}
+{"text":"Cardholders can browse newly added kitchen appliances in our rewards shop; fewer points are needed during this week's event.","label":"promotion","source":"augmentation:boundary:classic-v51","language":"en"}
+{"text":"カード会員向けの特典ショップに調理家電が登場しました。今週の交換キャンペーンでは必要ポイントが少なくなります。","label":"promotion","source":"augmentation:boundary:classic-v51","language":"ja"}
+{"text":"银行会员礼品目录新增咖啡机与出行券，登录活动页使用积分兑换，还有限量赠品。","label":"promotion","source":"augmentation:boundary:classic-v51","language":"zh"}
+{"text":"Our bank's member gift catalog now includes coffee makers and travel vouchers. Redeem your points during the campaign for a limited bonus gift.","label":"promotion","source":"augmentation:boundary:classic-v51","language":"en"}
+{"text":"銀行の会員ギフト一覧にコーヒーメーカーと旅行券が加わりました。期間中にポイントで交換すると数量限定のプレゼントが付きます。","label":"promotion","source":"augmentation:boundary:classic-v51","language":"ja"}
+{"text":"您的信用卡消费奖励已入账，新增积分已合并到本期账户余额，可在账单中核对。","label":"transaction.points","source":"augmentation:boundary:classic-v51","language":"zh"}
+{"text":"The rewards from your card purchases have posted. The new points are included in this statement's balance for reconciliation.","label":"transaction.points","source":"augmentation:boundary:classic-v51","language":"en"}
+{"text":"カード利用分のポイントが付与されました。今回の明細の残高に反映されていますので、ご確認ください。","label":"transaction.points","source":"augmentation:boundary:classic-v51","language":"ja"}
+{"text":"上次礼品兑换扣除的积分已退回，账户变动记录和剩余积分已同步更新。","label":"transaction.points","source":"augmentation:boundary:classic-v51","language":"zh"}
+{"text":"Points deducted for your cancelled gift redemption have been returned. Your activity history and remaining balance are updated.","label":"transaction.points","source":"augmentation:boundary:classic-v51","language":"en"}
+{"text":"取り消した特典交換のポイントを返還しました。利用履歴と現在のポイント残高を更新しています。","label":"transaction.points","source":"augmentation:boundary:classic-v51","language":"ja"}
+{"text":"奇幻游戏开启夏季特卖，商店中的冒险补给包与角色外观在活动期间享折扣。","label":"promotion","source":"augmentation:boundary:classic-v51","language":"zh"}
+{"text":"Summer bargains have arrived in the fantasy game's shop. Adventure supplies and character cosmetics are discounted throughout the event.","label":"promotion","source":"augmentation:boundary:classic-v51","language":"en"}
+{"text":"ファンタジーゲームの夏セールが始まりました。開催中はショップの冒険用品とキャラクター衣装を割引価格で購入できます。","label":"promotion","source":"augmentation:boundary:classic-v51","language":"ja"}
+{"text":"装备交易集市举办玩家节，平台内已认证商家的成交服务费限时下调，欢迎选购。","label":"promotion","source":"augmentation:boundary:classic-v51","language":"zh"}
+{"text":"The equipment marketplace is hosting a player festival with lower service fees on purchases from verified sellers during the event.","label":"promotion","source":"augmentation:boundary:classic-v51","language":"en"}
+{"text":"装備マーケットのプレイヤー祭では、認証済み出品者から購入した際のサービス手数料を期間限定で引き下げます。","label":"promotion","source":"augmentation:boundary:classic-v51","language":"ja"}
+{"text":"您购买的冒险补给已发放至角色邮箱，支付凭证保存在游戏交易记录中。","label":"transaction.order","source":"augmentation:boundary:classic-v51","language":"zh"}
+{"text":"The adventure supplies you purchased were delivered to your character mailbox. The receipt is saved in the game's transaction history.","label":"transaction.order","source":"augmentation:boundary:classic-v51","language":"en"}
+{"text":"購入した冒険用品をキャラクターのメールボックスへお届けしました。領収書はゲーム内の購入履歴に保存されています。","label":"transaction.order","source":"augmentation:boundary:classic-v51","language":"ja"}
+{"text":"更换为运营商家庭共享新套餐，可获一年云存储服务并加送周末流量，现有用户也可办理。","label":"carrier.promotion","source":"augmentation:boundary:classic-v51","language":"zh"}
+{"text":"Move to the carrier's family sharing plan for a year of cloud storage and bonus weekend data. Existing subscribers can claim this offer too.","label":"carrier.promotion","source":"augmentation:boundary:classic-v51","language":"en"}
+{"text":"通信会社の家族シェアプランへの変更で、クラウド保存一年分と週末用の追加データが付きます。既存の契約者も対象です。","label":"carrier.promotion","source":"augmentation:boundary:classic-v51","language":"ja"}
+{"text":"手机套餐焕新活动开始，升档办理可领取影音联合会员和额外上网额度。","label":"carrier.promotion","source":"augmentation:boundary:classic-v51","language":"zh"}
+{"text":"Our mobile plan upgrade event includes a streaming subscription and extra browsing allowance when you switch to a higher tier.","label":"carrier.promotion","source":"augmentation:boundary:classic-v51","language":"en"}
+{"text":"携帯プランのアップグレード企画を実施中です。上位プランへ変更すると動画会員サービスと追加の通信容量を受け取れます。","label":"carrier.promotion","source":"augmentation:boundary:classic-v51","language":"ja"}
+{"text":"本周期的家庭共享流量使用量已超过八成，剩余额度及各成员用量可在运营商应用查看。","label":"carrier.data_reminder","source":"augmentation:boundary:classic-v51","language":"zh"}
+{"text":"Your family has used over four fifths of this cycle's shared data. Remaining allowance and each member's usage are shown in the carrier app.","label":"carrier.data_reminder","source":"augmentation:boundary:classic-v51","language":"en"}
+{"text":"今月の家族共有データは八割以上を使用しました。残りの容量と各回線の使用状況は通信会社のアプリで確認できます。","label":"carrier.data_reminder","source":"augmentation:boundary:classic-v51","language":"ja"}
+{"text":"您的包裹正在转送附近服务站，尚未开放领取，送达后将另发领取通知。","label":"life.express","source":"augmentation:boundary:classic-v51","language":"zh"}
+{"text":"Your parcel is being transferred to a nearby service point and is not ready for collection. A separate notice will confirm its arrival.","label":"life.express","source":"augmentation:boundary:classic-v51","language":"en"}
+{"text":"お荷物は最寄りのサービス拠点へ転送中で、まだ受け取れません。到着後に受取案内を別途お送りします。","label":"life.express","source":"augmentation:boundary:classic-v51","language":"ja"}
+{"text":"服务站已收妥包裹，现在可以前往领取，请向柜台出示本人取件凭证。","label":"life.pickup_code","source":"augmentation:boundary:classic-v51","language":"zh"}
+{"text":"The service point has received your parcel and it is ready to collect now. Show your collection credential at the counter.","label":"life.pickup_code","source":"augmentation:boundary:classic-v51","language":"en"}
+{"text":"サービス拠点でお荷物をお預かりしており、ただいま受取可能です。窓口で受取証をご提示ください。","label":"life.pickup_code","source":"augmentation:boundary:classic-v51","language":"ja"}
+{"text":"您已成功为账户添加身份验证器，后续登录需同时验证密码与动态口令。","label":"transaction.account_security","source":"augmentation:boundary:classic-v51","language":"zh"}
+{"text":"An authenticator was successfully linked to your account. Future sign-ins will require both your password and a rotating security token.","label":"transaction.account_security","source":"augmentation:boundary:classic-v51","language":"en"}
+{"text":"アカウントに認証アプリを登録しました。次回からのログインにはパスワードとワンタイム認証が必要です。","label":"transaction.account_security","source":"augmentation:boundary:classic-v51","language":"ja"}
+{"text":"航空公司通知：您的候补座位已确认，电子客票完成更新，请在出发当天携带有效证件办理登机。","label":"travel.ticketing","source":"augmentation:boundary:classic-v51","language":"zh"}
+{"text":"The airline has confirmed your waitlisted seat and updated the e-ticket. Bring valid identification for check-in on departure day.","label":"travel.ticketing","source":"augmentation:boundary:classic-v51","language":"en"}
+{"text":"航空会社からのお知らせです。空席待ちのお座席が確保でき、電子航空券を更新しました。出発当日は有効な身分証をお持ちください。","label":"travel.ticketing","source":"augmentation:boundary:classic-v51","language":"ja"}
+{"text":"客轮预约已确认，请在码头窗口出示购票所用证件领取登船凭证，原订单金额保持不变。","label":"travel.ticketing","source":"augmentation:boundary:classic-v51","language":"zh"}
+{"text":"Your passenger ferry reservation is confirmed. Present the ID used for booking at the port desk to collect your boarding document; the fare is unchanged.","label":"travel.ticketing","source":"augmentation:boundary:classic-v51","language":"en"}
+{"text":"旅客船の予約が確定しました。港の窓口で予約時の身分証を提示し、乗船証をお受け取りください。運賃に変更はありません。","label":"travel.ticketing","source":"augmentation:boundary:classic-v51","language":"ja"}
+{"text":"列车席位调整已生效，新的车厢座号已显示在铁路客户端，原乘车证件仍可直接验票。","label":"travel.ticketing","source":"augmentation:boundary:classic-v51","language":"zh"}
+{"text":"Your train seat reassignment has taken effect. The new carriage and seat appear in the rail app, and your original travel document remains valid at the gate.","label":"travel.ticketing","source":"augmentation:boundary:classic-v51","language":"en"}
+{"text":"列車の座席変更が反映されました。新しい号車と座席は鉄道アプリに表示され、元の乗車証で改札を通れます。","label":"travel.ticketing","source":"augmentation:boundary:classic-v51","language":"ja"}
+{"text":"陌生人冒充航空客服，要求把银行卡登录口令发给他，声称才能激活已购买的航班座位。","label":"spam","source":"augmentation:boundary:classic-v51","language":"zh"}
+{"text":"A stranger claiming to work for the airline demands your bank login password to activate a seat you already paid for.","label":"spam","source":"augmentation:boundary:classic-v51","language":"en"}
+{"text":"航空会社の担当を装う見知らぬ相手が、購入済みの座席を有効化するため銀行のログインパスワードを送るよう要求しています。","label":"spam","source":"augmentation:boundary:classic-v51","language":"ja"}
+{"text":"所谓船票补偿专员要求先向私人钱包转入审核金，并索取账户恢复密语后才肯退款。","label":"spam","source":"augmentation:boundary:classic-v51","language":"zh"}
+{"text":"An alleged ferry compensation officer demands a screening payment to a private wallet and your account recovery phrase before issuing any refund.","label":"spam","source":"augmentation:boundary:classic-v51","language":"en"}
+{"text":"船の補償担当を名乗る人物が、返金の前に個人ウォレットへの審査料送金とアカウント復元フレーズを要求しています。","label":"spam","source":"augmentation:boundary:classic-v51","language":"ja"}
+{"text":"已为您的铁路预订重新分配靠窗指定席，票款沿用原支付记录，不会生成新的付款订单。","label":"travel.ticketing","source":"augmentation:boundary:classic-v51","language":"zh"}
+{"text":"A window seat has been reassigned for your rail reservation. The original fare payment carries over without creating another charge.","label":"travel.ticketing","source":"augmentation:boundary:classic-v51","language":"en"}
+{"text":"ご予約の鉄道指定席を窓側へ振り替えました。お支払い済みの運賃を引き継ぐため、新たな決済は発生しません。","label":"travel.ticketing","source":"augmentation:boundary:classic-v51","language":"ja"}
+{"text":"您的列车订座已迁至相邻车厢，电子预订信息随之变更，无须补交票款或重新购买。","label":"travel.ticketing","source":"augmentation:boundary:classic-v51","language":"zh"}
+{"text":"Your reserved train seats have moved to the adjacent carriage. The electronic booking is amended without any fare supplement or new purchase.","label":"travel.ticketing","source":"augmentation:boundary:classic-v51","language":"en"}
+{"text":"列車の予約席を隣の車両へ移しました。電子予約情報も変更済みで、差額の支払いや買い直しは不要です。","label":"travel.ticketing","source":"augmentation:boundary:classic-v51","language":"ja"}
+{"text":"旅客席位变更申请已办理完毕，请按更新后的预订凭证就座，费用仍按原票结算。","label":"travel.ticketing","source":"augmentation:boundary:classic-v51","language":"zh"}
+{"text":"Your passenger seat amendment is complete. Please use the updated reservation document; the cost remains covered by the original ticket.","label":"travel.ticketing","source":"augmentation:boundary:classic-v51","language":"en"}
+{"text":"お席の変更手続が完了しました。更新された予約票に従ってご着席ください。料金は元のきっぷで精算済みです。","label":"travel.ticketing","source":"augmentation:boundary:classic-v51","language":"ja"}
+{"text":"受线路施工影响，城郊铁路今晚部分班次取消，车站将提供接驳公交，请留意现场广播。","label":"travel.transport","source":"augmentation:boundary:classic-v51","language":"zh"}
+{"text":"Track works will cancel some suburban rail services tonight. Stations will provide replacement buses; please follow local announcements.","label":"travel.transport","source":"augmentation:boundary:classic-v51","language":"en"}
+{"text":"線路工事のため、今夜の郊外線は一部運休します。各駅で代行バスを用意しますので、構内放送をご確認ください。","label":"travel.transport","source":"augmentation:boundary:classic-v51","language":"ja"}

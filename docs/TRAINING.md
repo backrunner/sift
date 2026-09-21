@@ -125,7 +125,8 @@ python3 tools/transformer-trainer/curate_dataset.py \
 
 ```bash
 pnpm pipeline -- train-classic --version-classic corpus-0.2 \
-  --algorithm-classic maxent --install-ios
+  --algorithm-classic maxent --install-ios \
+  --classic-baseline-model /path/to/published/SiftSMSClassifier.mlmodel
 ```
 
 `--language auto` trains as a single language when at least 90% of the corpus is
@@ -162,21 +163,25 @@ python3 tools/apple-trainer/Scripts/prepare_classic_candidate.py \
 ```
 
 The script rejects exact and digit-normalized near duplicates before either
-classic or transformer training. The published
-`maxent-generalization-v50-seed29-r32` archive is the immutable Xcode Cloud
-baseline. It has 53 labels and scores 98.97% raw fixed, 98.00% raw promotion
-(98.67% action), 100% billing/card raw and action, and 100% conversation. The
-reviewed Feizhu/cruise boundary suite is 100% with zero benign or transactional
-messages routed to junk. `BuiltinModels.lock.json` pins this archive together
-with the accepted `pii-boundary-v8` artifact.
+classic or transformer training. The current Classic
+`maxent-generalization-v52-full-r35` has 53 labels and scores 98.97% raw fixed,
+98.67% raw promotion (100% action), 100% billing/card raw and action, and 100%
+conversation. All 27 external suites are non-regressing against the previous
+published r32 and local r34. The reviewed Feizhu/cruise boundary suite is 100%
+with zero benign or transactional messages routed to junk.
+`BuiltinModels.lock.json` pins the archive together with `pii-boundary-v8`.
+See [the r35 release record](engineering/classic-r35-release.md) for corpus
+identity, detailed results and reproduction instructions.
 
 Classic candidates must keep billing/card raw accuracy at or above 90% and
 billing/card action accuracy at or above 95%.
 Generalization selection prioritizes production action behavior over the
-trainer's internal validation split. A candidate may lose at most three
-absolute percentage points against the released Classic baseline on an
-established external suite, but any benign or transactional message routed to
-junk is a hard failure regardless of aggregate accuracy. New shadow failures
+trainer's internal validation split. Fixed, Promotion, Billing/Card and
+Conversation must not regress against the published Classic in either raw
+labels or final actions. On the additional generalization suites, a candidate
+may lose at most three absolute percentage points against the release, but any
+benign or transactional message routed to junk is a hard failure regardless of
+aggregate accuracy. New shadow failures
 must be addressed with independently worded training variants while the shadow
 rows themselves remain isolated.
 
@@ -188,6 +193,21 @@ and unsafe junk-action gates pass. A second production action-suite pass then
 requires perfect raw-label and final-action accuracy, plus zero unsafe junk
 routes, on the reviewed Feizhu and cruise ticketing boundary sets before
 installation.
+
+Installation also requires `--classic-baseline-model` pointing to the source
+model from the published built-in ZIP. Its SHA-256 must match
+`BuiltinModels.lock.json`; the local `GeneratedModels` candidate is not an
+acceptable substitute. The pipeline evaluates both artifacts with the same
+runtime and holdouts and writes `baseline-comparison.json`. Reports bind the
+model hash, dataset hashes and confidence threshold so unrelated or stale
+scores cannot qualify a replacement. A new version is required for installation.
+
+Use `--classic-training-input PATH` for a separately reviewed Classic corpus;
+it still passes all holdout isolation checks. `--validation-fraction-classic 0`
+can train on all isolated training rows once external evaluation is available.
+This never adds external holdout rows to training. Trainer manifests record
+the input SHA-256, actual split seed and validation fraction instead of relying
+on a manually named version such as `seed29`.
 
 Training prints the weakest 12 labels and the top confusion pairs. Use those
 reports as the main improvement loop: add targeted templates or samples, then

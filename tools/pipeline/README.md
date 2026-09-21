@@ -6,7 +6,9 @@ Transformer remain separate release steps because they require evidence from
 real devices and an offline Ed25519 key:
 
 ```bash
-pnpm pipeline -- all --install-ios            # everything, fresh
+pnpm pipeline -- all --install-ios --version-classic NEW_VERSION \
+  --classic-baseline-model /path/to/published/SiftSMSClassifier.mlmodel
+                                            # fresh training, guarded Classic install
 pnpm pipeline -- all --skip fetch-remote      # offline (no CloudKit creds)
 pnpm pipeline -- curate --model-filter off    # re-run one stage, light mode
 pnpm pipeline -- finetune                     # resume last checkpoint, low LR

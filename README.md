@@ -43,7 +43,7 @@ remote contribution from inside the app.
 | **PII-aware samples** | Deterministic redaction rules always run, and an optional Core ML PII detector can widen recall. |
 | **Revocable contribution** | CloudKit samples carry no identity fields; users can delete the latest sample, browse history, export JSON, or erase all submissions. |
 | **Allow/block rules** | Sender and message-body rules act as user-controlled white and black lists before model classification. |
-| **One-command training** | `pnpm pipeline -- all --install-ios` fetches, curates, audits, trains, installs, and reports. |
+| **One-command training** | `pnpm pipeline -- all` fetches, curates, audits, trains, and reports. Classic installation also requires a new version and the hash-pinned published baseline; see `tools/pipeline/README.md`. |
 
 ## Quick Start
 

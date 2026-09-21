@@ -262,6 +262,16 @@ private struct MockNetworkConditionChecker: TransformerNetworkConditionChecking 
     }
 }
 
+private struct SuspendedNetworkConditionChecker: TransformerNetworkConditionChecking {
+    let gate: SuspendedTransformerDownloadGate
+    let condition: TransformerNetworkCondition
+
+    func currentCondition() async -> TransformerNetworkCondition {
+        await gate.suspend()
+        return condition
+    }
+}
+
 private struct MockSiftModelClassifierLoader: SiftModelClassifierLoading {
     @concurrent
     func classifier(for variant: ModelVariant) async -> (any MessageClassifier)? {
@@ -770,6 +780,99 @@ func transformerUpdateCheckIsMetadataOnlyAndSurfacesCompatibleRelease() async th
     #expect(model.hasCompatibleTransformerUpdate)
     #expect(model.transformerUpdateReleaseID == "signal-v1")
     #expect(model.transformerUpdateDownloadSizeText != nil)
+}
+
+@MainActor
+@Test
+func switchingToSignalPreservesAnInFlightManualUpdateCheck() async throws {
+    let suiteName = "SiftTests.modelUpdate.manualBeforeAutomatic.\(UUID().uuidString)"
+    let defaults = try #require(UserDefaults(suiteName: suiteName))
+    defer { defaults.removePersistentDomain(forName: suiteName) }
+    let checkGate = SuspendedTransformerDownloadGate()
+    let networkRecorder = NetworkConditionRecorder()
+    let release = TransformerChannelManifestV2(
+        releaseSequence: 3, releaseID: "requires-new-app",
+        releaseManifestURL: "https://example.com/release.json",
+        releaseManifestSHA256: String(repeating: "a", count: 64),
+        modelABI: "sift-signal-v1", minimumAppBuild: 99,
+        maximumAppBuild: .max, minimumOSVersion: "18.0", keyID: "test"
+    )
+    let model = SiftAppModel(
+        premiumBackend: MockPremiumBackend(entitled: true, outcome: .cancelled),
+        transformerAvailabilityOverride: true, transformerDownloadedOverride: true,
+        transformerDeviceSupportOverride: .supported,
+        transformerDownloader: MockTransformerDownloader(plan: mockTransformerDownloadPlan()),
+        transformerUpdateChecker: SuspendedTransformerUpdateChecker(
+            gate: checkGate, state: .requiresAppUpdate(release)
+        ),
+        transformerNetworkConditionChecker: MockNetworkConditionChecker(
+            condition: TransformerNetworkCondition(isConnected: true, usesWiFi: true),
+            recorder: networkRecorder
+        ),
+        modelClassifierLoader: MockSiftModelClassifierLoader(),
+        modelSelectionDefaults: defaults, appDefaults: defaults,
+        ledgerDefaults: defaults, categoryMappingDefaults: defaults, ruleDefaults: defaults
+    )
+    try await waitFor { model.premium.isEntitlementResolved && !model.isSwitchingModelVariant }
+    model.checkForTransformerUpdate(force: true)
+    try await waitForSuspendedTransformerDownload(checkGate, count: 1)
+
+    model.selectModelVariant(.transformer)
+    try await waitFor { model.selectedModelVariant == .transformer && !model.isSwitchingModelVariant }
+    #expect(model.transformerUpdateState == .checking)
+    #expect(await networkRecorder.callCount == 0)
+
+    await checkGate.release(1)
+    try await waitFor { model.transformerUpdateState == .requiresAppUpdate(release) }
+    model.downloadTransformerUpdate()
+    #expect(model.isShowingTransformerAppUpdatePrompt)
+    #expect(model.selectedModelVariant == .transformer)
+}
+
+@MainActor
+@Test(arguments: [false, true])
+func manualUpdateCheckPreemptsAutomaticNetworkProbe(usesWiFi: Bool) async throws {
+    let suiteName = "SiftTests.modelUpdate.manualDuringNetworkProbe.\(UUID().uuidString)"
+    let defaults = try #require(UserDefaults(suiteName: suiteName))
+    defer { defaults.removePersistentDomain(forName: suiteName) }
+    ModelSelectionStore.save(.transformer, defaults: defaults)
+    let networkGate = SuspendedTransformerDownloadGate()
+    let downloadRecorder = TransformerDownloadRecorder()
+    let release = TransformerChannelManifestV2(
+        releaseSequence: 3, releaseID: "requires-new-app",
+        releaseManifestURL: "https://example.com/release.json",
+        releaseManifestSHA256: String(repeating: "a", count: 64),
+        modelABI: "sift-signal-v1", minimumAppBuild: 99,
+        maximumAppBuild: .max, minimumOSVersion: "18.0", keyID: "test"
+    )
+    let model = SiftAppModel(
+        premiumBackend: MockPremiumBackend(entitled: true, outcome: .cancelled),
+        transformerAvailabilityOverride: true, transformerDownloadedOverride: true,
+        transformerDeviceSupportOverride: .supported,
+        transformerDownloader: MockTransformerDownloader(
+            plan: mockTransformerDownloadPlan(), recorder: downloadRecorder
+        ),
+        transformerUpdateChecker: MockTransformerUpdateChecker(state: .requiresAppUpdate(release)),
+        transformerNetworkConditionChecker: SuspendedNetworkConditionChecker(
+            gate: networkGate,
+            condition: TransformerNetworkCondition(isConnected: true, usesWiFi: usesWiFi)
+        ),
+        modelClassifierLoader: MockSiftModelClassifierLoader(),
+        modelSelectionDefaults: defaults, appDefaults: defaults,
+        ledgerDefaults: defaults, categoryMappingDefaults: defaults, ruleDefaults: defaults
+    )
+    try await waitFor { model.premium.isEntitlementResolved && !model.isSwitchingModelVariant }
+    try await waitForSuspendedTransformerDownload(networkGate, count: 1)
+    #expect(!model.isTransformerUpdateBusy)
+
+    model.checkForTransformerUpdate(force: true)
+    try await waitFor { model.transformerUpdateState == .requiresAppUpdate(release) }
+    model.downloadTransformerUpdate()
+    #expect(model.isShowingTransformerAppUpdatePrompt)
+    #expect(!model.isTransformerUpdateBusy)
+    #expect(await downloadRecorder.counts().prepare == 0)
+    #expect(await downloadRecorder.counts().download == 0)
+    await networkGate.release(1)
 }
 
 @MainActor
@@ -1342,6 +1445,10 @@ func manualIncompatibleTransformerUpdatePromptsForAppUpdateWithoutReplacingSigna
         transformerDownloadedOverride: true,
         transformerDownloader: MockTransformerDownloader(plan: mockTransformerDownloadPlan(), recorder: recorder),
         transformerUpdateChecker: MockTransformerUpdateChecker(state: .requiresAppUpdate(release)),
+        transformerNetworkConditionChecker: MockNetworkConditionChecker(
+            condition: TransformerNetworkCondition(isConnected: true, usesWiFi: false),
+            recorder: NetworkConditionRecorder()
+        ),
         modelClassifierLoader: MockSiftModelClassifierLoader(),
         modelSelectionDefaults: defaults,
         appDefaults: defaults
@@ -1478,6 +1585,10 @@ func selectedSignalRemainsUsableWhileInteractiveUpdateDownloads() async throws {
         transformerDownloadedOverride: true,
         transformerDownloader: SuspendedTransformerDownloader(plan: mockTransformerDownloadPlan(), gate: gate),
         transformerUpdateChecker: MockTransformerUpdateChecker(state: .updateAvailable(release)),
+        transformerNetworkConditionChecker: MockNetworkConditionChecker(
+            condition: TransformerNetworkCondition(isConnected: true, usesWiFi: false),
+            recorder: NetworkConditionRecorder()
+        ),
         modelClassifierLoader: MockSiftModelClassifierLoader(),
         modelSelectionDefaults: defaults,
         appDefaults: defaults

@@ -41,6 +41,13 @@ swift run SiftAppleTrainer \
   --install-ios
 ```
 
+The direct trainer's `--install-ios` is a low-level local copy operation. For
+candidate qualification, use `pnpm pipeline -- train-classic --install-ios
+--version-classic NEW_VERSION --classic-baseline-model /path/to/published/SiftSMSClassifier.mlmodel`.
+It compares the candidate with the hash-verified published model on the same
+external datasets before installation. The trainer manifest records the input
+corpus hash, split seed and validation fraction under `trainingData`.
+
 `Evaluation/promotion-regressions.ndjson` is a fixed zh/en/ja holdout for
 merchant promotions, game offers, rewards malls, carrier points, and factual
 points notifications. It is never merged into training rows; both pipeline

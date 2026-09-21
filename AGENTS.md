@@ -79,22 +79,25 @@ The product is not launched yet; backward compatibility is not required.
     to `release`; Xcode Cloud workflows bind to `release`, while local builds
     use `main`.
 
-## Current Model Baselines (2026-08-21)
+## Current Model Baselines (2026-09-21)
 
 | Variant | Version | Fixed 487 | Promotion 150 | Notes |
 | --- | --- | ---: | ---: | --- |
-| Classic | `maxent-generalization-v50-seed29-r32` | 98.97% | 98.00% | 53 labels; action 99.18% / 98.67%; billing raw/action 100%/100%; 495,244 bytes |
-| Premium | `signal-v4-generalization-v50-r32-distilled-12l` | 99.18% | 100.00% | 22 -> 12 layers, W4A32 block16 PTQ (W4 weight-only, FP32 compute), CPU-only; sequence 4/build >= 19 (`...-metadata-v2` channel revision); 108,748,513 download bytes |
+| Classic | `maxent-generalization-v52-full-r35` | 98.97% | 98.67% | 53 labels; action 99.18% / 100%; billing raw/action 100%/100%; 539,242 bytes |
+| Premium | `signal-v4-generalization-v50-r33-distilled-12l` | 99.18% | 100.00% | 22 -> 12 layers, W4A32 block16 PTQ, FP32 CPU-only; sequence 5/build >= 19; 108,748,513 download bytes; published with device evidence skipped |
 | PII | `pii-boundary-v8` | n/a | n/a | Core ML INT8 P 99.57%, R 98.25%, F1 98.91%; clean FPR 0/480 and 0/69; grouped amounts |
 
-The current Classic and Signal release were trained from 16,472 leak-free rows
-with complete zh/en/ja coverage and the 53-label contract. The expanded pipeline
-isolates all 697 fixed, promotion, billing/card, and conversation holdout rows by
-exact and digit-normalized signatures before either model trains. Signal uses a
-22-layer teacher and a 12-layer student (temperature 2, distill alpha 0.7), and
-the selected W4A32 block16 artifact passed the physical iPhone CPU-only gate.
-Release sequence 4 has minimum app build 19 (Sift 1.4); build 18 and earlier
-continue to use the signed sequence 3 compatibility entry.
+Classic r35 uses 16,547 leak-free rows with complete zh/en/ja coverage. All 27
+external suites (1,957 rows) are isolated by exact and digit-normalized
+signatures; every suite is non-regressing against published r32 and local r34.
+See `docs/engineering/classic-r35-release.md`. Classic installation compares
+raw labels and final actions against the hash-pinned published baseline.
+Signal r33 uses a separate 19,254-row corpus with a 22-layer teacher and
+12-layer student (temperature 2, distill alpha 0.7). Its current sequence-5
+selection explicitly skipped device evidence; do not claim the prior
+IdentityLookup memory issue is resolved. See `docs/MESSAGE_FILTER_MEMORY.md`.
+Sequences 4 and 5 require app build 19 (Sift 1.4); build 18 and earlier
+continue to use the signed sequence-3 compatibility entry.
 The 150-row promotion boundary set spans game marketplaces, retail, finance,
 carrier offers, travel, insurance, services, loans, and housing, with paired
 order, points, bank, data-usage, update, and scam negatives. The previous
@@ -104,7 +107,9 @@ not restore it based on fixed-set accuracy alone.
 ## Common Commands
 
 ```bash
-pnpm pipeline -- all --install-ios      # Full automated training pipeline
+pnpm pipeline -- all                    # Train and evaluate candidates
+# Installation also requires --install-ios --version-classic NEW_VERSION
+# and --classic-baseline-model /path/to/published/SiftSMSClassifier.mlmodel.
 pnpm pipeline -- finetune               # Incremental fine-tuning from checkpoint
 pnpm export:training                    # Export CloudKit samples
 python3 tools/apple-trainer/Scripts/prepare_classic_candidate.py --help

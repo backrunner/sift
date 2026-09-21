@@ -632,6 +632,10 @@ public final class SiftAppModel {
         {
             return
         }
+        // A foreground check takes priority over an automatic network probe.
+        // Once an automatic update owns the download UI, the busy guard above
+        // still prevents competing checks.
+        cancelAutomaticTransformerUpdate()
         transformerUpdateState = .checking
         let identity = installedTransformerIdentity
         let requestID = UUID()
@@ -1250,6 +1254,7 @@ public final class SiftAppModel {
             isTransformerModelAvailable,
             !isTransformerUpdateBusy,
             transformerDownloadTask == nil,
+            transformerUpdateCheckTask == nil,
             automaticTransformerUpdateTask == nil,
             let transformerDownloader,
             let transformerUpdateChecker
@@ -1270,22 +1275,23 @@ public final class SiftAppModel {
         }
 
         let identity = installedTransformerIdentity
-        cancelTransformerUpdateCheck()
         let networkChecker = transformerNetworkConditionChecker
         let requestID = UUID()
         automaticTransformerUpdateRequestID = requestID
-        isAutomaticTransformerUpdateActive = true
         automaticTransformerUpdateTask = Task(priority: .utility) { [weak self] in
             guard let self else { return }
             let networkCondition = await networkChecker.currentCondition()
             guard
                 self.isAutomaticTransformerUpdateCurrent(requestID, expectedIdentity: identity),
-                networkCondition.allowsAutomaticModelUpdate
+                networkCondition.allowsAutomaticModelUpdate,
+                !self.isTransformerUpdateBusy,
+                self.transformerUpdateCheckTask == nil
             else {
                 self.finishAutomaticTransformerUpdate(requestID)
                 return
             }
 
+            self.isAutomaticTransformerUpdateActive = true
             self.hasPendingTransformerBackgroundDownloadEvents = false
 
             let state = await transformerUpdateChecker.checkForUpdate(currentIdentity: identity)
@@ -1383,8 +1389,10 @@ public final class SiftAppModel {
         guard automaticTransformerUpdateRequestID == requestID else { return }
         automaticTransformerUpdateTask = nil
         automaticTransformerUpdateRequestID = nil
-        isAutomaticTransformerUpdateActive = false
-        transformerDownloadPhase = isTransformerModelAvailable ? .ready : .notDownloaded
+        if isAutomaticTransformerUpdateActive {
+            isAutomaticTransformerUpdateActive = false
+            transformerDownloadPhase = isTransformerModelAvailable ? .ready : .notDownloaded
+        }
     }
 
     private func cancelAutomaticTransformerUpdate() {
