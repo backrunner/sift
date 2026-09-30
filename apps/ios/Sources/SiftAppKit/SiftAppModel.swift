@@ -581,6 +581,21 @@ public final class SiftAppModel {
         return false
     }
 
+    /// Only actionable updates and actual download work affect the model card.
+    /// Background checks must not add/remove a status row or change its height.
+    public var showsTransformerModelDownloadControls: Bool {
+        guard premium.isUnlocked, isTransformerDeviceSupported else { return false }
+        if isTransformerDownloadActive || transformerDownloadPhase == .waitingForTrafficConfirmation
+            || isTransformerAppUpdateRequired || !isTransformerModelAvailable {
+            return true
+        }
+        if case .failed = transformerDownloadPhase { return true }
+        switch transformerUpdateState {
+        case .updateAvailable, .requiresAppUpdate: return true
+        case .unknown, .checking, .current, .incompatible, .failed: return false
+        }
+    }
+
     public var transformerUpdateReleaseID: String? {
         guard !isTransformerUpdateBusy else { return nil }
         switch transformerUpdateState {
@@ -636,7 +651,11 @@ public final class SiftAppModel {
         // Once an automatic update owns the download UI, the busy guard above
         // still prevents competing checks.
         cancelAutomaticTransformerUpdate()
-        transformerUpdateState = .checking
+        // Keep the last confirmed result visible while refreshing it.
+        switch transformerUpdateState {
+        case .unknown, .checking, .failed: transformerUpdateState = .checking
+        case .current, .updateAvailable, .requiresAppUpdate, .incompatible: break
+        }
         let identity = installedTransformerIdentity
         let requestID = UUID()
         transformerUpdateCheckRequestID = requestID
@@ -647,10 +666,23 @@ public final class SiftAppModel {
             self.transformerUpdateCheckTask = nil
             self.transformerUpdateCheckRequestID = nil
             guard !self.isTransformerUpdateBusy, self.installedTransformerIdentity == identity else { return }
-            transformerUpdateState = state
-            isTransformerAppUpdateRequired = false
+            publishTransformerUpdateCheckResult(state)
             appDefaults.set(Date(), forKey: Self.transformerUpdateLastCheckKey)
         }
+    }
+
+    private func publishTransformerUpdateCheckResult(_ state: TransformerUpdateState) {
+        switch state {
+        case .unknown, .checking, .failed:
+            // A failed refresh cannot invalidate a previously verified update.
+            switch transformerUpdateState {
+            case .updateAvailable, .requiresAppUpdate: return
+            case .unknown, .checking, .current, .incompatible, .failed: break
+            }
+        case .current, .updateAvailable, .requiresAppUpdate, .incompatible:
+            isTransformerAppUpdateRequired = false
+        }
+        transformerUpdateState = state
     }
 
     public func downloadTransformerUpdate() {
@@ -1314,7 +1346,7 @@ public final class SiftAppModel {
                 return
             }
 
-            self.isAutomaticTransformerUpdateActive = true
+            // Catalog probes are silent and do not disable model selection.
             self.hasPendingTransformerBackgroundDownloadEvents = false
 
             let state = await transformerUpdateChecker.checkForUpdate(currentIdentity: identity)
@@ -1322,8 +1354,7 @@ public final class SiftAppModel {
                 self.finishAutomaticTransformerUpdate(requestID)
                 return
             }
-            self.transformerUpdateState = state
-            self.isTransformerAppUpdateRequired = false
+            self.publishTransformerUpdateCheckResult(state)
             self.appDefaults.set(Date(), forKey: Self.transformerUpdateLastCheckKey)
             guard case .updateAvailable = state else {
                 self.finishAutomaticTransformerUpdate(requestID)
@@ -1331,6 +1362,7 @@ public final class SiftAppModel {
             }
 
             do {
+                self.isAutomaticTransformerUpdateActive = true
                 self.transformerDownloadPhase = .checking
                 let plan = try await transformerDownloader.prepareDownload().forAutomaticUpdate()
                 guard
