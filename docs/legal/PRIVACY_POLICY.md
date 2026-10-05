@@ -36,13 +36,18 @@ contribute a sample:
   Submissions*, so the screen can open without querying CloudKit every time.
 - Sanitization previews.
 
-The App also keeps rotating local filter diagnostics with processing times,
-app/model versions, execution stages, memory use, and filtering results.
+The App's SMS filtering extension records local system diagnostics with processing
+times, app/model versions, execution stages, memory use, and filtering results.
 Short-lived random request identifiers and local process numbers help diagnose
 interrupted filtering; they do not identify your device or account. These
-logs contain no SMS text, sender information, or phone numbers, are excluded
-from backup, and are not uploaded automatically or used as training samples.
-You can explicitly export and share diagnostics for troubleshooting.
+logs contain no SMS text, sender information, or phone numbers, and are not
+uploaded automatically or used as training samples.
+Diagnostics use the device's system log, because iOS
+prohibits the filtering extension from writing storage shared with the App.
+They require development tools to retrieve; the App has no diagnostic export
+or developer section. Development test probes may also keep bounded local
+diagnostic files excluded from backup. You can retrieve and share diagnostics
+using development tools for troubleshooting.
 
 ## 3. Information you choose to contribute (opt-in)
 

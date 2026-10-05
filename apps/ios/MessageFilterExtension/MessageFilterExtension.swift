@@ -17,9 +17,11 @@ final class MessageFilterExtension: ILMessageFilterExtension, ILMessageFilterQue
     private let memoryPressureSource: DispatchSourceMemoryPressure
 
     override init() {
-        let diagnostics = MessageFilterOSLogDiagnosticsRecorder()
+        // IdentityLookup may read App Group configuration and models, but
+        // cannot write shared files or preferences back to the containing app.
+        let diagnostics = MessageFilterOSLogDiagnosticsRecorder(persistence: .systemLogOnly)
         let engine = MessageFilterEngine(transformerCacheReleaseHandler: { event in
-            // Cache release runs on the runtime actor. Keep JSONL and OSLog I/O
+            // Cache release runs on the runtime actor. Keep OSLog I/O
             // outside that serialization point so the next query is not delayed.
             Task.detached(priority: .utility) {
                 diagnostics.record(event)
@@ -48,11 +50,8 @@ final class MessageFilterExtension: ILMessageFilterExtension, ILMessageFilterQue
     }
 
     func handle(_ queryRequest: ILMessageFilterQueryRequest, context: ILMessageFilterExtensionContext, completion: @escaping (ILMessageFilterQueryResponse) -> Void) {
-        let gate = CompletionOnceGate<(ILMessageFilterAction, ILMessageFilterSubAction)> { value in
-            let response = ILMessageFilterQueryResponse()
-            response.action = value.0
-            response.subAction = value.1
-            completion(response)
+        let gate = CompletionOnceGate<MessageFilterExtensionRoute> { route in
+            completion(MessageFilterActionMapper.filterResponse(for: route))
         }
         let request = MessageFilterRequest(
             sender: queryRequest.sender,
@@ -74,7 +73,7 @@ final class MessageFilterExtension: ILMessageFilterExtension, ILMessageFilterQue
             } catch {
                 return
             }
-            if gate.complete((.none, .none)) {
+            if gate.complete(.unclassified) {
                 observer(.watchdogResponded)
                 diagnostics.record(MessageFilterDiagnosticEvent(
                     artifactIdentity: configuration.modelArtifactIdentity,
@@ -97,10 +96,7 @@ final class MessageFilterExtension: ILMessageFilterExtension, ILMessageFilterQue
         Task { [engine, diagnostics] in
             let result = await engine.classify(request, configuration: configuration, observer: observer)
             let route = MessageFilterActionMapper.extensionRoute(for: result)
-            let didComplete = gate.complete((
-                MessageFilterActionMapper.filterAction(for: route.action),
-                MessageFilterActionMapper.filterSubAction(for: route.subAction)
-            ))
+            let didComplete = gate.complete(route)
             watchdogTask.cancel()
             if didComplete {
                 observer(.responseSubmitted)
@@ -120,8 +116,8 @@ final class MessageFilterExtension: ILMessageFilterExtension, ILMessageFilterQue
                     decisionLabelID: result.decision.labelID,
                     decisionConfidence: result.decision.confidence,
                     decisionSource: result.decision.source,
-                    systemAction: result.systemAction,
-                    systemSubAction: result.systemSubAction,
+                    systemAction: route.action,
+                    systemSubAction: route.subAction,
                     appGroupContainerAvailable: hasSharedContainer,
                     requestID: requestID,
                     processIdentifier: ProcessInfo.processInfo.processIdentifier

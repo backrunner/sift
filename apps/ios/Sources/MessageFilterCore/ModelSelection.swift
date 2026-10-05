@@ -123,8 +123,8 @@ public enum SharedRuleStore {
 }
 
 /// User-selected destination for a taxonomy leaf. These overrides are applied
-/// after classification, so they work for both model decisions and custom
-/// rules without changing taxonomy IDs or retraining the model.
+/// after a valid classification without changing taxonomy IDs or retraining
+/// the model. Explicit allow/block rules and abstentions bypass overrides.
 public enum CategoryMappingTarget: String, CaseIterable, Codable, Sendable, Identifiable {
     case junk
     case promotionalOthers
@@ -150,13 +150,19 @@ public enum CategoryMappingTarget: String, CaseIterable, Codable, Sendable, Iden
         .transactionalOthers,
         .transactionalFinance,
         .transactionalOrders,
-        .transactionalReminders,
-        .transactionalHealth,
-        .transactionalWeather,
-        .transactionalCarrier,
-        .transactionalRewards,
-        .transactionalPublicServices
+        .transactionalReminders
     ]
+
+    /// Older stored choices remain decodable but cannot create unadvertised folders.
+    public var availableTarget: CategoryMappingTarget {
+        switch self {
+        case .transactionalHealth, .transactionalWeather, .transactionalCarrier,
+             .transactionalRewards, .transactionalPublicServices:
+            return .transactionalOthers
+        default:
+            return self
+        }
+    }
 
     public var id: String { rawValue }
 
@@ -165,13 +171,13 @@ public enum CategoryMappingTarget: String, CaseIterable, Codable, Sendable, Iden
         case .junk:
             return String(localized: "垃圾信息")
         case .promotionalOthers:
-            return String(localized: "其他")
+            return String(localized: "所有推广信息")
         case .promotionalOffers:
             return String(localized: "优惠")
         case .promotionalCoupons:
             return String(localized: "优惠券")
         case .transactionalOthers:
-            return String(localized: "其他")
+            return String(localized: "所有交易信息")
         case .transactionalFinance:
             return String(localized: "财务")
         case .transactionalOrders:
@@ -192,6 +198,12 @@ public enum CategoryMappingTarget: String, CaseIterable, Codable, Sendable, Iden
     }
 
     public var title: String {
+        if availableTarget != self {
+            return availableTarget.title
+        }
+        if self == .promotionalOthers || self == .transactionalOthers {
+            return menuTitle
+        }
         switch systemAction {
         case .promotion:
             return String(localized: "推广信息") + " - " + menuTitle
@@ -251,29 +263,20 @@ public enum CategoryMappingTarget: String, CaseIterable, Codable, Sendable, Iden
         case .junk:
             return .none
         case .promotionalOthers:
-            return .promotionalOthers
+            return .none
         case .promotionalOffers:
             return .promotionalOffers
         case .promotionalCoupons:
             return .promotionalCoupons
-        case .transactionalOthers:
-            return .transactionalOthers
+        case .transactionalOthers, .transactionalHealth, .transactionalWeather,
+             .transactionalCarrier, .transactionalRewards, .transactionalPublicServices:
+            return .none
         case .transactionalFinance:
             return .transactionalFinance
         case .transactionalOrders:
             return .transactionalOrders
         case .transactionalReminders:
             return .transactionalReminders
-        case .transactionalHealth:
-            return .transactionalHealth
-        case .transactionalWeather:
-            return .transactionalWeather
-        case .transactionalCarrier:
-            return .transactionalCarrier
-        case .transactionalRewards:
-            return .transactionalRewards
-        case .transactionalPublicServices:
-            return .transactionalPublicServices
         }
     }
 

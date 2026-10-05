@@ -6,6 +6,7 @@ import IdentityLookup
 #endif
 
 public struct MessageFilterExtensionRoute: Equatable, Sendable {
+    public static let unclassified = MessageFilterExtensionRoute(action: .none, subAction: .none)
     public let action: SystemAction
     public let subAction: SystemSubAction
 
@@ -16,23 +17,8 @@ public struct MessageFilterExtensionRoute: Equatable, Sendable {
 }
 
 public enum MessageFilterActionMapper {
-    public static let supportedTransactionalSubActions: [SystemSubAction] = [
-        .transactionalFinance,
-        .transactionalOrders,
-        .transactionalReminders,
-        .transactionalHealth,
-        .transactionalWeather,
-        .transactionalCarrier,
-        .transactionalRewards,
-        .transactionalPublicServices,
-        .transactionalOthers
-    ]
-
-    public static let supportedPromotionalSubActions: [SystemSubAction] = [
-        .promotionalCoupons,
-        .promotionalOffers,
-        .promotionalOthers
-    ]
+    public static let supportedTransactionalSubActions = MessageFilterCapabilities.transactionalSubActions
+    public static let supportedPromotionalSubActions = MessageFilterCapabilities.promotionalSubActions
 
     public static func systemAction(for decision: ClassificationDecision) -> SystemAction {
         MessageFilterRouting.systemAction(for: decision)
@@ -43,13 +29,26 @@ public enum MessageFilterActionMapper {
     }
 
     public static func extensionRoute(for result: MessageFilterResult) -> MessageFilterExtensionRoute {
-        MessageFilterExtensionRoute(
+        guard MessageFilterRouting.systemAction(for: result.decision) != .none else {
+            return .unclassified
+        }
+        return MessageFilterExtensionRoute(
             action: result.systemAction,
-            subAction: result.systemSubAction
+            subAction: MessageFilterCapabilities.subAction(for: result.systemAction, requested: result.systemSubAction)
         )
     }
 
     #if canImport(IdentityLookup) && os(iOS)
+    /// The only production response builder: always revalidate the final pair.
+    public static func filterResponse(for route: MessageFilterExtensionRoute) -> ILMessageFilterQueryResponse {
+        let response = ILMessageFilterQueryResponse()
+        response.action = filterAction(for: route.action)
+        response.subAction = filterSubAction(for: MessageFilterCapabilities.subAction(
+            for: route.action, requested: route.subAction
+        ))
+        return response
+    }
+
     public static func filterAction(for decision: ClassificationDecision) -> ILMessageFilterAction {
         switch systemAction(for: decision) {
         case .promotion:

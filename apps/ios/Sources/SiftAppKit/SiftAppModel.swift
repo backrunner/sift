@@ -1,6 +1,5 @@
 import Foundation
 import MessageFilterCore
-import MessageFilterExtensionKit
 import Observation
 
 #if canImport(CloudKit)
@@ -196,8 +195,6 @@ public final class SiftAppModel {
     public private(set) var isTransformerModelAvailable: Bool
     public private(set) var isTransformerModelDownloaded: Bool
     public private(set) var installedTransformerVersion: String?
-    public private(set) var isDeveloperModeEnabled: Bool
-    public private(set) var latestMessageFilterDiagnosticEvent: MessageFilterDiagnosticEvent? = nil
     public private(set) var isClearingTransformerModel: Bool = false
     public private(set) var transformerDownloadPhase: TransformerModelDownloadPhase = .notDownloaded
     public private(set) var transformerDownloadProgress: TransformerModelDownloadProgress?
@@ -304,15 +301,6 @@ public final class SiftAppModel {
     private let modelClassifierLoader: any SiftModelClassifierLoading
 
     @ObservationIgnored
-    private let messageFilterDiagnosticLogStore: MessageFilterDiagnosticLogStore
-
-    @ObservationIgnored
-    private let messageFilterPerformanceStore: MessageFilterPerformanceEvidenceStore
-
-    @ObservationIgnored
-    private var developerModeTapCounter = DeveloperModeTapCounter()
-
-    @ObservationIgnored
     private var transformerDownloadTask: Task<Void, Never>?
 
     @ObservationIgnored
@@ -413,8 +401,6 @@ public final class SiftAppModel {
         transformerNetworkConditionChecker: any TransformerNetworkConditionChecking = PathNetworkConditionChecker(),
         transformerModelRemover: any TransformerModelRemoving = TransformerModelStoreRemover(),
         modelClassifierLoader: any SiftModelClassifierLoading = DefaultSiftModelClassifierLoader(),
-        messageFilterDiagnosticLogStore: MessageFilterDiagnosticLogStore = MessageFilterDiagnosticLogStore(),
-        messageFilterPerformanceStore: MessageFilterPerformanceEvidenceStore? = nil,
         modelSelectionDefaults: UserDefaults? = nil,
         appDefaults: UserDefaults? = nil,
         ledgerDefaults: UserDefaults? = nil,
@@ -429,10 +415,6 @@ public final class SiftAppModel {
         self.hasAcceptedRemoteSamplePrivacy = resolvedAppDefaults.bool(forKey: Self.remoteSamplePrivacyConsentKey)
         self.hasConfirmedFilterSetup = resolvedAppDefaults.bool(forKey: Self.filterSetupConfirmationKey)
         self.modelSelectionDefaults = modelSelectionDefaults
-        self.messageFilterDiagnosticLogStore = messageFilterDiagnosticLogStore
-        self.messageFilterPerformanceStore = messageFilterPerformanceStore
-            ?? MessageFilterPerformanceEvidenceStore(defaults: modelSelectionDefaults)
-        self.isDeveloperModeEnabled = DeveloperModeStore.isEnabled(defaults: modelSelectionDefaults)
         self.ledgerDefaults = ledgerDefaults
         self.categoryMappingDefaults = categoryMappingDefaults
         self.ruleDefaults = ruleDefaults
@@ -743,68 +725,6 @@ public final class SiftAppModel {
             return nil
         case .transformer:
             return installedTransformerVersion ?? pendingTransformerDownloadPlan?.manifest.version
-        }
-    }
-
-    public var isSharedAppGroupContainerAvailable: Bool {
-        ModelSelectionStore.sharedContainerURL() != nil
-    }
-
-    public func registerVersionTap(at date: Date = .now) {
-        guard isDeveloperModeEnabled == false else {
-            return
-        }
-        guard developerModeTapCounter.registerTap(at: date) else {
-            return
-        }
-        DeveloperModeStore.enable(defaults: modelSelectionDefaults)
-        isDeveloperModeEnabled = true
-        refreshMessageFilterDiagnostics()
-        showToast(.success, String(localized: "开发者模式已启用"))
-    }
-
-    public func refreshMessageFilterDiagnostics() {
-        latestMessageFilterDiagnosticEvent = messageFilterPerformanceStore.snapshot().latestEvent
-    }
-
-    public func prepareMessageFilterDiagnosticsExport() async -> URL? {
-        guard isDeveloperModeEnabled else {
-            return nil
-        }
-
-        let configuration = FilterConfigurationSnapshotStore.load(defaults: modelSelectionDefaults)
-        let evidence = messageFilterPerformanceStore.snapshot()
-        latestMessageFilterDiagnosticEvent = evidence.latestEvent
-        let metadata = MessageFilterDiagnosticExportMetadata(
-            appVersion: Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "unknown",
-            appBuild: Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "unknown",
-            operatingSystemVersion: ProcessInfo.processInfo.operatingSystemVersionString,
-            developerModeEnabled: isDeveloperModeEnabled,
-            appGroupContainerAvailable: isSharedAppGroupContainerAvailable,
-            selectedVariant: configuration.selectedVariant,
-            configurationGeneration: configuration.generation,
-            configuredArtifactIdentity: configuration.modelArtifactIdentity,
-            installedTransformerVersion: installedTransformerVersion,
-            installedTransformerIdentity: installedTransformerIdentity,
-            ruleCount: configuration.rules.count,
-            categoryMappingCount: configuration.categoryMappings.count,
-            transformerDeviceSupportStatus: transformerDeviceSupport.status,
-            transformerDeviceSupportReason: transformerDeviceSupport.reason,
-            performanceEvidence: evidence
-        )
-        let logStore = messageFilterDiagnosticLogStore
-        let exportURL = FileManager.default.temporaryDirectory
-            .appendingPathComponent("Sift-Diagnostics.jsonl", isDirectory: false)
-
-        do {
-            return try await Task.detached(priority: .utility) {
-                let data = try logStore.exportData(metadata: metadata)
-                try data.write(to: exportURL, options: .atomic)
-                return exportURL
-            }.value
-        } catch {
-            showToast(.error, String(localized: "日志导出失败"))
-            return nil
         }
     }
 

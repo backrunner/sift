@@ -396,8 +396,7 @@ public final class TransformerModelDownloadClient: TransformerModelDownloading, 
             channelNamespace: channelNamespace,
             minimumReleaseSequence: minimumReleaseSequence,
             estimatedByteCount: estimatedBytes,
-            backgroundSessionIdentifierPrefix: "io.alkinum.sift.signal-download",
-            diagnosticLogStore: MessageFilterDiagnosticLogStore()
+            backgroundSessionIdentifierPrefix: "io.alkinum.sift.signal-download"
         )
     }
 

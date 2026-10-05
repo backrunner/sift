@@ -194,7 +194,7 @@ private struct CategoryMappingRow: View {
     }
 
     private var displayedTarget: CategoryMappingTarget? {
-        selection ?? defaultTarget
+        (selection ?? defaultTarget)?.availableTarget
     }
 
     var body: some View {

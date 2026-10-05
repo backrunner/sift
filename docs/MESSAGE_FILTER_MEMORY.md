@@ -54,22 +54,48 @@ preferences; device benchmarks now use an isolated, cleaned UUID suite.
 
 ## Added runtime evidence
 
-Each real filter request gets a random request UUID. The extension writes
-`message_filter_stage` JSONL and OSLog records before and after tokenizer
+### Correction, 2026-10-05: real extension diagnostics are OSLog-only
+
+Apple's [SMS and MMS Message Filtering documentation](https://developer.apple.com/documentation/identitylookup/sms-and-mms-message-filtering)
+explicitly prohibits the message-filter extension from writing containers
+shared with its containing app. The previous shared JSONL/preferences design
+was valid only for app-hosted probes; it cannot establish real SMS execution.
+An affected build-29 export contained metadata and a successful September 21
+installation prime, but no filter stages or completion counters. That absence
+does not prove that IdentityLookup never invoked the extension or that it crashed.
+
+The production extension now selects `.systemLogOnly` diagnostics: it reads
+configuration/model files but attempts no shared diagnostic-file or performance
+counter writes. Stage/completion/cache-release records still use OSLog. The
+app's developer section, version-tap unlock and diagnostic export have been
+removed, along with production installation-log persistence. Injected host
+probes can still use bounded JSONL stores. Collect real extension stages
+from a connected Mac's Console using subsystem
+`com.alkinum.sift.MessageFilterExtension`, starting capture before receiving a
+test SMS. Collect a matching `JetsamEvent` report if the process terminates.
+This fixes the diagnostics contract; it does not establish a solution to the
+observed Signal memory limit or the reported invisible-message incident.
+
+The JSONL description below records the earlier implementation and applies
+only to containing-app probes, not real IdentityLookup execution.
+
+Each real filter request gets a random request UUID and OSLog stage records.
+App-hosted probes can additionally write `message_filter_stage` JSONL records
+before and after tokenizer
 loading, model initialization, tokenization, mapped embedding lookup, prediction and response delivery,
 as well as Classic fallback and watchdog response stages. The records contain
 the local PID, bundle/build, requested artifact, elapsed milliseconds,
 current physical footprint, process-lifetime footprint peak, and available
 process memory. A cache hit does not repeat model-load stages.
 
-Stage records are enabled without developer mode and contain no SMS text,
+Stage records contain no SMS text,
 sender, phone number, or persistent device/account identifier. Completion
-records carry the request UUID/PID; category/confidence/routing details remain
-under the existing developer-mode setting. The existing log export includes
+records carry the request UUID/PID; test probes can additionally include
+category/confidence details when explicitly enabled. Host-probe exports include
 the new records. JSONL remains bounded by the existing rotation policy.
 Failed file writes are reported to OSLog.
 
-Persisting before expensive operations leaves useful breadcrumbs when a
+In app-hosted probes, persisting before expensive operations leaves useful breadcrumbs when a
 process never reaches completion. It cannot log *after* a Jetsam kill. The
 process-lifetime peak is not a per-request peak, and a missing completion can
 also reflect log rotation, truncation, or collection while work is active.

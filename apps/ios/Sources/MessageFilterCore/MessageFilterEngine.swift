@@ -16,6 +16,29 @@ public enum SystemSubAction: String, Codable, Hashable, Sendable {
     case promotionalCoupons
 }
 
+/// IdentityLookup permits at most five advertised subcategories in total.
+/// All other destinations use the top-level Transactions/Promotions folder.
+/// See https://developer.apple.com/videos/play/wwdc2022/110341/ (7:02).
+public enum MessageFilterCapabilities {
+    public static let transactionalSubActions: [SystemSubAction] = [
+        .transactionalFinance, .transactionalOrders, .transactionalReminders
+    ]
+    public static let promotionalSubActions: [SystemSubAction] = [
+        .promotionalOffers, .promotionalCoupons
+    ]
+
+    public static func subAction(for action: SystemAction, requested: SystemSubAction) -> SystemSubAction {
+        switch action {
+        case .transaction:
+            return transactionalSubActions.contains(requested) ? requested : .none
+        case .promotion:
+            return promotionalSubActions.contains(requested) ? requested : .none
+        case .junk, .none:
+            return .none
+        }
+    }
+}
+
 public struct ModelArtifactIdentity: Codable, Hashable, Sendable {
     public let variant: ModelVariant
     public let modelABI: String
@@ -331,13 +354,21 @@ public enum MessageFilterRouting {
             return ["carrier.promotion", "promotion"].contains(leaf.id)
                 ? .promotionalOffers : .promotionalOthers
         case .transaction:
-            return transactionalTarget(for: leaf.id)
+            return transactionalTarget(for: leaf.id).availableTarget
         case .none:
             return nil
         }
     }
 
     public static func systemAction(for decision: ClassificationDecision) -> SystemAction {
+        // An abstention (including legacy "transaction.other" placeholders)
+        // must never become a filtered result through a category override.
+        guard decision.confidence.isFinite, (0...1).contains(decision.confidence),
+              decision.source != .fallback,
+              decision.systemAction != .none,
+              SiftTaxonomy.leaf(id: decision.labelID) != nil else {
+            return .none
+        }
         if let categoryMappingTarget = decision.categoryMappingTarget {
             return categoryMappingTarget.systemAction
         }
@@ -357,18 +388,21 @@ public enum MessageFilterRouting {
     }
 
     public static func systemSubAction(for decision: ClassificationDecision) -> SystemSubAction {
+        let action = systemAction(for: decision)
         if let categoryMappingTarget = decision.categoryMappingTarget {
-            return categoryMappingTarget.systemSubAction
+            return MessageFilterCapabilities.subAction(for: action, requested: categoryMappingTarget.systemSubAction)
         }
-        switch systemAction(for: decision) {
+        let requested: SystemSubAction
+        switch action {
         case .promotion:
-            return ["carrier.promotion", "promotion"].contains(decision.labelID)
+            requested = ["carrier.promotion", "promotion"].contains(decision.labelID)
                 ? .promotionalOffers : .promotionalOthers
         case .transaction:
-            return transactionalTarget(for: decision.labelID).systemSubAction
+            requested = transactionalTarget(for: decision.labelID).systemSubAction
         case .junk, .none:
-            return .none
+            requested = .none
         }
+        return MessageFilterCapabilities.subAction(for: action, requested: requested)
     }
 
     private static func transactionalTarget(for labelID: String) -> CategoryMappingTarget {
@@ -810,6 +844,17 @@ public actor MessageFilterEngine {
             )
         }
 
+        // Textless MMS and missing/blank SMS bodies supply no model evidence.
+        // Sender-based user rules above still take precedence.
+        guard !request.body.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            return result(
+                decision: ModelOutputContract.abstentionDecision(confidence: 0),
+                identity: configuration.modelArtifactIdentity,
+                fallbackReason: .none,
+                executionPath: .noDecision
+            )
+        }
+
         guard configuration.selectedVariant == configuration.modelArtifactIdentity.variant else {
             return classifyWithClassic(
                 request,
@@ -841,7 +886,8 @@ public actor MessageFilterEngine {
         case let .decision(transformerResult, signalTiming):
             let calibrated = HeuristicClassifier.highPrecisionDecision(for: request.body)
                 ?? transformerResult
-            let mapped = calibrated.applying(categoryMappings: configuration.categoryMappings)
+            let mapped = ModelOutputContract.validatedDecision(calibrated, minimumConfidence: 0.5)
+                .applying(categoryMappings: configuration.categoryMappings)
             return result(
                 decision: mapped,
                 identity: configuration.modelArtifactIdentity,
