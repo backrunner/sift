@@ -360,30 +360,46 @@ public protocol MessageFilterDiagnosticsRecording: Sendable {
     func record(_ event: MessageFilterDiagnosticEvent)
 }
 
+public enum MessageFilterDiagnosticPersistence: Sendable {
+    /// Containing-app probes can persist their own diagnostics.
+    case appGroup
+    /// IdentityLookup prohibits writes to containers shared with the app.
+    case systemLogOnly
+}
+
 public struct MessageFilterOSLogDiagnosticsRecorder: MessageFilterDiagnosticsRecording {
     #if canImport(OSLog)
     private let logger = Logger(subsystem: "com.alkinum.sift.MessageFilterExtension", category: "filter")
     #endif
-    private let performanceStore: MessageFilterPerformanceEvidenceStore
-    private let diagnosticLogStore: MessageFilterDiagnosticLogStore
+    private let performanceStore: MessageFilterPerformanceEvidenceStore?
+    private let diagnosticLogStore: MessageFilterDiagnosticLogStore?
+    private let includesDecisionDetails: Bool
 
     public init(
+        persistence: MessageFilterDiagnosticPersistence = .appGroup,
+        includesDecisionDetails: Bool = false,
         performanceStore: MessageFilterPerformanceEvidenceStore = MessageFilterPerformanceEvidenceStore(),
         diagnosticLogStore: MessageFilterDiagnosticLogStore = MessageFilterDiagnosticLogStore()
     ) {
-        self.performanceStore = performanceStore
-        self.diagnosticLogStore = diagnosticLogStore
+        self.includesDecisionDetails = includesDecisionDetails
+        switch persistence {
+        case .appGroup:
+            self.performanceStore = performanceStore
+            self.diagnosticLogStore = diagnosticLogStore
+        case .systemLogOnly:
+            self.performanceStore = nil
+            self.diagnosticLogStore = nil
+        }
     }
 
     public func record(_ event: MessageFilterDiagnosticEvent) {
-        performanceStore.record(event)
-        let detailedLoggingEnabled = DeveloperModeStore.isEnabled()
-        let persisted = diagnosticLogStore.record(event, includesDetails: detailedLoggingEnabled)
+        performanceStore?.record(event)
+        let persisted = diagnosticLogStore?.record(event, includesDetails: includesDecisionDetails)
         #if canImport(OSLog)
-        if !persisted {
+        if persisted == false {
             logger.error("diagnostic_write_failed record=message_filter_event")
         }
-        if detailedLoggingEnabled {
+        if includesDecisionDetails {
             let actualArtifactIdentity: ModelArtifactIdentity? = switch event.executionPath {
             case .classic, .signal:
                 event.artifactIdentity
@@ -395,7 +411,7 @@ public struct MessageFilterOSLogDiagnosticsRecorder: MessageFilterDiagnosticsRec
             )
         } else {
             logger.notice(
-                "selected=\(event.selectedVariant.rawValue, privacy: .public) path=\(event.executionPath.rawValue, privacy: .public) latency=\(event.latencyBucket.rawValue, privacy: .public) cold=\(event.isColdStart) signal_access=\(event.signalTiming?.accessKind.rawValue ?? "none", privacy: .public) signal_load_ms=\(event.signalTiming?.totalLoadMilliseconds ?? -1) signal_wait_ms=\(event.signalTiming?.queryWaitMilliseconds ?? -1) signal_inference_ms=\(event.signalTiming?.inferenceMilliseconds ?? -1) fallback=\(event.fallbackReason.rawValue, privacy: .public) error=\(event.errorCode ?? "none", privacy: .public) app_group=\(event.appGroupContainerAvailable)"
+                "selected=\(event.selectedVariant.rawValue, privacy: .public) path=\(event.executionPath.rawValue, privacy: .public) action=\(event.systemAction?.rawValue ?? "none", privacy: .public) sub_action=\(event.systemSubAction?.rawValue ?? "none", privacy: .public) latency=\(event.latencyBucket.rawValue, privacy: .public) cold=\(event.isColdStart) signal_access=\(event.signalTiming?.accessKind.rawValue ?? "none", privacy: .public) signal_load_ms=\(event.signalTiming?.totalLoadMilliseconds ?? -1) signal_wait_ms=\(event.signalTiming?.queryWaitMilliseconds ?? -1) signal_inference_ms=\(event.signalTiming?.inferenceMilliseconds ?? -1) fallback=\(event.fallbackReason.rawValue, privacy: .public) error=\(event.errorCode ?? "none", privacy: .public) app_group=\(event.appGroupContainerAvailable)"
             )
         }
         #endif
@@ -450,11 +466,11 @@ public struct MessageFilterOSLogDiagnosticsRecorder: MessageFilterDiagnosticsRec
             "request=\(requestID.uuidString, privacy: .public) pid=\(processIdentifier) stage=\(stage.rawValue, privacy: .public) elapsed_ms=\(record.elapsedMilliseconds) footprint=\(record.memory.physicalFootprintBytes) process_peak=\(record.memory.processPeakPhysicalFootprintBytes) available=\(record.memory.availableMemoryBytes ?? 0)"
         )
         #endif
-        // Persist before the next expensive phase, so a process kill cannot
-        // erase all evidence of an otherwise unfinished request.
-        let persisted = diagnosticLogStore.record(record)
+        // Only containing-app probes may persist shared files. Real filtering
+        // uses OSLog, including breadcrumbs before expensive model phases.
+        let persisted = diagnosticLogStore?.record(record)
         #if canImport(OSLog)
-        if !persisted {
+        if persisted == false {
             logger.error("diagnostic_write_failed record=message_filter_stage")
         }
         #endif
@@ -462,7 +478,7 @@ public struct MessageFilterOSLogDiagnosticsRecorder: MessageFilterDiagnosticsRec
 
     public func record(_ event: SignalModelCacheReleaseEvent) {
         let footprint = MessageFilterProcessMetrics.currentPhysicalFootprintBytes()
-        diagnosticLogStore.record(event, physicalFootprintBytes: footprint)
+        diagnosticLogStore?.record(event, physicalFootprintBytes: footprint)
         #if canImport(OSLog)
         logger.notice(
             "signal_cache_release reason=\(event.reason.rawValue, privacy: .public) abi=\(event.artifactIdentity.modelABI, privacy: .public) sequence=\(event.artifactIdentity.releaseSequence) residency_ms=\(event.residencyMilliseconds) signal_load_ms=\(event.totalLoadMilliseconds) artifact_ms=\(event.loadPhases?.artifactResolutionMilliseconds ?? -1) tokenizer_ms=\(event.loadPhases?.tokenizerMilliseconds ?? -1) model_init_ms=\(event.loadPhases?.modelInitializationMilliseconds ?? -1) first_prediction=\(event.loadPhases?.firstPredictionStrategy.rawValue ?? "none", privacy: .public) footprint=\(footprint)"

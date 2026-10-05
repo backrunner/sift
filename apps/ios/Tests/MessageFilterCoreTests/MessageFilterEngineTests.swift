@@ -569,6 +569,91 @@ func signalAbstentionIsACompletedSignalResultInsteadOfClassicFallback() async {
     #expect(result.fallbackReason == .none)
     #expect(result.decision.labelID == ModelOutputContract.abstainLabel)
     #expect(result.decision.source == .fallback)
+    #expect(result.systemAction == .none)
+    #expect(result.systemSubAction == .none)
+}
+
+@Test
+func bothModelPathsKeepUnclassifiedResultsOutOfAllCategoryMappings() async {
+    let identity = ModelArtifactIdentity(
+        variant: .transformer, modelABI: "sift-signal-v1", releaseSequence: 1, sha256: "fixture"
+    )
+    let overrides = Dictionary(uniqueKeysWithValues: SiftTaxonomy.leaves.map { ($0.id, CategoryMappingTarget.junk) })
+    let decisions = [
+        ModelOutputContract.abstentionDecision(confidence: 0.85),
+        ClassificationDecision(labelID: "transaction.other", labelTitle: "", groupID: "", groupTitle: "",
+            confidence: 0.88, systemAction: .none, source: .fallback),
+        ClassificationDecision(labelID: "finance.bank", labelTitle: "", groupID: "", groupTitle: "",
+            confidence: 0.4, systemAction: .transaction, source: .model),
+        ClassificationDecision(labelID: "future.unknown", labelTitle: "", groupID: "", groupTitle: "",
+            confidence: 0.99, systemAction: .junk, source: .model),
+        ClassificationDecision(labelID: "promotion", labelTitle: "", groupID: "", groupTitle: "",
+            confidence: .nan, systemAction: .promotion, source: .model)
+    ]
+    for decision in decisions {
+        for variant in [ModelVariant.classic, .transformer] {
+            let classifier = ResultReportingClassifier(result: .success(decision))
+            let engine = MessageFilterEngine(
+                classicClassifier: classifier,
+                transformerLoader: StaticRuntimeLoader(classifier: classifier),
+                transformerDeviceSupport: .supported
+            )
+            let result = await engine.classify(
+                MessageFilterRequest(sender: nil, body: "opaque payload"),
+                configuration: FilterConfigurationSnapshot(
+                    generation: 1, selectedVariant: variant,
+                    modelArtifactIdentity: variant == .classic ? .classic : identity,
+                    rules: [], categoryMappings: overrides
+                )
+            )
+            #expect(result.executionPath == (variant == .classic ? .classic : .signal))
+            #expect(result.decision.labelID == ModelOutputContract.abstainLabel)
+            #expect(result.decision.categoryMappingTarget == nil)
+            #expect(result.systemAction == .none)
+            #expect(result.systemSubAction == .none)
+            #expect(MessageFilterActionMapper.extensionRoute(for: result) == .unclassified)
+        }
+    }
+}
+
+@Test
+func emptyBodiesNeverInvokeModelsButStillHonorSenderRules() async {
+    let recorder = RuntimeLoadRecorder()
+    let classic = ClassificationRecorder(labelID: "spam")
+    let engine = MessageFilterEngine(
+        classicClassifier: classic,
+        transformerLoader: RecordingRuntimeLoader(recorder: recorder),
+        transformerDeviceSupport: .supported
+    )
+    let identity = ModelArtifactIdentity(
+        variant: .transformer, modelABI: "sift-signal-v1", releaseSequence: 1, sha256: "fixture"
+    )
+    for variant in [ModelVariant.classic, .transformer] {
+        for body in ["", " \n\t"] {
+            let configuration = FilterConfigurationSnapshot(
+                generation: 1, selectedVariant: variant,
+                modelArtifactIdentity: variant == .classic ? .classic : identity,
+                rules: [], categoryMappings: ["transaction.other": .junk]
+            )
+            let result = await engine.classify(MessageFilterRequest(sender: nil, body: body), configuration: configuration)
+            #expect(result.executionPath == .noDecision)
+            #expect(result.decision.labelID == ModelOutputContract.abstainLabel)
+            #expect(MessageFilterActionMapper.extensionRoute(for: result) == .unclassified)
+        }
+    }
+    for action in [RuleAction.allow, .block] {
+        let result = await engine.classify(
+            MessageFilterRequest(sender: "10086", body: ""),
+            configuration: transformerSnapshot(identity: identity, rules: [
+                CustomRule(name: "Sender rule", sender: SenderMatcher(kind: .exact, pattern: "10086"), action: action)
+            ])
+        )
+        #expect(result.executionPath == .rule)
+        #expect(result.systemAction == action.systemAction)
+        #expect(result.systemSubAction == .none)
+    }
+    #expect(classic.recordedBodies().isEmpty)
+    #expect(await recorder.values().isEmpty)
 }
 
 @Test

@@ -67,19 +67,23 @@ or delete the app.
 
 ## Local filter diagnostics
 
-The app keeps bounded, rotating diagnostic files in the App Group cache,
-excluded from backup (one active file and up to three 512 KiB archives).
-They record timestamps, app/model versions, execution stages, elapsed time,
+Real filtering diagnostics use the system log and require development tools to
+retrieve. IdentityLookup prohibits the SMS extension from writing shared
+containers. The app has no developer section or diagnostic export and does not
+persist installation/prewarm diagnostics in production. Test probes can use
+injected, bounded JSONL stores excluded from backup (one active file and up to
+three 512 KiB archives).
+Diagnostics record timestamps, app/model versions, execution stages, elapsed time,
 process memory use and peak, available process memory, and filtering outcomes.
 Random identifiers are generated separately for each filter request; the local
 process number helps compare a run with an iOS termination report. These are
 not device, account, sender, or persistent user identifiers. Diagnostic records
-contain no message text or phone numbers. Developer details can additionally
+contain no message text or phone numbers. Explicit test-probe details can additionally
 include category, confidence, model identity, and system routing actions.
 
 Diagnostics are local and are not sent to CloudKit or used as training samples.
-They leave the device only when the user explicitly exports and shares them,
-or retrieves them using development tools. A missing completion record is
+They leave the device only when retrieved and shared using development tools.
+A missing completion record is
 evidence of an unfinished observation, not proof of a crash or a specific SMS.
 
 ## Apple review checklist

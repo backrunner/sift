@@ -22,7 +22,7 @@ func unfinishedRequestStagesRemainExportableBeforeAnyCompletion() throws {
             stage: stage, elapsedMilliseconds: 2, configuration: .classicDefault, memory: memory
         )))
     }
-    // Reopen the store, as the containing app does after the extension exits.
+    // Reopen a host-side probe store. Real IdentityLookup cannot write it.
     let data = try MessageFilterDiagnosticLogStore(directoryURL: directory)
         .exportData(metadata: diagnosticExportMetadata(identity: .classic))
     let decoder = JSONDecoder()
@@ -39,7 +39,7 @@ func unfinishedRequestStagesRemainExportableBeforeAnyCompletion() throws {
 }
 
 @Test
-func defaultStageRecorderWritesWithoutEnablingDeveloperMode() throws {
+func hostStageRecorderPersistsExecutionStages() throws {
     let suiteName = "SiftStageDiagnostics.\(UUID().uuidString)"
     let defaults = try #require(UserDefaults(suiteName: suiteName))
     defer { defaults.removePersistentDomain(forName: suiteName) }
@@ -56,6 +56,35 @@ func defaultStageRecorderWritesWithoutEnablingDeveloperMode() throws {
     #expect(String(decoding: data, as: UTF8.self).contains("modelLoadStarted"))
     // Stage breadcrumbs must not inflate successful-classification counters.
     #expect(MessageFilterPerformanceEvidenceStore(defaults: defaults).snapshot().releases.isEmpty)
+}
+
+@Test
+func identityLookupDiagnosticsNeverWriteSharedFilesOrPreferences() throws {
+    let suiteName = "SiftReadOnlyDiagnostics.\(UUID().uuidString)"
+    let defaults = try #require(UserDefaults(suiteName: suiteName))
+    defer { defaults.removePersistentDomain(forName: suiteName) }
+    let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+    defer { try? FileManager.default.removeItem(at: directory) }
+    let performanceStore = MessageFilterPerformanceEvidenceStore(defaults: defaults)
+    let recorder = MessageFilterOSLogDiagnosticsRecorder(
+        persistence: .systemLogOnly,
+        performanceStore: performanceStore,
+        diagnosticLogStore: MessageFilterDiagnosticLogStore(directoryURL: directory)
+    )
+    let observer = recorder.stageObserver(requestID: UUID(), configuration: .classicDefault)
+    observer(.queryReceived)
+    observer(.responseSubmitted)
+    recorder.record(MessageFilterDiagnosticEvent(
+        artifactIdentity: .classic, latencyBucket: .under500Milliseconds,
+        fallbackReason: .none, executionPath: .classic
+    ))
+    recorder.record(SignalModelCacheReleaseEvent(
+        artifactIdentity: .classic, reason: .idleTimeout, residencyMilliseconds: 10
+    ))
+    #expect(!FileManager.default.fileExists(atPath: directory.path))
+    #expect(defaults.data(forKey: MessageFilterPerformanceEvidenceStore.defaultsKey) == nil)
+    #expect(performanceStore.snapshot().releases.isEmpty)
+    #expect(performanceStore.snapshot().latestEvent == nil)
 }
 
 @Test
@@ -242,7 +271,6 @@ private func diagnosticExportMetadata(
         appVersion: "1.4",
         appBuild: "18",
         operatingSystemVersion: "test",
-        developerModeEnabled: true,
         appGroupContainerAvailable: true,
         selectedVariant: identity.variant,
         configurationGeneration: 1,

@@ -179,7 +179,6 @@ public struct MessageFilterDiagnosticExportMetadata: Codable, Hashable, Sendable
     public let appVersion: String
     public let appBuild: String
     public let operatingSystemVersion: String
-    public let developerModeEnabled: Bool
     public let appGroupContainerAvailable: Bool
     public let selectedVariant: ModelVariant
     public let configurationGeneration: UInt64
@@ -197,7 +196,6 @@ public struct MessageFilterDiagnosticExportMetadata: Codable, Hashable, Sendable
         appVersion: String,
         appBuild: String,
         operatingSystemVersion: String,
-        developerModeEnabled: Bool,
         appGroupContainerAvailable: Bool,
         selectedVariant: ModelVariant,
         configurationGeneration: UInt64,
@@ -216,7 +214,6 @@ public struct MessageFilterDiagnosticExportMetadata: Codable, Hashable, Sendable
         self.appVersion = appVersion
         self.appBuild = appBuild
         self.operatingSystemVersion = operatingSystemVersion
-        self.developerModeEnabled = developerModeEnabled
         self.appGroupContainerAvailable = appGroupContainerAvailable
         self.selectedVariant = selectedVariant
         self.configurationGeneration = configurationGeneration

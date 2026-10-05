@@ -40,6 +40,9 @@ public struct ClassificationDecision: Codable, Hashable, Sendable {
     public func applying(categoryMappings: [String: CategoryMappingTarget]) -> ClassificationDecision {
         guard
             source != .rule,
+            source != .fallback,
+            systemAction != .none,
+            confidence.isFinite, (0...1).contains(confidence),
             CategoryMappingPolicy.isEligibleSource(labelID: labelID),
             let target = categoryMappings[labelID]
         else {

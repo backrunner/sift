@@ -13,10 +13,26 @@ public enum ModelOutputContract {
             labelTitle: String(localized: "未分类"),
             groupID: "",
             groupTitle: "",
-            confidence: confidence,
+            confidence: confidence.isFinite ? min(max(confidence, 0), 1) : 0,
             systemAction: .none,
             source: .fallback
         )
+    }
+
+    /// Only a completed, valid classification may participate in category mapping.
+    /// Confidence thresholds are Sift policy, not IdentityLookup requirements.
+    public static func validatedDecision(
+        _ decision: ClassificationDecision,
+        minimumConfidence: Double
+    ) -> ClassificationDecision {
+        guard decision.confidence.isFinite, (0...1).contains(decision.confidence),
+              decision.source != .fallback,
+              decision.systemAction != .none,
+              SiftTaxonomy.leaf(id: decision.labelID) != nil,
+              decision.confidence >= minimumConfidence else {
+            return abstentionDecision(confidence: decision.confidence)
+        }
+        return decision
     }
 }
 
@@ -2373,23 +2389,10 @@ public struct ClassificationPipeline: Sendable {
             )
         }
 
+        guard !body.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            return ModelOutputContract.abstentionDecision(confidence: 0)
+        }
         let decision = classifier.classify(sender: sender, body: body)
-        if ModelOutputContract.isAbstainLabel(decision.labelID) {
-            return decision
-        }
-        if decision.confidence < 0.6 {
-            if let fallback = SiftTaxonomy.leaf(id: "transaction.other") {
-                return ClassificationDecision(
-                    labelID: fallback.id,
-                    labelTitle: fallback.title,
-                    groupID: fallback.groupId,
-                    groupTitle: fallback.groupTitle,
-                    confidence: decision.confidence,
-                    systemAction: .none,
-                    source: .fallback
-                )
-            }
-        }
-        return decision
+        return ModelOutputContract.validatedDecision(decision, minimumConfidence: 0.6)
     }
 }
