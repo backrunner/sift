@@ -1,5 +1,19 @@
 # Message-filter memory and diagnostics
 
+## Qualified NeuralNetwork route, 2026-10-07
+
+The original 12-layer r33 model now has a qualified FP32 NeuralNetwork export with
+mapped W4 embeddings. On iPhone 17 / iOS 27.0.1, a real IdentityLookup extension
+completed 30 engine/model reloads and 10,000 continuous classifications without
+failures or fallback. Its absolute lifetime peak was 19,891,944 bytes, with over
+5 MB of observed headroom; an actual incoming SMS also completed. The initial
+cache growth and the later steady-state window are reported separately.
+
+See [the release evidence and limitations](engineering/signal-nn12-release.md)
+for exact identities, timings, quality, compatibility and memory gates. This
+sequence-6 route requires Sift 1.5 (32). The sections below preserve the earlier
+MLProgram/Jetsam investigation and do not describe the new export's results.
+
 ## Device evidence, 2026-09-05
 
 The iPhone 17 running iOS 27.0 build 24A5424a recorded four

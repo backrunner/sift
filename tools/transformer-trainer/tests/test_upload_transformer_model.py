@@ -35,6 +35,30 @@ from upload_transformer_model import (
 
 
 class UploadTransformerModelTests(unittest.TestCase):
+    def test_neuralnetwork_upload_cannot_skip_actual_extension_evidence(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            selection_path, manifest = self.selection_fixture(root)
+            profile = {
+                "identifier": "nn-fp32-mapped-w4-block16", "weightBits": 32,
+                "activationBits": 32, "method": "mixed",
+                "granularity": "encoder-fp32-embedding-blockwise-int4", "blockSize": 16,
+            }
+            manifest.update(modelABI="sift-signal-mapped-embedding-v1", minimumAppBuild=32,
+                            runtimeProfile={"computeUnits": "cpuOnly", "computePrecision": "float32",
+                                            "modelType": "neuralNetworkClassifier"},
+                            quantizationProfile=profile)
+            selection = json.loads(selection_path.read_text())
+            report_path = Path(selection["reportPath"])
+            report = json.loads(report_path.read_text())
+            report["profileID"] = profile["identifier"]
+            report_path.write_text(json.dumps(report))
+            selection.update(profileID=profile["identifier"], deviceEvidenceSkipped=True,
+                             reportSHA256=hashlib.sha256(report_path.read_bytes()).hexdigest())
+            selection_path.write_text(json.dumps(selection))
+            with self.assertRaisesRegex(SystemExit, "IdentityLookup evidence gate failed"):
+                verify_selected_candidate(selection_path, manifest, root, skip_device_evidence=True)
+
     def test_channel_namespace_matches_release_generation(self) -> None:
         validate_channel_path_for_release("channels/v2/SiftSignalModel.channel.json", {"releaseSequence": 3})
         validate_channel_path_for_release("channels/v3/SiftSignalModel.channel.json", {"releaseSequence": 4})
@@ -400,6 +424,28 @@ class UploadTransformerModelTests(unittest.TestCase):
 
             with self.assertRaisesRegex(SystemExit, "report artifact does not match"):
                 verify_selected_candidate(selection_path, manifest, root)
+
+    def test_mapped_neuralnetwork_profile_requires_matching_runtime_and_build(self) -> None:
+        manifest = {
+            "modelABI": "sift-signal-mapped-embedding-v1", "minimumAppBuild": 32,
+            "runtimeProfile": {"modelType": "neuralNetworkClassifier", "computeUnits": "cpuOnly", "computePrecision": "float32"},
+            "quantizationProfile": {
+                "identifier": "nn-fp32-mapped-w4-block16", "weightBits": 32,
+                "activationBits": 32, "method": "mixed",
+                "granularity": "encoder-fp32-embedding-blockwise-int4", "blockSize": 16,
+            },
+        }
+        validate_release_profile(manifest)
+        for key, value in (("modelABI", "sift-signal-v1"), ("minimumAppBuild", 31)):
+            invalid = json.loads(json.dumps(manifest))
+            invalid[key] = value
+            with self.assertRaises(SystemExit):
+                validate_release_profile(invalid)
+        for key, value in (("modelType", "mlProgram"), ("computeUnits", "all")):
+            invalid = json.loads(json.dumps(manifest))
+            invalid["runtimeProfile"][key] = value
+            with self.assertRaises(SystemExit):
+                validate_release_profile(invalid)
 
     def test_upload_guard_rejects_changed_report_bytes(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

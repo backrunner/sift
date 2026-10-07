@@ -7,6 +7,21 @@ import argparse
 import json
 from pathlib import Path
 
+from identitylookup_release_gate import PROFILE_ID, identitylookup_failures
+
+
+def cpu_plan_verified(benchmark: dict) -> bool:
+    """Accept measured NN layer placement without inventing MLProgram costs."""
+    plan = benchmark.get("computePlan", {})
+    if benchmark.get("computeUnits") != "cpuOnly":
+        return False
+    if plan.get("highestCostOperationDevice") == "cpu" and plan.get("cpuPreferredCost", 0) > 0:
+        return True
+    layers = plan.get("neuralNetworkLayerCount", 0)
+    assigned = plan.get("deviceAssignedLayerCount", 0)
+    return (isinstance(layers, int) and isinstance(assigned, int)
+            and 0 < assigned <= layers and plan.get("cpuPreferredLayerCount") == assigned)
+
 
 def parse_arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
@@ -65,11 +80,7 @@ def device_metrics(benchmark: dict, extension: dict) -> dict:
     if extension.get("computeUnits") != compute_units:
         raise SystemExit("error: runtime benchmark and MessageFilter evidence compute units differ")
     acceleration_verified = bool(compute_plan.get("accelerationVerified")) and trace_count > 0
-    cpu_plan_verified = (
-        compute_units == "cpuOnly"
-        and compute_plan.get("highestCostOperationDevice") == "cpu"
-        and compute_plan.get("cpuPreferredCost", 0) > 0
-    )
+    cpu_verified = cpu_plan_verified(benchmark)
     baseline_footprint = benchmark.get("baselinePhysicalFootprintBytes", 0)
     average_footprint = benchmark.get("averagePhysicalFootprintBytes", 0)
     peak_footprint = benchmark.get("peakPhysicalFootprintBytes", 0)
@@ -77,7 +88,10 @@ def device_metrics(benchmark: dict, extension: dict) -> dict:
     cold_model_load = benchmark.get("coldLoadMilliseconds", 0)
     first_inference = benchmark.get("firstInferenceMilliseconds", 0)
     return {
-        "runtimeExecutionVerified": acceleration_verified or cpu_plan_verified,
+        "runtimeExecutionVerified": acceleration_verified or cpu_verified,
+        "neuralNetworkLayerCount": compute_plan.get("neuralNetworkLayerCount"),
+        "deviceAssignedLayerCount": compute_plan.get("deviceAssignedLayerCount"),
+        "cpuPreferredLayerCount": compute_plan.get("cpuPreferredLayerCount"),
         "accelerationVerified": acceleration_verified,
         "computePlanAccelerationVerified": bool(compute_plan.get("accelerationVerified")),
         "coreMLTraceAcceleratorExecutionCount": trace_count,
@@ -153,6 +167,18 @@ def merge_device_metrics(
 
     report = dict(report)
     report["deviceMetrics"] = release_device
+    if report.get("profileID") == PROFILE_ID:
+        artifact = report.get("artifactSHA256")
+        if not artifact or benchmark.get("artifactIdentity", {}).get("sha256") != artifact:
+            raise SystemExit("error: runtime benchmark artifact does not match candidate")
+        if extension.get("artifactSHA256") != artifact:
+            raise SystemExit("error: extension artifact does not match candidate")
+        if not benchmark.get("deviceModel") or benchmark.get("deviceModel") != extension.get("deviceModel"):
+            raise SystemExit("error: runtime and extension evidence device models differ")
+        report["identityLookupEvidence"] = extension.get("identityLookupEvidence", {})
+        failures = identitylookup_failures(report)
+        if failures:
+            raise SystemExit("error: IdentityLookup evidence failed: " + ", ".join(failures))
     return report
 
 

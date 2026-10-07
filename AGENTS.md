@@ -79,12 +79,12 @@ The product is not launched yet; backward compatibility is not required.
     to `release`; Xcode Cloud workflows bind to `release`, while local builds
     use `main`.
 
-## Current Model Baselines (2026-09-21)
+## Current Model Baselines (2026-10-07)
 
 | Variant | Version | Fixed 487 | Promotion 150 | Notes |
 | --- | --- | ---: | ---: | --- |
 | Classic | `maxent-generalization-v52-full-r35` | 98.97% | 98.67% | 53 labels; action 99.18% / 100%; billing raw/action 100%/100%; 539,242 bytes |
-| Premium | `signal-v4-generalization-v50-r33-distilled-12l` | 99.18% | 100.00% | 22 -> 12 layers, W4A32 block16 PTQ, FP32 CPU-only; sequence 5/build >= 19; 108,748,513 download bytes; published with device evidence skipped |
+| Premium | `signal-v5-r33-nn12-mapped` | 99.38% | 100.00% | Same r33 12 layers; FP32 NeuralNetwork encoder + mapped W4 embeddings, CPU-only; sequence 6/build >= 32 (1.5); 171,886,849 download bytes; real IdentityLookup peak 19,891,944 bytes |
 | PII | `pii-boundary-v8` | n/a | n/a | Core ML INT8 P 99.57%, R 98.25%, F1 98.91%; clean FPR 0/480 and 0/69; grouped amounts |
 
 Classic r35 uses 16,547 leak-free rows with complete zh/en/ja coverage. All 27
@@ -93,11 +93,15 @@ signatures; every suite is non-regressing against published r32 and local r34.
 See `docs/engineering/classic-r35-release.md`. Classic installation compares
 raw labels and final actions against the hash-pinned published baseline.
 Signal r33 uses a separate 19,254-row corpus with a 22-layer teacher and
-12-layer student (temperature 2, distill alpha 0.7). Its current sequence-5
-selection explicitly skipped device evidence; do not claim the prior
-IdentityLookup memory issue is resolved. See `docs/MESSAGE_FILTER_MEMORY.md`.
-Sequences 4 and 5 require app build 19 (Sift 1.4); build 18 and earlier
-continue to use the signed sequence-3 compatibility entry.
+12-layer student (temperature 2, distill alpha 0.7). Sequence 6 preserves that
+checkpoint with a NeuralNetwork export; real IdentityLookup completed 30 model
+reloads in one process and 10,000 warm queries with zero failures/fallback on
+iPhone 17 / iOS 27.0.1. See `docs/engineering/signal-nn12-release.md` for initial
+cache growth, steady-state drift, headroom and evidence limits. Do not equate
+model reloads with fresh OS processes or claim safety on every device/OS.
+Sequence 6 requires Sift 1.5 build 32. Sequences 4 and 5 require build 19 and
+remain compatible entries; their prior selection skipped device evidence.
+Build 18 and earlier continue to use the signed sequence-3 compatibility entry.
 The 150-row promotion boundary set spans game marketplaces, retail, finance,
 carrier offers, travel, insurance, services, loans, and housing, with paired
 order, points, bank, data-usage, update, and scam negatives. The previous

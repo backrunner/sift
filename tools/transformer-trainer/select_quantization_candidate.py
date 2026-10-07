@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any
 
 from check_distillation_gate import gate_matches_student, is_distilled, read_report
+from identitylookup_release_gate import identitylookup_failures
 
 
 QUALITY_FAILURES = frozenset({
@@ -152,7 +153,7 @@ def candidate_failures(report: dict[str, Any], fp16: dict[str, Any], *, skip_dev
     actions = report.get("messageFilterActions", {})
     device = report.get("deviceMetrics", {})
     fp16_metrics = fp16.get("metrics", {})
-    failures: list[str] = []
+    failures: list[str] = identitylookup_failures(report)
 
     def require(condition: bool, name: str) -> None:
         if not condition:

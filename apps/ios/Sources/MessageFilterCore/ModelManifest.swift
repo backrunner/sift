@@ -121,12 +121,25 @@ public struct TransformerManifestVerifier: Sendable {
     /// A32 explicitly.
     public static func supports(
         runtimeProfile: TransformerRuntimeProfile,
-        quantizationProfile: TransformerQuantizationProfile
+        quantizationProfile: TransformerQuantizationProfile,
+        modelABI: String? = nil,
+        minimumAppBuild: Int = 0
     ) -> Bool {
+        let mappedNeuralNetwork = modelABI == MappedTokenEmbedding.modelABI
+            && minimumAppBuild >= TransformerSignalReleaseContract.neuralNetworkMinimumAppBuild
+            && runtimeProfile.modelType == "neuralNetworkClassifier"
+            && runtimeProfile.computeUnits == "cpuOnly"
+            && runtimeProfile.computePrecision == "float32"
+            && quantizationProfile.identifier == TransformerSignalReleaseContract.neuralNetworkProfileID
+            && quantizationProfile.weightBits == 32
+            && quantizationProfile.activationBits == 32
+            && quantizationProfile.method == "mixed"
+            && quantizationProfile.granularity == "encoder-fp32-embedding-blockwise-int4"
+            && quantizationProfile.blockSize == 16
         guard
             TransformerRuntimeProfile.supportedComputeUnits.contains(runtimeProfile.computeUnits),
             runtimeProfile.inferenceBudgetMilliseconds <= 500,
-            [4, 8].contains(quantizationProfile.weightBits),
+            ([4, 8].contains(quantizationProfile.weightBits) || mappedNeuralNetwork),
             [8, 16, 32].contains(quantizationProfile.activationBits)
         else {
             return false
@@ -237,7 +250,9 @@ public struct TransformerManifestVerifier: Sendable {
             manifest.minimumOSVersion == channel.minimumOSVersion,
             Self.supports(
                 runtimeProfile: manifest.runtimeProfile,
-                quantizationProfile: manifest.quantizationProfile
+                quantizationProfile: manifest.quantizationProfile,
+                modelABI: manifest.modelABI,
+                minimumAppBuild: manifest.minimumAppBuild
             )
         else {
             throw TransformerManifestValidationError.channelReleaseMismatch

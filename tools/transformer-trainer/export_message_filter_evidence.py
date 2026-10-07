@@ -10,6 +10,8 @@ import math
 from pathlib import Path
 from typing import Any
 
+from record_device_metrics import cpu_plan_verified
+
 
 BOUNDED_BUCKETS: tuple[tuple[str, float], ...] = (
     ("under150Milliseconds", 150.0),
@@ -159,11 +161,7 @@ def build_evidence(
     compute_units = runtime_benchmark.get("computeUnits")
     cpu_only = compute_units == "cpuOnly"
     if cpu_only:
-        compute_plan = runtime_benchmark.get("computePlan", {})
-        if (
-            compute_plan.get("highestCostOperationDevice") != "cpu"
-            or compute_plan.get("cpuPreferredCost", 0) <= 0
-        ):
+        if not cpu_plan_verified(runtime_benchmark):
             raise SystemExit("error: CPU-only benchmark lacks a matching Core ML compute plan")
         if (
             runtime_benchmark.get("p99LatencyMilliseconds", float("inf")) > 250

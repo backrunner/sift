@@ -195,8 +195,18 @@ public struct TransformerDistillationProvenance: Codable, Hashable, Sendable {
 public enum TransformerSignalReleaseContract {
     public static let distilledReleaseSequence = 4
     public static let distilledMinimumAppBuild = 19
+    public static let neuralNetworkMinimumAppBuild = 32
+    public static let neuralNetworkProfileID = "nn-fp32-mapped-w4-block16"
 
     public static func accepts(_ manifest: TransformerModelManifest) -> Bool {
+        if manifest.quantizationProfile.weightBits == 32 {
+            guard TransformerManifestVerifier.supports(
+                runtimeProfile: manifest.runtimeProfile,
+                quantizationProfile: manifest.quantizationProfile,
+                modelABI: manifest.modelABI,
+                minimumAppBuild: manifest.minimumAppBuild
+            ) else { return false }
+        }
         if manifest.modelABI == MappedTokenEmbedding.modelABI {
             guard manifest.minimumAppBuild >= MappedTokenEmbedding.minimumAppBuild,
                   manifest.releaseSequence >= 5,
