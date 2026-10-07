@@ -174,3 +174,30 @@ CoreSmokeTests, 153 trainer Python tests without skips, physical-device build an
 the installation/prime/runtime/manual-selection XCTest checks. Pushing `release`
 requests the Xcode Cloud app build; model publication does not itself deliver an
 App Store/TestFlight binary.
+
+## Sift 1.5 build 33 release review, 2026-10-08
+
+Build 33 retains the exact sequence-6 model and runtime qualified above. The
+model still downloads on demand; no bundled Signal or regional offline edition
+is introduced. Its minimum compatible build remains 32.
+
+The release review rechecked the runtime profile, mapped embedding loader,
+download verification and activation path. The four candidate artifact files and
+package hash match the selected release. Quality and device-evidence publication
+gates pass without bypasses. Fresh public metadata passes the actual Swift
+client's signature and release validation: builds 19/30/31 select sequence 5,
+and builds 32/33 select sequence 6.
+
+Validation passed: `swift build`, `swift test`, `swift run CoreSmokeTests`, all
+153 trainer Python tests in the trainer environment without skips, Xcode Cloud's
+built-in model preflight, and a local Release archive. The archive contains
+version 1.5/build 33 in both the app and filtering extension, the expected v3
+model channel, and the pinned Classic/PII resources in their intended bundles.
+It contains no Signal model, XCTest bundle or probe extension. Local artifacts
+are under `build/sift-1.5-build33-review/`.
+
+The local archive is unsigned and verifies release contents, not Distribution
+signing or TestFlight delivery. The verified main commit is merged into release
+for the existing Xcode Cloud signing and TestFlight workflow. Build 33 changes
+the app build number only; the physical-device results above remain build-32
+evidence for the unchanged runtime and model.
