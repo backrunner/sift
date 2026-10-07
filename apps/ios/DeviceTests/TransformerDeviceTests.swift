@@ -7,6 +7,25 @@ final class TransformerDeviceTests: XCTestCase {
     private static let candidateDirectoryName = ".DeviceBenchmarkCandidate"
     private static let evidenceDirectoryName = "DeviceEvidence"
 
+    /// Explicit device setup for a user-coordinated incoming-SMS check. This is
+    /// intentionally outside the isolated benchmarks: it changes the real shared
+    /// selection. Normal test runs skip it. Use `classic` to restore afterwards.
+    func testSetModelForManualSMSValidation() throws {
+        try requireSupportedPhysicalDevice()
+        guard let raw = ProcessInfo.processInfo.environment["SIFT_DEVICE_MANUAL_SMS_VARIANT"],
+              let variant = ModelVariant(rawValue: raw) else {
+            throw XCTSkip("Manual SMS setup requires an explicit model variant")
+        }
+        let identity = variant == .transformer
+            ? try installedModelForBenchmark().manifest.artifactIdentity
+            : nil
+        ModelSelectionStore.save(variant, artifactIdentity: identity)
+        XCTAssertEqual(ModelSelectionStore.load(), variant)
+        if let identity {
+            XCTAssertEqual(FilterConfigurationSnapshotStore.load().modelArtifactIdentity, identity)
+        }
+    }
+
     func testInstallCandidateWithoutFinalPathPrime() throws {
         try requireSupportedPhysicalDevice()
         let evidenceDirectory = try Self.evidenceDirectory(reset: true)
@@ -78,7 +97,16 @@ final class TransformerDeviceTests: XCTestCase {
         XCTAssertEqual(report.artifactIdentity, installed.manifest.artifactIdentity)
         XCTAssertEqual(report.measuredIterations, measuredIterations)
         XCTAssertEqual(report.failedInferenceCount, 0)
-        XCTAssertGreaterThan(report.computePlan.costedOperationCount, 0)
+        if let layerCount = report.computePlan.neuralNetworkLayerCount {
+            XCTAssertGreaterThan(layerCount, 0)
+            XCTAssertEqual(computeUnits, "cpuOnly")
+            let assigned = try XCTUnwrap(report.computePlan.deviceAssignedLayerCount)
+            XCTAssertGreaterThan(assigned, 0)
+            XCTAssertLessThanOrEqual(assigned, layerCount)
+            XCTAssertEqual(report.computePlan.cpuPreferredLayerCount, assigned)
+        } else {
+            XCTAssertGreaterThan(report.computePlan.costedOperationCount, 0)
+        }
         if computeUnits == "cpuOnly" {
             XCTAssertFalse(report.computePlan.accelerationVerified)
         } else {
@@ -157,6 +185,8 @@ final class TransformerDeviceTests: XCTestCase {
                 evidenceStore: evidenceStore,
                 isColdStart: true
             )
+            // Do not retain 30 model instances through their idle eviction tasks.
+            await engine.handleSignalMemoryPressure()
         }
 
         let warmEngine = MessageFilterEngine()
@@ -236,7 +266,12 @@ final class TransformerDeviceTests: XCTestCase {
             TransformerRuntimeProfile.supportedComputeUnits.contains(
                 candidate.manifest.runtimeProfile.computeUnits
             ),
-            [4, 8].contains(candidate.manifest.quantizationProfile.weightBits)
+            TransformerManifestVerifier.supports(
+                runtimeProfile: candidate.manifest.runtimeProfile,
+                quantizationProfile: candidate.manifest.quantizationProfile,
+                modelABI: candidate.manifest.modelABI,
+                minimumAppBuild: candidate.manifest.minimumAppBuild
+            )
         else {
             throw DeviceBenchmarkError.invalidCandidate
         }

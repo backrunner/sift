@@ -1,0 +1,122 @@
+{
+  "schemaVersion": 1,
+  "qualifiedAt": "2026-10-07",
+  "version": "signal-v5-r33-nn12-mapped",
+  "releaseSequence": 6,
+  "minimumAppVersion": "1.5",
+  "minimumAppBuild": 32,
+  "artifactSHA256": "5e7db0cb2e17b210532d240ad4cd1d21926e1e740f396ec78e03fd17e8f61092",
+  "downloadBytes": 171886849,
+  "deviceModel": "iPhone18,3",
+  "osVersion": "27.0.1 (24A446)",
+  "quality": {
+    "fixedAccuracy": 0.9938398357289527,
+    "promotionAccuracy": 1.0,
+    "billingAccuracy": 1.0,
+    "conversationAccuracy": 1.0,
+    "billingActionAccuracy": 1.0,
+    "conversationActionAccuracy": 1.0,
+    "fp16Top1Agreement": 0.9985652797704447,
+    "probabilitiesFinite": true,
+    "probabilitySumsValid": true,
+    "languageAccuracy": {
+      "en": 0.9956140350877193,
+      "ja": 0.9911894273127754,
+      "zh": 1.0
+    }
+  },
+  "identityLookupEvidence": {
+    "artifactSHA256": "5e7db0cb2e17b210532d240ad4cd1d21926e1e740f396ec78e03fd17e8f61092",
+    "environment": "identitylookup-extension",
+    "productionEngine": true,
+    "completed": true,
+    "processIdentifier": 54482,
+    "coldRunCount": 30,
+    "coldRunDefinition": "fresh engine and classifier, same OS process",
+    "warmQueryCount": 10000,
+    "failedQueries": 0,
+    "completedIncomingSMSQueries": 1,
+    "absoluteProcessPeakBytes": 19891944,
+    "observedProcessBudgetBytes": 25149440,
+    "initialPhysicalFootprintBytes": 4114152,
+    "finalPhysicalFootprintBytes": 19105512,
+    "postReleasePhysicalFootprintBytes": 5097072,
+    "initialToFinalGrowthBytes": 14991360,
+    "steadyStateWindow": {
+      "startQuery": 5000,
+      "endQuery": 10000,
+      "sampleCount": 51,
+      "firstPhysicalFootprintBytes": 19072744,
+      "maximumPhysicalFootprintBytes": 19203816,
+      "finalPhysicalFootprintBytes": 19121896
+    },
+    "sourceLogs": [
+      {
+        "file": "identitylookup-qualification-log.json",
+        "sha256": "7ff59df2fbe214a40b43a25310bfd55892b830bc7c544f771bb0d23137e53f7e"
+      },
+      {
+        "file": "full12-latest-otp-stages.json",
+        "sha256": "8f33518f0db4cb04907ed2bdf554ed9e1ee8454f06e29f339379f0ab71ca92c6"
+      }
+    ]
+  },
+  "extensionTiming": {
+    "coldP95Milliseconds": 279.772167,
+    "coldP99Milliseconds": 382.94425,
+    "coldMaximumMilliseconds": 382.94425,
+    "warmP95Milliseconds": 137.828292,
+    "warmP99Milliseconds": 170.791166,
+    "warmMaximumMilliseconds": 538.466583
+  },
+  "deviceEvidenceSkipped": false,
+  "reportSHA256": "98b0a181b813dfc67077db7af3c65f4f822bf77fc91383aec6541dfd83f30560",
+  "distillationGateSHA256": "19a46fe2cc47e606cd8821a0b5fdfcbef81e83b54ae32958cf2765dd9b1cd414",
+  "notes": [
+    "Cold count is fresh engine/model reloads in one OS process.",
+    "Stress runs the production engine with a bundled artifact loader in an isolated real IdentityLookup test extension.",
+    "Actual test-extension SMS is always allowed. This does not establish notification suppression.",
+    "The fixed second-half drift window is separate from initial allocation growth.",
+    "Evidence covers iPhone18,3 on iOS 27.0.1, not all supported devices and operating systems."
+  ],
+  "productionIncomingSMS": {
+    "appVersion": "1.5",
+    "appBuild": 32,
+    "timestamp": "2026-10-07T23:37:20+08:00",
+    "selectedArtifactSHA256": "5e7db0cb2e17b210532d240ad4cd1d21926e1e740f396ec78e03fd17e8f61092",
+    "coldLoad": true,
+    "executionPath": "signal",
+    "action": "transaction",
+    "fallback": "none",
+    "error": "none",
+    "responseSubmitted": true,
+    "totalMilliseconds": 268,
+    "signalLoadMilliseconds": 66,
+    "signalInferenceMilliseconds": 193,
+    "absoluteProcessPeakBytes": 18499208,
+    "responsePhysicalFootprintBytes": 6325992,
+    "processStillAliveAfterCollection": true,
+    "sourceLogSHA256": "6ed6d7fae509fb8941ea65c0943041bdb00d599d87eb691341a6c4f566233b99",
+    "selectionMethod": "opt-in device-test setup; production IAP unchanged"
+  },
+  "sourceCorpusAudit": {
+    "inputRows": 19254,
+    "externalSuites": 27,
+    "exactOverlap": 0,
+    "digitNormalizedOverlap": 0,
+    "templateOverlapRemovedForNewLiteTraining": 44,
+    "auditSHA256": "42a8161f881ed00116a65c88edfc7e7bb345430b6f33ceef7d1bebde3ef881b2",
+    "historicalTeacherCorpusByteIdentityProven": false
+  },
+  "publication": {
+    "channelURL": "https://sift.alkinum.com/models/channels/v3/SiftSignalModel.channel.json",
+    "allRemoteArtifactsSHA256Verified": true,
+    "swiftClientSignaturesVerified": true,
+    "verifiedBuildSelection": {
+      "19": 5,
+      "30": 5,
+      "31": 5,
+      "32": 6
+    }
+  }
+}

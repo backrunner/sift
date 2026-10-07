@@ -1,9 +1,23 @@
 import unittest
 
-from record_device_metrics import merge_device_metrics
+from record_device_metrics import cpu_plan_verified, merge_device_metrics
 
 
 class RecordDeviceMetricsTests(unittest.TestCase):
+    def test_neuralnetwork_cpu_evidence_requires_every_assigned_layer(self) -> None:
+        benchmark = {"computeUnits": "cpuOnly", "computePlan": {
+            "neuralNetworkLayerCount": 52, "deviceAssignedLayerCount": 48, "cpuPreferredLayerCount": 48,
+            "cpuPreferredCost": 0, "highestCostOperationDevice": None,
+        }}
+        self.assertTrue(cpu_plan_verified(benchmark))
+        benchmark["computePlan"]["cpuPreferredLayerCount"] = 47
+        self.assertFalse(cpu_plan_verified(benchmark))
+        benchmark["computePlan"].update(neuralNetworkLayerCount=0, cpuPreferredLayerCount=0)
+        self.assertFalse(cpu_plan_verified(benchmark))
+        benchmark["computePlan"].update(neuralNetworkLayerCount=48, cpuPreferredLayerCount=48)
+        benchmark["computeUnits"] = "all"
+        self.assertFalse(cpu_plan_verified(benchmark))
+
     def test_requires_full_extension_run_counts(self) -> None:
         benchmark = {
             "computeUnits": "all",

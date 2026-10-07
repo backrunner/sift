@@ -11,6 +11,11 @@ public struct TransformerComputePlanReport: Codable, Hashable, Sendable {
     public let neuralEnginePreferredCost: Double
     public let highestCostOperationDevice: String?
     public let accelerationVerified: Bool
+    /// NeuralNetwork plans expose layer placement, but no per-layer costs.
+    /// Keep this separate from MLProgram cost evidence.
+    public var neuralNetworkLayerCount: Int?
+    public var deviceAssignedLayerCount: Int?
+    public var cpuPreferredLayerCount: Int?
 }
 
 public enum TransformerComputePlanInspector {
@@ -21,6 +26,25 @@ public enum TransformerComputePlanInspector {
         let configuration = MLModelConfiguration()
         configuration.computeUnits = try resolvedComputeUnits(computeUnits)
         let plan = try await MLComputePlan.load(contentsOf: modelURL, configuration: configuration)
+        if case let .neuralNetwork(network) = plan.modelStructure {
+            let assignedLayers = network.layers.filter { plan.deviceUsage(for: $0) != nil }.count
+            let cpuLayers = network.layers.filter { layer in
+                guard let device = plan.deviceUsage(for: layer)?.preferred else { return false }
+                return deviceName(device) == "cpu"
+            }.count
+            return TransformerComputePlanReport(
+                operationCount: network.layers.count,
+                costedOperationCount: 0,
+                cpuPreferredCost: 0,
+                gpuPreferredCost: 0,
+                neuralEnginePreferredCost: 0,
+                highestCostOperationDevice: nil,
+                accelerationVerified: false,
+                neuralNetworkLayerCount: network.layers.count,
+                deviceAssignedLayerCount: assignedLayers,
+                cpuPreferredLayerCount: cpuLayers
+            )
+        }
         guard case let .program(program) = plan.modelStructure else {
             return TransformerComputePlanReport(
                 operationCount: 0,

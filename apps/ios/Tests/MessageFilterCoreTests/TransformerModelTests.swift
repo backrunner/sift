@@ -1223,6 +1223,64 @@ func fp32RuntimeProfileRequiresExplicitA32QuantizationMetadata() {
 }
 
 @Test
+func mappedNeuralNetworkProfileRequiresBuild32AndCPUOnly() {
+    let verifier = TransformerManifestVerifier(publicKeys: [:])
+    let channel = TransformerChannelManifestV2(
+        releaseSequence: 6, releaseID: "signal-v5-r33-nn12-mapped",
+        releaseManifestURL: "https://example.com/manifest.json",
+        releaseManifestSHA256: String(repeating: "a", count: 64),
+        modelABI: MappedTokenEmbedding.modelABI, minimumAppBuild: 32,
+        maximumAppBuild: .max, minimumOSVersion: "18.0", keyID: "release-2026"
+    )
+    let system = OperatingSystemVersion(majorVersion: 27, minorVersion: 0, patchVersion: 1)
+    #expect(verifier.compatibility(
+        of: channel, appBuild: 31, operatingSystemVersion: system, currentReleaseSequence: 5
+    ) == .appBuildTooOld)
+    #expect(verifier.compatibility(
+        of: channel, appBuild: 32, operatingSystemVersion: system, currentReleaseSequence: 5
+    ) == .compatible)
+    let profile = TransformerQuantizationProfile(
+        identifier: TransformerSignalReleaseContract.neuralNetworkProfileID,
+        weightBits: 32, activationBits: 32, method: "mixed",
+        granularity: "encoder-fp32-embedding-blockwise-int4", blockSize: 16
+    )
+    let runtime = TransformerRuntimeProfile(
+        computeUnits: "cpuOnly", modelType: "neuralNetworkClassifier", computePrecision: "float32"
+    )
+    #expect(TransformerManifestVerifier.supports(
+        runtimeProfile: runtime, quantizationProfile: profile,
+        modelABI: MappedTokenEmbedding.modelABI, minimumAppBuild: 32
+    ))
+    #expect(!TransformerManifestVerifier.supports(
+        runtimeProfile: runtime, quantizationProfile: profile,
+        modelABI: MappedTokenEmbedding.modelABI, minimumAppBuild: 31
+    ))
+    #expect(!TransformerManifestVerifier.supports(
+        runtimeProfile: runtime, quantizationProfile: profile,
+        modelABI: "sift-signal-v1", minimumAppBuild: 32
+    ))
+    for (units, type, precision) in [
+        ("all", "neuralNetworkClassifier", "float32"),
+        ("cpuOnly", "mlProgram", "float32"),
+        ("cpuOnly", "neuralNetworkClassifier", "float16")
+    ] {
+        #expect(!TransformerManifestVerifier.supports(
+            runtimeProfile: TransformerRuntimeProfile(
+                computeUnits: units, modelType: type, computePrecision: precision
+            ), quantizationProfile: profile,
+            modelABI: MappedTokenEmbedding.modelABI, minimumAppBuild: 32
+        ))
+    }
+    #expect(!TransformerManifestVerifier.supports(
+        runtimeProfile: runtime,
+        quantizationProfile: TransformerQuantizationProfile(
+            identifier: "arbitrary-fp32", weightBits: 32, activationBits: 32,
+            method: "ptq", granularity: "per-block", blockSize: 16
+        ), modelABI: MappedTokenEmbedding.modelABI, minimumAppBuild: 32
+    ))
+}
+
+@Test
 func governmentReminderSignalReleaseRequiresBuild16AndSequence3() {
     let verifier = TransformerManifestVerifier(publicKeys: [:])
     let channel = TransformerChannelManifestV2(

@@ -69,6 +69,7 @@ from string import Formatter
 from typing import Any
 
 from check_distillation_gate import gate_matches_student, is_distilled
+from identitylookup_release_gate import identitylookup_failures
 
 
 DEFAULT_MODEL_NAME = "SiftSignalModel"
@@ -625,6 +626,9 @@ def verify_selected_candidate(
     metrics = report.get("metrics", {})
     actions = report.get("messageFilterActions", {})
     device = report.get("deviceMetrics", {})
+    extension_failures = identitylookup_failures(report)
+    if extension_failures:
+        raise SystemExit("error: IdentityLookup evidence gate failed: " + ", ".join(extension_failures))
     if not skip_device_evidence:
         if device.get("runtimeExecutionVerified") is not True:
             raise SystemExit("error: candidate lacks matching CPU or accelerator execution evidence")
@@ -750,8 +754,21 @@ def validate_release_profile(manifest: dict[str, Any]) -> None:
         )
     if compute_precision not in (None, "float16", "float32", "mixedFloat16Float32"):
         raise SystemExit(f"error: unsupported runtimeProfile.computePrecision: {compute_precision}")
-    if profile.get("method") != "baseline" and profile.get("weightBits") not in (4, 8):
-        raise SystemExit("error: release quantization must use W4 or W8 weights")
+    mapped_neuralnetwork = (
+        manifest.get("modelABI") == "sift-signal-mapped-embedding-v1"
+        and manifest.get("minimumAppBuild", 0) >= 32
+        and runtime.get("modelType") == "neuralNetworkClassifier"
+        and runtime.get("computeUnits") == "cpuOnly"
+        and compute_precision == "float32"
+        and profile.get("identifier") == "nn-fp32-mapped-w4-block16"
+        and profile.get("weightBits") == 32
+        and profile.get("activationBits") == 32
+        and profile.get("method") == "mixed"
+        and profile.get("granularity") == "encoder-fp32-embedding-blockwise-int4"
+        and profile.get("blockSize") == 16
+    )
+    if profile.get("method") != "baseline" and profile.get("weightBits") not in (4, 8) and not mapped_neuralnetwork:
+        raise SystemExit("error: release quantization must use W4/W8 or the build-32 mapped NeuralNetwork profile")
 
 
 _RELEASE_PAYLOAD_FIELDS = (

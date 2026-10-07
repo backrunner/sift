@@ -500,7 +500,9 @@ public final class TransformerModelDownloadClient: TransformerModelDownloading, 
             TransformerManifestVerifier.supportedModelABIs.contains(manifest.modelABI),
             TransformerManifestVerifier.supports(
                 runtimeProfile: manifest.runtimeProfile,
-                quantizationProfile: manifest.quantizationProfile
+                quantizationProfile: manifest.quantizationProfile,
+                modelABI: manifest.modelABI,
+                minimumAppBuild: manifest.minimumAppBuild
             ),
             manifest.tokenizerKind == "bpe",
             manifest.tokenizerArtifact.hasSuffix(".siftbpe"),

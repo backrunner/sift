@@ -146,6 +146,16 @@
       "granularity": "per-block",
       "blockSize": 32,
       "enabledWhenPTQQualityFails": true
+    },
+    {
+      "id": "nn-fp32-mapped-w4-block16",
+      "eligibleForRelease": true,
+      "enabledByDefault": false,
+      "method": "mixed",
+      "weightBits": 32,
+      "activationBits": 32,
+      "granularity": "encoder-fp32-embedding-blockwise-int4",
+      "blockSize": 16
     }
   ]
 }
