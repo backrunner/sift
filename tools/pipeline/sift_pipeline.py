@@ -139,7 +139,7 @@ BOUNDARY_AUGMENTATION_CONFIGS = (
 
 
 def holdout_test_sets() -> tuple[Path, ...]:
-    return (
+    listed = (
         CLASSIFICATION_TEST_SET,
         PROMOTION_TEST_SET,
         BILLING_CARD_TEST_SET,
@@ -167,8 +167,9 @@ def holdout_test_sets() -> tuple[Path, ...]:
         GENERALIZATION_ACCEPTANCE_V18_TEST_SET,
         GENERALIZATION_ACCEPTANCE_V19_TEST_SET,
         GENERALIZATION_ACCEPTANCE_V20_TEST_SET,
-        CLOUDKIT_SERVICE_TEST_SET,
     )
+    # Derived from submitted samples, so it stays out of the public repository.
+    return listed + tuple(path for path in (CLOUDKIT_SERVICE_TEST_SET,) if path.exists())
 
 
 def parse_arguments() -> argparse.Namespace:
