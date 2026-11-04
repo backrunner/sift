@@ -364,6 +364,7 @@ public enum MessageFilterRouting {
         // An abstention (including legacy "transaction.other" placeholders)
         // must never become a filtered result through a category override.
         guard decision.confidence.isFinite, (0...1).contains(decision.confidence),
+              decision.hasValidTransactionConfidence,
               decision.source != .fallback,
               decision.systemAction != .none,
               SiftTaxonomy.leaf(id: decision.labelID) != nil else {
@@ -381,7 +382,7 @@ public enum MessageFilterRouting {
         case .junk:
             return .junk
         case .transaction:
-            return decision.confidence >= 0.60 ? .transaction : .none
+            return decision.routingConfidence >= 0.60 ? .transaction : .none
         case .none:
             return .none
         }
@@ -398,6 +399,11 @@ public enum MessageFilterRouting {
             requested = ["carrier.promotion", "promotion"].contains(decision.labelID)
                 ? .promotionalOffers : .promotionalOthers
         case .transaction:
+            // Coarse certainty does not justify a specific finance/order/etc.
+            // folder when the original leaf remains below its routing gate.
+            if decision.transactionConfidence != nil && decision.confidence < 0.60 {
+                return .none
+            }
             requested = transactionalTarget(for: decision.labelID).systemSubAction
         case .junk, .none:
             requested = .none
@@ -884,8 +890,9 @@ public actor MessageFilterEngine {
 
         switch transformerOutcome {
         case let .decision(transformerResult, signalTiming):
-            let calibrated = HeuristicClassifier.highPrecisionDecision(for: request.body)
-                ?? transformerResult
+            let calibrated = SignalBusinessOverride.resolve(
+                modelDecision: transformerResult, body: request.body
+            )
             let mapped = ModelOutputContract.validatedDecision(calibrated, minimumConfidence: 0.5)
                 .applying(categoryMappings: configuration.categoryMappings)
             return result(

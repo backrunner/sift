@@ -202,6 +202,9 @@ public final class SiftAppModel {
     public private(set) var transformerUpdateState: TransformerUpdateState = .unknown
     public private(set) var isAutomaticTransformerUpdateActive = false
     public private(set) var isTransformerAppUpdateRequired = false
+    public private(set) var isDeveloperOptionsEligible = false
+    public private(set) var isDeveloperOptionsRevealed = false
+    public private(set) var selectedModelTrack: SignalModelTrack = .stable
     public var isShowingMeteredTransformerDownloadConfirmation: Bool = false
     public var isShowingTransformerAppUpdatePrompt: Bool = false
     public var submissionDestination: SubmissionDestination = .local
@@ -289,10 +292,19 @@ public final class SiftAppModel {
     private let personalizationTrainer = PersonalizationTrainer()
 
     @ObservationIgnored
-    private let transformerDownloader: (any TransformerModelDownloading)?
+    private var transformerDownloader: (any TransformerModelDownloading)?
 
     @ObservationIgnored
-    private let transformerUpdateChecker: (any TransformerModelUpdateChecking)?
+    private var transformerUpdateChecker: (any TransformerModelUpdateChecking)?
+
+    @ObservationIgnored
+    private let developerOptionsEligibility: any DeveloperOptionsEligibilityChecking
+
+    @ObservationIgnored
+    private let transformerDownloaderForTrack: @Sendable (SignalModelTrack) -> (any TransformerModelDownloading)?
+
+    @ObservationIgnored
+    private var developerOptionsRevealCounter = DeveloperOptionsRevealCounter()
 
     @ObservationIgnored
     private let transformerNetworkConditionChecker: any TransformerNetworkConditionChecking
@@ -398,6 +410,10 @@ public final class SiftAppModel {
         transformerDeviceSupportOverride: TransformerDeviceSupport? = nil,
         transformerDownloader: (any TransformerModelDownloading)? = TransformerModelDownloadClient.configured(),
         transformerUpdateChecker: (any TransformerModelUpdateChecking)? = nil,
+        developerOptionsEligibility: any DeveloperOptionsEligibilityChecking = AppTransactionDeveloperOptionsEligibility(),
+        transformerDownloaderForTrack: @escaping @Sendable (SignalModelTrack) -> (any TransformerModelDownloading)? = {
+            TransformerModelDownloadClient.configured(track: $0)
+        },
         transformerNetworkConditionChecker: any TransformerNetworkConditionChecking = PathNetworkConditionChecker(),
         transformerModelRemover: any TransformerModelRemoving = TransformerModelStoreRemover(),
         modelClassifierLoader: any SiftModelClassifierLoading = DefaultSiftModelClassifierLoader(),
@@ -422,6 +438,8 @@ public final class SiftAppModel {
         self.remoteSampleClient = remoteSampleClient ?? CloudKitSampleClient(
             containerIdentifier: CloudKitSampleClient.configuredContainerIdentifier()
         )
+        self.developerOptionsEligibility = developerOptionsEligibility
+        self.transformerDownloaderForTrack = transformerDownloaderForTrack
         self.transformerDownloader = transformerDownloader
         self.transformerUpdateChecker = transformerUpdateChecker
             ?? (transformerDownloader as? any TransformerModelUpdateChecking)
@@ -665,6 +683,64 @@ public final class SiftAppModel {
             isTransformerAppUpdateRequired = false
         }
         transformerUpdateState = state
+    }
+
+    /// A stored track applies only once this install is confirmed non-production.
+    public func refreshDeveloperOptionsEligibility() async {
+        let eligible = await developerOptionsEligibility.isEligible()
+        isDeveloperOptionsEligible = eligible
+        guard eligible else {
+            isDeveloperOptionsRevealed = false
+            applyModelTrack(.stable)
+            return
+        }
+        isDeveloperOptionsRevealed = appDefaults.bool(forKey: Self.developerOptionsRevealedKey)
+        let stored = appDefaults.string(forKey: Self.modelTrackKey).flatMap(SignalModelTrack.init(rawValue:)) ?? .stable
+        let track = isDeveloperOptionsRevealed ? stored : .stable
+        guard track != selectedModelTrack else { return }
+        applyModelTrack(track)
+        checkForTransformerUpdate(force: true)
+    }
+
+    public func registerVersionTap(at date: Date = Date()) {
+        guard isDeveloperOptionsEligible, !isDeveloperOptionsRevealed,
+              developerOptionsRevealCounter.register(at: date) else { return }
+        isDeveloperOptionsRevealed = true
+        appDefaults.set(true, forKey: Self.developerOptionsRevealedKey)
+    }
+
+    public var canChangeModelTrack: Bool {
+        isDeveloperOptionsEligible && !isTransformerUpdateBusy
+    }
+
+    public func selectModelTrack(_ track: SignalModelTrack) {
+        guard canChangeModelTrack, isDeveloperOptionsRevealed, track != selectedModelTrack else { return }
+        appDefaults.set(track.rawValue, forKey: Self.modelTrackKey)
+        applyModelTrack(track)
+        checkForTransformerUpdate(force: true)
+    }
+
+    public func hideDeveloperOptions() {
+        guard !isTransformerUpdateBusy else { return }
+        appDefaults.removeObject(forKey: Self.developerOptionsRevealedKey)
+        appDefaults.removeObject(forKey: Self.modelTrackKey)
+        isDeveloperOptionsRevealed = false
+        applyModelTrack(.stable)
+    }
+
+    private func applyModelTrack(_ track: SignalModelTrack) {
+        guard track != selectedModelTrack else { return }
+        selectedModelTrack = track
+        cancelAutomaticTransformerUpdate()
+        transformerUpdateCheckTask?.cancel()
+        transformerUpdateCheckTask = nil
+        transformerUpdateCheckRequestID = nil
+        transformerDownloader = transformerDownloaderForTrack(track)
+        transformerUpdateChecker = transformerDownloader as? any TransformerModelUpdateChecking
+        // A result from the previous channel says nothing about this one.
+        transformerUpdateState = .unknown
+        isTransformerAppUpdateRequired = false
+        appDefaults.removeObject(forKey: Self.transformerUpdateLastCheckKey)
     }
 
     public func downloadTransformerUpdate() {
@@ -2419,6 +2495,8 @@ public final class SiftAppModel {
     private static let remoteSamplePrivacyConsentKey = "Sift.hasAcceptedRemoteSamplePrivacy"
     private static let filterSetupConfirmationKey = "Sift.hasConfirmedFilterSetup"
     private static let transformerUpdateLastCheckKey = "Sift.transformerUpdateLastCheck.v1"
+    private static let developerOptionsRevealedKey = "Sift.developerOptionsRevealed.v1"
+    private static let modelTrackKey = "Sift.modelTrack.v1"
     private static let transformerUpdateCheckInterval: TimeInterval = 6 * 60 * 60
 
     private func persistRules() {

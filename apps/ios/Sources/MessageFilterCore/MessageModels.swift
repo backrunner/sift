@@ -13,6 +13,9 @@ public struct ClassificationDecision: Codable, Hashable, Sendable {
     public let groupID: String
     public let groupTitle: String
     public let confidence: Double
+    /// Probability of the default transaction action, never leaf confidence.
+    /// Only a validated full transformer distribution may supply this value.
+    public let transactionConfidence: Double?
     public let systemAction: SystemAction
     public let source: ClassificationSource
     public let categoryMappingTarget: CategoryMappingTarget?
@@ -25,16 +28,31 @@ public struct ClassificationDecision: Codable, Hashable, Sendable {
         confidence: Double,
         systemAction: SystemAction,
         source: ClassificationSource,
-        categoryMappingTarget: CategoryMappingTarget? = nil
+        categoryMappingTarget: CategoryMappingTarget? = nil,
+        transactionConfidence: Double? = nil
     ) {
         self.labelID = labelID
         self.labelTitle = labelTitle
         self.groupID = groupID
         self.groupTitle = groupTitle
         self.confidence = confidence
+        self.transactionConfidence = transactionConfidence
         self.systemAction = systemAction
         self.source = source
         self.categoryMappingTarget = categoryMappingTarget
+    }
+
+    public var hasValidTransactionConfidence: Bool {
+        guard let value = transactionConfidence else { return true }
+        return value.isFinite && (0...1).contains(value)
+            && value + 0.000001 >= confidence
+            && source == .model && systemAction == .transaction
+            && categoryMappingTarget == nil
+            && SiftTaxonomy.leaf(id: labelID)?.systemAction == .transaction
+    }
+
+    public var routingConfidence: Double {
+        hasValidTransactionConfidence ? transactionConfidence ?? confidence : .nan
     }
 
     public func applying(categoryMappings: [String: CategoryMappingTarget]) -> ClassificationDecision {
@@ -43,6 +61,10 @@ public struct ClassificationDecision: Codable, Hashable, Sendable {
             source != .fallback,
             systemAction != .none,
             confidence.isFinite, (0...1).contains(confidence),
+            hasValidTransactionConfidence,
+            // A coarse business prediction cannot justify a user override
+            // attached to a particular uncertain leaf (especially .junk).
+            transactionConfidence == nil || confidence >= 0.5,
             CategoryMappingPolicy.isEligibleSource(labelID: labelID),
             let target = categoryMappings[labelID]
         else {

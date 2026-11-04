@@ -299,6 +299,8 @@ public final class TransformerModelDownloadClient: TransformerModelDownloading, 
     private let stateLock = NSLock()
     private var channelETag: String?
     private var cachedChannel: TransformerChannelManifestV2?
+    private var track: SignalModelTrack = .stable
+    private var installedTrack: @Sendable () -> SignalModelTrack? = { TransformerClassifierLoader.manifest()?.track }
 
     public init(
         manifestURL: URL,
@@ -359,7 +361,10 @@ public final class TransformerModelDownloadClient: TransformerModelDownloading, 
         self.diagnosticLogStore = diagnosticLogStore
     }
 
-    public static func configured(bundle: Bundle = .main) -> TransformerModelDownloadClient? {
+    public static func configured(
+        bundle: Bundle = .main,
+        track: SignalModelTrack = .stable
+    ) -> TransformerModelDownloadClient? {
         let keys = ["SiftSignalModelChannelURL", "SIFT_SIGNAL_MODEL_CHANNEL_URL"]
         let channelURL = keys.compactMap { key -> URL? in
             guard
@@ -389,15 +394,32 @@ public final class TransformerModelDownloadClient: TransformerModelDownloading, 
 
         let estimatedBytes = (bundle.object(forInfoDictionaryKey: "SiftSignalModelEstimatedBytes") as? NSNumber)?.int64Value
         let appBuild = Int(bundle.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "") ?? 0
-        return TransformerModelDownloadClient(
-            channelURL: channelURL,
+        let client = TransformerModelDownloadClient(
+            channelURL: track.channelURL(fromStable: channelURL),
             publicKeys: publicKeys,
             appBuild: appBuild,
-            channelNamespace: channelNamespace,
+            channelNamespace: channelNamespace.flatMap { $0.isEmpty ? nil : track.channelNamespace(base: $0) },
             minimumReleaseSequence: minimumReleaseSequence,
             estimatedByteCount: estimatedBytes,
             backgroundSessionIdentifierPrefix: "io.alkinum.sift.signal-download"
         )
+        client.track = track
+        return client
+    }
+
+    /// A signed release from another track does not count here, even if a pointer serves it.
+    /// Sequences are compared within a track, so returning to stable is not a rollback.
+    func selectableReleases(in releases: [TransformerChannelManifestV2]) -> [TransformerChannelManifestV2] {
+        releases.filter { $0.resolvedTrack == track && $0.releaseSequence >= minimumReleaseSequence }
+    }
+
+    func trackAwareSequence(_ installedSequence: Int) -> Int {
+        (installedTrack() ?? track) == track ? installedSequence : 0
+    }
+
+    func configureTrack(_ track: SignalModelTrack, installedTrack: @escaping @Sendable () -> SignalModelTrack?) {
+        self.track = track
+        self.installedTrack = installedTrack
     }
 
     public func prepareDownload() async throws -> TransformerModelDownloadPlan {
@@ -409,16 +431,16 @@ public final class TransformerModelDownloadClient: TransformerModelDownloading, 
                 throw TransformerModelDownloadError.invalidChannelManifest
             }
             let channel = try await fetchChannel(at: channelURL, verifier: manifestVerifier)
-            let releases = try manifestVerifier.verifiedReleases(in: channel)
-                .filter { $0.releaseSequence >= minimumReleaseSequence }
+            let releases = selectableReleases(in: try manifestVerifier.verifiedReleases(in: channel))
             let installedManifest = TransformerClassifierLoader.manifest()
+            let installedSequence = trackAwareSequence(installedManifest?.releaseSequence ?? 0)
             guard let compatibleRelease = Self.latestCompatibleRelease(
                 in: releases,
                 verifier: manifestVerifier,
                 appBuild: appBuild,
                 operatingSystemVersion: operatingSystemVersion,
                 currentModelABI: installedManifest?.modelABI,
-                currentReleaseSequence: installedManifest?.releaseSequence ?? 0
+                currentReleaseSequence: installedSequence
             ) else {
                 if Self.latestReleaseRequiringAppUpdate(
                     in: releases,
@@ -426,7 +448,7 @@ public final class TransformerModelDownloadClient: TransformerModelDownloading, 
                     appBuild: appBuild,
                     operatingSystemVersion: operatingSystemVersion,
                     currentModelABI: installedManifest?.modelABI,
-                    currentReleaseSequence: installedManifest?.releaseSequence ?? 0
+                    currentReleaseSequence: installedSequence
                 ) != nil {
                     throw TransformerModelDownloadError.appUpdateRequired
                 }
@@ -447,6 +469,7 @@ public final class TransformerModelDownloadClient: TransformerModelDownloading, 
             do {
                 try manifestVerifier.verifySignature(of: manifest)
                 try manifestVerifier.validateRelease(manifest, for: compatibleRelease)
+                guard manifest.track == track else { throw TransformerManifestValidationError.channelReleaseMismatch }
             } catch {
                 throw TransformerModelDownloadError.invalidManifestSignature
             }
@@ -477,10 +500,9 @@ public final class TransformerModelDownloadClient: TransformerModelDownloading, 
                 throw TransformerModelDownloadError.invalidChannelManifest
             }
             let channel = try await fetchChannel(at: channelURL, verifier: manifestVerifier)
-            let releases = try manifestVerifier.verifiedReleases(in: channel)
-                .filter { $0.releaseSequence >= minimumReleaseSequence }
+            let releases = selectableReleases(in: try manifestVerifier.verifiedReleases(in: channel))
             let currentModelABI = currentIdentity?.variant == .transformer ? currentIdentity?.modelABI : nil
-            let currentReleaseSequence = currentIdentity?.releaseSequence ?? 0
+            let currentReleaseSequence = trackAwareSequence(currentIdentity?.releaseSequence ?? 0)
             return Self.updateState(
                 for: releases,
                 verifier: manifestVerifier,

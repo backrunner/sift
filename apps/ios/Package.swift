@@ -14,7 +14,9 @@ let package = Package(
         .library(name: "MessageFilterExtensionKit", targets: ["MessageFilterExtensionKit"]),
         .executable(name: "CoreSmokeTests", targets: ["CoreSmokeTests"]),
         .executable(name: "ClassicMessageFilterArtifactTests", targets: ["ClassicMessageFilterArtifactTests"]),
-        .executable(name: "MessageFilterArtifactTests", targets: ["MessageFilterArtifactTests"])
+        .executable(name: "MessageFilterArtifactTests", targets: ["MessageFilterArtifactTests"]),
+        .executable(name: "MessageFilterPredictionAudit", targets: ["MessageFilterPredictionAudit"]),
+        .executable(name: "MessageFilterFineAudit", targets: ["MessageFilterFineAudit"])
     ],
     targets: [
         .target(name: "MessageFilterCore"),
@@ -37,6 +39,21 @@ let package = Package(
             name: "MessageFilterArtifactTests",
             dependencies: ["MessageFilterCore"],
             path: "Tools/MessageFilterArtifactTests"
+        ),
+        .executableTarget(
+            name: "MessageFilterPredictionAudit",
+            dependencies: ["MessageFilterCore"],
+            path: "Tools/MessageFilterPredictionAudit"
+        ),
+        .executableTarget(
+            name: "SignalLocalProbe",
+            dependencies: ["MessageFilterCore"],
+            path: "Tools/SignalLocalProbe"
+        ),
+        .executableTarget(
+            name: "MessageFilterFineAudit",
+            dependencies: ["MessageFilterCore"],
+            path: "Tools/MessageFilterFineAudit"
         ),
         .testTarget(name: "MessageFilterCoreTests", dependencies: ["MessageFilterCore", "MessageFilterExtensionKit"]),
         .testTarget(name: "SiftAppKitTests", dependencies: ["SiftAppKit", "MessageFilterCore"])

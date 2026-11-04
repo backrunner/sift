@@ -197,6 +197,8 @@ public enum TransformerSignalReleaseContract {
     public static let distilledMinimumAppBuild = 19
     public static let neuralNetworkMinimumAppBuild = 32
     public static let neuralNetworkProfileID = "nn-fp32-mapped-w4-block16"
+    public static let routedMinimumAppBuild = 34
+    public static let routedAlgorithm = "supervised-rebuild-directional-routing"
 
     public static func accepts(_ manifest: TransformerModelManifest) -> Bool {
         if manifest.quantizationProfile.weightBits == 32 {
@@ -217,6 +219,13 @@ public enum TransformerSignalReleaseContract {
         }
         guard manifest.releaseSequence >= distilledReleaseSequence else {
             return true
+        }
+        // Rebuilt encoders have no teacher. They stay off the stable track, and
+        // routing weights must decode, so a stable app can never select one.
+        if manifest.algorithm == routedAlgorithm {
+            return manifest.track != .stable
+                && manifest.minimumAppBuild >= routedMinimumAppBuild
+                && manifest.routing.flatMap(TransformerRoutingGate.init(profile:)) != nil
         }
         guard
             manifest.minimumAppBuild >= distilledMinimumAppBuild,
@@ -261,6 +270,10 @@ public struct TransformerModelManifest: Codable, Hashable, Sendable {
     public let remoteBaseURL: String?
     public let remoteArtifacts: [TransformerRemoteArtifact]
     public let downloadBytes: Int64
+    public let releaseTrack: String?
+    public let routing: TransformerRoutingProfile?
+
+    public var track: SignalModelTrack { SignalModelTrack(signedValue: releaseTrack) }
 
     public init(
         schemaVersion: Int = 1,
@@ -291,7 +304,9 @@ public struct TransformerModelManifest: Codable, Hashable, Sendable {
         remoteBaseURL: String? = nil,
         remoteArtifacts: [TransformerRemoteArtifact],
         downloadBytes: Int64,
-        distillation: TransformerDistillationProvenance? = nil
+        distillation: TransformerDistillationProvenance? = nil,
+        releaseTrack: String? = nil,
+        routing: TransformerRoutingProfile? = nil
     ) {
         self.schemaVersion = schemaVersion
         self.releaseSequence = releaseSequence
@@ -322,6 +337,8 @@ public struct TransformerModelManifest: Codable, Hashable, Sendable {
         self.remoteBaseURL = remoteBaseURL
         self.remoteArtifacts = remoteArtifacts
         self.downloadBytes = downloadBytes
+        self.releaseTrack = releaseTrack
+        self.routing = routing
     }
 
     public var artifactIdentity: ModelArtifactIdentity {
@@ -363,7 +380,9 @@ public struct TransformerModelManifest: Codable, Hashable, Sendable {
             remoteBaseURL: remoteBaseURL,
             remoteArtifacts: remoteArtifacts,
             downloadBytes: downloadBytes,
-            distillation: distillation
+            distillation: distillation,
+            releaseTrack: releaseTrack,
+            routing: routing
         )
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.sortedKeys, .withoutEscapingSlashes]
@@ -417,6 +436,7 @@ public struct TransformerModelManifest: Codable, Hashable, Sendable {
         case version, trainedAt, algorithm, backbone, languages, labels, maxSequenceLength, doLowerCase
         case tokenizerKind, tokenizerArtifact, modelArtifact, sha256, taxonomyHash, tokenizerSHA256
         case keyID, signature, remoteBaseURL, remoteArtifacts, downloadBytes
+        case releaseTrack, routing
     }
 
     public init(from decoder: any Decoder) throws {
@@ -456,6 +476,8 @@ public struct TransformerModelManifest: Codable, Hashable, Sendable {
         self.remoteBaseURL = try container.decodeIfPresent(String.self, forKey: .remoteBaseURL)
         self.remoteArtifacts = try container.decodeIfPresent([TransformerRemoteArtifact].self, forKey: .remoteArtifacts) ?? []
         self.downloadBytes = try container.decodeIfPresent(Int64.self, forKey: .downloadBytes) ?? 0
+        self.releaseTrack = try container.decodeIfPresent(String.self, forKey: .releaseTrack)
+        self.routing = try container.decodeIfPresent(TransformerRoutingProfile.self, forKey: .routing)
     }
 }
 
@@ -477,6 +499,9 @@ public struct TransformerChannelManifestV2: Codable, Hashable, Sendable {
     public let compatibleReleases: [TransformerChannelManifestV2]?
     public let catalogKeyID: String?
     public let catalogSignature: String?
+    public let track: String?
+
+    public var resolvedTrack: SignalModelTrack { SignalModelTrack(signedValue: track) }
 
     public init(
         schemaVersion: Int = 2,
@@ -493,7 +518,8 @@ public struct TransformerChannelManifestV2: Codable, Hashable, Sendable {
         signature: String? = nil,
         compatibleReleases: [TransformerChannelManifestV2]? = nil,
         catalogKeyID: String? = nil,
-        catalogSignature: String? = nil
+        catalogSignature: String? = nil,
+        track: String? = nil
     ) {
         self.schemaVersion = schemaVersion
         self.releaseSequence = releaseSequence
@@ -510,6 +536,7 @@ public struct TransformerChannelManifestV2: Codable, Hashable, Sendable {
         self.compatibleReleases = compatibleReleases
         self.catalogKeyID = catalogKeyID
         self.catalogSignature = catalogSignature
+        self.track = track
     }
 
     public func canonicalPayload() -> Data {
@@ -524,7 +551,8 @@ public struct TransformerChannelManifestV2: Codable, Hashable, Sendable {
             maximumAppBuild: maximumAppBuild,
             minimumOSVersion: minimumOSVersion,
             downloadBytes: downloadBytes,
-            keyID: keyID
+            keyID: keyID,
+            track: track
         )
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.sortedKeys, .withoutEscapingSlashes]
@@ -544,7 +572,8 @@ public struct TransformerChannelManifestV2: Codable, Hashable, Sendable {
             minimumOSVersion: minimumOSVersion,
             downloadBytes: downloadBytes,
             keyID: keyID,
-            signature: signature
+            signature: signature,
+            track: track
         )
     }
 
@@ -845,7 +874,8 @@ public enum TransformerClassifierLoader {
                 labels: installed.manifest.labels,
                 confidenceThreshold: confidenceThreshold,
                 computeUnits: installed.manifest.runtimeProfile.computeUnits,
-                embeddingURL: installed.embeddingURL
+                embeddingURL: installed.embeddingURL,
+                routing: installed.manifest.routing
             )
         } catch {
             return TransformerClassifierLoadAttempt(
@@ -972,7 +1002,8 @@ public enum TransformerClassifierLoader {
             labels: installed.manifest.labels,
             confidenceThreshold: 0,
             computeUnits: installed.manifest.runtimeProfile.computeUnits,
-            embeddingURL: installed.embeddingURL
+            embeddingURL: installed.embeddingURL,
+            routing: installed.manifest.routing
         )
         let smokeBodies = [
             "您的验证码是 482913，请勿泄露。",
@@ -1036,9 +1067,11 @@ public final class TransformerTextClassifier: StageReportingMessageClassifier, @
     private let tokenizer: any TextTokenizing
     private let labels: [String]
     private let confidenceThreshold: Double
+    private let decisionPolicy: TransformerDecisionPolicy
     private let inputIDsName: String
     private let attentionMaskName: String?
     private let embedding: MappedTokenEmbedding?
+    private let routingGate: TransformerRoutingGate?
 
     public init(
         modelURL: URL,
@@ -1046,7 +1079,9 @@ public final class TransformerTextClassifier: StageReportingMessageClassifier, @
         labels: [String],
         confidenceThreshold: Double = 0.5,
         computeUnits: String = "all",
-        embeddingURL: URL? = nil
+        embeddingURL: URL? = nil,
+        decisionPolicy: TransformerDecisionPolicy = .leaf,
+        routing: TransformerRoutingProfile? = nil
     ) throws {
         let configuration = MLModelConfiguration()
         guard let resolvedComputeUnits = Self.computeUnits(named: computeUnits) else {
@@ -1064,6 +1099,16 @@ public final class TransformerTextClassifier: StageReportingMessageClassifier, @
         self.tokenizer = tokenizer
         self.labels = labels
         self.confidenceThreshold = confidenceThreshold
+        self.decisionPolicy = decisionPolicy
+        if let routing {
+            guard let gate = TransformerRoutingGate(profile: routing),
+                  model.modelDescription.outputDescriptionsByName[Self.actionOutputName] != nil else {
+                throw CocoaError(.fileReadCorruptFile)
+            }
+            self.routingGate = gate
+        } else {
+            self.routingGate = nil
+        }
 
         let inputs = model.modelDescription.inputDescriptionsByName
         self.inputIDsName = inputs["input_ids"] != nil ? "input_ids"
@@ -1080,6 +1125,8 @@ public final class TransformerTextClassifier: StageReportingMessageClassifier, @
             throw CocoaError(.fileReadNoSuchFile)
         }
     }
+
+    private static let actionOutputName = "actionProbabilities"
 
     private static func computeUnits(named identifier: String) -> MLComputeUnits? {
         switch identifier {
@@ -1154,6 +1201,27 @@ public final class TransformerTextClassifier: StageReportingMessageClassifier, @
             observer?(.predictionStarted)
             let output = try model.prediction(from: provider)
             observer?(.predictionFinished)
+            if let routingGate {
+                guard let probabilities = probabilityDistribution(from: output),
+                      let array = output.featureValue(for: Self.actionOutputName)?.multiArrayValue,
+                      array.count == TransformerRoutingGate.actionHeadOrder.count else {
+                    return .failure(.invalidOutput)
+                }
+                let action = Dictionary(uniqueKeysWithValues: TransformerRoutingGate.actionHeadOrder.enumerated().map {
+                    ($0.element, array[$0.offset].doubleValue)
+                })
+                guard let decision = routingGate.decision(fineProbabilities: probabilities, actionProbabilities: action) else {
+                    return .failure(.invalidOutput)
+                }
+                return .success(decision)
+            }
+            if decisionPolicy.requiresFullDistribution {
+                guard let probabilities = probabilityDistribution(from: output),
+                      let summary = TransformerProbabilityDecision(probabilities: probabilities, policy: decisionPolicy) else {
+                    return .failure(.invalidOutput)
+                }
+                return .success(summary.decision(minimumConfidence: confidenceThreshold))
+            }
             guard let best = bestPrediction(from: output) else {
                 return .failure(.invalidOutput)
             }
@@ -1224,6 +1292,23 @@ public final class TransformerTextClassifier: StageReportingMessageClassifier, @
             return (labels[bestIndex], bestValue)
         }
         return nil
+    }
+
+    private func probabilityDistribution(from output: MLFeatureProvider) -> [String: Double]? {
+        guard Set(labels).count == labels.count else { return nil }
+        if let name = model.modelDescription.predictedProbabilitiesName,
+           let dictionary = output.featureValue(for: name)?.dictionaryValue {
+            var values: [String: Double] = [:]
+            for label in labels {
+                guard let value = dictionary[AnyHashable(label)] ?? dictionary[AnyHashable(label as NSString)] else { return nil }
+                values[label] = value.doubleValue
+            }
+            guard dictionary.count == values.count else { return nil }
+            return values
+        }
+        guard let array = output.featureValue(for: "probabilities")?.multiArrayValue,
+              array.count == labels.count else { return nil }
+        return Dictionary(uniqueKeysWithValues: labels.enumerated().map { ($0.element, array[$0.offset].doubleValue) })
     }
 
     private func multiArray(from values: [Int32]) throws -> MLMultiArray {

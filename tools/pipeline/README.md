@@ -137,3 +137,10 @@ python3 tools/transformer-trainer/upload_transformer_model.py \
   --selection build/pipeline/transformer-model/quantization-tournament/selected-candidate.json \
   --r2-bucket "$SIFT_MODEL_R2_BUCKET" --verify-http
 ```
+
+## Publishing tracks
+
+`upload_transformer_model.py --track stable|beta|dev` selects the pointer: `channels/v3/SiftSignalModel.channel.json`,
+`channels/v3/beta/...` or `channels/v3/dev/...`. The track is signed into the channel and release, so a dev release cannot be
+replayed through another pointer. For beta and dev, `--selection` takes a `qualification.json` bound to the artifact. Dev accepts
+local evidence; beta also requires `deviceQualified`. Routed rebuilds cannot use stable.
