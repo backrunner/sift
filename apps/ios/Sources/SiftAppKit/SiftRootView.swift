@@ -44,6 +44,7 @@ public struct SiftRootView: View {
         #if canImport(UIKit)
         .background(KeyboardDismissInstaller())
         #endif
+        .task { await model.refreshDeveloperOptionsEligibility() }
         .onChange(of: scenePhase) { _, newPhase in
             switch newPhase {
             case .background:

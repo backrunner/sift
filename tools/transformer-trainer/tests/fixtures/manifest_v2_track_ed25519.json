@@ -1,0 +1,93 @@
+{
+  "publicKeyBase64": "7jTilU2DMrpBz7vBiFOsdGjifYmnsXhehrpKb8FxL1k=",
+  "channel": {
+    "schemaVersion": 2,
+    "releaseSequence": 7,
+    "releaseID": "fixture",
+    "releaseManifestURL": "https://example.invalid/m.json",
+    "releaseManifestSHA256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "modelABI": "sift-signal-mapped-embedding-v1",
+    "minimumAppBuild": 34,
+    "maximumAppBuild": 99,
+    "minimumOSVersion": "18.0",
+    "downloadBytes": 30,
+    "keyID": "fixture-key",
+    "track": "dev",
+    "signature": "rQAV037rDaAHTfcpqEW1H63gc1mrHQaCTb87XIFrriCwlG6ToTdJbSu6523sIgGbBpUh60h9bBu6/ohpKTWhAw=="
+  },
+  "release": {
+    "schemaVersion": 2,
+    "releaseSequence": 7,
+    "modelABI": "sift-signal-mapped-embedding-v1",
+    "minimumAppBuild": 34,
+    "maximumAppBuild": 99,
+    "minimumOSVersion": "18.0",
+    "runtimeProfile": {
+      "computeUnits": "all",
+      "modelType": "mlProgram",
+      "inferenceBudgetMilliseconds": 500,
+      "computePrecision": "float32"
+    },
+    "quantizationProfile": {
+      "identifier": "w4a32-block16-qat",
+      "weightBits": 4,
+      "activationBits": 32,
+      "method": "qat",
+      "granularity": "per-block",
+      "blockSize": 16
+    },
+    "validationMetrics": {
+      "fixedAccuracy": 0.995,
+      "promotionAccuracy": 0.98,
+      "fp16Agreement": 0.99,
+      "languageAccuracy": {
+        "zh": 0.995,
+        "en": 0.99,
+        "ja": 0.985
+      }
+    },
+    "version": "signal-interop-v42",
+    "trainedAt": "2026-07-18T00:00:00.000Z",
+    "algorithm": "supervised-rebuild-directional-routing",
+    "backbone": "private-checkpoint",
+    "languages": [
+      "zh",
+      "en",
+      "ja"
+    ],
+    "labels": [
+      "verification",
+      "promotion",
+      "spam"
+    ],
+    "maxSequenceLength": 96,
+    "doLowerCase": false,
+    "tokenizerKind": "bpe",
+    "tokenizerArtifact": "tokenizer.siftbpe",
+    "modelArtifact": "SiftSignalModel.mlpackage",
+    "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "taxonomyHash": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "tokenizerSHA256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+    "keyID": "fixture-key",
+    "remoteBaseURL": "https://sift.example/models/releases/signal-interop-v42",
+    "remoteArtifacts": [
+      {
+        "path": "SiftSignalModel.mlpackage/Data/model.mlmodel",
+        "sha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+        "byteCount": 10
+      },
+      {
+        "path": "tokenizer.siftbpe",
+        "sha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+        "byteCount": 20
+      }
+    ],
+    "downloadBytes": 30,
+    "releaseTrack": "dev",
+    "routing": {
+      "kind": "directional-v75",
+      "gateWeights": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+    },
+    "signature": "R6/vN0YHlMOx/PyDsz5u7SSwbUh6Yf996yt35oG9JUro2wo12kUiOVWGyqZf99KCsatZhM+8TgHw4WF2jde0Dg=="
+  }
+}

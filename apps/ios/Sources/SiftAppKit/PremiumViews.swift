@@ -376,6 +376,9 @@ struct SettingsView: View {
                 }
                 legalSection
                 aboutSection
+                if model.isDeveloperOptionsEligible && model.isDeveloperOptionsRevealed {
+                    developerOptionsSection
+                }
             }
             .padding(.horizontal, 16)
             .padding(.top, 16)
@@ -733,6 +736,8 @@ struct SettingsView: View {
                     .font(.callout.monospacedDigit())
                     .foregroundStyle(.secondary)
             }
+            .contentShape(Rectangle())
+            .onTapGesture { model.registerVersionTap() }
             .insetSurface(cornerRadius: 12)
 
             SettingsRowContent(
@@ -756,6 +761,41 @@ struct SettingsView: View {
                 }
                 .frame(minWidth: 96, alignment: .trailing)
             }
+            .insetSurface(cornerRadius: 12)
+        }
+        .padding(18)
+        .cardSurface()
+    }
+
+    private var developerOptionsSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            SectionHeader(title: String(localized: "开发者选项"), icon: "hammer")
+            VStack(alignment: .leading, spacing: 8) {
+                Text("模型渠道")
+                    .font(.subheadline.weight(.semibold))
+                Picker(String(localized: "模型渠道"), selection: Binding(
+                    get: { model.selectedModelTrack },
+                    set: { model.selectModelTrack($0) }
+                )) {
+                    ForEach(SignalModelTrack.allCases, id: \.self) { track in
+                        Text(track.localizedTitle).tag(track)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .disabled(!model.canChangeModelTrack)
+                Text("模型更新只来自所选渠道。已安装的模型会保留，直到你下载更新。")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            .padding(12)
+            .insetSurface(cornerRadius: 12)
+            Button {
+                model.hideDeveloperOptions()
+            } label: {
+                SettingsRowContent(title: String(localized: "隐藏开发者选项"), icon: "eye.slash", tint: .siftHalo)
+            }
+            .buttonStyle(.plain)
+            .disabled(!model.canChangeModelTrack)
             .insetSurface(cornerRadius: 12)
         }
         .padding(18)

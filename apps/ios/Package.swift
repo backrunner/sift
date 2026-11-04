@@ -46,6 +46,11 @@ let package = Package(
             path: "Tools/MessageFilterPredictionAudit"
         ),
         .executableTarget(
+            name: "SignalLocalProbe",
+            dependencies: ["MessageFilterCore"],
+            path: "Tools/SignalLocalProbe"
+        ),
+        .executableTarget(
             name: "MessageFilterFineAudit",
             dependencies: ["MessageFilterCore"],
             path: "Tools/MessageFilterFineAudit"
