@@ -13,7 +13,7 @@ Examples:
     --selection build/pipeline/transformer-model/selected-candidate.json \
     --signing-key ~/.config/sift/model-release-ed25519.pem \
     --signing-key-id release-2026 \
-    --base-url https://sift.alkinum.io/models \
+    --base-url https://sift.alkinum.com/models \
     --dry-run
 
   # Copy into a local static/CDN publish directory.
@@ -22,10 +22,10 @@ Examples:
     --selection build/pipeline/transformer-model/selected-candidate.json \
     --signing-key ~/.config/sift/model-release-ed25519.pem \
     --signing-key-id release-2026 \
-    --base-url https://sift.alkinum.io/models \
+    --base-url https://sift.alkinum.com/models \
     --dest-dir /tmp/sift-models
 
-  # Upload to Cloudflare R2 with the AWS CLI. Copy
+  # Upload to Cloudflare R2 with Wrangler. Copy
   # .env.signal-model.example to .env.signal-model first; do not
   # commit the real dotenv file.
   python3 tools/transformer-trainer/upload_transformer_model.py \
@@ -42,7 +42,7 @@ Examples:
     --selection build/pipeline/transformer-model/selected-candidate.json \
     --signing-key ~/.config/sift/model-release-ed25519.pem \
     --signing-key-id release-2026 \
-    --base-url https://sift.alkinum.io/models \
+    --base-url https://sift.alkinum.com/models \
     --upload-command 'rclone copyto {src} r2:sift-models/models/{path}'
 """
 
@@ -99,6 +99,8 @@ CHANNEL_FILE_BY_TRACK = {
     "dev": "channels/v3/dev/SiftSignalModel.channel.json",
 }
 ROUTED_ALGORITHM = "supervised-rebuild-directional-routing"
+ROUTED_STABLE_MINIMUM_APP_BUILD = 35
+CLIENT_METRIC_FLOORS = {"fixedAccuracy": 0.99, "promotionAccuracy": 0.98, "fp16Agreement": 0.985}
 
 
 @dataclass(frozen=True)
@@ -161,13 +163,10 @@ def parse_arguments() -> argparse.Namespace:
     parser.add_argument("--r2-bucket", default=os.getenv("SIFT_MODEL_R2_BUCKET"), help="Cloudflare R2 bucket name")
     parser.add_argument("--r2-prefix", default=os.getenv("SIFT_MODEL_R2_PREFIX", ""), help="R2 object key prefix")
     parser.add_argument(
-        "--r2-account-id",
-        default=os.getenv("CLOUDFLARE_ACCOUNT_ID"),
-        help="Cloudflare account id used to derive the R2 S3 endpoint",
+        "--wrangler-bin",
+        default=os.getenv("SIFT_WRANGLER_BIN"),
+        help="Wrangler used for R2 uploads; defaults to the apps/site install, then PATH",
     )
-    parser.add_argument("--r2-endpoint-url", default=os.getenv("SIFT_MODEL_R2_ENDPOINT_URL"), help="explicit R2 S3 endpoint URL")
-    parser.add_argument("--aws-profile", default=os.getenv("AWS_PROFILE"), help="optional AWS CLI profile for R2 credentials")
-    parser.add_argument("--aws-region", default=os.getenv("AWS_REGION") or os.getenv("AWS_DEFAULT_REGION") or "auto")
     parser.add_argument(
         "--upload-command",
         default=None,
@@ -190,7 +189,7 @@ def parse_arguments() -> argparse.Namespace:
         "--env-file",
         type=Path,
         default=None,
-        help=f"dotenv file to load before reading SIFT_* / AWS_* variables; defaults to {DEFAULT_DOTENV_NAME} when present",
+        help=f"dotenv file to load before reading SIFT_* variables; defaults to {DEFAULT_DOTENV_NAME} when present",
     )
     parser.add_argument("--no-env-file", action="store_true", help="skip automatic dotenv loading")
     return parser.parse_args(raw)
@@ -282,7 +281,7 @@ def main() -> None:
     manifest = read_manifest(manifest_path)
     args.channel_path = args.channel_path or default_channel_path(args.track)
     validate_track(args.track, manifest, args.channel_path)
-    if args.track == "stable":
+    if args.track == "stable" and not is_routed(manifest):
         verify_selected_candidate(
             args.selection.expanduser().resolve(),
             manifest,
@@ -407,12 +406,16 @@ def validate_track(track: str, manifest: dict[str, Any], channel_path: str) -> N
         raise SystemExit(f"error: manifest track {manifest.get('releaseTrack', 'stable')} does not match --track {track}")
     if channel_path.strip("/").split("/")[-2] != (track if track != "stable" else channel_path.strip("/").split("/")[1]):
         raise SystemExit(f"error: channel path {channel_path} is not a {track} pointer")
-    if track == "stable" and (manifest.get("algorithm") == ROUTED_ALGORITHM or "routing" in manifest):
-        raise SystemExit("error: a routed rebuild has no stable release contract; publish it to beta or dev")
+    if track == "stable" and is_routed(manifest) and int(manifest.get("minimumAppBuild", 0)) < ROUTED_STABLE_MINIMUM_APP_BUILD:
+        raise SystemExit(f"error: a routed rebuild on stable needs minimumAppBuild {ROUTED_STABLE_MINIMUM_APP_BUILD} or later")
+
+
+def is_routed(manifest: dict[str, Any]) -> bool:
+    return manifest.get("algorithm") == ROUTED_ALGORITHM or "routing" in manifest
 
 
 def verify_track_qualification(path: Path, manifest: dict[str, Any], track: str) -> None:
-    """Dev may rest on local evidence. Beta reaches testers, so it also needs a real device."""
+    """Dev and beta are opt-in on TestFlight. Stable reaches customers, so it needs a real device too."""
     if not path.exists():
         raise SystemExit(f"error: qualification file not found: {path}")
     evidence = read_manifest(path)
@@ -420,9 +423,23 @@ def verify_track_qualification(path: Path, manifest: dict[str, Any], track: str)
         raise SystemExit("error: qualification does not bind this artifact")
     if evidence.get("localQualified") is not True or evidence.get("decisionDifferences") != 0:
         raise SystemExit("error: local qualification has not passed")
-    if track == "beta" and evidence.get("deviceQualified") is not True:
-        raise SystemExit("error: beta requires device qualification; publish to dev until a device run exists")
+    if track in ("beta", "stable") and evidence.get("sealedComparisonPassed") is not True:
+        raise SystemExit(f"error: {track} requires a passed sealed comparison; publish to dev until one exists")
+    if track == "stable" and evidence.get("deviceQualified") is not True:
+        raise SystemExit("error: stable requires device qualification; publish to dev or beta until a device run exists")
     validate_release_profile(manifest)
+    validate_client_floors(manifest)
+
+
+def validate_client_floors(manifest: dict[str, Any]) -> None:
+    """Same floors as the app's download check, so a release it would refuse cannot go out."""
+    metrics = manifest.get("validationMetrics", {})
+    for field, floor in CLIENT_METRIC_FLOORS.items():
+        if float(metrics.get(field, 0)) < floor:
+            raise SystemExit(f"error: {field} {metrics.get(field)} is below the app's download floor {floor}")
+    missing = {"zh", "en", "ja"} - set(manifest.get("languages", []))
+    if missing:
+        raise SystemExit(f"error: manifest languages are missing {sorted(missing)}")
 
 
 def validate_channel_path_for_release(channel_path: str, manifest: dict[str, Any]) -> None:
@@ -1267,23 +1284,24 @@ def verify_reused_remote_artifacts(manifest: dict[str, Any], artifact_base_url: 
         print(f"verified reused artifact: {url}")
 
 
+def wrangler_command(args: argparse.Namespace) -> list[str]:
+    """Wrangler handles Cloudflare auth, so no account id or access key reaches this script."""
+    if args.wrangler_bin:
+        configured = shutil.which(args.wrangler_bin)
+        if configured is None:
+            raise SystemExit(f"error: wrangler not found: {args.wrangler_bin}")
+        return [configured]
+    installed = repo_root() / "apps/site/node_modules/.bin/wrangler"
+    if installed.exists():
+        return [str(installed)]
+    found = shutil.which("wrangler")
+    if found is None:
+        raise SystemExit("error: --r2-bucket requires wrangler; run pnpm install or pass --wrangler-bin")
+    return [found]
+
+
 def validate_r2_configuration(args: argparse.Namespace) -> None:
-    if shutil.which("aws") is None:
-        raise SystemExit("error: --r2-bucket requires the AWS CLI (`aws`) to be installed")
-    r2_endpoint_url(args)
-    if args.aws_profile:
-        return
-    if os.getenv("AWS_ACCESS_KEY_ID") and os.getenv("AWS_SECRET_ACCESS_KEY"):
-        return
-    raise SystemExit("error: set AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY or pass --aws-profile for R2 upload")
-
-
-def r2_endpoint_url(args: argparse.Namespace) -> str:
-    if args.r2_endpoint_url:
-        return args.r2_endpoint_url.rstrip("/")
-    if args.r2_account_id:
-        return f"https://{args.r2_account_id}.r2.cloudflarestorage.com"
-    raise SystemExit("error: set CLOUDFLARE_ACCOUNT_ID or pass --r2-endpoint-url for R2 upload")
+    wrangler_command(args)
 
 
 def r2_object_key(prefix: str, path: str) -> str:
@@ -1291,21 +1309,21 @@ def r2_object_key(prefix: str, path: str) -> str:
     return f"{prefix}/{path}" if prefix else path
 
 
+def wrangler_put_command(wrangler: list[str], bucket: str, prefix: str, item: UploadItem) -> list[str]:
+    return [
+        *wrangler, "r2", "object", "put",
+        f"{bucket}/{r2_object_key(prefix, item.path)}",
+        "--remote",
+        "--file", str(item.source),
+        "--content-type", item.content_type,
+        "--cache-control", item.cache_control,
+    ]
+
+
 def upload_to_r2(items: list[UploadItem], args: argparse.Namespace) -> None:
-    endpoint = r2_endpoint_url(args)
+    wrangler = wrangler_command(args)
     for item in items:
-        target = f"s3://{args.r2_bucket}/{r2_object_key(args.r2_prefix, item.path)}"
-        command = [
-            "aws", "s3", "cp",
-            str(item.source),
-            target,
-            "--endpoint-url", endpoint,
-            "--region", args.aws_region,
-            "--content-type", item.content_type,
-            "--cache-control", item.cache_control,
-        ]
-        if args.aws_profile:
-            command.extend(["--profile", args.aws_profile])
+        command = wrangler_put_command(wrangler, args.r2_bucket, args.r2_prefix, item)
         print(f"r2 upload: {' '.join(shlex.quote(part) for part in command)}")
         subprocess.run(command, check=True)
 

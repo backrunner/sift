@@ -19,6 +19,7 @@ from upload_transformer_model import (
     legacy_canonical_release_payload,
     validate_track,
     verify_track_qualification,
+    wrangler_put_command,
     entries_after_metadata_revision,
     make_channel_catalog,
     merge_channel_entries,
@@ -616,12 +617,13 @@ class UploadTransformerModelTests(unittest.TestCase):
         self.assertEqual(default_channel_path("dev"), "channels/v3/dev/SiftSignalModel.channel.json")
         validate_track("stable", {}, default_channel_path("stable"))
         validate_track("dev", {"releaseTrack": "dev"}, default_channel_path("dev"))
+        validate_track("stable", {"routing": {}, "minimumAppBuild": 35}, default_channel_path("stable"))
         for track, manifest, path in (
             ("dev", {}, default_channel_path("dev")),
             ("stable", {"releaseTrack": "dev"}, default_channel_path("stable")),
             ("dev", {"releaseTrack": "dev"}, default_channel_path("stable")),
             ("beta", {"releaseTrack": "beta"}, default_channel_path("dev")),
-            ("stable", {"routing": {}}, default_channel_path("stable")),
+            ("stable", {"routing": {}, "minimumAppBuild": 34}, default_channel_path("stable")),
         ):
             with self.assertRaises(SystemExit, msg=(track, manifest, path)):
                 validate_track(track, manifest, path)
@@ -642,8 +644,9 @@ class UploadTransformerModelTests(unittest.TestCase):
         with self.assertRaises(SystemExit):
             make_channel_catalog([entry(6), entry(7, track="dev")], "k", Path("/nonexistent"))
 
-    def test_dev_accepts_local_evidence_but_beta_needs_a_device(self) -> None:
-        manifest = {"sha256": "abc", "runtimeProfile": {"computeUnits": "cpuOnly", "modelType": "neuralNetworkClassifier", "computePrecision": "float32"},
+    def test_dev_accepts_local_evidence_but_beta_needs_a_sealed_comparison(self) -> None:
+        manifest = {"sha256": "abc", "languages": ["zh", "en", "ja"],
+                    "validationMetrics": {"fixedAccuracy": 0.99, "promotionAccuracy": 0.98, "fp16Agreement": 0.985}, "runtimeProfile": {"computeUnits": "cpuOnly", "modelType": "neuralNetworkClassifier", "computePrecision": "float32"},
                     "modelABI": "sift-signal-mapped-embedding-v1", "minimumAppBuild": 34,
                     "quantizationProfile": {"identifier": "nn-fp32-mapped-w4-block16", "weightBits": 32, "activationBits": 32, "method": "mixed",
                                             "granularity": "encoder-fp32-embedding-blockwise-int4", "blockSize": 16}}
@@ -654,14 +657,30 @@ class UploadTransformerModelTests(unittest.TestCase):
             verify_track_qualification(path, manifest, "dev")
             with self.assertRaises(SystemExit):
                 verify_track_qualification(path, manifest, "beta")
-            path.write_text(json.dumps({**evidence, "deviceQualified": True}))
+            path.write_text(json.dumps({**evidence, "sealedComparisonPassed": True}))
             verify_track_qualification(path, manifest, "beta")
+            with self.assertRaises(SystemExit):
+                verify_track_qualification(path, manifest, "stable")
+            path.write_text(json.dumps({**evidence, "sealedComparisonPassed": True, "deviceQualified": True}))
+            verify_track_qualification(path, manifest, "stable")
             path.write_text(json.dumps({**evidence, "artifactSHA256": "other"}))
             with self.assertRaises(SystemExit):
                 verify_track_qualification(path, manifest, "dev")
             path.write_text(json.dumps({**evidence, "decisionDifferences": 1}))
             with self.assertRaises(SystemExit):
                 verify_track_qualification(path, manifest, "dev")
+            path.write_text(json.dumps(evidence))
+            for field in ("fixedAccuracy", "promotionAccuracy", "fp16Agreement"):
+                low = {**manifest, "validationMetrics": {**manifest["validationMetrics"], field: 0.5}}
+                with self.assertRaises(SystemExit, msg=field):
+                    verify_track_qualification(path, low, "dev")
+
+    def test_wrangler_upload_targets_the_remote_bucket_key_with_headers(self) -> None:
+        item = UploadItem(Path("/tmp/a.json"), "channels/v3/dev/SiftSignalModel.channel.json", "application/json", "no-cache")
+        self.assertEqual(wrangler_put_command(["wrangler"], "sift-models", "models", item), [
+            "wrangler", "r2", "object", "put", "sift-models/models/channels/v3/dev/SiftSignalModel.channel.json",
+            "--remote", "--file", "/tmp/a.json", "--content-type", "application/json", "--cache-control", "no-cache",
+        ])
 
     def test_manifest_v2_interop_fixture_verifies_with_openssl(self) -> None:
         fixture_path = Path(__file__).with_name("fixtures") / "manifest_v2_ed25519.json"

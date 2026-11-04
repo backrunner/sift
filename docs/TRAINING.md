@@ -44,8 +44,8 @@ pnpm pipeline -- all \
 ```
 
 The pipeline prints the exported row count and label distribution before
-curation. Do not promote the generated transformer until its quantization
-tournament and physical-device evidence pass.
+curation. Do not promote the generated transformer until it passes the gate for
+its publishing track, described in section 2.5.
 
 Common variants:
 
@@ -306,7 +306,7 @@ are recorded above; do not reuse the legacy v15 artifacts.
 The current app line reads the manifest first when a Premium user switches to the transformer:
 
 ```text
-https://sift.alkinum.io/models/channels/v3/SiftSignalModel.channel.json
+https://sift.alkinum.com/models/channels/v3/SiftSignalModel.channel.json
 ```
 
 The legacy Sift 1.3 build continues to use the frozen `channels/v2` pointer,
@@ -321,16 +321,44 @@ top-level release stays compatible with legacy single-release parsers. Build
 the highest release sequence compatible with their app build, OS, and model
 ABI. Every list entry remains individually signed, and the catalog signature
 prevents a valid newer entry from being removed or reordered.
-The recommended target is a Cloudflare R2 bucket exposed through a public
-custom domain or Worker/Pages route.
+Models are stored in the Cloudflare R2 bucket `sift-models` and served by the
+`apps/site` route `/models/...`.
+
+#### Publishing tracks and gates
+
+The gate depends on who can receive the model. Beta and Dev are opt-in through
+Developer Options, which App Store installs do not have, so they only need enough
+evidence to test safely. Stable reaches customers, so it always needs a real device run.
+A rebuilt model does not need a teacher.
+
+| Track | Pointer | Who receives it | Required before publishing |
+| --- | --- | --- | --- |
+| Dev | `channels/v3/dev/` | Testers who choose it | Local qualification: exact decision parity with the evaluated checkpoint, and memory compared with the shipped model |
+| Beta | `channels/v3/beta/` | Testers who choose it | Dev gate, plus a passed sealed comparison on leak-free rows |
+| Stable, distilled | `channels/v3/` | All customers | Distillation contract, selected candidate, quality and action gates, physical-device evidence |
+| Stable, rebuilt | `channels/v3/` | Customers on build 35 or later | Beta gate, plus physical-device evidence recorded as `deviceQualified` |
+
+- Judge candidates first on serious errors: harmful missed, normal to junk, and
+  normal to promotion. Overall action accuracy is a secondary check, because filing
+  mix-ups between transaction and none dominate it.
+- Use margins rather than one-row bars on small sets, and report paired differences.
+- `validationMetrics` must clear the app's download floors: fixed 0.99, promotion 0.98,
+  agreement 0.985. The publisher enforces the same floors. Routed releases report policy action,
+  where commercial messages sent to junk count as correct.
+- For Beta and Dev, `--selection` takes a `qualification.json` bound to the artifact
+  hash. A device run is recommended and recorded as `deviceQualified`, but not required.
+- A routed rebuild on Stable needs `minimumAppBuild` 35 or later. Builds up to 34 keep
+  the distilled model, because their app code rejects a rebuilt model on Stable.
+- Keep `minimumAppBuild` at the first build that can run the model. Old builds read
+  only their own pointer. Check the app-build ranges in the registry before publishing.
 
 - Recommended R2 object key prefix: `models/`.
-- Public base URL used by the app: `https://sift.alkinum.io/models`.
+- Public base URL used by the app: `https://sift.alkinum.com/models`.
 - These must map one-to-one so
   `models/channels/v3/SiftSignalModel.channel.json` is publicly reachable.
 
 Credentials must not be committed. Copy the dotenv sample and provide real
-values locally or via CI secrets:
+values locally:
 
 ```bash
 cp .env.signal-model.example .env.signal-model
@@ -341,9 +369,9 @@ present. Use `--env-file /path/to/file` to choose another file or
 `--no-env-file` to skip dotenv loading. The real `.env.signal-model` file
 is git-ignored and must not be committed.
 
-Use Cloudflare R2 S3-compatible access keys for `AWS_ACCESS_KEY_ID` and
-`AWS_SECRET_ACCESS_KEY`, scoped to the model bucket with least privilege. First
-run a dry-run to validate the manifest, hashes, and total byte size:
+Uploads use Wrangler from `apps/site`. Sign in with
+`pnpm -C apps/site exec wrangler login`, or set `CLOUDFLARE_API_TOKEN`. No S3 access
+keys are needed. First run a dry-run to validate the manifest, hashes, and total byte size:
 
 ```bash
 pnpm upload:transformer-model -- \
@@ -362,6 +390,9 @@ pnpm upload:transformer-model -- \
   --verify-http
 ```
 
+To publish to Dev or Beta, add `--track dev` or `--track beta` and pass the
+qualification file as `--selection`.
+
 The publisher preserves and verifies the currently published channel history
 by default. When bootstrapping the catalog from an older single-release
 channel, add each older immutable manifest once:
@@ -370,7 +401,7 @@ channel, add each older immutable manifest once:
 pnpm upload:transformer-model -- \
   --model-dir build/pipeline/transformer-model/quantization-tournament/candidates/w4a32-block16-ptq \
   --selection build/pipeline/transformer-model/quantization-tournament/selected-candidate.json \
-  --compatible-release-manifest-url https://sift.alkinum.io/models/releases/signal-v2-boundary-v15/SiftSignalModel.manifest.json \
+  --compatible-release-manifest-url https://sift.alkinum.com/models/releases/signal-v2-boundary-v15/SiftSignalModel.manifest.json \
   --r2-bucket "$SIFT_MODEL_R2_BUCKET" \
   --verify-http
 ```
@@ -387,11 +418,6 @@ overwriting or duplicating model weights. The current sequence-4 repair is
 `signal-v4-generalization-v50-r32-distilled-12l-metadata-v2`, which reuses
 `signal-v4-generalization-v50-r32-distilled-12l` and advertises the W4A32/FP32
 runtime contract.
-
-If you do not want to place the account id in the environment, pass
-`--r2-endpoint-url https://<account-id>.r2.cloudflarestorage.com`. If you use an
-AWS profile, set `AWS_PROFILE=sift-r2` in dotenv or pass
-`--aws-profile <profile>`.
 
 You can also copy to a local publish directory:
 
@@ -410,7 +436,7 @@ file, supporting `{src}`, `{path}`, `{content_type}`, and `{cache_control}`:
 pnpm upload:transformer-model -- \
   --model-dir build/pipeline/transformer-model/quantization-tournament/candidates/w4a32-block16-ptq \
   --selection build/pipeline/transformer-model/quantization-tournament/selected-candidate.json \
-  --base-url https://sift.alkinum.io/models \
+  --base-url https://sift.alkinum.com/models \
   --upload-command 'rclone copyto {src} r2:sift-models/models/{path}' \
   --verify-http
 ```
@@ -530,7 +556,7 @@ and per-language evaluation.
 | `build/pipeline/pruning-report.json` | Semantic pruning counts, thresholds, protected rows, and cross-label audit result |
 | `build/pipeline/pruning-rejected.ndjson` | Removed same-label semantic repetitions with retained representative |
 | `build/pipeline/apple-model/SiftSMSClassifier.{mlmodel,manifest.json}` | App and extension classic model |
-| `build/pipeline/transformer-model/SiftSignalModel.{mlpackage,tokenizer.siftbpe,manifest.json}` | Upload to `https://sift.alkinum.io/models/` for Premium on-demand download |
+| `build/pipeline/transformer-model/SiftSignalModel.{mlpackage,tokenizer.siftbpe,manifest.json}` | Upload to `https://sift.alkinum.com/models/` for Premium on-demand download |
 | `build/pipeline/transformer-model/checkpoint/` | Fine-tuning starting point |
 | `build/pipeline/transformer-model/training-report.html` | Training report |
 | `build/pii-model/SiftPIIDetector.*` | Optional app PII model |

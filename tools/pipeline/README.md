@@ -91,9 +91,10 @@ Tool requirements per stage: `swift` (fetch-public, train-classic), `pnpm`
 (fetch-remote), `uv` (prune, train-transformer, and curate when the model filter
 is enabled). The orchestrator itself is stdlib-only Python 3.10+.
 
-## Transformer release gate
+## Stable release gate
 
-For every candidate report under
+This is the full gate for a distilled model on the Stable track. Rebuilt models, Beta and Dev
+use the gates under Publishing tracks. For every candidate report under
 `build/pipeline/transformer-model/quantization-tournament/reports`, run
 `TransformerRuntimeBenchmark` and the device-hosted production
 `MessageFilterEngine` stress suite on the physical iPhone available for the
@@ -142,5 +143,6 @@ python3 tools/transformer-trainer/upload_transformer_model.py \
 
 `upload_transformer_model.py --track stable|beta|dev` selects the pointer: `channels/v3/SiftSignalModel.channel.json`,
 `channels/v3/beta/...` or `channels/v3/dev/...`. The track is signed into the channel and release, so a dev release cannot be
-replayed through another pointer. For beta and dev, `--selection` takes a `qualification.json` bound to the artifact. Dev accepts
-local evidence; beta also requires `deviceQualified`. Routed rebuilds cannot use stable.
+replayed through another pointer. For beta and dev, `--selection` takes a `qualification.json` bound to the artifact. Dev
+needs local qualification, and beta also needs `sealedComparisonPassed`. Neither needs a device run. A routed rebuild can use stable
+with minimum build 35 and `deviceQualified`, and needs no teacher. Uploads use Wrangler, signed in through `apps/site`. See `docs/TRAINING.md` section 2.5.
