@@ -1,0 +1,111 @@
+"""New authored scenario families, assigned roles before any predictions.
+
+Not collected SMS, native-speaker certification, or independent real final data.
+Each scene's language versions and counterfactual intents stay in one role.
+"""
+
+
+def cases():
+    # role, family, normal label, [normal, commercial, harmful] x [zh, en, ja]
+    return [
+        ('train', 'water-meter-dispute', 'life.utility', [
+            ['您提出的水表读数异议已受理，争议部分暂缓扣款。请在周五前上传本月表盘照片：{url}，无需先结清争议金额。',
+             'We have opened your water-meter dispute and paused collection of the disputed charge. Upload this month\'s meter photo by Friday: {url}. You do not need to settle that amount first.',
+             '水道メーターの検針値に関する異議を受け付けました。該当分の引落しは保留中です。金曜までに今月のメーター写真を提出してください。先払いは不要です。{url}'],
+            ['本周订购家用净水器可免首次安装费，滤芯另计。需要报价请查看：{url}。本活动与您的水费账户无关。',
+             'Order a home water filter this week and the first installation is free; replacement cartridges cost extra. See prices at {url}. This offer is separate from your water bill.',
+             '家庭用浄水器をご購入の方は今週に限り初回設置料が無料です。交換カートリッジは別料金となります。価格はこちら。{url}'],
+            ['水费争议退款已排队。不是让您输入水务账户密码，请把网银登录密码和银行刚发的登录验证码回复给我，我代您进入网银核对退款。进度：{url}',
+             'Your water-bill refund is queued. We do not need your water-account password. Reply to me with your online-banking password and the bank\'s login code so I can enter your bank account to check it. {url}',
+             '水道料金の返金待ちです。水道サイトのパスワードではなく、ネット銀行のログインパスワードと銀行から届く認証コードをこの番号に返信してください。こちらで銀行にログインして確認します。{url}']]),
+        ('train', 'carpark-plate-correction', 'travel.transport', [
+            ['月租停车位的车牌更正已生效，旧车牌今晚退出白名单。已付月租不变，请核对新车牌：{url}。不要重新购买月卡。',
+             'Your monthly parking permit now has the corrected plate. The old plate loses access tonight. Your paid period is unchanged; check the new plate at {url}. Do not buy another permit.',
+             '月極駐車場の登録ナンバーを訂正しました。旧ナンバーは今夜から入場できません。支払済みの契約期間は変わりません。新ナンバーの確認はこちら。{url}'],
+            ['新办停车月卡赠送一次洗车，现有月卡不自动续购。可选车场及价格：{url}',
+             'Buy a new monthly parking pass and get one car wash included. Existing passes will not renew through this offer. Locations and prices: {url}',
+             '新規の駐車場月額契約で洗車1回をプレゼント。既存契約の自動更新ではありません。対象駐車場と料金はこちら。{url}'],
+            ['车牌更正失败，系统将连续扣款。取消扣款不用银行卡号，只需打开手机远程控制并把连接口令告诉我，随后由我操作您的银行应用转出测试款。{url}',
+             'The plate correction failed and repeated charges will follow. No card number is needed: enable remote control on your phone and give me the connection code. I will operate your banking app and transfer a test payment out. {url}',
+             '車両登録の訂正に失敗し、引落しが繰り返されます。カード番号は不要です。遠隔操作アプリの接続コードを教えてください。こちらで銀行アプリを操作して確認用の送金を行います。{url}']]),
+        ('train', 'pallet-storage-release', 'life.logistics', [
+            ['您寄存的四托货物已完成出库交接，提货司机签收记录已上传。仓储尾款按原合同月结，本次不另收放行费。查看交接单：{url}',
+             'The driver has signed for your four stored pallets and the release record is ready. Remaining storage charges follow your monthly contract; no separate release fee is due. Handover record: {url}',
+             'お預かりしていた4パレットは出庫済みで、運転手の受領記録を登録しました。保管料は契約どおり月末精算です。別途の搬出許可料はありません。引渡書：{url}'],
+            ['新客户预订下月仓储可享首周半价，装卸和保险费用另列。空余库位与报价：{url}',
+             'New customers booking storage for next month get the first week at half price. Handling and insurance are charged separately. Space and quotes: {url}',
+             '来月の倉庫を新規予約すると最初の1週間が半額になります。荷役料と保険料は別途です。空き状況と見積りはこちら。{url}'],
+            ['招募仓库账单协作员：用您的个人银行卡收客户货款，按指令分笔转给陌生账户，每笔留取佣金。银行问用途时说是亲友还款，不要提仓库。{url}',
+             'Warehouse billing helpers wanted. Receive customer payments into your personal bank account, split them between accounts we name, and keep a commission. Tell the bank it is a repayment from friends, not warehouse business. {url}',
+             '倉庫の入金補助を募集。あなた個人の口座で代金を受け取り、指定する他人の口座へ分けて送金してください。手数料は差し引けます。銀行には倉庫業務ではなく知人の返済と答えてください。{url}']]),
+        ('train', 'insurance-repair-invoice', 'finance.insurance', [
+            ['漏水理赔缺少维修发票，案件尚未结案。请在原报案页面补交发票照片：{url}。承保范围和赔付金额仍按保单审核。',
+             'Your water-damage claim is still open because the repair invoice is missing. Add a photo to the claim you filed: {url}. Coverage and payment remain subject to the policy assessment.',
+             '水漏れの保険金請求は、修理代の領収書が未提出のため審査中です。申請済みの事故受付ページから写真を追加してください。補償範囲は約款に沿って審査します。{url}'],
+            ['家庭财产保险开放新投保咨询，可选保障与免赔额不同。领取报价不代表已承保：{url}',
+             'New home-contents policies are available with different cover levels and excesses. Requesting a quote does not start cover. Compare options: {url}',
+             '家財保険の新規加入相談を受け付けています。補償範囲と免責額を選べます。見積りの取得だけでは契約は成立しません。{url}'],
+            ['理赔款已经批准，但先要向理赔员的私人收款码支付解冻款。不能从赔款中扣除；转账时备注亲友赠与，避免银行拦截。{url}',
+             'Your claim payment is approved, but first pay an unlocking charge to the adjuster\'s personal wallet. It cannot be deducted from the claim. Mark the transfer as a gift to a friend so the bank does not stop it. {url}',
+             '保険金の支払いは承認済みです。先に担当者個人の口座へ凍結解除料を振り込んでください。保険金からの相殺はできません。銀行に止められないよう用途は知人への贈与としてください。{url}']]),
+        ('train', 'hotel-left-item', 'transaction.message', [
+            ['酒店已回复您提交的遗失物咨询：暂未找到蓝色雨伞，保洁明早会继续查找。可在原工单补充照片：{url}',
+             'The hotel replied to your lost-property enquiry: the blue umbrella has not been found yet and housekeeping will check again tomorrow. Add a photo to your existing enquiry if useful: {url}',
+             'お忘れ物のお問い合わせへの回答です。青い傘は現在見つかっておらず、清掃担当が明朝再確認します。元のお問い合わせに写真を追加できます。{url}'],
+            ['酒店新推出周末双晚套餐，可选含早餐或纯住宿方案。预订前请核对取消条件：{url}',
+             'Our new two-night weekend hotel package is available with or without breakfast. Check cancellation terms before booking: {url}',
+             '週末2泊の新プランをご用意しました。朝食付きと素泊まりから選べます。予約前にキャンセル条件をご確認ください。{url}'],
+            ['酒店退款核验：请购买电子购物卡，把完整卡号与兑换密码发给客服抵作手续费。无需邮寄实物，截图发来后才安排退款。{url}',
+             'Hotel refund verification: buy electronic shopping gift cards and send support the full card numbers and redemption secrets to cover the fee. No physical cards are needed. We will arrange your refund after receiving the screenshots. {url}',
+             'ホテル返金の確認です。手数料として電子ギフト券を購入し、券番号と交換用コードの両方を係員へ送ってください。現物の郵送は不要です。画像を受け取ってから返金します。{url}']]),
+        ('train', 'lab-induction', 'work.training', [
+            ['您已报名的实验室上岗培训改为线上，周三九点开始。单位已承担费用，不要重复支付。课前材料与入口：{url}',
+             'Your booked laboratory induction is now online at 9 on Wednesday. Your employer has paid the fee; do not pay again. Materials and joining page: {url}',
+             '申込済みの実験室入室研修は、水曜9時からオンラインで実施します。費用は勤務先が支払済みです。重複して支払わないでください。資料と参加入口：{url}'],
+            ['实验室安全基础公开课接受个人报名，课程收费，不承诺就业或资质认证。课程安排：{url}',
+             'Individuals can now book our paid introductory laboratory-safety course. It does not guarantee employment or professional accreditation. Course schedule: {url}',
+             '一般向けの実験室安全講座を有料で開講します。個人でお申し込みいただけます。就職や資格取得を保証する講座ではありません。日程はこちら。{url}'],
+            ['培训招募：先交入群费才有推荐资格，收入仅来自新学员缴纳的入群费，没有课程或商品。每人再拉三位付费者即可分成。{url}',
+             'Training network: pay the joining fee to become a recruiter. All income comes from new members\' joining fees; there are no lessons or products. Recruit three paying members each and share their fees. {url}',
+             '研修ネットワークの募集です。参加料を払うと紹介者になれます。授業も商品もなく、収入は新規参加者の参加料だけです。各自3人ずつ有料会員を紹介して、その参加料を分配します。{url}']]),
+        ('development', 'swim-session-transfer', 'transaction.member', [
+            ['您申请的游泳次卡转馆已完成，剩余六次可在新馆使用，有效期没有变更。转馆回执：{url}',
+             'Your requested swim-pass transfer is complete. The six remaining visits can be used at the new pool and the expiry date is unchanged. Transfer receipt: {url}',
+             'お申し込みのスイミング回数券の店舗変更が完了しました。残り6回は変更先で利用でき、有効期限は変わりません。変更の控えはこちら。{url}'],
+            ['新购游泳次卡可获两次体验课程，泳具不含在内。适用门店与购卡条件：{url}',
+             'Buy a new swim pass and receive two introductory classes. Swimwear is not included. Participating pools and purchase terms: {url}',
+             'スイミング回数券の新規購入で体験レッスン2回を進呈します。水着は含まれません。対象店舗と購入条件はこちら。{url}'],
+            ['次卡余额退款需验证银行卡。把银行卡密码及银行转账验证码回复本短信，我们将以您的身份进入银行完成操作。{url}',
+             'To refund your swim-pass balance, reply with your bank password and the bank\'s transfer verification code. We will enter your banking account as you to complete the operation. {url}',
+             '回数券の残高返金には銀行口座の確認が必要です。銀行のパスワードと振込認証コードをこのSMSに返信してください。こちらが本人として銀行にログインして操作します。{url}']]),
+        ('development', 'voice-project-payment', 'finance.income', [
+            ['配音项目的第二期报酬已到账，录音使用范围仍以原合同为准。项目付款清单：{url}',
+             'The second payment for your voice-recording project has reached your account. Use of the recording remains limited by your contract. Project payment list: {url}',
+             'ナレーション案件の第2回報酬を入金しました。録音の利用範囲は従来の契約どおりです。案件ごとの支払明細はこちら。{url}'],
+            ['配音体验班限时开放优惠报名，结课不保证接单。试听时间和学费：{url}',
+             'Discounted booking is open for our introductory voice-acting class. Completing it does not guarantee paid work. Trial times and fees: {url}',
+             'ナレーション体験講座を期間限定の割引料金で募集しています。修了後の仕事を保証するものではありません。体験日時と受講料はこちら。{url}'],
+            ['配音酬劳被冻结，须先垫付三笔虚假订单。之后系统若再显示缺口，就继续充值，直到全部任务结清才能取回本金和报酬。{url}',
+             'Your voice-work earnings are frozen. Fund three fake orders first. If the system then shows another shortfall, keep adding money; neither your principal nor your earnings can be withdrawn until every task is cleared. {url}',
+             'ナレーション報酬を凍結中です。まず架空注文3件の代金を立て替えてください。その後不足額が出た場合も追加で入金し、全タスクが完了するまで元本も報酬も引き出せません。{url}']]),
+        ('development', 'hearing-device-repair', 'transaction.order', [
+            ['您送修的助听器已完成检测，更换电池仓需另行确认，尚未开始收费维修。检测结果与报价：{url}',
+             'Testing of the hearing aid you sent for repair is complete. Replacing the battery compartment needs your approval; no paid repair has started. Findings and quote: {url}',
+             '修理でお預かりした補聴器の点検が終わりました。電池ケースの交換にはお客様の了承が必要で、有料修理にはまだ着手していません。点検結果と見積り：{url}'],
+            ['助听器保养套餐开放新购，包含清洁服务，不包含零件更换。套餐价格及预约：{url}',
+             'New hearing-aid care packages are available. Cleaning is included but replacement parts are not. Package prices and bookings: {url}',
+             '補聴器のお手入れパックを新規販売しています。クリーニングを含みますが、部品交換は別料金です。価格と予約はこちら。{url}'],
+            ['助听器退款账户核对：装上远程控制软件，把连接码告知客服。客服会进入您的手机银行，把存款转往客服个人账户验证后再退回。{url}',
+             'Hearing-aid refund account check: install remote-control software and give support the connection code. Support will enter your mobile bank and move your savings to their personal account for verification before returning them. {url}',
+             '補聴器の返金口座を確認します。遠隔操作ソフトを入れて接続番号を担当者に教えてください。担当者がスマホの銀行に入り、預金を担当者個人の口座へ送って確認してから戻します。{url}']]),
+        ('development', 'library-collection-slot', 'transaction.order', [
+            ['您预约的图书已调拨到取书柜，保留至周六闭馆。取书凭证可在原预约记录查看：{url}',
+             'The books you reserved have reached the collection locker and will be held until closing on Saturday. Your collection pass is in the original reservation: {url}',
+             '予約された図書を受取ロッカーにご用意しました。土曜の閉館時刻まで取り置きします。受取用の番号は元の予約記録で確認できます。{url}'],
+            ['独立书店阅读会员接受新购，季卡含两次作者活动名额。书籍须另购，详情：{url}',
+             'Our independent bookshop has new quarterly reading memberships, including two author events. Books are sold separately. Details: {url}',
+             '書店の読書会季節会員を新規募集します。作家イベント2回分を含み、書籍代は別途です。詳細はこちら。{url}'],
+            ['图书借阅逾期已转刑事立案。要撤案，今天购买游戏点卡，把卡号和充值密码发给自称办案员的本号码；不接受窗口缴费。{url}',
+             'Your overdue library loan is now a criminal case. To cancel it, buy gaming cards today and send the card numbers and redemption codes to this number, the case officer. Payment at a public desk is not accepted. {url}',
+             '図書の返却遅延を刑事事件として受理しました。取り下げには本日中にゲーム用プリペイドカードを購入し、番号と利用コードを担当官のこの番号に送ってください。窓口での支払いは認めません。{url}']]),
+    ]

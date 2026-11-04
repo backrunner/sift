@@ -101,6 +101,7 @@ docs/APP_STORE_CONNECT_METADATA.md
 !tools/apple-trainer/Evaluation/*.ndjson
 !tools/apple-trainer/Training/*.ndjson
 !tools/pii-trainer/Evaluation/*.ndjson
+!tools/transformer-trainer/Evaluation/conversation-regressions.ndjson
 *.jsonl
 *.csv
 *.tsv
