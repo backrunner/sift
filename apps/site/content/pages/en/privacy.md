@@ -56,8 +56,8 @@ submission attempts. See [Cloudflare's privacy policy](https://www.cloudflare.co
 Support processing is based on handling your requested service and our legitimate
 interest in responding to requests and preventing abuse, as applicable. Support
 records are retained as needed to resolve requests and meet legal obligations.
-You can request access or deletion through the support form or
-[support@alkinum.io](mailto:support@alkinum.io); we may need to verify your request.
+You can request access or deletion through the
+[support form](https://sift.alkinum.com/en/support); we may need to verify your request.
 App controls for deleting contributed samples do not delete support tickets.
 
 ## 4. Purchases
@@ -84,7 +84,7 @@ Where GDPR, UK GDPR, CCPA/CPRA, or similar laws apply, you have rights of access
 - **Erasure**: Settings → Data & Privacy → *Erase all submitted data* permanently deletes every sample you contributed. *Delete last submission* is also available right after submitting.
 - **Withdrawal of consent**: turn off the anonymous-contribution toggle.
 
-For anything else, including complaints, contact **privacy@sift.alkinum.io**. You also have the right to lodge a complaint with your local supervisory authority. We do not sell or share personal information as defined by the CCPA/CPRA.
+For anything else, including complaints, use the [support form](https://sift.alkinum.com/en/support). You also have the right to lodge a complaint with your local supervisory authority. We do not sell or share personal information as defined by the CCPA/CPRA.
 
 ## 8. International transfers
 
@@ -104,4 +104,4 @@ We will update this document when features change and adjust the effective date 
 
 ## 12. Contact
 
-Alkinum — privacy@sift.alkinum.io
+Alkinum — [support form](https://sift.alkinum.com/en/support)

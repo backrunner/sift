@@ -17,5 +17,5 @@ description: 联系 Sift 支持团队，获取短信过滤、购买与下载方�
 
 <details>
 <summary>如何跟进已有工单？</summary>
-<p>请保留提交成功后显示的工单编号。后续联系 <a href="mailto:support@alkinum.io?subject=Sift%20Support">support@alkinum.io</a> 时附上编号，方便我们查找。请不要重复提交同一个问题。</p>
+<p>请保留提交成功后显示的工单编号。如需补充信息，请使用支持表单并附上该编号，方便我们查找。请不要重复提交同一个问题。</p>
 </details>

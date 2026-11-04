@@ -43,7 +43,7 @@ description: 了解 Sift 如何在本地处理短信、可选样本贡献与 iCl
 
 你主动提交网站支持表单时，我们会处理你填写的邮箱、主题、留言、首选语言，以及选填的应用版本、iOS 版本和 iPhone 型号。请求保存在托管于 Cloudflare 的 OnFire 支持系统中，由获授权的支持人员处理和跟进。该服务与 CloudKit 匿名训练样本贡献相互独立，不会自动上传短信或诊断日志。请勿提交真实短信、电话号码、验证码、Apple ID 登录凭据或支付信息。
 
-表单使用 Cloudflare Turnstile 处理浏览器、设备和网络信号以防范滥用；网站也会使用 IP 地址限制提交频率。详见 [Cloudflare 隐私政策](https://www.cloudflare.com/privacypolicy/)。我们根据处理你所请求的服务，以及回复请求和防范滥用的合法利益（视适用情况）处理支持数据。工单会在解决请求和履行法律义务所需期间保留。你可通过支持表单或 [support@alkinum.io](mailto:support@alkinum.io) 请求访问或删除支持记录，我们可能需要验证请求。应用内的样本删除功能不会删除支持工单。
+表单使用 Cloudflare Turnstile 处理浏览器、设备和网络信号以防范滥用；网站也会使用 IP 地址限制提交频率。详见 [Cloudflare 隐私政策](https://www.cloudflare.com/privacypolicy/)。我们根据处理你所请求的服务，以及回复请求和防范滥用的合法利益（视适用情况）处理支持数据。工单会在解决请求和履行法律义务所需期间保留。你可通过[支持表单](https://sift.alkinum.com/support) 请求访问或删除支持记录，我们可能需要验证请求。应用内的样本删除功能不会删除支持工单。
 
 ## 4. 购买
 
@@ -69,7 +69,7 @@ Premium 高级版是由 Apple 处理的非消耗型应用内购买。我们不�
 - **删除**：“设置 → 数据与隐私 → 清空全部提交数据”会永久删除你贡献过的全部样本。提交后也可以单独删除最近一次记录。
 - **撤回同意**：关闭匿名贡献开关。
 
-其他请求或投诉请联系 **privacy@sift.alkinum.io**。你也有权向所在地监管机构投诉。我们不会出售或分享 CCPA/CPRA 所定义的个人信息。
+其他请求或投诉请联系 [support form](https://sift.alkinum.com/en/support)。你也有权向所在地监管机构投诉。我们不会出售或分享 CCPA/CPRA 所定义的个人信息。
 
 ## 8. 跨境传输
 
@@ -89,4 +89,4 @@ Sift 不面向 13 岁以下儿童（或你所在地区规定的其他最低年�
 
 ## 12. 联系方式
 
-Alkinum — privacy@sift.alkinum.io
+Alkinum — [支持表单](https://sift.alkinum.com/support)

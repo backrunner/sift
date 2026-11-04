@@ -115,4 +115,4 @@ mandatory protections or venue rights, which remain unaffected.
 
 ## 11. Contact
 
-Alkinum — privacy@sift.alkinum.io
+Alkinum — [support form](https://sift.alkinum.com/en/support)

@@ -17,5 +17,5 @@ description: SMSの振り分け、購入、モデルの取得、データとプ�
 
 <details>
 <summary>送信済みのお問い合わせを確認するには？</summary>
-<p>送信後に表示される受付番号を保存してください。<a href="mailto:support@alkinum.io?subject=Sift%20Support">support@alkinum.io</a>へご連絡の際に番号を添えると、お問い合わせを確認できます。同じ内容の重複送信はお控えください。</p>
+<p>送信後に表示される受付番号を保存してください。追加のご連絡はサポートフォームから送信し、受付番号を添えてください。同じ内容の重複送信はお控えください。</p>
 </details>

@@ -62,4 +62,4 @@ These Terms are governed by the laws of the jurisdiction in which the App publis
 
 ## 11. Contact
 
-Alkinum — privacy@sift.alkinum.io
+Alkinum — [support form](https://sift.alkinum.com/en/support)

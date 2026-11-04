@@ -143,6 +143,6 @@ submission attempts. See [Cloudflare's privacy policy](https://www.cloudflare.co
 Support processing is based on handling your requested service and our legitimate
 interest in responding to requests and preventing abuse, as applicable. Support
 records are retained as needed to resolve requests and meet legal obligations.
-You can request access or deletion through the support form or
-[support@alkinum.io](mailto:support@alkinum.io); we may need to verify your request.
+You can request access or deletion through the
+[support form](https://sift.alkinum.com/en/support); we may need to verify your request.
 App controls for deleting contributed samples do not delete support tickets.

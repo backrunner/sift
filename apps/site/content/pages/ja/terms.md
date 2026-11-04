@@ -62,4 +62,4 @@ Siftは、端末上でのSMS分類とフィルタリング、ユーザー定義�
 
 ## 11. お問い合わせ
 
-Alkinum — privacy@sift.alkinum.io
+Alkinum — [サポートフォーム](https://sift.alkinum.com/ja/support)

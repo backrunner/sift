@@ -10,11 +10,7 @@ your request; no account is needed. App and device information is optional.
 Keep the ticket reference shown after submission for follow-up. Please omit
 real SMS messages, phone numbers, verification codes, and credentials.
 
-You can also email:
-
-**[support@alkinum.io](mailto:support@alkinum.io?subject=Sift%20Support)**
-
-Include `Sift` in the email subject and briefly describe the issue.
+Use the support form and briefly describe the issue. Keep the reference shown after submitting.
 
 You can also open a public issue after the repository is published:
 
@@ -42,6 +38,4 @@ Sift implements export and deletion controls in the app:
 - Withdraw anonymous contribution consent: turn off the anonymous contribution
   toggle in the app.
 
-For anything that cannot be handled in the app, email
-[support@alkinum.io](mailto:support@alkinum.io?subject=Sift%20Support) and
-include `Sift` in the subject.
+For anything that cannot be handled in the app, use the [support form](https://sift.alkinum.com/en/support) and select Data & privacy.
