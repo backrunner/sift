@@ -515,7 +515,8 @@ private func v6SafetyAndOperationalBoundariesClassifyCorrectly(example: Promotio
     PromotionClassificationCase(text: "餐馆确认订单并开始烹饪，骑手接单后会发送送达预估。", expectedLabelID: "life.takeaway"),
     PromotionClassificationCase(text: "园区行政通知：周五东侧停车入口只对访客开放，员工请绕行。", expectedLabelID: "work.announcement"),
     PromotionClassificationCase(text: "Your high-speed rail e-ticket was issued; the gate QR code appears before departure.", expectedLabelID: "travel.ticketing"),
-    PromotionClassificationCase(text: "口座末尾7314から本日89円を青嵐書店へ支払いました。", expectedLabelID: "finance.bank"),
+    // Posted merchant purchases follow fund direction, per docs/TAXONOMY.md.
+    PromotionClassificationCase(text: "口座末尾7314から本日89円を青嵐書店へ支払いました。", expectedLabelID: "finance.consumption"),
     PromotionClassificationCase(text: "After tax withholding, the cash dividend from East Ridge Energy is available in your brokerage funds.", expectedLabelID: "finance.stock"),
     PromotionClassificationCase(text: "The weather office issued a cold-wave warning; mountain temperatures may fall below zero.", expectedLabelID: "life.weather"),
     PromotionClassificationCase(text: "货件已通过海关，正在前往沿海保税仓等待区域分拨。", expectedLabelID: "life.logistics"),

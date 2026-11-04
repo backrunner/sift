@@ -29,7 +29,8 @@ public enum ModelOutputContract {
               decision.source != .fallback,
               decision.systemAction != .none,
               SiftTaxonomy.leaf(id: decision.labelID) != nil,
-              decision.confidence >= minimumConfidence else {
+              decision.hasValidTransactionConfidence,
+              decision.routingConfidence >= minimumConfidence else {
             return abstentionDecision(confidence: decision.confidence)
         }
         return decision
@@ -93,7 +94,26 @@ public struct HeuristicClassifier: MessageClassifier {
     /// Rules are evaluated before the classifier by MessageFilterEngine, so
     /// this remains subordinate to explicit user allow/block rules.
     public static func highPrecisionDecision(for body: String) -> ClassificationDecision? {
+        let original = highPrecisionCandidate(for: body)
+        if let original, original.systemAction != .transaction { return original }
+        let prose = InsuranceNoticeEvidence(lowercasedBody: body.lowercased()).prose
+        guard let candidate = original
+            ?? AccountSettingsEvidence(prose: prose).decision else { return nil }
+        if candidate.systemAction == .transaction {
+            if CredentialHandoffEvidence(prose: prose).requiresLearnedDecision
+                || CustodyTransferEvidence(prose: prose).requiresLearnedDecision {
+                return nil
+            }
+        }
+        return candidate
+    }
+
+    private static func highPrecisionCandidate(for body: String) -> ClassificationDecision? {
         let lowercased = body.lowercased()
+        let insuranceEvidence = InsuranceNoticeEvidence(lowercasedBody: lowercased)
+        if insuranceEvidence.requiresLearnedDecision {
+            return nil
+        }
         func forcedDecision(labelID: String, confidence: Double) -> ClassificationDecision? {
             guard let label = SiftTaxonomy.leaf(id: labelID) else {
                 return nil
@@ -226,8 +246,9 @@ public struct HeuristicClassifier: MessageClassifier {
             "is ready", "ready", "confirm before", "已生成", "已出", "確認してください", "確認"
         ]
         if
-            insuranceRenewalContextMarkers.contains(where: lowercased.contains),
-            insuranceRenewalStateMarkers.contains(where: lowercased.contains),
+            insuranceEvidence.permitsBenignOverride,
+            insuranceRenewalContextMarkers.contains(where: insuranceEvidence.prose.contains),
+            insuranceRenewalStateMarkers.contains(where: insuranceEvidence.prose.contains),
             let decision = forcedDecision(labelID: "finance.insurance", confidence: 0.99)
         {
             return decision
@@ -1055,11 +1076,24 @@ public struct HeuristicClassifier: MessageClassifier {
             return decision
         }
 
+        // A displayed balance is not proof of settled income if accessing it
+        // involves another withdrawal fee/deposit. Both income rules defer
+        // to the classifier for that boundary instead of overwriting junk.
+        let withdrawalContextMarkers = ["提现", "领款", "withdrawal", "withdraw", "出金", "引き出"]
+        let withdrawalChargeMarkers = [
+            "费", "税", "保证金", "缴纳", "缴",
+            "手数料", "保証金", "税", "支払", "払う"
+        ]
+        let hasWithdrawalCharge = withdrawalContextMarkers.contains(where: lowercased.contains)
+            && (withdrawalChargeMarkers.contains(where: lowercased.contains)
+                || lowercased.range(of: #"\b(?:fees?|tax(?:es)?|deposit)\b"#, options: .regularExpression) != nil)
         let earlyIncomeMarkers = ["工资", "薪资", "salary", "payroll", "給与", "賞与"]
         let earlyIncomeCompletionMarkers = ["入账", "存入", "credited", "deposited", "入金"]
         if
             earlyIncomeMarkers.contains(where: lowercased.contains),
             earlyIncomeCompletionMarkers.contains(where: lowercased.contains),
+            !hasWithdrawalCharge,
+            !IncomeNoticeEvidence.requiresLearnedDecision(lowercased),
             let decision = forcedDecision(labelID: "finance.income", confidence: 0.98)
         {
             return decision
@@ -1076,6 +1110,26 @@ public struct HeuristicClassifier: MessageClassifier {
             scheduledTransferContextMarkers.contains(where: lowercased.contains),
             scheduledTransferReceiptMarkers.contains(where: lowercased.contains),
             let decision = forcedDecision(labelID: "finance.bank", confidence: 0.99)
+        {
+            return decision
+        }
+
+        // A merchant debit needs account/card context and a completed payment.
+        // Generic payment requests mentioning a shop are not bank evidence.
+        let merchantDebitAccountMarkers = [
+            "账户尾号", "卡尾号", "account ending", "card ending", "口座末尾", "カード末尾", "口座から"
+        ]
+        let merchantDebitCompletionMarkers = [
+            "扣款", "消费成功", "debited", "was charged", "支払いました", "引き落とされました", "引落済"
+        ]
+        let merchantDebitMerchantMarkers = [
+            "商户", "商店", "merchant", "purchase", "書店", "店舗", "購入"
+        ]
+        if
+            merchantDebitAccountMarkers.contains(where: lowercased.contains),
+            merchantDebitCompletionMarkers.contains(where: lowercased.contains),
+            merchantDebitMerchantMarkers.contains(where: lowercased.contains),
+            let decision = forcedDecision(labelID: "finance.consumption", confidence: 0.98)
         {
             return decision
         }
@@ -1264,21 +1318,13 @@ public struct HeuristicClassifier: MessageClassifier {
             return decision
         }
 
-        let accountSecurityStatusMarkers = [
-            "移除设备", "删除设备", "设备已移除", "不能再访问", "不再访问个人资料", "安全验证已通过",
-            "撤销", "授权", "注销", "removed", "revoked", "ended access", "sign out", "browser token",
-            "访问令牌", "access token", "no longer access", "two-step verification is now on", "device was removed",
-            "認証トークン", "無効にし", "権限を終了", "ログアウト",
-            "端末を削除", "アクセスできません", "端末からプロフィールへアクセスできません",
-            "二段階認証が有効", "ログイン"
-        ]
         let accountSecurityContextMarkers = [
             "账户", "账号", "个人资料", "account", "profile", "device", "设备", "端末", "アカウント",
             "security center", "browser", "tablet", "token", "session", "セキュリティセンター", "タブレット"
         ]
         if
-            accountSecurityStatusMarkers.contains(where: lowercased.contains),
-            accountSecurityContextMarkers.contains(where: lowercased.contains),
+            AccountSecurityCompletionEvidence(prose: insuranceEvidence.prose).isCompletedNotice,
+            accountSecurityContextMarkers.contains(where: insuranceEvidence.prose.contains),
             let decision = forcedDecision(labelID: "transaction.account_security", confidence: 0.98)
         {
             return decision
@@ -1644,6 +1690,12 @@ public struct HeuristicClassifier: MessageClassifier {
             return decision
         }
 
+        // Training and course words also occur in fee and recruitment scams.
+        // Require a workplace context before overriding the learned result.
+        let trainingWorkplaceMarkers = [
+            "员工", "职工", "公司内部", "企业内部", "内部培训", "employee", "staff",
+            "workplace", "internal training", "in-house", "社員", "社内", "従業員"
+        ]
         let trainingMarkers = [
             "培训", "必修课", "复训", "隐私合规课程", "学习计划", "training", "mandatory course",
             "privacy-compliance course", "learning plan", "modules", "refresher", "研修", "必修", "プライバシー研修"
@@ -1653,6 +1705,7 @@ public struct HeuristicClassifier: MessageClassifier {
             "finish", "employee file", "受講", "試験", "修了", "社員台帳"
         ]
         if
+            trainingWorkplaceMarkers.contains(where: lowercased.contains),
             trainingMarkers.contains(where: lowercased.contains),
             trainingEventMarkers.contains(where: lowercased.contains),
             let decision = forcedDecision(labelID: "work.training", confidence: 0.98)
@@ -1789,7 +1842,15 @@ public struct HeuristicClassifier: MessageClassifier {
             "再診予約", "病院から", "検査室", "検査センター", "血液検査", "検査報告",
             "処方", "薬局", "検査結果", "放射科", "影像复核", "radiology", "imaging review", "放射線科", "画像再確認"
         ]
-        if medicalMarkers.contains(where: lowercased.contains), let label = SiftTaxonomy.leaf(id: "life.medical") {
+        // A provider name identifies the domain, not the intent of a numeric
+        // credential. Leave verification and credential theft to the model
+        // and more specific rules; never force these into medical notices.
+        let codeContextMarkers = ["验证码", "动态码", "校验码", "code", "otp", "passcode", "コード"]
+        let containsNumericCredential = codeContextMarkers.contains(where: lowercased.contains)
+            && lowercased.range(of: #"(?<![0-9])[0-9]{4,8}(?![0-9])"#, options: .regularExpression) != nil
+        if medicalMarkers.contains(where: lowercased.contains),
+           !containsNumericCredential,
+           let label = SiftTaxonomy.leaf(id: "life.medical") {
             return ClassificationDecision(
                 labelID: label.id, labelTitle: label.title, groupID: label.groupId,
                 groupTitle: label.groupTitle, confidence: 0.97,
@@ -1844,21 +1905,6 @@ public struct HeuristicClassifier: MessageClassifier {
             return decision
         }
 
-        let bankPaymentMarkers = [
-            "口座末尾", "account ending", "账户尾号", "扣款", "debited", "支払いました", "支払い",
-            "口座から"
-        ]
-        let bankMerchantMarkers = [
-            "商户", "可用资金", "merchant", "available funds", "書店", "店舗", "店"
-        ]
-        if
-            bankPaymentMarkers.contains(where: lowercased.contains),
-            bankMerchantMarkers.contains(where: lowercased.contains),
-            let decision = forcedDecision(labelID: "finance.bank", confidence: 0.97)
-        {
-            return decision
-        }
-
         let trafficMarkers = [
             "道路", "隧道", "高架", "匝道", "车辆", "通行", "交通", "road closure", "road work", "road maintenance",
             "roadway", "lane", "tunnel", "bridge", "detour", "traffic", "通行止め"
@@ -1903,6 +1949,8 @@ public struct HeuristicClassifier: MessageClassifier {
         if
             incomeMarkers.contains(where: lowercased.contains),
             incomeCompletionMarkers.contains(where: lowercased.contains),
+            !hasWithdrawalCharge,
+            !IncomeNoticeEvidence.requiresLearnedDecision(lowercased),
             let decision = forcedDecision(labelID: "finance.income", confidence: 0.98)
         {
             return decision
@@ -1923,15 +1971,16 @@ public struct HeuristicClassifier: MessageClassifier {
             return decision
         }
 
-        let insuranceMarkers = [
-            "保险", "理赔", "赔付", "报销", "claim", "insurer", "benefit", "reimbursement", "保険", "給付"
-        ]
+        // Generic claims, benefits and reimbursements also describe welfare,
+        // expense reports and fraud. An insurance override needs explicit context.
         let insuranceCompletionMarkers = [
             "审核通过", "完成", "到账", "approved", "complete", "payment", "transfer", "支払", "入金"
         ]
         if
-            insuranceMarkers.contains(where: lowercased.contains),
-            insuranceCompletionMarkers.contains(where: lowercased.contains),
+            insuranceEvidence.permitsBenignOverride,
+            insuranceCompletionMarkers.contains(where: insuranceEvidence.prose.contains),
+            !socialSecurityMarkers.contains(where: lowercased.contains),
+            !lowercased.contains("social insurance"),
             let decision = forcedDecision(labelID: "finance.insurance", confidence: 0.98)
         {
             return decision
@@ -1990,9 +2039,17 @@ public struct HeuristicClassifier: MessageClassifier {
             "改到", "延期", "延后", "更新", "链接", "日历", "moved", "rescheduled", "updated", "calendar",
             "link", "変更", "遅く"
         ]
+        // URL hosts, paths and query strings cannot establish meeting context.
+        // Restrict this to the meeting override: adjacent unspaced CJK text
+        // may contain credential requests and must remain visible to the
+        // safety boundaries above. The learned model still sees the full SMS.
+        let meetingProse = lowercased.replacingOccurrences(
+            of: #"(?<![a-z0-9])(?:https?://|www\.)[^\s<>"'（）()\[\]{},，。！？；：、]+"#,
+            with: " ", options: .regularExpression
+        )
         if
-            meetingMarkers.contains(where: lowercased.contains),
-            meetingChangeMarkers.contains(where: lowercased.contains),
+            meetingMarkers.contains(where: meetingProse.contains),
+            meetingChangeMarkers.contains(where: meetingProse.contains),
             let decision = forcedDecision(labelID: "work.meeting", confidence: 0.97)
         {
             return decision
@@ -2305,7 +2362,7 @@ public struct HeuristicClassifier: MessageClassifier {
             ("work.approval", ["审批", "请假单", "调休", "报销审批", "oa", "approval"], 0.9),
             ("work.attendance", ["打卡", "考勤", "外勤", "排班", "加班记录", "clock-out", "roster"], 0.9),
             ("work.announcement", ["公司公告", "全员通知", "团建", "组织公告", "all hands"], 0.85),
-            ("work.training", ["培训", "课程", "认证", "考试提醒", "training"], 0.85),
+            ("work.training", ["培训", "课程", "认证", "考试提醒", "training", "研修"], 0.85),
             ("work.reminder", ["提醒", "待办", "日程", "周报", "to-do", "due by"], 0.8),
             ("work.alert", ["告警", "异常", "风险", "超限", "pager", "system alert", "production alert", "cloud service alert", "cloud cache", "build failed", "retention capacity", "certificate expires", "クラウドサービス", "クラウドキャッシュ", "本番監視アラート", "保管容量"], 0.93),
             ("carrier.call_reminder", ["来电提醒", "missed call", "voicemail"], 0.95),

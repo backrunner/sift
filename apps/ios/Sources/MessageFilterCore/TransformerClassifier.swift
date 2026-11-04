@@ -1036,6 +1036,7 @@ public final class TransformerTextClassifier: StageReportingMessageClassifier, @
     private let tokenizer: any TextTokenizing
     private let labels: [String]
     private let confidenceThreshold: Double
+    private let decisionPolicy: TransformerDecisionPolicy
     private let inputIDsName: String
     private let attentionMaskName: String?
     private let embedding: MappedTokenEmbedding?
@@ -1046,7 +1047,8 @@ public final class TransformerTextClassifier: StageReportingMessageClassifier, @
         labels: [String],
         confidenceThreshold: Double = 0.5,
         computeUnits: String = "all",
-        embeddingURL: URL? = nil
+        embeddingURL: URL? = nil,
+        decisionPolicy: TransformerDecisionPolicy = .leaf
     ) throws {
         let configuration = MLModelConfiguration()
         guard let resolvedComputeUnits = Self.computeUnits(named: computeUnits) else {
@@ -1064,6 +1066,7 @@ public final class TransformerTextClassifier: StageReportingMessageClassifier, @
         self.tokenizer = tokenizer
         self.labels = labels
         self.confidenceThreshold = confidenceThreshold
+        self.decisionPolicy = decisionPolicy
 
         let inputs = model.modelDescription.inputDescriptionsByName
         self.inputIDsName = inputs["input_ids"] != nil ? "input_ids"
@@ -1154,6 +1157,13 @@ public final class TransformerTextClassifier: StageReportingMessageClassifier, @
             observer?(.predictionStarted)
             let output = try model.prediction(from: provider)
             observer?(.predictionFinished)
+            if decisionPolicy.requiresFullDistribution {
+                guard let probabilities = probabilityDistribution(from: output),
+                      let summary = TransformerProbabilityDecision(probabilities: probabilities, policy: decisionPolicy) else {
+                    return .failure(.invalidOutput)
+                }
+                return .success(summary.decision(minimumConfidence: confidenceThreshold))
+            }
             guard let best = bestPrediction(from: output) else {
                 return .failure(.invalidOutput)
             }
@@ -1224,6 +1234,23 @@ public final class TransformerTextClassifier: StageReportingMessageClassifier, @
             return (labels[bestIndex], bestValue)
         }
         return nil
+    }
+
+    private func probabilityDistribution(from output: MLFeatureProvider) -> [String: Double]? {
+        guard Set(labels).count == labels.count else { return nil }
+        if let name = model.modelDescription.predictedProbabilitiesName,
+           let dictionary = output.featureValue(for: name)?.dictionaryValue {
+            var values: [String: Double] = [:]
+            for label in labels {
+                guard let value = dictionary[AnyHashable(label)] ?? dictionary[AnyHashable(label as NSString)] else { return nil }
+                values[label] = value.doubleValue
+            }
+            guard dictionary.count == values.count else { return nil }
+            return values
+        }
+        guard let array = output.featureValue(for: "probabilities")?.multiArrayValue,
+              array.count == labels.count else { return nil }
+        return Dictionary(uniqueKeysWithValues: labels.enumerated().map { ($0.element, array[$0.offset].doubleValue) })
     }
 
     private func multiArray(from values: [Int32]) throws -> MLMultiArray {
