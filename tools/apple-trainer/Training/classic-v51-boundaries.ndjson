@@ -46,12 +46,6 @@
 {"text":"列车席位调整已生效，新的车厢座号已显示在铁路客户端，原乘车证件仍可直接验票。","label":"travel.ticketing","source":"augmentation:boundary:classic-v51","language":"zh"}
 {"text":"Your train seat reassignment has taken effect. The new carriage and seat appear in the rail app, and your original travel document remains valid at the gate.","label":"travel.ticketing","source":"augmentation:boundary:classic-v51","language":"en"}
 {"text":"列車の座席変更が反映されました。新しい号車と座席は鉄道アプリに表示され、元の乗車証で改札を通れます。","label":"travel.ticketing","source":"augmentation:boundary:classic-v51","language":"ja"}
-{"text":"陌生人冒充航空客服，要求把银行卡登录口令发给他，声称才能激活已购买的航班座位。","label":"spam","source":"augmentation:boundary:classic-v51","language":"zh"}
-{"text":"A stranger claiming to work for the airline demands your bank login password to activate a seat you already paid for.","label":"spam","source":"augmentation:boundary:classic-v51","language":"en"}
-{"text":"航空会社の担当を装う見知らぬ相手が、購入済みの座席を有効化するため銀行のログインパスワードを送るよう要求しています。","label":"spam","source":"augmentation:boundary:classic-v51","language":"ja"}
-{"text":"所谓船票补偿专员要求先向私人钱包转入审核金，并索取账户恢复密语后才肯退款。","label":"spam","source":"augmentation:boundary:classic-v51","language":"zh"}
-{"text":"An alleged ferry compensation officer demands a screening payment to a private wallet and your account recovery phrase before issuing any refund.","label":"spam","source":"augmentation:boundary:classic-v51","language":"en"}
-{"text":"船の補償担当を名乗る人物が、返金の前に個人ウォレットへの審査料送金とアカウント復元フレーズを要求しています。","label":"spam","source":"augmentation:boundary:classic-v51","language":"ja"}
 {"text":"已为您的铁路预订重新分配靠窗指定席，票款沿用原支付记录，不会生成新的付款订单。","label":"travel.ticketing","source":"augmentation:boundary:classic-v51","language":"zh"}
 {"text":"A window seat has been reassigned for your rail reservation. The original fare payment carries over without creating another charge.","label":"travel.ticketing","source":"augmentation:boundary:classic-v51","language":"en"}
 {"text":"ご予約の鉄道指定席を窓側へ振り替えました。お支払い済みの運賃を引き継ぐため、新たな決済は発生しません。","label":"travel.ticketing","source":"augmentation:boundary:classic-v51","language":"ja"}

@@ -38,9 +38,3 @@
 {"text":"飞猪提醒：订单10004611770578出票完成，官方行程详情https://a.feizhu.com/Qq5Rr6","label":"travel.ticketing","source":"targeted:feizhu-boundary-v1"}
 {"text":"【飞猪】订单10004611770579机票出票成功，防诈提醒及登机说明https://a.feizhu.com/Ss7Tt8","label":"travel.ticketing","source":"targeted:feizhu-boundary-v1"}
 {"text":"飞猪通知：订单10004611770580已出票，乘机指南和航班动态https://a.feizhu.com/Uu9Vv0","label":"travel.ticketing","source":"targeted:feizhu-boundary-v1"}
-{"text":"【飞猪】退款需重新验证账户，点击https://a.feizhu.com/verify/20045679901561领取退款，否则订单将关闭","label":"spam","source":"targeted:feizhu-boundary-v1"}
-{"text":"飞猪客服通知：订单退款异常，请在https://a.feizhu.com/verify/20045679901562填写银行卡密码","label":"spam","source":"targeted:feizhu-boundary-v1"}
-{"text":"【飞猪】机票订单异常，点击https://a.feizhu.com/security/20045679901563上传身份证即可恢复出票","label":"spam","source":"targeted:feizhu-boundary-v1"}
-{"text":"飞猪退款补偿到账，点击https://a.feizhu.com/claim/20045679901564支付1元手续费领取全部款项","label":"spam","source":"targeted:feizhu-boundary-v1"}
-{"text":"【飞猪】订单已锁定，请立即登录https://a.feizhu.com/login/20045679901565核验，否则无法退款","label":"spam","source":"targeted:feizhu-boundary-v1"}
-{"text":"飞猪客服：您的出票资格失效，点击https://a.feizhu.com/unlock/20045679901566重新支付即可解锁","label":"spam","source":"targeted:feizhu-boundary-v1"}

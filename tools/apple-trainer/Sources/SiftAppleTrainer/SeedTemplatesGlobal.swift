@@ -33,13 +33,6 @@ enum SeedTemplatesGlobal {
             "Gran apertura de {merchant} en {city}: vale de ${amount} al presentar este SMS.",
             "Tus puntos de {bank} caducan el {date}. Canjéalos en {url}"
         ],
-        "spam": [
-            "¡GANASTE! Has sido seleccionado para un premio. Contacta al agente para reclamar.",
-            "Préstamo inmediato sin buró, hasta ${amount2} solo con tu ID: {url}",
-            "Tu paquete no pudo entregarse. Verifica tus datos en {url}",
-            "Tu cuenta será suspendida. Evítalo verificando en {url}",
-            "Gana ${amount} al día desde casa, sin experiencia. Escribe al {order}."
-        ],
         "finance.bank": [
             "Cargo de ${amount} en tu cuenta terminación {tail} a las {time}. Si no fuiste tú, llama al banco.",
             "{bank}: abono recibido de ${amount}. Saldo disponible ${amount2}.",
@@ -119,13 +112,6 @@ enum SeedTemplatesGlobal {
             "Dia do sócio: seus cupons já estão na conta {brand}.",
             "Inauguração da {merchant} em {city}: vale de R${amount} apresentando este SMS.",
             "Seus pontos do {bank} vencem em {date}. Troque em {url}"
-        ],
-        "spam": [
-            "PARABÉNS! Você foi sorteado. Fale com o atendente para resgatar o prêmio.",
-            "Empréstimo na hora sem consulta, até R${amount2} só com RG: {url}",
-            "Sua encomenda não pôde ser entregue. Atualize seus dados em {url}",
-            "Sua conta será bloqueada. Regularize agora em {url}",
-            "Ganhe R${amount} por dia em casa, sem experiência. Chame {order}."
         ],
         "finance.bank": [
             "Débito de R${amount} na conta final {tail} às {time}. Não reconhece? Ligue para o banco.",
@@ -207,13 +193,6 @@ enum SeedTemplatesGlobal {
             "Ouverture de {merchant} à {city} : bon de {amount} € sur présentation de ce SMS.",
             "Vos points {bank} expirent le {date}. Échangez-les sur {url}"
         ],
-        "spam": [
-            "FÉLICITATIONS ! Vous avez gagné un lot. Contactez l'agent pour le récupérer.",
-            "Crédit immédiat sans justificatif, jusqu'à {amount2} € : {url}",
-            "Votre colis n'a pas pu être livré. Vérifiez vos coordonnées sur {url}",
-            "Votre compte sera suspendu. Régularisez sur {url}",
-            "Gagnez {amount} €/jour depuis chez vous, sans expérience. Contact {order}."
-        ],
         "finance.bank": [
             "Débit de {amount} € sur le compte se terminant par {tail} à {time}. Contactez-nous si ce n'était pas vous.",
             "{bank} : virement reçu de {amount} €. Solde disponible {amount2} €.",
@@ -293,13 +272,6 @@ enum SeedTemplatesGlobal {
             "Mitgliedertag: Ihre Gutscheine liegen im {brand}-Konto bereit.",
             "Neueröffnung {merchant} in {city}: {amount} €-Gutschein gegen Vorlage dieser SMS.",
             "Ihre {bank}-Punkte verfallen am {date}. Einlösen unter {url}"
-        ],
-        "spam": [
-            "GLÜCKWUNSCH! Sie wurden ausgelost. Melden Sie sich beim Agenten für Ihren Gewinn.",
-            "Sofortkredit ohne Schufa, bis {amount2} € nur mit Ausweis: {url}",
-            "Ihr Paket konnte nicht zugestellt werden. Daten prüfen unter {url}",
-            "Ihr Konto wird gesperrt. Jetzt verifizieren unter {url}",
-            "Verdienen Sie {amount} €/Tag von zu Hause, keine Erfahrung nötig. Kontakt {order}."
         ],
         "finance.bank": [
             "Abbuchung von {amount} € vom Konto mit Endziffern {tail} um {time}. Nicht Sie? Rufen Sie uns an.",
@@ -381,13 +353,6 @@ enum SeedTemplatesGlobal {
             "Открытие {merchant} в {city}: купон на {amount} ₽ по этому SMS.",
             "Баллы {bank} сгорают {date}. Обменяйте на {url}"
         ],
-        "spam": [
-            "ПОЗДРАВЛЯЕМ! Вы выиграли приз. Свяжитесь с оператором для получения.",
-            "Займ за 5 минут без проверок, до {amount2} ₽ по паспорту: {url}",
-            "Ваша посылка не доставлена. Подтвердите данные: {url}",
-            "Ваш аккаунт будет заблокирован. Подтвердите: {url}",
-            "Зарабатывайте {amount} ₽ в день из дома, без опыта. Пишите {order}."
-        ],
         "finance.bank": [
             "Списание {amount} ₽ со счёта *{tail} в {time}. Если это не вы — позвоните в банк.",
             "{bank}: поступление {amount} ₽. Доступный остаток {amount2} ₽.",
@@ -467,13 +432,6 @@ enum SeedTemplatesGlobal {
             "회원의 날: 쿠폰이 {brand} 계정에 지급되었습니다.",
             "{merchant} {city}점 오픈! 이 문자 제시 시 {amount}원 상품권 증정.",
             "{bank} 포인트가 {date} 소멸됩니다. {url} 에서 교환하세요."
-        ],
-        "spam": [
-            "축하합니다! 경품에 당첨되셨습니다. 상담원에게 연락해 수령하세요.",
-            "무심사 즉시 대출, 신분증만으로 최대 {amount2}원: {url}",
-            "택배가 배송되지 못했습니다. 정보를 확인하세요 {url}",
-            "계정이 정지될 예정입니다. 지금 인증하세요 {url}",
-            "재택 알바 일당 {amount}원, 경력 무관. {order} 로 연락주세요."
         ],
         "finance.bank": [
             "끝자리 {tail} 계좌에서 {time}에 {amount}원이 출금되었습니다. 본인이 아니면 즉시 연락하세요.",
@@ -555,13 +513,6 @@ enum SeedTemplatesGlobal {
             "Grand opening {merchant} di {city}: voucher Rp{amount}.000 dengan menunjukkan SMS ini.",
             "Poin {bank} Anda hangus {date}. Tukarkan di {url}"
         ],
-        "spam": [
-            "SELAMAT! Anda terpilih mendapat hadiah. Hubungi agen untuk klaim.",
-            "Pinjaman cair 5 menit tanpa BI checking, hingga Rp{amount2}.000: {url}",
-            "Paket Anda gagal dikirim. Verifikasi data di {url}",
-            "Akun Anda akan diblokir. Segera verifikasi di {url}",
-            "Kerja dari rumah Rp{amount}.000/hari, tanpa pengalaman. Hubungi {order}."
-        ],
         "finance.bank": [
             "Debit Rp{amount}.000 dari rekening akhiran {tail} pukul {time}. Bukan Anda? Hubungi bank.",
             "{bank}: dana masuk Rp{amount}.000. Saldo tersedia Rp{amount2}.000.",
@@ -642,13 +593,6 @@ enum SeedTemplatesGlobal {
             "Khai trương {merchant} tại {city}: tặng voucher {amount}.000đ khi xuất trình SMS này.",
             "Điểm {bank} của bạn hết hạn ngày {date}. Đổi quà tại {url}"
         ],
-        "spam": [
-            "CHÚC MỪNG! Bạn trúng thưởng. Liên hệ nhân viên để nhận quà.",
-            "Vay nhanh 5 phút không thẩm định, tới {amount2}.000đ chỉ cần CMND: {url}",
-            "Bưu kiện của bạn giao không thành công. Xác nhận thông tin tại {url}",
-            "Tài khoản của bạn sắp bị khóa. Xác minh ngay tại {url}",
-            "Việc nhẹ tại nhà {amount}.000đ/ngày, không cần kinh nghiệm. Liên hệ {order}."
-        ],
         "finance.bank": [
             "Tài khoản đuôi {tail} bị trừ {amount}.000đ lúc {time}. Không phải bạn? Gọi ngân hàng ngay.",
             "{bank}: nhận {amount}.000đ. Số dư khả dụng {amount2}.000đ.",
@@ -728,13 +672,6 @@ enum SeedTemplatesGlobal {
             "วันสมาชิก: คูปองเข้าบัญชี {brand} ของคุณแล้ว",
             "{merchant} เปิดสาขาใหม่ที่{city} รับบัตรกำนัล {amount} บาทเมื่อแสดง SMS นี้",
             "คะแนน {bank} จะหมดอายุ {date} แลกของรางวัลที่ {url}"
-        ],
-        "spam": [
-            "ยินดีด้วย! คุณได้รับรางวัล ติดต่อเจ้าหน้าที่เพื่อรับของรางวัล",
-            "เงินกู้อนุมัติไว ไม่เช็คเครดิต สูงสุด {amount2} บาท ใช้แค่บัตรประชาชน: {url}",
-            "พัสดุของคุณส่งไม่สำเร็จ ยืนยันข้อมูลที่ {url}",
-            "บัญชีของคุณจะถูกระงับ ยืนยันทันทีที่ {url}",
-            "งานทำที่บ้าน วันละ {amount} บาท ไม่ต้องมีประสบการณ์ ติดต่อ {order}"
         ],
         "finance.bank": [
             "บัญชีลงท้าย {tail} ถูกหัก {amount} บาท เวลา {time} หากไม่ใช่คุณโปรดติดต่อธนาคาร",

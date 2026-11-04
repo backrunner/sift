@@ -9,13 +9,9 @@
 {"text":"駅前道路は舗装工事のため22時から翌朝まで車両通行を制限します。","label":"government.traffic","source":"augmentation:boundary:generalization-v4-targeted"}
 {"text":"运营商通知：核心网将在周一凌晨维护，部分用户的语音服务可能短时中断。","label":"carrier.service","source":"augmentation:boundary:generalization-v4-targeted"}
 {"text":"移动网络升级安排已确定，维护窗口内可能无法拨打电话，结束后会自动恢复。","label":"carrier.service","source":"augmentation:boundary:generalization-v4-targeted"}
-{"text":"本地运营商提醒：周末进行交换设备切换，短信和通话或有短暂延迟。","label":"carrier.service","source":"augmentation:boundary:generalization-v4-targeted"}
 {"text":"The carrier will replace switching equipment overnight; voice service may be briefly unavailable during the window.","label":"carrier.service","source":"augmentation:boundary:generalization-v4-targeted"}
-{"text":"Network maintenance is scheduled for Monday morning, and calls or texts may arrive a few minutes late.","label":"carrier.service","source":"augmentation:boundary:generalization-v4-targeted"}
 {"text":"Your mobile provider is migrating a service node tonight; no action is required and service will recover automatically.","label":"carrier.service","source":"augmentation:boundary:generalization-v4-targeted"}
 {"text":"通信事業者は月曜未明に交換設備を切り替えるため、音声サービスが一時停止する場合があります。","label":"carrier.service","source":"augmentation:boundary:generalization-v4-targeted"}
-{"text":"携帯ネットワークの保守時間中は通話の接続に遅れが出ることがあります。作業後に自動復旧します。","label":"carrier.service","source":"augmentation:boundary:generalization-v4-targeted"}
-{"text":"通信会社から、今夜サービスノードを移行するとの案内です。利用者の操作は必要ありません。","label":"carrier.service","source":"augmentation:boundary:generalization-v4-targeted"}
 {"text":"6月绩效奖金已发放，金额5,760元进入工资卡尾号2741。","label":"finance.income","source":"augmentation:boundary:generalization-v4-targeted"}
 {"text":"公司薪资系统提示：本月工资已汇入您登记的收款账户，尾号9063。","label":"finance.income","source":"augmentation:boundary:generalization-v4-targeted"}
 {"text":"年终奖励12,800元已入账，可在工资账户明细中查看。","label":"finance.income","source":"augmentation:boundary:generalization-v4-targeted"}
@@ -58,18 +54,6 @@
 {"text":"The seaside hotel held your family room; check the order details for dates and cancellation terms.","label":"travel.tourism","source":"augmentation:boundary:generalization-v4-targeted"}
 {"text":"山あいの宿泊施設で12月2日から2泊を確保しました。チェックイン時に予約書類をご提示ください。","label":"travel.tourism","source":"augmentation:boundary:generalization-v4-targeted"}
 {"text":"海辺のホテルがファミリールームを確保しています。日程と取消条件は予約詳細をご確認ください。","label":"travel.tourism","source":"augmentation:boundary:generalization-v4-targeted"}
-{"text":"冒充快递客服称包裹异常，要求先付重新派送费并填写银行卡安全码。","label":"spam","source":"augmentation:boundary:generalization-v4-targeted"}
-{"text":"假冒法院通知以未缴罚款为由，要求购买礼品卡并回传卡密。","label":"spam","source":"augmentation:boundary:generalization-v4-targeted"}
-{"text":"所谓退款专员声称原路退款失败，诱导提供短信验证码才能补发。","label":"spam","source":"augmentation:boundary:generalization-v4-targeted"}
-{"text":"A fake delivery agent says the parcel is held and demands a redelivery fee plus your card security code.","label":"spam","source":"augmentation:boundary:generalization-v4-targeted"}
-{"text":"A message impersonating a court clerk asks you to buy gift cards and send back the card numbers for a fine.","label":"spam","source":"augmentation:boundary:generalization-v4-targeted"}
-{"text":"A supposed refund specialist says the original transfer failed and requests the one-time code to resend it.","label":"spam","source":"augmentation:boundary:generalization-v4-targeted"}
-{"text":"偽の配送業者が荷物の再配達料とカードのセキュリティコードを要求しています。","label":"spam","source":"augmentation:boundary:generalization-v4-targeted"}
-{"text":"裁判所職員を名乗るSMSが罰金の代わりにギフトカードを買い、番号を送るよう求めています。","label":"spam","source":"augmentation:boundary:generalization-v4-targeted"}
-{"text":"返金担当を装う相手が送金失敗を理由に、再送のためワンタイムコードを聞き出そうとしています。","label":"spam","source":"augmentation:boundary:generalization-v4-targeted"}
-{"text":"包裹配送确实失败时，官方页面只会提供查询入口，不会要求短信支付手续费。","label":"spam","source":"augmentation:boundary:generalization-v4-targeted"}
-{"text":"Legitimate parcel notices provide a tracking page and never ask for a text-message payment fee.","label":"spam","source":"augmentation:boundary:generalization-v4-targeted"}
-{"text":"正規の配送案内は追跡ページを示すだけで、SMSで手数料の支払いを求めません。","label":"spam","source":"augmentation:boundary:generalization-v4-targeted"}
 {"text":"我周五下班后再决定去哪里吃饭，到时发消息给你。","label":"__sift_abstain__","source":"augmentation:boundary:generalization-v4-targeted"}
 {"text":"The meeting link is just for our small group; I will message you when I am free.","label":"__sift_abstain__","source":"augmentation:boundary:generalization-v4-targeted"}
 {"text":"金曜の仕事帰りにどこで食事するか決めて、あとで連絡します。","label":"__sift_abstain__","source":"augmentation:boundary:generalization-v4-targeted"}

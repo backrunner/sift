@@ -16,12 +16,6 @@
 {"text":"Join the household plan promotion for an introductory price and complimentary download credits.","label":"promotion","source":"augmentation:boundary:generalization-v6"}
 {"text":"音楽ファミリープランの体験キャンペーンで、初月割引とオフライン券が付きます。","label":"promotion","source":"augmentation:boundary:generalization-v6"}
 {"text":"家族向けプランの期間限定特典として、初回料金が割引になります。","label":"promotion","source":"augmentation:boundary:generalization-v6"}
-{"text":"云端文件续存页面要求输入钱包种子词，否则资料会被删除。","label":"spam","source":"augmentation:boundary:generalization-v6"}
-{"text":"假冒云盘升级页面索要钱包恢复短语来保留照片。","label":"spam","source":"augmentation:boundary:generalization-v6"}
-{"text":"A cloud-file retention page asks for your wallet seed words or the files will be deleted.","label":"spam","source":"augmentation:boundary:generalization-v6"}
-{"text":"A fake cloud-drive upgrade requests a wallet recovery phrase to keep your photos.","label":"spam","source":"augmentation:boundary:generalization-v6"}
-{"text":"偽のクラウド保存ページが、データを残すためウォレットのシードフレーズを要求しています。","label":"spam","source":"augmentation:boundary:generalization-v6"}
-{"text":"クラウド容量の更新を装い、写真の保存にリカバリーフレーズを入力させようとしています。","label":"spam","source":"augmentation:boundary:generalization-v6"}
 {"text":"北辰能源现金分红已到账，税后金额计入证券资金余额。","label":"finance.stock","source":"augmentation:boundary:generalization-v6"}
 {"text":"持仓公司派发股息，红利已反映在可用证券余额中。","label":"finance.stock","source":"augmentation:boundary:generalization-v6"}
 {"text":"Northstar Energy's cash dividend was posted to your brokerage balance after tax.","label":"finance.stock","source":"augmentation:boundary:generalization-v6"}

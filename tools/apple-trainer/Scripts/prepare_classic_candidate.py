@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Build a leak-free classic/transformer candidate corpus.
 
-The base corpus is preserved except for rows colliding with a holdout. The
+The base corpus is preserved except for rows colliding with a holdout and
+documented legacy carrier/card label migrations. The
 supplement contributes only requested labels and is deduplicated against the
 base, every holdout, and earlier supplement rows using the same exact,
 digit-insensitive, and template signatures as the curation pipeline. A
@@ -15,9 +16,14 @@ import hashlib
 import json
 import random
 import re
+import sys
 import unicodedata
 from collections import Counter
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "transformer-trainer"))
+from curate_dataset import canonicalize_carrier_billing
+from sms_signatures import semantic_signature
 
 
 def parse_arguments() -> argparse.Namespace:
@@ -74,12 +80,7 @@ def template_signature(text: str) -> str:
 def canonicalize_label(text: str, label: str) -> str:
     """Migrate unambiguous legacy carrier/card rows to current boundaries."""
     lowered = text.casefold()
-    if label in {"carrier.other", "carrier.data_reminder"} and any(marker in lowered for marker in (
-        "账单", "缴费", "充值成功", "欠费", "应缴", "账期", "月结单",
-        "billing", "mobile bill", "monthly statement", "payment received", "autopay",
-        "請求", "支払い", "料金残高",
-    )):
-        return "carrier.billing"
+    label, _ = canonicalize_carrier_billing(text, label)
 
     if label == "finance.credit_card":
         if any(marker in lowered for marker in (
@@ -97,7 +98,7 @@ def canonicalize_label(text: str, label: str) -> str:
     return label
 
 
-def load_rows(path: Path) -> list[dict[str, str]]:
+def load_rows(path: Path, migration_counts: Counter | None = None) -> list[dict[str, str]]:
     rows: list[dict[str, str]] = []
     with path.open(encoding="utf-8") as handle:
         for number, line in enumerate(handle, 1):
@@ -105,7 +106,10 @@ def load_rows(path: Path) -> list[dict[str, str]]:
                 continue
             record = json.loads(line)
             text = normalize(str(record.get("text", "")))
-            label = canonicalize_label(text, str(record.get("label", "")).strip())
+            original_label = str(record.get("label", "")).strip()
+            label = canonicalize_label(text, original_label)
+            if migration_counts is not None and label != original_label:
+                migration_counts[f"{original_label}->{label}"] += 1
             if not text or not label:
                 raise SystemExit(f"error: invalid row at {path}:{number}")
             rows.append({"text": text, "label": label, "source": str(record.get("source", ""))})
@@ -118,6 +122,7 @@ def main() -> None:
     holdout_rows = [row for path in arguments.holdout for row in load_rows(path)]
     holdout_exact = {row["text"].lower() for row in holdout_rows}
     holdout_near = {near_duplicate_signature(row["text"]) for row in holdout_rows}
+    holdout_families = {semantic_signature(row["text"]) for row in holdout_rows}
 
     retained: list[dict[str, str]] = []
     exact_to_label: dict[str, str] = {}
@@ -132,7 +137,7 @@ def main() -> None:
         if exact in holdout_exact:
             rejected[f"{origin}:holdout-exact"] += 1
             return
-        if signature in holdout_near:
+        if signature in holdout_near or semantic_signature(row["text"]) in holdout_families:
             rejected[f"{origin}:holdout-near"] += 1
             return
         if exact in exact_to_label and exact_to_label[exact] != row["label"]:
@@ -160,14 +165,15 @@ def main() -> None:
         if template:
             template_to_label[template] = row["label"]
 
-    base_rows = load_rows(arguments.base)
+    label_migrations = Counter()
+    base_rows = load_rows(arguments.base, label_migrations)
     for row in base_rows:
         retain(row, "base")
 
     supplement_rows = [
         row
         for supplement_path in arguments.supplement
-        for row in load_rows(supplement_path)
+        for row in load_rows(supplement_path, label_migrations)
     ]
     selected_supplement = [
         row for row in supplement_rows
@@ -198,6 +204,7 @@ def main() -> None:
     counts = Counter(row["label"] for row in retained)
     report = {
         "baseCount": len(base_rows),
+        "labelMigrations": dict(sorted(label_migrations.items())),
         "supplementCount": len(supplement_rows),
         "supplementPaths": [str(path) for path in arguments.supplement],
         "selectedSupplementCount": len(selected_supplement),

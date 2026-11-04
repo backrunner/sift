@@ -5,18 +5,14 @@ import Foundation
 enum SeedTemplatesEnglish {
     static let templates: [String: [String]] = [
         "finance.bank": [
-            "Your account ending {tail} was debited ${amount} at {time}. Call us if this wasn't you.",
-            "Balance update: ${amount} credited to account ending {tail}. Available balance ${amount2}.",
             "{bank}: your transfer of ${amount} has been submitted and should arrive within {minutes} minutes.",
-            "Debit card ending {tail} was used for ${amount} on {date}.",
             "Your e-receipt is ready. View transaction {order} in mobile banking.",
             "Housing loan review progress updated. Visit the counter to confirm.",
             "Mortgage application status updated. Check mobile banking for details.",
             "ATM withdrawal of ${amount} from account ending {tail}. If unauthorized, call the number on your card.",
             "{bank}: your new debit card has shipped and should arrive within {days} days.",
-            "Account ending {tail} was charged ${amount} by {merchant}; available balance ${amount2}.",
-            "Debit account {tail} recorded a ${amount} merchant purchase on {date}.",
-            "Bank activity alert: ${amount} spent from account {tail} through an in-store merchant."
+            "{bank}: the account certificate you requested is ready for collection with application number {order}.",
+            "Your requested change to the bank contact phone number is now effective. Check mobile banking if you have questions."
         ],
         "finance.insurance": [
             "Your policy is now active. Coverage ${amount2}, effective {date}.",
@@ -52,7 +48,10 @@ enum SeedTemplatesEnglish {
             "Card ending {tail} used for ${amount}. Monthly spend so far: ${amount2}.",
             "Subscription renewed: {platform} charged ${amount} for your monthly plan.",
             "Installment purchase at {merchant}: ${amount} was paid with your card.",
-            "Installment payment complete for order {order}: ${amount}."
+            "Installment payment complete for order {order}: ${amount}.",
+            "Account ending {tail} was charged ${amount} by {merchant}; available balance ${amount2}.",
+            "Debit account {tail} recorded a ${amount} merchant purchase on {date}.",
+            "Bank activity alert: ${amount} spent from account {tail} through an in-store merchant."
         ],
         "finance.income": [
             "You received a transfer of ${amount}. New balance ${amount2}.",
@@ -60,7 +59,8 @@ enum SeedTemplatesEnglish {
             "{name} sent you ${amount}. It's now in your balance.",
             "Deposit received: ${amount} at {time}.",
             "Cash deposit of ${amount} to account ending {tail} confirmed.",
-            "Expense reimbursement of ${amount} has been paid. Check your account."
+            "Expense reimbursement of ${amount} has been paid. Check your account.",
+            "Balance update: ${amount} credited to account ending {tail}. Available balance ${amount2}."
         ],
         "finance.refund": [
             "Your refund of ${amount} has been issued to your original payment method.",
@@ -81,14 +81,14 @@ enum SeedTemplatesEnglish {
             "Order filled: {count} shares executed.",
             "IPO allocation notice: you may subscribe up to {count} shares.",
             "Brokerage cash balance changed by ${amount}.",
-            "Order {order} has been cancelled as requested.",
+            "Stock trading order {order} has been cancelled as requested.",
             "Margin call warning: maintain the required equity before {date}."
         ],
         "finance.other": [
-            "You have a new notice from your bank. Sign in to view it.",
+            "Your personal credit report is ready in the credit bureau portal.",
             "Finance update: please confirm your latest service status.",
             "Your e-invoice details were updated. Confirm before {date}.",
-            "Proof-of-funds request received. Track progress online.",
+            "Your credit-report dispute is accepted. Track the review in the credit bureau portal.",
             "Please upload the latest supporting documents for your finance application.",
             "Exchange rate alert: your watched currency pair has been updated."
         ],
@@ -130,7 +130,7 @@ enum SeedTemplatesEnglish {
             "Heads up: {brand} membership renews on {date} for ${amount}. Manage anytime."
         ],
         "transaction.message": [
-            "New message: {task}.",
+            "A reader has replied to your book review. See the community inbox.",
             "Inbox updated — {count} unread notifications.",
             "{platform}: support replied to your ticket.",
             "You have a new comment reply.",
@@ -166,7 +166,7 @@ enum SeedTemplatesEnglish {
         "life.takeaway": [
             "Your food has arrived — please pick it up at the door.",
             "Order's ready! Your courier is on the way.",
-            "{merchant} accepted your order. ETA {minutes} min.",
+            "{restaurant} accepted your takeaway order. ETA {minutes} min.",
             "Your rider is waiting at the restaurant for pickup.",
             "Delivery order cancelled. Refund will follow the original payment.",
             "Delivery issue: the rider will call to confirm your address.",
@@ -187,15 +187,14 @@ enum SeedTemplatesEnglish {
             "Electricity reminder: ${amount} due this month.",
             "Gas bill issued: ${amount} for this period.",
             "HOA fee reminder: pay by {date} to avoid late charges.",
-            "Broadband bill ${amount} generated. Autopay on {date}.",
-            "Parking payment of ${amount} confirmed."
+            "Water bill payment of ${amount} confirmed."
         ],
         "life.logistics": [
             "Tracking {order}: your freight reached a transit hub, arriving tomorrow.",
-            "Your shipment reached the distribution center.",
+            "Your truckload freight reached the distribution warehouse.",
             "Goods loaded. Route information updated.",
-            "Logistics alert: the delivery address needs a unit number.",
-            "Order {order} left the warehouse. Next stop {station}.",
+            "Freight alert: the receiving factory must provide an unloading dock number.",
+            "Freight consignment {order} left the warehouse for the destination cargo hub.",
             "Bulky-item delivery scheduled for {date} {time}.",
             "Line-haul update: freight cleared the {city} sorting hub, temperature normal.",
             "Your mover accepted the job — truck ending {tail} arrives in {minutes} minutes."
@@ -206,7 +205,7 @@ enum SeedTemplatesEnglish {
             "Locker drop-off complete. Your code is {code}.",
             "{station}: collect your parcel with code {code}.",
             "Pickup notice: parcel for number ending {tail}, code {code}.",
-            "Held at the pickup point — collect within {days} days with your code.",
+            "Held at the pickup point — collect within {days} days with code {code}.",
             "Locker {count} assigned. Access code {code}.",
             "Reminder: your parcel has waited {days} days. Use code {code} before it's returned."
         ],
@@ -217,7 +216,7 @@ enum SeedTemplatesEnglish {
             "Health check booked. Please fast before your visit on {date}.",
             "Follow-up reminder: your doctor will see you at {time}.",
             "Prescription issued. Pharmacy pickup details are in the portal.",
-            "Vaccination reminder: dose {count} scheduled for {date}."
+            "Your vaccination clinic appointment is scheduled for {date}."
         ],
         "life.weather": [
             "Weather warning: heavy rain expected in {city} around {time}.",
@@ -226,7 +225,7 @@ enum SeedTemplatesEnglish {
             "Temperatures drop sharply over the next {days} days. Dress warmly.",
             "Flash flood watch issued. Avoid low-lying roads.",
             "Air quality alert: pollution levels are elevated today.",
-            "Storm track update: landfall expected near {city} on {date}."
+            "Storm track update: check the weather service coastal wind advisory."
         ],
         "life.other": [
             "Service update: your request has been received.",
@@ -264,24 +263,24 @@ enum SeedTemplatesEnglish {
         "travel.other": [
             "Travel service update: your order status changed.",
             "Trip planning complete — see your full itinerary.",
-            "Car rental confirmed. Pickup {date} {time}.",
+            "Passport collection confirmed. Attend the travel document office on {date} at {time}.",
             "Visa application progress updated. Check for document requests.",
-            "Luggage shipping booked. Tracking {order}.",
-            "Travel protection active through {date}."
+            "Additional travel document photos received. Track the review online.",
+            "Your visa application is accepted. A processing update is expected on {date}."
         ],
         "work.reminder": [
             "To-do: {task} is due by {time}.",
-            "Calendar: {task} starts soon.",
+            "Work task: complete {task} before {date}.",
             "Project reminder: {task} is due {date}.",
-            "On-call reminder: your shift starts at {time} tonight.",
+            "Project delivery reminder: check the acceptance documents by {time}.",
             "{name} is waiting on your reply since {time}.",
             "Weekly report due {date}. Please submit on time."
         ],
         "work.alert": [
-            "System alert: {task} failed. Immediate action required.",
+            "System alert: {brand} API failed. Immediate action required.",
             "Monitoring: API latency exceeded the threshold.",
-            "Resolved: service {task} is back to normal.",
-            "Security scanner alert: service {task} failed policy checks.",
+            "Resolved: service {brand} API is back to normal.",
+            "Security scanner alert: service {brand} API failed policy checks.",
             "Disk space is running low on the production server.",
             "Job failure count hit the alert threshold.",
             "Pager: on-call engineer, please ack P{count} now.",
@@ -318,14 +317,14 @@ enum SeedTemplatesEnglish {
         "work.announcement": [
             "Company notice: holiday schedule is out.",
             "New org announcement published.",
-            "All hands this Friday at {time}.",
+            "Administration notice: visitor reception moves to the east lobby this Friday.",
             "Welcome {name} to the {brand} team!",
             "Benefits update effective {date}.",
             "Team offsite: RSVP by {date}."
         ],
         "work.training": [
             "Training starts {date}.",
-            "New course assigned: {task}.",
+            "New employee course assigned: {course}.",
             "Exam reminder: online test on {date} {time}.",
             "Certification expires {date}. Schedule your renewal.",
             "Learning plan updated — finish this week's modules.",
@@ -369,7 +368,8 @@ enum SeedTemplatesEnglish {
             "Your {carrier} bill is paid in full. Thank you.",
             "Account balance notice: ${amount} remains available for mobile service.",
             "{carrier} monthly bill ready: ${amount} is due by {date}.",
-            "Mobile service statement: ${amount} must be paid before {date}."
+            "Mobile service statement: ${amount} must be paid before {date}.",
+            "Broadband bill ${amount} generated. Autopay on {date}."
         ],
         "carrier.service": [
             "Service request received. We'll text you the result.",
@@ -400,12 +400,16 @@ enum SeedTemplatesEnglish {
             "Line status: secondary SIM info synced."
         ],
         "government.notice": [
-            "Public service notice: {task} has been received.",
-            "Official notice: please complete your information confirmation.",
-            "Community notice: complete data collection before {date}.",
+            "Public service notice: {publicCase} has been received.",
             "Your document application status was updated on the portal.",
             "Immigration application moved to the next step. Watch for SMS updates.",
-            "Registry result ready — collect at the designated counter."
+            "Registry result ready — collect at the designated counter.",
+            "Your building permit application {order} passed the initial document review. The next step will appear on the civic service portal.",
+            "Your requested replacement birth certificate is ready. Collect it at the office that accepted your application.",
+            "The registered-address change for your business licence is complete. The electronic licence has been updated.",
+            "Your document-service appointment is booked for {date} at {time}. Bring your application materials to the civic service centre.",
+            "The personal tax-record certificate you requested is ready to download on the tax service portal.",
+            "Civic service application {order} requires proof of address. The original application page lists the required documents."
         ],
         "government.reminder": [
             "Police reminder: supervise children around water and avoid unsupervised swimming in open water.",
@@ -425,7 +429,7 @@ enum SeedTemplatesEnglish {
             "DMV reminder: appointment confirmed for {date}.",
             "Vehicle ending {tail} has a violation recorded on {date}. Handle it promptly.",
             "Licence renewal reminder: complete review before {date}.",
-            "Toll charge: ${amount} for your recent trip.",
+            "Traffic authority: your violation appeal result is available in the official portal.",
             "Vehicle inspection appointment confirmed.",
             "Traffic authority: your penalty notice has been generated."
         ],
@@ -489,7 +493,7 @@ enum SeedTemplatesEnglish {
             "New arrivals at {merchant}: spend & save today only.",
             "Member day is here! Coupons added to your account.",
             "Store anniversary — show this SMS for a free gift.",
-            "Live shopping tonight {time}: first {count} buyers get special pricing.",
+            "Live shopping at {time}: first {count} buyers get special pricing.",
             "{merchant} Black Friday: up to {percent}% off storewide {url}",
             "{merchant} Cyber Monday: extra {percent}% off, tap {url}",
             "{brand} holiday bundle — {tier} members earn {points} bonus points.",
@@ -500,9 +504,9 @@ enum SeedTemplatesEnglish {
             "{merchant} summer sale from {percent}% off select lines.",
             "Loyalty thanks: a ${amount} reward just for you, {name}.",
             "New season styles at {merchant} — ${amount} off your first order {url}",
-            "{brand} beauty: {percent}% off until {time} tonight.",
-            "${amount} dining voucher from {merchant} — reply STOP to end.",
-            "Buy 4 get 1 free coffee at {merchant} through {date}.",
+            "{brand} beauty: {percent}% off until {time}.",
+            "${amount} dining voucher from {restaurant} — reply STOP to end.",
+            "Buy 4 get 1 free coffee at {restaurant} through {date}.",
             "{brand} gym {city}: annual pass ${amount2} — details {url}",
             "Your {bank} points expire {date} — redeem gifts at {url}",
             "Double-points day at {merchant}: earn {points} on every visit.",
@@ -521,7 +525,7 @@ enum SeedTemplatesEnglish {
             "Game top-up week: buy ${amount} in credits and receive {points} bonus gems.",
             "{bank} personal loan rate offer for eligible customers; apply only in the official app.",
             "Licensed lender welcome offer: review the APR and fees before using your loan coupon.",
-            "{brand} launches its new collection tonight at {time}; preorders save ${amount}.",
+            "{brand} launches its new collection at {time}; preorders save ${amount}.",
             "New products are live at {merchant}, with double points on selected releases.",
             "Furnished one-bedroom apartment near the {city} metro; book a viewing for ${amount} off fees.",
             "New rental listings from {brand} apartments include move-in and rent promotions {url}",
@@ -547,29 +551,22 @@ enum SeedTemplatesEnglish {
             "Card dining cashback season rewards qualifying spend at selected restaurants."
         ],
         "spam": [
-            "High-yield investment club — join now for guaranteed returns. Reply STOP.",
-            "WINNER! You've been selected for a prize. Contact the agent to claim.",
-            "Earn ${amount}/day working from home. Add the recruiter to start.",
-            "Your account is abnormal. Click the link to verify or it will be frozen.",
-            "Instant loan approval — borrow up to ${amount2} with just your ID.",
-            "Invoices and certificates for sale. Contact online support.",
-            "[WARNING] Account at risk. Resolve now at {url}",
-            "Congrats! You won an iPhone. Claim via {order} today.",
-            "Data-entry side job, ${amount}/day, no experience. Join group {order}.",
-            "Bad credit OK — instant cash, no checks: {url}",
-            "Your delivery could not be signed. Re-verify at {url}",
-            "Your {brand} account is flagged for violations. Fix it at {url}",
-            "Exclusive wealth group invite: {percent}% annualized, guaranteed.",
-            "Your toll pass expired. Reactivate at {url}",
-            "{bank} card upgrade required — verify at {url} immediately.",
-            "Your package is held at customs. Pay ${amount} duty: {url}",
-            "IRS notice: unpaid taxes detected. Settle immediately to avoid arrest.",
-            "Hi mom, my phone broke — message me at this new number {order}.",
-            "Your Netflix payment failed. Update billing at {url}",
-            "Crypto insider signals — 10x guaranteed, join {order}.",
-            "Your number won the international lottery. Send a fee to release funds.",
-            "Unpaid parking fine: avoid penalties, pay now at {url}",
-            "Pay a deposit before your loan is released — no credit check, same-day cash. Contact {order}."
+            "We cannot deliver your parcel. Reply with your bank card PIN and SMS login code so our agent can verify the recipient.",
+            "Your hotel booking will be cancelled. Send me your online banking password and the verification code you receive; I will charge the room again for you.",
+            "Your refund channel is frozen. First pay an unfreeze charge to my personal payment code; an additional verification deposit is required before you can withdraw.",
+            "Your medical reimbursement is expiring. Install the remote control program I send and open your banking app so our agent can carry out a verification transfer.",
+            "Your phone line will be suspended today. Buy game top-up cards and send their redemption codes to this number as a deposit to restore service.",
+            "Fake-order tasks guarantee 600 a day. Transfer the task capital to me first; your displayed earnings cannot be withdrawn until you top up again.",
+            "Your tax balance is unpaid. Buy shopping gift cards immediately and reply with the redemption codes, or you will be arrested today.",
+            "Your membership account is locked. Reply with your complete password and SMS verification code so this private agent can log in and remove the restriction.",
+            "Your loan is approved but not released. Transfer money to my personal account to build account activity, then pay another unfreeze fee. Do not ask the bank.",
+            "Flight compensation is awaiting activation. Share your screen so I can see the bank verification code, then send a deposit to my personal account to collect it.",
+            "Your meter is about to be disconnected. Buy electronic gift cards at a convenience store and send me all card numbers and PINs for the electricity bill. No other payment is accepted.",
+            "Your insurance payout is frozen. First buy top-up cards for the private reviewer and send the redemption codes before requesting withdrawal of the claim money.",
+            "Your seller payout is frozen. Pay a deposit to me first; if the account reports failure, keep adding money until the system lets you withdraw.",
+            "Your cloud account will be closed. Send me the administrator password and two-factor recovery codes directly, or all data will be deleted today.",
+            "You won a major draw without entering. Before receiving the prize, pay tax and a release fee to my personal account, then send an additional security deposit.",
+            "You are suspected of money laundering. Transfer all savings to the safe account I provide immediately. Keep this investigation secret and do not verify it with local police."
         ]
     ]
 }

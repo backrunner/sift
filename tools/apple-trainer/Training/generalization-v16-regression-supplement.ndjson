@@ -85,7 +85,6 @@
 {"text":"运营商凌晨升级富通信路由，维护时群聊送达状态可能延迟。","label":"carrier.service","source":"augmentation:boundary:generalization-v16"}
 {"text":"移动网络将更新语音留言存储服务，切换期间旧录音可能暂时不可播放。","label":"carrier.service","source":"augmentation:boundary:generalization-v16"}
 {"text":"The carrier upgrades rich-messaging routing overnight, which may delay group-chat delivery status during maintenance.","label":"carrier.service","source":"augmentation:boundary:generalization-v16"}
-{"text":"The mobile network is updating voicemail storage, and old recordings may be briefly unavailable during migration.","label":"carrier.service","source":"augmentation:boundary:generalization-v16"}
 {"text":"通信会社は深夜にRCS経路を更新し、保守中はグループメッセージの配信表示が遅れる場合があります。","label":"carrier.service","source":"augmentation:boundary:generalization-v16"}
 {"text":"携帯網は留守番電話保管サービスを更新し、移行中は過去の録音を一時再生できません。","label":"carrier.service","source":"augmentation:boundary:generalization-v16"}
 {"text":"企业主套餐新增物联网副卡可免三个月月租，并获赠设备流量。","label":"carrier.promotion","source":"augmentation:boundary:generalization-v16"}

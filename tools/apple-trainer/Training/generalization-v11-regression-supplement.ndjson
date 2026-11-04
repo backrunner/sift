@@ -13,7 +13,6 @@
 {"text":"尾号1173卡在机场自动售货机支付24元，离线交易现已入账。","label":"finance.consumption","language":"zh","source":"acceptance:generalization-v11"}
 {"text":"新的硬件通行密钥已绑定到账户，密码登录仍可用，找回代码未变更。","label":"transaction.account_security","source":"augmentation:replacement:security-wording","language":"zh"}
 {"text":"本番オブジェクトストレージの書き込み遅延が8分を超え、さらに増えるとバックアップが停止します。","label":"work.alert","language":"ja","source":"acceptance:generalization-v11"}
-{"text":"A supposed tax-refund agent demands screen sharing and your bank one-time code or says the refund will expire.","label":"spam","language":"en","source":"acceptance:generalization-v11"}
 {"text":"A new hardware passkey was added to your account; password sign-in remains enabled and account recovery codes are unchanged.","label":"transaction.account_security","source":"augmentation:replacement:security-wording","language":"en"}
 {"text":"The genetics clinic lab completed its review; your clinician can view the risk-interpretation report before follow-up.","label":"life.medical","source":"augmentation:replacement:medical-wording","language":"en"}
 {"text":"遺伝子検査室の再確認が終わり、再診前に医師がリスク解説報告を確認できます。","label":"life.medical","language":"ja","source":"acceptance:generalization-v11"}
@@ -46,7 +45,6 @@
 {"text":"輸入冷蔵貨物ユニットを貨物船から荷下ろしし、鉄道貨物駅で温度管理輸送を待っています。","label":"life.logistics","source":"augmentation:replacement:logistics-wording","language":"ja"}
 {"text":"Your polar-cruise boarding document was issued; print the cabin card at the terminal after passport verification.","label":"travel.ticketing","language":"en","source":"acceptance:generalization-v11"}
 {"text":"Your custom-desk dimensions and final payment are confirmed; the workshop starts production next week.","label":"transaction.order","language":"en","source":"acceptance:generalization-v11"}
-{"text":"A supposed tax-refund agent insists on screen sharing and your bank one-time code or says the refund will expire.","label":"spam","source":"augmentation:replacement:spam-wording","language":"en"}
 {"text":"生育津贴资格复核已通过，本次补发金额将在社保待遇账户显示。","label":"government.social_security","language":"zh","source":"acceptance:generalization-v11"}
 {"text":"他行宛て予約振込を7時42分に実行し、末尾5026の口座へ送金しました。電子控えを発行済みです。","label":"finance.bank","language":"ja","source":"acceptance:generalization-v11"}
 {"text":"海事司法機関が証拠保全申立てを受領し、審査後に担当裁判官が納付案内を送ります。","label":"government.court","source":"augmentation:replacement:court-wording","language":"ja"}
@@ -93,7 +91,6 @@
 {"text":"The genetics lab completed its review; your clinician can view the risk-interpretation report before follow-up.","label":"life.medical","language":"en","source":"acceptance:generalization-v11"}
 {"text":"信号点検で空港快速は区間運転となり、ターミナル方面は中央駅で代行バスへ乗り換えてください。","label":"travel.transport","language":"ja","source":"acceptance:generalization-v11"}
 {"text":"The maritime tribunal received the evidence-preservation request; the assigned judge will issue a fee notice after review.","label":"government.court","source":"augmentation:replacement:court-wording","language":"en"}
-{"text":"税還付担当を名乗る人物が画面共有と銀行のワンタイムコードを要求し、応じなければ還付が無効になると告げています。","label":"spam","language":"ja","source":"acceptance:generalization-v11"}
 {"text":"Your intercity train trip added 420 reward points; the available balance is now 3,860.","label":"transaction.points","language":"en","source":"acceptance:generalization-v11"}
 {"text":"輸入冷蔵コンテナを貨物船から荷下ろしし、鉄道貨物駅で温度管理輸送を待っています。","label":"life.logistics","language":"ja","source":"acceptance:generalization-v11"}
 {"text":"进口冷链集装箱已从货轮卸下，正在铁路场站等待温控转运。","label":"life.logistics","language":"zh","source":"acceptance:generalization-v11"}
@@ -101,7 +98,6 @@
 {"text":"EV充電会員の秋季会員企画で、3か月プランに急速充電所の予約権2回分が付きます。","label":"promotion","source":"augmentation:replacement:promotion-wording","language":"ja"}
 {"text":"The unused ferry-cabin surcharge was refunded; $274 returns to the original payment channel within four business days.","label":"finance.refund","language":"en","source":"acceptance:generalization-v11"}
 {"text":"架构评审改到周二16:30，白板房取消，新的远程会议邀请已发送。","label":"work.meeting","language":"zh","source":"acceptance:generalization-v11"}
-{"text":"所谓税务退款专员要求开启屏幕共享并报出银行动态口令，声称否则退款作废。","label":"spam","language":"zh","source":"acceptance:generalization-v11"}
 {"text":"末尾1173のカードで空港自販機の24円オフライン決済が記録されました。","label":"finance.consumption","language":"ja","source":"acceptance:generalization-v11"}
 {"text":"机场快线因信号检修缩短运行区间，前往航站楼请在中央站换乘接驳巴士。","label":"travel.transport","language":"zh","source":"acceptance:generalization-v11"}
 {"text":"定制书桌商品订单已确认尺寸并收齐尾款，木工车间下周开始生产。","label":"transaction.order","source":"augmentation:replacement:order-wording","language":"zh"}

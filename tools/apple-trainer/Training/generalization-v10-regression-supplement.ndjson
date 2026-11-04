@@ -55,9 +55,6 @@
 {"text":"家庭网络安全险限时试算，完成报价可领取路由器延保券。","label":"promotion","source":"augmentation:boundary:generalization-v10-regression"}
 {"text":"Limited home cyber-insurance quote offer includes an extended router-warranty voucher.","label":"promotion","source":"augmentation:boundary:generalization-v10-regression"}
 {"text":"家庭向けサイバー保険の期間限定見積で、ルーター延長保証券が付きます。","label":"promotion","source":"augmentation:boundary:generalization-v10-regression"}
-{"text":"冒充法院调解员的人要求先转保全费到个人账户，否则立即冻结资产。","label":"spam","source":"augmentation:boundary:generalization-v10-regression"}
-{"text":"Someone posing as a court mediator demands a preservation fee to a personal account or threatens an immediate asset freeze.","label":"spam","source":"augmentation:boundary:generalization-v10-regression"}
-{"text":"裁判所の調停員を装い、資産凍結を避けるため個人口座へ保全費を送るよう要求しています。","label":"spam","source":"augmentation:boundary:generalization-v10-regression"}
 {"text":"酒店押金解冻完成，920元退款将在周五前退至原付款方式。","label":"finance.refund","source":"augmentation:boundary:generalization-v10-variant"}
 {"text":"The canceled hotel deposit was released; the $920 refund returns to the original payment method by Friday.","label":"finance.refund","source":"augmentation:boundary:generalization-v10-variant"}
 {"text":"ホテル保証金の取消が完了し、920円を金曜までに元の決済方法へ返金します。","label":"finance.refund","source":"augmentation:boundary:generalization-v10-variant"}
@@ -72,7 +69,6 @@
 {"text":"家族向け通信プランの請求額は319円で、土曜に通信残高から自動決済します。","label":"carrier.billing","source":"augmentation:boundary:generalization-v10-variant"}
 {"text":"eSIM签发系统周三凌晨维护，期间新号码暂时无法激活。","label":"carrier.service","source":"augmentation:boundary:generalization-v10-variant"}
 {"text":"The eSIM issuance system has maintenance Wednesday morning; new lines cannot activate during the window.","label":"carrier.service","source":"augmentation:boundary:generalization-v10-variant"}
-{"text":"eSIM発行システムを水曜未明に保守し、その間は新規回線を有効化できません。","label":"carrier.service","source":"augmentation:boundary:generalization-v10-variant"}
 {"text":"电力公司通知：南岸变电站检修，周日上午部分街区暂停供电。","label":"life.utility","source":"augmentation:boundary:generalization-v10-variant"}
 {"text":"The power utility will service the Southbank substation, interrupting electricity in several blocks Sunday morning.","label":"life.utility","source":"augmentation:boundary:generalization-v10-variant"}
 {"text":"電力会社は南岸変電所を点検するため、日曜午前に一部地域を停電します。","label":"life.utility","source":"augmentation:boundary:generalization-v10-variant"}
@@ -115,6 +111,3 @@
 {"text":"宠物医疗险本周提供免费保费测算，提交报价可获一次线上问诊券。","label":"promotion","source":"augmentation:boundary:generalization-v10-variant"}
 {"text":"This week's pet-health insurance quote offer includes a complimentary online consultation voucher.","label":"promotion","source":"augmentation:boundary:generalization-v10-variant"}
 {"text":"ペット医療保険の今週限定見積で、オンライン診療券を受け取れます。","label":"promotion","source":"augmentation:boundary:generalization-v10-variant"}
-{"text":"自称执行法官的人要求把案件解冻费转入个人数字钱包，否则今晚查封住房。","label":"spam","source":"augmentation:boundary:generalization-v10-variant"}
-{"text":"A supposed enforcement judge demands an unfreezing fee to a personal crypto wallet or threatens to seize your home tonight.","label":"spam","source":"augmentation:boundary:generalization-v10-variant"}
-{"text":"執行裁判官を名乗る人物が、今夜の住宅差押えを避けるため個人暗号資産口座へ解除料を求めています。","label":"spam","source":"augmentation:boundary:generalization-v10-variant"}
