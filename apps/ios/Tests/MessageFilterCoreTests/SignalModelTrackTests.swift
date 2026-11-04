@@ -57,6 +57,27 @@ import Testing
         #expect(fixture.release.routing != nil)
     }
 
+    private func routed(track: String?, build: Int, base: TransformerModelManifest) -> TransformerModelManifest {
+        TransformerModelManifest(schemaVersion: base.schemaVersion, releaseSequence: 8, modelABI: base.modelABI, minimumAppBuild: build,
+            maximumAppBuild: base.maximumAppBuild, minimumOSVersion: base.minimumOSVersion, runtimeProfile: base.runtimeProfile,
+            quantizationProfile: base.quantizationProfile, validationMetrics: base.validationMetrics, version: base.version,
+            trainedAt: base.trainedAt, algorithm: base.algorithm, backbone: base.backbone, languages: base.languages, labels: base.labels,
+            maxSequenceLength: base.maxSequenceLength, doLowerCase: base.doLowerCase, tokenizerKind: base.tokenizerKind,
+            tokenizerArtifact: base.tokenizerArtifact, modelArtifact: base.modelArtifact, sha256: base.sha256, taxonomyHash: base.taxonomyHash,
+            tokenizerSHA256: base.tokenizerSHA256, remoteArtifacts: base.remoteArtifacts, downloadBytes: base.downloadBytes,
+            releaseTrack: track, routing: base.routing)
+    }
+
+    @Test func routedStableRequiresTheLaterBuild() throws {
+        let base = try fixture().release
+        let accepted = { (track: String?, build: Int) in
+            TransformerSignalReleaseContract.isAcceptedRoutedRule(self.routed(track: track, build: build, base: base))
+        }
+        #expect(accepted("dev", 34))
+        #expect(!accepted(nil, 34), "builds up to 34 keep the distilled model on stable")
+        #expect(accepted(nil, 35))
+    }
+
     @Test func replayingADevEntryAsStableBreaksItsSignature() throws {
         let channel = try fixture()
         let c = channel.channel
