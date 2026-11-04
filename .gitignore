@@ -88,6 +88,10 @@ DerivedData/
 # Local release submission notes
 docs/APP_STORE_CONNECT_METADATA.md
 
+# Local development process notes, audits, evidence, and experiment charts
+/docs/engineering/
+/docs/MESSAGE_FILTER_MEMORY.md
+
 # Databases and local sample exports
 *.sqlite
 *.sqlite-shm
@@ -102,6 +106,54 @@ docs/APP_STORE_CONNECT_METADATA.md
 *.tsv
 *.parquet
 *.arrow
+
+# Local training reviews, experiment manifests, and derived corpus snapshots.
+# Keep these after the Training/*.ndjson exception above.
+/tools/apple-trainer/Training/public-sms-*
+/tools/apple-trainer/Training/retired-signal-samples-*
+/tools/apple-trainer/Training/signal-approved-*
+/tools/apple-trainer/Training/signal-boundary-review-*
+/tools/apple-trainer/Training/signal-continuation-*
+/tools/apple-trainer/Training/signal-corpus-*
+/tools/apple-trainer/Training/signal-correction-*
+/tools/apple-trainer/Training/signal-enrichment-*
+/tools/apple-trainer/Training/signal-generalization-*
+/tools/apple-trainer/Training/signal-quality-language-*
+/tools/apple-trainer/Training/signal-r33-retention-*
+/tools/apple-trainer/Training/signal-recall-*
+/tools/apple-trainer/Training/signal-retention-*
+/tools/apple-trainer/Training/signal-reviewed-*
+/tools/apple-trainer/Training/signal-stage-*
+/tools/apple-trainer/Training/signal-url-weight-*
+/tools/apple-trainer/Training/signal-boundary-calibration-*
+/tools/apple-trainer/Training/signal-data-review-*
+/tools/apple-trainer/Training/signal-false-positive-*
+/tools/apple-trainer/Training/signal-filter-policy-*
+/tools/apple-trainer/Training/signal-hard-example-*
+/tools/apple-trainer/Training/signal-independent-gate-*
+/tools/apple-trainer/Training/signal-language-quality-*
+/tools/apple-trainer/Training/signal-native-*
+/tools/apple-trainer/Training/signal-neutral-url-*
+/tools/apple-trainer/Training/signal-real-source-*
+/tools/apple-trainer/Training/signal-sam-*
+/tools/apple-trainer/Training/signal-semantic-coverage-*
+/tools/apple-trainer/Training/signal-source-families-*
+/tools/apple-trainer/Training/signal-translation-*
+/tools/apple-trainer/Training/signal-v8-reviewed-service-coverage.ndjson
+/tools/apple-trainer/Training/*-ledger.json
+/tools/apple-trainer/Training/*-evidence.json
+/tools/apple-trainer/Training/*-exposure.json
+/tools/apple-trainer/Training/*-review.json
+/tools/apple-trainer/Training/*-reviews.json
+/tools/apple-trainer/Training/*-reviews-*.json
+/tools/apple-trainer/Training/*-review-v*.json
+/tools/apple-trainer/Training/local/
+/tools/apple-trainer/Training/reports/
+/tools/apple-trainer/Training/artifacts/
+/tools/transformer-trainer/experiments/
+/tools/transformer-trainer/artifacts/
+/tools/transformer-trainer/checkpoints/
+/tools/transformer-trainer/runs/
 
 # Core ML / trainer working artifacts
 GeneratedModels/
@@ -121,9 +173,26 @@ mlruns/
 
 # Python / tooling caches
 __pycache__/
+*.py[cod]
 .pytest_cache/
 .ruff_cache/
 .mypy_cache/
+.hypothesis/
+.coverage.*
 .venv/
 venv/
 *.egg-info/
+
+# Workspace scratch directories; source, tests and curated fixtures stay visible.
+/tmp/
+/temp/
+
+# Not for a public repository: anything derived from submitted samples, and review
+# artifacts that hold message bodies. These stay local.
+/tools/apple-trainer/Training/cloudkit-*
+/tools/apple-trainer/Evaluation/cloudkit-*
+/tools/apple-trainer/Evaluation/public-*
+/tools/apple-trainer/Evaluation/*-review.json
+/tools/apple-trainer/Evaluation/*-review-v*.json
+/tools/apple-trainer/Evaluation/signal-*-authored.json
+/tools/transformer-trainer/Evaluation/*-review.json
