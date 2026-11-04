@@ -15,7 +15,10 @@ from upload_transformer_model import (
     canonical_catalog_payload,
     canonical_channel_payload,
     canonical_release_payload,
+    default_channel_path,
     legacy_canonical_release_payload,
+    validate_track,
+    verify_track_qualification,
     entries_after_metadata_revision,
     make_channel_catalog,
     merge_channel_entries,
@@ -608,6 +611,58 @@ class UploadTransformerModelTests(unittest.TestCase):
             self.assertGreater(len(signature), 80)
 
     @unittest.skipUnless(shutil.which("openssl"), "OpenSSL is required for signing")
+    def test_tracks_use_separate_pointers_and_must_agree_with_the_manifest(self) -> None:
+        self.assertEqual(default_channel_path("stable"), "channels/v3/SiftSignalModel.channel.json")
+        self.assertEqual(default_channel_path("dev"), "channels/v3/dev/SiftSignalModel.channel.json")
+        validate_track("stable", {}, default_channel_path("stable"))
+        validate_track("dev", {"releaseTrack": "dev"}, default_channel_path("dev"))
+        for track, manifest, path in (
+            ("dev", {}, default_channel_path("dev")),
+            ("stable", {"releaseTrack": "dev"}, default_channel_path("stable")),
+            ("dev", {"releaseTrack": "dev"}, default_channel_path("stable")),
+            ("beta", {"releaseTrack": "beta"}, default_channel_path("dev")),
+            ("stable", {"routing": {}}, default_channel_path("stable")),
+        ):
+            with self.assertRaises(SystemExit, msg=(track, manifest, path)):
+                validate_track(track, manifest, path)
+
+    def test_track_signature_payloads_leave_stable_bytes_unchanged(self) -> None:
+        channel = {"schemaVersion": 2, "releaseSequence": 7, "keyID": "k"}
+        self.assertNotIn(b"track", canonical_channel_payload(channel))
+        self.assertIn(b'"track":"dev"', canonical_channel_payload({**channel, "track": "dev"}))
+        release = {"schemaVersion": 2, "releaseTrack": "dev", "routing": {"gateWeights": "a/b+", "kind": "directional-v75"}}
+        self.assertIn(b'"routing":{"gateWeights":"a/b+","kind":"directional-v75"}', canonical_release_payload(release))
+        self.assertNotIn(b"routing", legacy_canonical_release_payload(release))
+
+    def test_catalog_refuses_to_mix_tracks(self) -> None:
+        def entry(sequence: int, **extra: object) -> dict:
+            return {"schemaVersion": 2, "releaseSequence": sequence, "releaseID": f"r{sequence}", "releaseManifestURL": "https://x/r",
+                    "releaseManifestSHA256": "a", "modelABI": "abi", "minimumAppBuild": 1, "maximumAppBuild": 9,
+                    "minimumOSVersion": "18.0", "downloadBytes": 1, "keyID": "k", "signature": "s", **extra}
+        with self.assertRaises(SystemExit):
+            make_channel_catalog([entry(6), entry(7, track="dev")], "k", Path("/nonexistent"))
+
+    def test_dev_accepts_local_evidence_but_beta_needs_a_device(self) -> None:
+        manifest = {"sha256": "abc", "runtimeProfile": {"computeUnits": "cpuOnly", "modelType": "neuralNetworkClassifier", "computePrecision": "float32"},
+                    "modelABI": "sift-signal-mapped-embedding-v1", "minimumAppBuild": 34,
+                    "quantizationProfile": {"identifier": "nn-fp32-mapped-w4-block16", "weightBits": 32, "activationBits": 32, "method": "mixed",
+                                            "granularity": "encoder-fp32-embedding-blockwise-int4", "blockSize": 16}}
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "qualification.json"
+            evidence = {"schemaVersion": 1, "artifactSHA256": "abc", "localQualified": True, "decisionDifferences": 0}
+            path.write_text(json.dumps(evidence))
+            verify_track_qualification(path, manifest, "dev")
+            with self.assertRaises(SystemExit):
+                verify_track_qualification(path, manifest, "beta")
+            path.write_text(json.dumps({**evidence, "deviceQualified": True}))
+            verify_track_qualification(path, manifest, "beta")
+            path.write_text(json.dumps({**evidence, "artifactSHA256": "other"}))
+            with self.assertRaises(SystemExit):
+                verify_track_qualification(path, manifest, "dev")
+            path.write_text(json.dumps({**evidence, "decisionDifferences": 1}))
+            with self.assertRaises(SystemExit):
+                verify_track_qualification(path, manifest, "dev")
+
     def test_manifest_v2_interop_fixture_verifies_with_openssl(self) -> None:
         fixture_path = Path(__file__).with_name("fixtures") / "manifest_v2_ed25519.json"
         fixture = json.loads(fixture_path.read_text(encoding="utf-8"))

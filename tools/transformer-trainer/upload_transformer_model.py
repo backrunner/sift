@@ -92,6 +92,15 @@ SIGNED_QUANTIZATION_PROFILE_FIELDS = (
 )
 
 
+TRACKS = ("stable", "beta", "dev")
+CHANNEL_FILE_BY_TRACK = {
+    "stable": "channels/v3/SiftSignalModel.channel.json",
+    "beta": "channels/v3/beta/SiftSignalModel.channel.json",
+    "dev": "channels/v3/dev/SiftSignalModel.channel.json",
+}
+ROUTED_ALGORITHM = "supervised-rebuild-directional-routing"
+
+
 @dataclass(frozen=True)
 class UploadItem:
     source: Path
@@ -111,9 +120,15 @@ def parse_arguments() -> argparse.Namespace:
     parser.add_argument("--selection", type=Path, required=True, help="selected-candidate.json produced by the quantization gate")
     parser.add_argument("--release-id", default=None, help="immutable release directory name; defaults to manifest version")
     parser.add_argument(
+        "--track",
+        choices=TRACKS,
+        default="stable",
+        help="publishing track; beta and dev use their own pointer and a signed track field",
+    )
+    parser.add_argument(
         "--channel-path",
-        default="channels/v3/SiftSignalModel.channel.json",
-        help="mutable channel pointer path for the current app line (legacy v2 remains frozen)",
+        default=None,
+        help="mutable channel pointer path; defaults to the current app line for --track (legacy v2 remains frozen)",
     )
     parser.add_argument(
         "--compatible-release-manifest-url",
@@ -265,12 +280,17 @@ def main() -> None:
 
     manifest_path = model_dir / f"{args.model_name}.manifest.json"
     manifest = read_manifest(manifest_path)
-    verify_selected_candidate(
-        args.selection.expanduser().resolve(),
-        manifest,
-        model_dir,
-        skip_device_evidence=args.skip_device_evidence,
-    )
+    args.channel_path = args.channel_path or default_channel_path(args.track)
+    validate_track(args.track, manifest, args.channel_path)
+    if args.track == "stable":
+        verify_selected_candidate(
+            args.selection.expanduser().resolve(),
+            manifest,
+            model_dir,
+            skip_device_evidence=args.skip_device_evidence,
+        )
+    else:
+        verify_track_qualification(args.selection.expanduser().resolve(), manifest, args.track)
     validate_channel_path_for_release(args.channel_path, manifest)
     release_id = args.release_id or require_string(manifest, "version")
     ensure_safe_relative_path(release_id)
@@ -375,6 +395,34 @@ def main() -> None:
                 verify_http(channel_items, base_url)
 
     print_channel_summary(channel)
+
+
+def default_channel_path(track: str) -> str:
+    return CHANNEL_FILE_BY_TRACK[track]
+
+
+def validate_track(track: str, manifest: dict[str, Any], channel_path: str) -> None:
+    """A release, its signed track and its pointer must all agree before anything is signed."""
+    if manifest.get("releaseTrack", "stable") != track:
+        raise SystemExit(f"error: manifest track {manifest.get('releaseTrack', 'stable')} does not match --track {track}")
+    if channel_path.strip("/").split("/")[-2] != (track if track != "stable" else channel_path.strip("/").split("/")[1]):
+        raise SystemExit(f"error: channel path {channel_path} is not a {track} pointer")
+    if track == "stable" and (manifest.get("algorithm") == ROUTED_ALGORITHM or "routing" in manifest):
+        raise SystemExit("error: a routed rebuild has no stable release contract; publish it to beta or dev")
+
+
+def verify_track_qualification(path: Path, manifest: dict[str, Any], track: str) -> None:
+    """Dev may rest on local evidence. Beta reaches testers, so it also needs a real device."""
+    if not path.exists():
+        raise SystemExit(f"error: qualification file not found: {path}")
+    evidence = read_manifest(path)
+    if evidence.get("schemaVersion") != 1 or evidence.get("artifactSHA256") != manifest.get("sha256"):
+        raise SystemExit("error: qualification does not bind this artifact")
+    if evidence.get("localQualified") is not True or evidence.get("decisionDifferences") != 0:
+        raise SystemExit("error: local qualification has not passed")
+    if track == "beta" and evidence.get("deviceQualified") is not True:
+        raise SystemExit("error: beta requires device qualification; publish to dev until a device run exists")
+    validate_release_profile(manifest)
 
 
 def validate_channel_path_for_release(channel_path: str, manifest: dict[str, Any]) -> None:
@@ -778,10 +826,10 @@ _RELEASE_PAYLOAD_FIELDS = (
         "version", "trainedAt", "algorithm", "backbone", "languages", "labels",
         "maxSequenceLength", "doLowerCase", "tokenizerKind", "tokenizerArtifact",
         "modelArtifact", "sha256", "taxonomyHash", "tokenizerSHA256", "keyID",
-        "remoteBaseURL", "remoteArtifacts", "downloadBytes",
+        "remoteBaseURL", "remoteArtifacts", "downloadBytes", "releaseTrack", "routing",
 )
 _LEGACY_RELEASE_PAYLOAD_FIELDS = tuple(
-    field for field in _RELEASE_PAYLOAD_FIELDS if field != "distillation"
+    field for field in _RELEASE_PAYLOAD_FIELDS if field not in ("distillation", "releaseTrack", "routing")
 )
 
 
@@ -817,7 +865,7 @@ def canonical_channel_payload(channel: dict[str, Any]) -> bytes:
     fields = (
         "schemaVersion", "releaseSequence", "releaseID", "releaseManifestURL",
         "releaseManifestSHA256", "modelABI", "minimumAppBuild", "maximumAppBuild",
-        "minimumOSVersion", "downloadBytes", "keyID",
+        "minimumOSVersion", "downloadBytes", "keyID", "track",
     )
     payload = {key: channel[key] for key in fields if key in channel}
     return json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
@@ -843,6 +891,8 @@ def channel_release_entry(channel: dict[str, Any]) -> dict[str, Any]:
     missing = [key for key in fields if key not in entry]
     if missing:
         raise SystemExit(f"error: channel release entry is missing fields: {', '.join(missing)}")
+    if "track" in channel:
+        entry["track"] = channel["track"]
     return entry
 
 
@@ -938,6 +988,8 @@ def make_channel_manifest(
         "downloadBytes": manifest["downloadBytes"],
         "keyID": key_id,
     }
+    if manifest.get("releaseTrack", "stable") != "stable":
+        channel["track"] = manifest["releaseTrack"]
     channel["signature"] = sign_payload(canonical_channel_payload(channel), signing_key)
     return channel
 
@@ -950,6 +1002,8 @@ def make_channel_catalog(
     releases = merge_channel_entries(entries)
     if not releases:
         raise SystemExit("error: compatibility catalog has no releases")
+    if len({entry.get("track", "stable") for entry in releases}) != 1:
+        raise SystemExit("error: a channel catalog cannot mix release tracks")
     oldest_supported_build = min(int(entry["minimumAppBuild"]) for entry in releases)
     legacy_candidates = [
         entry for entry in releases
