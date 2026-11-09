@@ -19,7 +19,7 @@ from export_neuralnetwork import quantize_checkpoint_embeddings, unsigned_candid
 from externalize_embeddings import EMBEDDING_PATH, directory_sha256, sha256, write_embeddings
 
 ROUTED_ALGORITHM = 'supervised-rebuild-directional-routing'
-ROUTED_MINIMUM_APP_BUILD = 34
+ROUTED_MINIMUM_APP_BUILD = 35
 TRACKS = ('dev', 'beta')
 GATE_VALUES = 3 * 18 + 3
 
@@ -118,7 +118,7 @@ if __name__ == '__main__':
     parser.add_argument('--arm', default='free-v92'); parser.add_argument('--seed', type=int, default=321)
     parser.add_argument('--head', type=Path, required=True); parser.add_argument('--gate', type=Path, required=True)
     parser.add_argument('--mapped-source', type=Path, required=True); parser.add_argument('--out', type=Path, required=True)
-    parser.add_argument('--version', required=True); parser.add_argument('--release-sequence', type=int, default=7)
+    parser.add_argument('--version', required=True); parser.add_argument('--release-sequence', type=int, required=True)
     parser.add_argument('--track', choices=TRACKS, default='dev'); parser.add_argument('--trained-at', required=True)
     parsed = parser.parse_args(); result = export(parsed)
     print('unselected candidate', result['sha256'], result['downloadBytes'])

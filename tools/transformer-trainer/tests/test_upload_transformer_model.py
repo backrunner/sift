@@ -71,6 +71,17 @@ class UploadTransformerModelTests(unittest.TestCase):
         with self.assertRaisesRegex(SystemExit, "legacy sequence"):
             validate_channel_path_for_release("channels/v3/SiftSignalModel.channel.json", {"releaseSequence": 3})
 
+    def test_sift_16_release_is_isolated_from_15(self) -> None:
+        release = {"releaseSequence": 9, "minimumAppBuild": 35}
+        for track in ("stable", "beta", "dev"):
+            validate_channel_path_for_release(default_channel_path(track), release)
+            with self.assertRaisesRegex(SystemExit, "frozen"):
+                validate_channel_path_for_release(default_channel_path(track).replace("/v4/", "/v3/"), release)
+            with self.assertRaisesRegex(SystemExit, "minimumAppBuild 35"):
+                validate_channel_path_for_release(default_channel_path(track), {**release, "minimumAppBuild": 34})
+        # The accepted r33 baseline can seed the new stable channel unchanged.
+        validate_channel_path_for_release(default_channel_path("stable"), {"releaseSequence": 6, "minimumAppBuild": 32})
+
     def valid_report(self, profile_id: str, artifact_sha: str, download_bytes: int) -> dict:
         return {
             "profileID": profile_id,
@@ -613,8 +624,8 @@ class UploadTransformerModelTests(unittest.TestCase):
 
     @unittest.skipUnless(shutil.which("openssl"), "OpenSSL is required for signing")
     def test_tracks_use_separate_pointers_and_must_agree_with_the_manifest(self) -> None:
-        self.assertEqual(default_channel_path("stable"), "channels/v3/SiftSignalModel.channel.json")
-        self.assertEqual(default_channel_path("dev"), "channels/v3/dev/SiftSignalModel.channel.json")
+        self.assertEqual(default_channel_path("stable"), "channels/v4/SiftSignalModel.channel.json")
+        self.assertEqual(default_channel_path("dev"), "channels/v4/dev/SiftSignalModel.channel.json")
         validate_track("stable", {}, default_channel_path("stable"))
         validate_track("dev", {"releaseTrack": "dev"}, default_channel_path("dev"))
         validate_track("stable", {"routing": {}, "minimumAppBuild": 35}, default_channel_path("stable"))

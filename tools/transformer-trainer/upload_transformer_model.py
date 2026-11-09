@@ -94,9 +94,9 @@ SIGNED_QUANTIZATION_PROFILE_FIELDS = (
 
 TRACKS = ("stable", "beta", "dev")
 CHANNEL_FILE_BY_TRACK = {
-    "stable": "channels/v3/SiftSignalModel.channel.json",
-    "beta": "channels/v3/beta/SiftSignalModel.channel.json",
-    "dev": "channels/v3/dev/SiftSignalModel.channel.json",
+    "stable": "channels/v4/SiftSignalModel.channel.json",
+    "beta": "channels/v4/beta/SiftSignalModel.channel.json",
+    "dev": "channels/v4/dev/SiftSignalModel.channel.json",
 }
 ROUTED_ALGORITHM = "supervised-rebuild-directional-routing"
 ROUTED_STABLE_MINIMUM_APP_BUILD = 35
@@ -446,11 +446,15 @@ def validate_channel_path_for_release(channel_path: str, manifest: dict[str, Any
     """Keep release generations isolated at the publisher boundary."""
     normalized = channel_path.strip("/")
     release_sequence = int(manifest.get("releaseSequence", 0))
+    if normalized.startswith("channels/v3/") and release_sequence >= 9:
+        raise SystemExit("error: Sift 1.5 channels/v3 is frozen; publish new releases to Sift 1.6 channels/v4")
+    if normalized.startswith("channels/v4/") and release_sequence >= 7 and int(manifest.get("minimumAppBuild", 0)) < 35:
+        raise SystemExit("error: Sift 1.6 releases require minimumAppBuild 35 or later")
     if normalized.startswith("channels/v2/") and release_sequence >= 4:
         raise SystemExit(
-            "error: sequence 4+ releases must use the current-app channels/v3 (or newer) namespace"
+            "error: sequence 4+ releases must use the current-app channels/v4 (or newer) namespace"
         )
-    if normalized.startswith("channels/v3/") and release_sequence < 4:
+    if normalized.startswith(("channels/v3/", "channels/v4/")) and release_sequence < 4:
         raise SystemExit(
             "error: legacy sequence 1-3 releases must remain in the legacy channels/v2 namespace"
         )
