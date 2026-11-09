@@ -1,21 +1,3 @@
-{"text":"共享相册恢复页面声称必须提交加密钱包助记词才能找回照片。","label":"spam","source":"augmentation:boundary:generalization-v8-r2"}
-{"text":"网盘客服要求填写十二个钱包恢复单词以解除文件冻结。","label":"spam","source":"augmentation:boundary:generalization-v8-r2"}
-{"text":"照片备份解锁表单要求发送数字钱包种子短语。","label":"spam","source":"augmentation:boundary:generalization-v8-r2"}
-{"text":"云端文件迁移页面索要钱包恢复短语才允许继续。","label":"spam","source":"augmentation:boundary:generalization-v8-r2"}
-{"text":"相册空间续期链接让您粘贴助记词来验证所有权。","label":"spam","source":"augmentation:boundary:generalization-v8-r2"}
-{"text":"云文档修复工具要求输入加密资产钱包的种子词。","label":"spam","source":"augmentation:boundary:generalization-v8-r2"}
-{"text":"A shared-album recovery page demands a crypto-wallet seed phrase before restoring photos.","label":"spam","source":"augmentation:boundary:generalization-v8-r2"}
-{"text":"Cloud-drive support asks for all wallet recovery words to unfreeze your files.","label":"spam","source":"augmentation:boundary:generalization-v8-r2"}
-{"text":"A photo-backup unlock form requests the seed phrase from your digital wallet.","label":"spam","source":"augmentation:boundary:generalization-v8-r2"}
-{"text":"The cloud migration page says to provide a wallet recovery phrase before continuing.","label":"spam","source":"augmentation:boundary:generalization-v8-r2"}
-{"text":"An album-renewal link asks you to paste secret wallet words as ownership proof.","label":"spam","source":"augmentation:boundary:generalization-v8-r2"}
-{"text":"A cloud-document repair tool requests the seed words for a crypto wallet.","label":"spam","source":"augmentation:boundary:generalization-v8-r2"}
-{"text":"共有アルバムの復旧ページが、写真を戻すためにウォレットのシードフレーズを求めています。","label":"spam","source":"augmentation:boundary:generalization-v8-r2"}
-{"text":"クラウドドライブのサポートが、凍結解除のためウォレットの復元フレーズ入力を要求しています。","label":"spam","source":"augmentation:boundary:generalization-v8-r2"}
-{"text":"写真バックアップの解除フォームが暗号資産ウォレットの秘密の単語を求めています。","label":"spam","source":"augmentation:boundary:generalization-v8-r2"}
-{"text":"クラウド移行画面が続行条件としてウォレットのリカバリーフレーズを入力させます。","label":"spam","source":"augmentation:boundary:generalization-v8-r2"}
-{"text":"アルバム容量の更新リンクが本人確認としてウォレットのシードフレーズを要求します。","label":"spam","source":"augmentation:boundary:generalization-v8-r2"}
-{"text":"クラウド文書の修復ツールが暗号資産ウォレットの復元語を求めています。","label":"spam","source":"augmentation:boundary:generalization-v8-r2"}
 {"text":"钱包应用提醒：恢复短语只能离线保管，官方不会通过云相册索取。","label":"transaction.account_security","source":"augmentation:boundary:generalization-v8-r2"}
 {"text":"账户安全通知：已阻止索取助记词的云盘登录页面并注销该会话。","label":"transaction.account_security","source":"augmentation:boundary:generalization-v8-r2"}
 {"text":"Wallet security notice: keep recovery words offline; official support never asks for them in a cloud album.","label":"transaction.account_security","source":"augmentation:boundary:generalization-v8-r2"}

@@ -8,11 +8,6 @@
 {"text":"合同审批单CT-6314等待处理，法务意见和附件已上传工作台。","label":"work.approval","source":"augmentation:boundary:generalization-v4"}
 {"text":"山景度假村确认您11月6日起三晚住宿，入住时请出示预订证件。","label":"travel.tourism","source":"augmentation:boundary:generalization-v4"}
 {"text":"快递已存入春晖驿站8号柜，取件码3527，请及时领取。","label":"life.pickup_code","source":"augmentation:boundary:generalization-v4"}
-{"text":"违章短信引导至仿冒网站缴纳证件解锁费，并威胁当天吊销驾照。","label":"spam","source":"augmentation:boundary:generalization-v4"}
-{"text":"冒充法院执行人员的来电要求购买礼品卡抵扣处罚并发送卡密。","label":"spam","source":"augmentation:boundary:generalization-v4"}
-{"text":"所谓重新派件页面要求先付手续费，再填写银行卡号和安全码。","label":"spam","source":"augmentation:boundary:generalization-v4"}
-{"text":"荐股导师承诺固定收益，要求把服务费和本金汇入个人账户。","label":"spam","source":"augmentation:boundary:generalization-v4"}
-{"text":"假客服以账号停用为由，诱导在陌生网址提交密码和身份证照片。","label":"spam","source":"augmentation:boundary:generalization-v4"}
 {"text":"【绿色屋顶】家庭光伏预约可获安装补贴和免费现场测量。","label":"promotion","source":"augmentation:boundary:generalization-v4"}
 {"text":"手机服务周更换屏幕立减120元，线上预约赠设备清洁。","label":"promotion","source":"augmentation:boundary:generalization-v4"}
 {"text":"家庭意外险新客活动含保费折扣和全年在线问诊权益。","label":"promotion","source":"augmentation:boundary:generalization-v4"}
@@ -28,11 +23,6 @@
 {"text":"Contract approval CT-6314 awaits action; legal comments and attachments are available in the workspace.","label":"work.approval","source":"augmentation:boundary:generalization-v4"}
 {"text":"Mountain View Resort confirmed your three-night stay from November 6; show the booking document at check-in.","label":"travel.tourism","source":"augmentation:boundary:generalization-v4"}
 {"text":"Parcel pickup code 3527 is ready in Chunhui Station locker 8. Please collect it promptly.","label":"life.pickup_code","source":"augmentation:boundary:generalization-v4"}
-{"text":"A traffic violation text links to a fake site for a licence unlock fee and threatens same-day revocation.","label":"spam","source":"augmentation:boundary:generalization-v4"}
-{"text":"A caller posing as court enforcement demands gift cards for a penalty and asks you to send the card codes.","label":"spam","source":"augmentation:boundary:generalization-v4"}
-{"text":"A supposed redelivery page requires an advance handling fee plus your card number and security code.","label":"spam","source":"augmentation:boundary:generalization-v4"}
-{"text":"A stock mentor promises fixed returns but wants both the service fee and principal in a personal account.","label":"spam","source":"augmentation:boundary:generalization-v4"}
-{"text":"Fake support threatens account closure and directs you to submit a password and identity photo on an unfamiliar site.","label":"spam","source":"augmentation:boundary:generalization-v4"}
 {"text":"Green Roof home solar reservations include an installation rebate and free on-site measurement.","label":"promotion","source":"augmentation:boundary:generalization-v4"}
 {"text":"Phone Service Week takes 120 dollars off screen replacement and adds free cleaning for online bookings.","label":"promotion","source":"augmentation:boundary:generalization-v4"}
 {"text":"The new-customer family accident policy includes a premium discount and year-round online consultations.","label":"promotion","source":"augmentation:boundary:generalization-v4"}
@@ -48,11 +38,6 @@
 {"text":"契約承認CT-6314が処理待ちです。法務コメントと添付資料は業務画面にあります。","label":"work.approval","source":"augmentation:boundary:generalization-v4"}
 {"text":"マウンテンビューリゾートで11月6日から3泊の予約を確定しました。受付で予約証明書をご提示ください。","label":"travel.tourism","source":"augmentation:boundary:generalization-v4"}
 {"text":"荷物を春日受取所8番ロッカーへ保管しました。受取番号3527でお受け取りください。","label":"life.pickup_code","source":"augmentation:boundary:generalization-v4"}
-{"text":"交通違反SMSが偽サイトへ誘導し、免許解除料を払わなければ当日失効すると脅しています。","label":"spam","source":"augmentation:boundary:generalization-v4"}
-{"text":"裁判所執行官を装う人物が罰金用ギフトカードを購入し、番号を送るよう要求しています。","label":"spam","source":"augmentation:boundary:generalization-v4"}
-{"text":"再配達を装うページが手数料の先払いとカード番号、セキュリティコードを求めています。","label":"spam","source":"augmentation:boundary:generalization-v4"}
-{"text":"株式講師が固定利益を約束し、手数料と元金を個人口座へ送らせようとしています。","label":"spam","source":"augmentation:boundary:generalization-v4"}
-{"text":"偽サポートが口座停止を理由に、不審なサイトでパスワードと身分証写真を入力させようとしています。","label":"spam","source":"augmentation:boundary:generalization-v4"}
 {"text":"グリーンルーフの家庭用太陽光予約は設置補助と現地測定が無料です。","label":"promotion","source":"augmentation:boundary:generalization-v4"}
 {"text":"スマホサービス週間は画面交換が12,000円引き。オンライン予約で清掃も無料です。","label":"promotion","source":"augmentation:boundary:generalization-v4"}
 {"text":"家族傷害保険の新規契約で保険料割引と年間オンライン相談が付きます。","label":"promotion","source":"augmentation:boundary:generalization-v4"}

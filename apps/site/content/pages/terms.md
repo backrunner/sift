@@ -62,4 +62,4 @@ Sift 提供设备端短信分类和过滤、自定义放行/阻止规则、可�
 
 ## 11. 联系方式
 
-Alkinum — privacy@sift.alkinum.io
+Alkinum — [支持表单](https://sift.alkinum.com/support)

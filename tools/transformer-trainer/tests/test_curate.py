@@ -5,6 +5,7 @@ Run:  python3 -m unittest discover -s tests
 
 import json
 import re
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -32,6 +33,42 @@ from curate_dataset import (  # noqa: E402
     stable_rng,
     template_signature,
 )
+
+
+LOCAL_DATA = Path(__file__).resolve().parents[3] / 'tools/apple-trainer/Training'
+
+
+class StrictTaxonomyAuditTests(unittest.TestCase):
+    def run_audit(self, directory, *, strict, audit_only):
+        root=Path(directory)
+        taxonomy=root/'taxonomy.json'
+        taxonomy.write_text(json.dumps({'groups':[{'id':'test','leaves':[{'id':'verification'}]}]}))
+        rows=root/'rows.ndjson'
+        rows.write_text(json.dumps({'text':'Your verification code is 748392.','label':'verification','language':'en','source':'synthetic:unit'})+'\n'
+            +json.dumps({'text':'The requested service appointment is confirmed.','label':'nonexistent.label','language':'en','source':'synthetic:unit'})+'\n')
+        report=root/'report.json'
+        cmd=[sys.executable,'-B',str(Path(__file__).resolve().parents[1]/'curate_dataset.py'),
+             '--inputs',str(rows),'--taxonomy',str(taxonomy),'--min-core-rows','0','--report',str(report)]
+        cmd+=['--audit-only'] if audit_only else ['--out',str(root/'curated.ndjson')]
+        if strict:cmd+=['--strict-audit']
+        result=subprocess.run(cmd,capture_output=True,text=True)
+        return result,json.loads(report.read_text())
+
+    @unittest.skipUnless((LOCAL_DATA / 'retired-signal-samples-v8.json').exists(), 'needs local research data')
+    def test_strict_unknown_label_fails_even_without_coverage_gaps(self):
+        for audit_only in (True,False):
+            with self.subTest(audit_only=audit_only),tempfile.TemporaryDirectory() as directory:
+                result,report=self.run_audit(directory,strict=True,audit_only=audit_only)
+                self.assertEqual(result.returncode,2,result.stderr)
+                self.assertEqual(report['rejected']['unknown-label'],1)
+                self.assertEqual(report['audit_gaps'],[])
+
+    @unittest.skipUnless((LOCAL_DATA / 'retired-signal-samples-v8.json').exists(), 'needs local research data')
+    def test_nonstrict_audit_reports_unknown_label_instead_of_silently_hiding_it(self):
+        with tempfile.TemporaryDirectory() as directory:
+            result,report=self.run_audit(directory,strict=False,audit_only=True)
+            self.assertEqual(result.returncode,0,result.stderr)
+            self.assertEqual(report['rejected']['unknown-label'],1)
 
 
 class DetectLanguageTests(unittest.TestCase):

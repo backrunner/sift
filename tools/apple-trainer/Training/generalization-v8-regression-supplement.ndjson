@@ -11,7 +11,6 @@
 {"text":"利用していない端末の認証トークンを無効にし、プロフィール権限を取り消しました。","label":"transaction.account_security","source":"augmentation:boundary:generalization-v8"}
 {"text":"古いスマホのセッションを終了し、アカウントへのアクセスを停止しました。","label":"transaction.account_security","source":"augmentation:boundary:generalization-v8"}
 {"text":"运营商语音信箱新增一条留言，可在手机应用中回听。","label":"carrier.call_reminder","source":"augmentation:boundary:generalization-v8"}
-{"text":"语音信箱收到来自0755-2281的新留言，点击运营商应用即可播放。","label":"carrier.call_reminder","source":"augmentation:boundary:generalization-v8"}
 {"text":"通信服务提醒：未接来电已转入语音信箱并留下消息。","label":"carrier.call_reminder","source":"augmentation:boundary:generalization-v8"}
 {"text":"您的号码收到新的语音留言，回拨信息已保存在运营商应用。","label":"carrier.call_reminder","source":"augmentation:boundary:generalization-v8"}
 {"text":"A new carrier voicemail is ready to replay in the mobile application.","label":"carrier.call_reminder","source":"augmentation:boundary:generalization-v8"}

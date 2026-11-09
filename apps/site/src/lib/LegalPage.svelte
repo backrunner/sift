@@ -67,7 +67,6 @@
       </section>
       <SupportForm locale={formLocale} />
     </div>
-    <div class="support-alternative"><p>{copy.emailAlternative} <a href="mailto:support@alkinum.io?subject=Sift%20Support">support@alkinum.io <span aria-hidden="true">↗</span></a></p></div>
     <article class="support-help sd-prose" lang={languageTag}>{@html page.html}</article>
   {:else}
   <section class="legal-hero">
@@ -86,7 +85,7 @@
 
 <style>
   .support-page { --support-inset: 32px; padding-top: 112px; }
-  .support-surface, .support-help, .support-alternative { width: 100%; max-width: 840px; margin-inline: auto; }
+  .support-surface, .support-help { width: 100%; max-width: 840px; margin-inline: auto; }
   .support-surface { border: 1px solid var(--line); border-radius: 22px; background: var(--paper-soft); box-shadow: 0 12px 40px rgba(42, 38, 27, .04); }
   .support-intro { padding: 20px var(--support-inset) 28px; }
   .support-topline { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; margin-bottom: 14px; }
@@ -99,10 +98,7 @@
   .support-languages a:focus-visible { outline: 2px solid var(--mint); outline-offset: 2px; }
   .support-intro h1 { margin: 0; font-size: clamp(1.7rem, 3.6vw, 2.6rem); line-height: 1.3; letter-spacing: -.035em; text-wrap: balance; }
   .support-intro p { max-width: 640px; margin: 12px 0 0; color: var(--muted); font-size: .95rem; line-height: 1.8; }
-  .support-alternative { padding: 16px 0 24px; color: var(--muted); font-size: .85rem; }
-  .support-alternative p { margin: 0; display: flex; align-items: center; flex-wrap: wrap; gap: 4px 8px; }
-  .support-alternative a { display: inline-flex; align-items: center; min-height: 44px; gap: 6px; color: var(--mint-strong); text-underline-offset: 4px; }
-  .support-help { border-top: 1px solid var(--line); padding-top: 20px; }
+  .support-help { margin-top: 24px; border-top: 1px solid var(--line); padding-top: 20px; }
   .support-help :global(h2) { margin: 0 0 12px; font-size: 1.05rem; }
   .support-help :global(details) { border-bottom: 1px solid var(--line); padding: 8px 0; }
   .support-help :global(summary) { min-height: 44px; align-content: center; font-size: .9rem; font-weight: 600; cursor: pointer; }

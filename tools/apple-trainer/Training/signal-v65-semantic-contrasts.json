@@ -1,0 +1,569 @@
+{
+  "schemaVersion": 1,
+  "kind": "reviewed-semantic-contrasts",
+  "reviewMethod": "AI-assisted authoring and coding-agent semantic review; not independent human/native-speaker certification",
+  "provenance": "Original fictional SMS scenarios; no private reports, held-out texts, model errors, or web message bodies used as prompts.",
+  "purpose": "Training only; paired topics with different explicit intent. Not a blind test.",
+  "scenarios": [
+    {
+      "id": "parcel",
+      "variants": [
+        {
+          "intent": "service",
+          "label": "life.express",
+          "text": {
+            "zh": "包裹运输状态更新：雨天道路封闭，预计延后一天送达，新的配送时间会另行通知。",
+            "en": "Delivery update: a road closure has delayed your parcel by one day. We will send the revised delivery window.",
+            "ja": "配送状況のお知らせ。通行止めによりお荷物の到着が一日遅れる見込みです。新しい配達予定は改めてお知らせします。"
+          },
+          "reviewReason": "Existing service/transaction or explicit anti-fraud public notice; no new sale."
+        },
+        {
+          "intent": "offer",
+          "label": "promotion",
+          "text": {
+            "zh": "周末寄件活动：同城包裹运费八折，需要寄件可在门店下单。",
+            "en": "Weekend shipping sale: save 20% on local parcel delivery when you book at a branch.",
+            "ja": "週末の発送キャンペーン。店頭でお申し込みいただくと市内向けの配送料が二割引になります。"
+          },
+          "reviewReason": "Explicit new purchase/subscription incentive."
+        },
+        {
+          "intent": "fraud",
+          "label": "spam",
+          "text": {
+            "zh": "包裹无法投递，请把银行卡取款密码和短信登录口令发给本客服，我们将代您验证收件资格。",
+            "en": "We cannot deliver your parcel. Reply with your bank card PIN and SMS login code so our agent can verify the recipient.",
+            "ja": "お荷物を配達できません。受取人確認のため、銀行カードの暗証番号とSMSログインコードをこの担当者に送ってください。"
+          },
+          "reviewReason": "Direct recipient instruction to disclose credentials, pay gift cards/advance fees, or transfer to a secret safe account."
+        }
+      ]
+    },
+    {
+      "id": "reservation",
+      "variants": [
+        {
+          "intent": "service",
+          "label": "travel.tourism",
+          "text": {
+            "zh": "您预订的房间已确认可提前寄存行李，请到酒店前台出示订单。",
+            "en": "Your hotel has confirmed early luggage storage for your existing reservation. Show the booking at reception.",
+            "ja": "ご予約のホテルでチェックイン前のお荷物をお預かりできます。フロントで予約内容をご提示ください。"
+          },
+          "reviewReason": "Existing service/transaction or explicit anti-fraud public notice; no new sale."
+        },
+        {
+          "intent": "offer",
+          "label": "promotion",
+          "text": {
+            "zh": "海景客房限时特价，预订两晚赠送双人早餐，欢迎咨询空房。",
+            "en": "Seaview room offer: book two nights and receive breakfast for two. Ask us about availability.",
+            "ja": "海の見える客室が期間限定価格です。二泊のご予約で二名様分の朝食をプレゼント。空室状況をお問い合わせください。"
+          },
+          "reviewReason": "Explicit new purchase/subscription incentive."
+        },
+        {
+          "intent": "fraud",
+          "label": "spam",
+          "text": {
+            "zh": "您的酒店预订将取消，请立即把网银密码和收到的验证码发给我，我帮您重新扣款保留房间。",
+            "en": "Your hotel booking will be cancelled. Send me your online banking password and the verification code you receive; I will charge the room again for you.",
+            "ja": "ホテルの予約が取り消されます。部屋を確保するため、ネットバンキングのパスワードと届いた認証コードを私に送ってください。代理で決済します。"
+          },
+          "reviewReason": "Direct recipient instruction to disclose credentials, pay gift cards/advance fees, or transfer to a secret safe account."
+        }
+      ]
+    },
+    {
+      "id": "refund",
+      "variants": [
+        {
+          "intent": "service",
+          "label": "finance.refund",
+          "text": {
+            "zh": "退货退款已原路退回，到账时间以发卡行记录为准，无需再次提交申请。",
+            "en": "Your return refund has been sent to the original payment method. The issuer determines when it appears; no new application is required.",
+            "ja": "返品分の返金を元のお支払い方法へ処理しました。反映時期はカード会社によります。再申請は不要です。"
+          },
+          "reviewReason": "Existing service/transaction or explicit anti-fraud public notice; no new sale."
+        },
+        {
+          "intent": "offer",
+          "label": "promotion",
+          "text": {
+            "zh": "本店换季清仓，购物满三百减五十，活动商品售完即止。",
+            "en": "Seasonal clearance: spend 300 and save 50. Offer ends when promotional stock sells out.",
+            "ja": "季節の在庫一掃セール。三百以上のお買い物で五十引き。対象商品がなくなり次第終了します。"
+          },
+          "reviewReason": "Explicit new purchase/subscription incentive."
+        },
+        {
+          "intent": "fraud",
+          "label": "spam",
+          "text": {
+            "zh": "退款通道已冻结，先向我的私人收款码支付解冻款，付完后还需追加认证金才能提现。",
+            "en": "Your refund channel is frozen. First pay an unfreeze charge to my personal payment code; an additional verification deposit is required before you can withdraw.",
+            "ja": "返金手続きが凍結されました。私個人の決済コードへ解除料を払ってください。出金には追加の認証保証金も必要です。"
+          },
+          "reviewReason": "Direct recipient instruction to disclose credentials, pay gift cards/advance fees, or transfer to a secret safe account."
+        }
+      ]
+    },
+    {
+      "id": "clinic",
+      "variants": [
+        {
+          "intent": "service",
+          "label": "life.medical",
+          "text": {
+            "zh": "复诊预约时间已调整为周四下午，请携带上次的检查报告到门诊报到。",
+            "en": "Your follow-up appointment has moved to Thursday afternoon. Bring your previous test results to the clinic.",
+            "ja": "再診の予約を木曜日の午後に変更しました。前回の検査結果を持って外来受付にお越しください。"
+          },
+          "reviewReason": "Existing service/transaction or explicit anti-fraud public notice; no new sale."
+        },
+        {
+          "intent": "offer",
+          "label": "promotion",
+          "text": {
+            "zh": "口腔护理体验活动，本月新购洁牙套餐可享折扣，预约名额有限。",
+            "en": "Dental care promotion: newly purchased cleaning packages are discounted this month. Appointments are limited.",
+            "ja": "今月の口腔ケア体験キャンペーン。新規購入のクリーニングプランが割引になります。予約枠に限りがあります。"
+          },
+          "reviewReason": "Explicit new purchase/subscription incentive."
+        },
+        {
+          "intent": "fraud",
+          "label": "spam",
+          "text": {
+            "zh": "医保报销即将失效，请安装我发的远程控制程序并打开银行应用，让客服替您操作转账认证。",
+            "en": "Your medical reimbursement is expiring. Install the remote control program I send and open your banking app so our agent can carry out a verification transfer.",
+            "ja": "医療費の払い戻しが失効します。送付する遠隔操作ソフトを入れて銀行アプリを開き、担当者に認証送金を操作させてください。"
+          },
+          "reviewReason": "Direct recipient instruction to disclose credentials, pay gift cards/advance fees, or transfer to a secret safe account."
+        }
+      ]
+    },
+    {
+      "id": "carrier",
+      "variants": [
+        {
+          "intent": "service",
+          "label": "carrier.service",
+          "text": {
+            "zh": "您申请的补卡已制作完成，请携带有效证件到所选营业厅领取。",
+            "en": "The replacement SIM you requested is ready. Bring valid identification to the branch you selected.",
+            "ja": "お申し込みの再発行SIMカードをご用意しました。有効な本人確認書類を持って指定の店舗へお越しください。"
+          },
+          "reviewReason": "Existing service/transaction or explicit anti-fraud public notice; no new sale."
+        },
+        {
+          "intent": "offer",
+          "label": "carrier.promotion",
+          "text": {
+            "zh": "流量加购限时优惠，现在订购夜间流量包可享首月半价。",
+            "en": "Limited data add-on offer: order the night-time data pack now for half price in the first month.",
+            "ja": "データ追加の期間限定特典。今、夜間データパックを申し込むと初月が半額になります。"
+          },
+          "reviewReason": "Explicit new purchase/subscription incentive."
+        },
+        {
+          "intent": "fraud",
+          "label": "spam",
+          "text": {
+            "zh": "手机号码今日停用，购买游戏充值卡并把卡密发到本号码，作为恢复通信的保证金。",
+            "en": "Your phone line will be suspended today. Buy game top-up cards and send their redemption codes to this number as a deposit to restore service.",
+            "ja": "本日中に回線を停止します。ゲーム用プリペイドカードを購入し、そのコードをこの番号に送って復旧保証金を納めてください。"
+          },
+          "reviewReason": "Direct recipient instruction to disclose credentials, pay gift cards/advance fees, or transfer to a secret safe account."
+        }
+      ]
+    },
+    {
+      "id": "employment",
+      "variants": [
+        {
+          "intent": "service",
+          "label": "work.training",
+          "text": {
+            "zh": "已报名的岗前培训改在二楼教室举行，课件已放入员工学习系统。",
+            "en": "The induction training you enrolled in will take place in the second-floor classroom. Materials are in the employee learning system.",
+            "ja": "お申し込みの入社研修は二階の教室で行います。資料は社員学習システムに掲載しました。"
+          },
+          "reviewReason": "Existing service/transaction or explicit anti-fraud public notice; no new sale."
+        },
+        {
+          "intent": "offer",
+          "label": "promotion",
+          "text": {
+            "zh": "职场技能课程招生，新学员报名可领取试听课，欢迎了解课程安排。",
+            "en": "Enrolment is open for workplace skills courses. New students can claim a trial lesson; ask for the timetable.",
+            "ja": "仕事のスキル講座の受講生を募集しています。初めての方には体験授業をご用意。日程をお問い合わせください。"
+          },
+          "reviewReason": "Explicit new purchase/subscription incentive."
+        },
+        {
+          "intent": "fraud",
+          "label": "spam",
+          "text": {
+            "zh": "刷单任务保证日赚六百，先给我转任务本金；账户收益已显示，但必须再次充值才能提走。",
+            "en": "Fake-order tasks guarantee 600 a day. Transfer the task capital to me first; your displayed earnings cannot be withdrawn until you top up again.",
+            "ja": "架空注文の作業で日給六百を保証します。まず私に作業資金を振り込み、表示された報酬を引き出すにはさらに入金してください。"
+          },
+          "reviewReason": "Direct recipient instruction to disclose credentials, pay gift cards/advance fees, or transfer to a secret safe account."
+        }
+      ]
+    },
+    {
+      "id": "tax",
+      "variants": [
+        {
+          "intent": "service",
+          "label": "government.tax",
+          "text": {
+            "zh": "您提交的退税申请已受理，办理进度可在税务办事平台查看。",
+            "en": "Your submitted tax refund application has been accepted. Track its progress on the tax service portal.",
+            "ja": "提出された税金の還付申請を受け付けました。処理状況は税務手続きのサイトで確認できます。"
+          },
+          "reviewReason": "Existing service/transaction or explicit anti-fraud public notice; no new sale."
+        },
+        {
+          "intent": "offer",
+          "label": "promotion",
+          "text": {
+            "zh": "记账服务新客优惠，首次购买年度企业报税套餐减免一个月服务费。",
+            "en": "Bookkeeping offer for new customers: buy an annual business tax filing package and receive one month of service free.",
+            "ja": "記帳代行の新規契約特典。法人の年間税務申告プランをご購入いただくと一か月分のサービス料が無料になります。"
+          },
+          "reviewReason": "Explicit new purchase/subscription incentive."
+        },
+        {
+          "intent": "fraud",
+          "label": "spam",
+          "text": {
+            "zh": "税款未结清，立即购买购物礼品卡并将兑换码回复给我，拒绝照办今天就拘捕您。",
+            "en": "Your tax balance is unpaid. Buy shopping gift cards immediately and reply with the redemption codes, or you will be arrested today.",
+            "ja": "税金が未納です。今すぐ買い物用ギフトカードを購入してコードを私に返信してください。従わなければ本日逮捕します。"
+          },
+          "reviewReason": "Direct recipient instruction to disclose credentials, pay gift cards/advance fees, or transfer to a secret safe account."
+        }
+      ]
+    },
+    {
+      "id": "membership",
+      "variants": [
+        {
+          "intent": "service",
+          "label": "transaction.member",
+          "text": {
+            "zh": "您的会员资料修改已完成，联系地址已更新，可在账户设置中查看。",
+            "en": "Your membership profile change is complete. The contact address has been updated in account settings.",
+            "ja": "会員情報の変更が完了し、連絡先住所を更新しました。アカウント設定から確認できます。"
+          },
+          "reviewReason": "Existing service/transaction or explicit anti-fraud public notice; no new sale."
+        },
+        {
+          "intent": "offer",
+          "label": "promotion",
+          "text": {
+            "zh": "会员专享购物礼遇，今天购买新品可获双倍积分，点击店铺查看活动。",
+            "en": "Members-only shopping offer: earn double points on new products purchased today. Visit the store for details.",
+            "ja": "会員限定のお買い物特典。本日、新商品をご購入いただくとポイントが二倍になります。店舗で詳細をご確認ください。"
+          },
+          "reviewReason": "Explicit new purchase/subscription incentive."
+        },
+        {
+          "intent": "fraud",
+          "label": "spam",
+          "text": {
+            "zh": "会员账户被锁，请回复完整登录密码和短信验证码，本私人客服将登录您的账户解除限制。",
+            "en": "Your membership account is locked. Reply with your complete password and SMS verification code so this private agent can log in and remove the restriction.",
+            "ja": "会員アカウントをロックしました。パスワード全文とSMS認証コードを返信してください。私が代理でログインして制限を解除します。"
+          },
+          "reviewReason": "Direct recipient instruction to disclose credentials, pay gift cards/advance fees, or transfer to a secret safe account."
+        }
+      ]
+    },
+    {
+      "id": "loan",
+      "variants": [
+        {
+          "intent": "service",
+          "label": "finance.bank",
+          "text": {
+            "zh": "您申请的贷款已完成面签预约，周五上午请携带申请材料到银行网点。",
+            "en": "The in-person signing appointment for your loan application is booked. Bring the application documents to the bank branch on Friday morning.",
+            "ja": "お申し込みの融資の契約面談を予約しました。金曜日の午前に申込書類を持って銀行窓口へお越しください。"
+          },
+          "reviewReason": "Existing service/transaction or explicit anti-fraud public notice; no new sale."
+        },
+        {
+          "intent": "offer",
+          "label": "promotion",
+          "text": {
+            "zh": "个人贷款产品咨询活动，利率以审批结果为准，欢迎到银行网点了解申请条件。",
+            "en": "Personal loan information event: rates depend on approval. Visit a bank branch to learn about eligibility.",
+            "ja": "個人向け融資のご相談会。金利は審査結果によります。お申し込み条件は銀行窓口へお問い合わせください。"
+          },
+          "reviewReason": "Explicit new purchase/subscription incentive."
+        },
+        {
+          "intent": "fraud",
+          "label": "spam",
+          "text": {
+            "zh": "贷款已批但暂不放款，先向我个人账户转账做流水，仍须再付解冻费，不要向银行问询。",
+            "en": "Your loan is approved but not released. Transfer money to my personal account to build account activity, then pay another unfreeze fee. Do not ask the bank.",
+            "ja": "融資は承認済みですが未入金です。取引実績を作るため私個人の口座へ振り込み、その後に解除料も払ってください。銀行への確認は禁止です。"
+          },
+          "reviewReason": "Direct recipient instruction to disclose credentials, pay gift cards/advance fees, or transfer to a secret safe account."
+        }
+      ]
+    },
+    {
+      "id": "flight",
+      "variants": [
+        {
+          "intent": "service",
+          "label": "travel.ticketing",
+          "text": {
+            "zh": "航班起飞时间变更，您的原客票仍有效，可在航空公司应用中查看改签选项。",
+            "en": "Your flight departure time has changed. The existing ticket remains valid; rebooking options are in the airline app.",
+            "ja": "便の出発時刻を変更しました。元の航空券は引き続き有効です。航空会社のアプリで変更方法をご確認ください。"
+          },
+          "reviewReason": "Existing service/transaction or explicit anti-fraud public notice; no new sale."
+        },
+        {
+          "intent": "offer",
+          "label": "promotion",
+          "text": {
+            "zh": "秋季航线特惠，指定城市往返机票低价开售，座位数量有限。",
+            "en": "Autumn airfare sale: discounted return tickets to selected cities are now available. Seats are limited.",
+            "ja": "秋の航空券セール。対象都市への往復航空券を特別価格で販売中です。座席数には限りがあります。"
+          },
+          "reviewReason": "Explicit new purchase/subscription incentive."
+        },
+        {
+          "intent": "fraud",
+          "label": "spam",
+          "text": {
+            "zh": "航班赔偿已到账待激活，先开屏幕共享让我看见银行验证码，再转保证金到我私人账户领取赔偿。",
+            "en": "Flight compensation is awaiting activation. Share your screen so I can see the bank verification code, then send a deposit to my personal account to collect it.",
+            "ja": "航空便の補償金は認証待ちです。画面共有で銀行の認証コードを私に見せ、私個人の口座へ保証金を送ると受け取れます。"
+          },
+          "reviewReason": "Direct recipient instruction to disclose credentials, pay gift cards/advance fees, or transfer to a secret safe account."
+        }
+      ]
+    },
+    {
+      "id": "utility",
+      "variants": [
+        {
+          "intent": "service",
+          "label": "life.utility",
+          "text": {
+            "zh": "您提交的燃气安全检查预约已确认，工作人员将在约定时段上门。",
+            "en": "Your requested gas safety inspection is booked. The technician will visit during the agreed time slot.",
+            "ja": "お申し込みのガス安全点検を予約しました。担当者が指定の時間帯に訪問します。"
+          },
+          "reviewReason": "Existing service/transaction or explicit anti-fraud public notice; no new sale."
+        },
+        {
+          "intent": "offer",
+          "label": "promotion",
+          "text": {
+            "zh": "家电节能升级活动，新购指定型号热水器可享安装费减免。",
+            "en": "Energy-saving appliance promotion: buy a qualifying new water heater and receive discounted installation.",
+            "ja": "省エネ家電への買い替えキャンペーン。対象の給湯器を新たに購入すると設置費が割引になります。"
+          },
+          "reviewReason": "Explicit new purchase/subscription incentive."
+        },
+        {
+          "intent": "fraud",
+          "label": "spam",
+          "text": {
+            "zh": "电表马上断电，去便利店买电子礼品卡，把所有卡号密码发给我充抵电费，不接受其他缴费方式。",
+            "en": "Your meter is about to be disconnected. Buy electronic gift cards at a convenience store and send me all card numbers and PINs for the electricity bill. No other payment is accepted.",
+            "ja": "まもなく送電を止めます。コンビニで電子ギフトカードを買い、番号と暗証コードを全部私に送って電気代を払ってください。他の支払方法は認めません。"
+          },
+          "reviewReason": "Direct recipient instruction to disclose credentials, pay gift cards/advance fees, or transfer to a secret safe account."
+        }
+      ]
+    },
+    {
+      "id": "insurance",
+      "variants": [
+        {
+          "intent": "service",
+          "label": "finance.insurance",
+          "text": {
+            "zh": "理赔补充材料已收到，案件进入审核，后续结果将在原理赔页面更新。",
+            "en": "The additional claim documents have been received. Your case is under review; results will appear on the original claim page.",
+            "ja": "保険金請求の追加書類を受領し、審査に入りました。結果は元の請求ページでお知らせします。"
+          },
+          "reviewReason": "Existing service/transaction or explicit anti-fraud public notice; no new sale."
+        },
+        {
+          "intent": "offer",
+          "label": "promotion",
+          "text": {
+            "zh": "家庭保障计划咨询，新投保指定组合可享首年保费优惠，保障范围以条款为准。",
+            "en": "Family protection plan offer: new qualifying policies receive a first-year premium discount. Coverage is subject to policy terms.",
+            "ja": "家族向け保障プランのご案内。対象の組み合わせに新規加入すると初年度の保険料が割引になります。保障内容は約款をご確認ください。"
+          },
+          "reviewReason": "Explicit new purchase/subscription incentive."
+        },
+        {
+          "intent": "fraud",
+          "label": "spam",
+          "text": {
+            "zh": "保险理赔金被冻结，请先给私人审核员买充值卡并发送卡密，之后才能申请把赔款转出。",
+            "en": "Your insurance payout is frozen. First buy top-up cards for the private reviewer and send the redemption codes before requesting withdrawal of the claim money.",
+            "ja": "保険金を凍結しました。出金申請の前に個人審査員のためにプリペイドカードを買い、そのコードを送ってください。"
+          },
+          "reviewReason": "Direct recipient instruction to disclose credentials, pay gift cards/advance fees, or transfer to a secret safe account."
+        }
+      ]
+    },
+    {
+      "id": "marketplace",
+      "variants": [
+        {
+          "intent": "service",
+          "label": "transaction.order",
+          "text": {
+            "zh": "买家已确认收货，本次交易订单已完成，售后入口仍可在订单详情中找到。",
+            "en": "The buyer has confirmed receipt and your sale is complete. After-sales support remains available in order details.",
+            "ja": "購入者が受け取りを確認し、取引が完了しました。注文詳細から引き続き取引後のサポートを利用できます。"
+          },
+          "reviewReason": "Existing service/transaction or explicit anti-fraud public notice; no new sale."
+        },
+        {
+          "intent": "offer",
+          "label": "promotion",
+          "text": {
+            "zh": "二手数码交易节，新买家下单指定商品可领运费补贴，活动持续三天。",
+            "en": "Used electronics sale: new buyers can claim a shipping subsidy on selected items. The event runs for three days.",
+            "ja": "中古デジタル機器のセール。初めて購入される方は対象商品の送料補助を受けられます。開催期間は三日間です。"
+          },
+          "reviewReason": "Explicit new purchase/subscription incentive."
+        },
+        {
+          "intent": "fraud",
+          "label": "spam",
+          "text": {
+            "zh": "您的卖家收款被冻结，需要先向我交保证金，账户提示失败后继续加钱，直到系统允许您提现。",
+            "en": "Your seller payout is frozen. Pay a deposit to me first; if the account reports failure, keep adding money until the system lets you withdraw.",
+            "ja": "出品者への入金を凍結しました。まず私に保証金を払い、エラーが出ても出金が許可されるまで追加の入金を続けてください。"
+          },
+          "reviewReason": "Direct recipient instruction to disclose credentials, pay gift cards/advance fees, or transfer to a secret safe account."
+        }
+      ]
+    },
+    {
+      "id": "cloud",
+      "variants": [
+        {
+          "intent": "service",
+          "label": "work.alert",
+          "text": {
+            "zh": "存储服务故障已恢复，昨晚失败的备份任务已重新执行完成，运维记录已更新。",
+            "en": "Storage service has recovered. Last night's failed backups have been rerun successfully and the operations log is updated.",
+            "ja": "ストレージサービスが復旧しました。昨夜失敗したバックアップは再実行を完了し、運用記録を更新しました。"
+          },
+          "reviewReason": "Existing service/transaction or explicit anti-fraud public notice; no new sale."
+        },
+        {
+          "intent": "offer",
+          "label": "promotion",
+          "text": {
+            "zh": "云主机新购优惠，首次购买年度套餐可获额外存储空间，欢迎查看配置。",
+            "en": "Cloud server offer: first-time annual plan buyers receive extra storage. Browse the available configurations.",
+            "ja": "クラウドサーバーの新規契約特典。年間プランの初回購入で追加ストレージを進呈します。構成をご確認ください。"
+          },
+          "reviewReason": "Explicit new purchase/subscription incentive."
+        },
+        {
+          "intent": "fraud",
+          "label": "spam",
+          "text": {
+            "zh": "云账户将封停，请把管理员密码与双重认证恢复码直接发给我，否则今日删除全部数据。",
+            "en": "Your cloud account will be closed. Send me the administrator password and two-factor recovery codes directly, or all data will be deleted today.",
+            "ja": "クラウドアカウントを停止します。管理者パスワードと二段階認証の復旧コードを直接私に送らなければ、今日中に全データを削除します。"
+          },
+          "reviewReason": "Direct recipient instruction to disclose credentials, pay gift cards/advance fees, or transfer to a secret safe account."
+        }
+      ]
+    },
+    {
+      "id": "prize",
+      "variants": [
+        {
+          "intent": "service",
+          "label": "transaction.points",
+          "text": {
+            "zh": "您申请兑换的积分礼品已出库，配送进度已更新到积分商城订单。",
+            "en": "The reward you redeemed with points has left the warehouse. Tracking is updated in the rewards shop order.",
+            "ja": "ポイント交換でお申し込みの景品を出荷しました。配送状況はポイント交換サイトの注文に反映しています。"
+          },
+          "reviewReason": "Existing service/transaction or explicit anti-fraud public notice; no new sale."
+        },
+        {
+          "intent": "offer",
+          "label": "promotion",
+          "text": {
+            "zh": "积分兑换活动，本周使用积分加购指定礼品可享折扣，数量有限。",
+            "en": "Points redemption event: selected rewards purchased with points and cash are discounted this week. Limited quantities available.",
+            "ja": "ポイント交換キャンペーン。今週はポイントと現金で購入する対象景品が割引になります。数量限定です。"
+          },
+          "reviewReason": "Explicit new purchase/subscription incentive."
+        },
+        {
+          "intent": "fraud",
+          "label": "spam",
+          "text": {
+            "zh": "您未参加抽奖也获得大奖，奖金发放前须先给我私人账户支付税款和放行费，随后再补保证金。",
+            "en": "You won a major draw without entering. Before receiving the prize, pay tax and a release fee to my personal account, then send an additional security deposit.",
+            "ja": "応募していませんが高額当選です。賞金を受け取る前に私個人の口座へ税金と解除料を払い、その後に追加の保証金も送ってください。"
+          },
+          "reviewReason": "Direct recipient instruction to disclose credentials, pay gift cards/advance fees, or transfer to a secret safe account."
+        }
+      ]
+    },
+    {
+      "id": "police",
+      "variants": [
+        {
+          "intent": "service",
+          "label": "government.reminder",
+          "text": {
+            "zh": "社区反诈宣传周开始，遇到索要密码、验证码或礼品卡卡密的来电请停止联系并向警方咨询。",
+            "en": "Community fraud awareness week has begun. Stop contact and consult the police if a caller asks for passwords, verification codes or gift card codes.",
+            "ja": "地域の詐欺防止週間が始まります。電話でパスワード、認証コード、ギフトカードのコードを求められたら連絡をやめ、警察へ相談してください。"
+          },
+          "reviewReason": "Public non-personal fraud-prevention guidance belongs to government.reminder under docs/TAXONOMY.md."
+        },
+        {
+          "intent": "offer",
+          "label": "promotion",
+          "text": {
+            "zh": "安全防护软件新品促销，首次订阅年度家庭版可享折扣，欢迎试用。",
+            "en": "Security software launch offer: first-time annual family subscriptions are discounted. Try the new product.",
+            "ja": "セキュリティソフトの新製品キャンペーン。家庭用年間プランの初回契約が割引になります。ぜひお試しください。"
+          },
+          "reviewReason": "Explicit new purchase/subscription incentive."
+        },
+        {
+          "intent": "fraud",
+          "label": "spam",
+          "text": {
+            "zh": "您涉嫌洗钱，请立刻把全部存款转入我提供的安全账户，调查必须保密，不准向当地警局核实。",
+            "en": "You are suspected of money laundering. Transfer all savings to the safe account I provide immediately. Keep this investigation secret and do not verify it with local police.",
+            "ja": "資金洗浄の疑いがあります。全預金を私の指定する安全口座へ直ちに送ってください。捜査は秘密です。地元の警察への確認は禁止します。"
+          },
+          "reviewReason": "Direct recipient instruction to disclose credentials, pay gift cards/advance fees, or transfer to a secret safe account."
+        }
+      ]
+    }
+  ]
+}

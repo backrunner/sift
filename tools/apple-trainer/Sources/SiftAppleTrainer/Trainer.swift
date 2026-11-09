@@ -1199,19 +1199,18 @@ func generateSyntheticRows(
             while labelRows.count < targetCount && attempt < maxAttempts {
                 var generator = SeededGenerator(seed: stableHash("\(language.rawValue):\(label):\(attempt)"))
                 let template = templates[attempt % templates.count]
-                var text = fillSyntheticTemplate(template, language: language, generator: &generator)
-                if seenTexts.contains(text) {
-                    text = "\(text) #\(100000 + (attempt % 900000))"
-                }
+                let text = fillSyntheticTemplate(template, language: language, generator: &generator)
                 if seenTexts.insert(text).inserted {
-                    labelRows.append(SampleRow(text: text, label: label, source: "synthetic:\(language.rawValue)", language: language.rawValue))
+                    labelRows.append(SampleRow(text: text, label: label,
+                        source: "synthetic:clean-v8:\(language.rawValue):\(label):\(attempt % templates.count)",
+                        language: language.rawValue))
                 }
                 attempt += 1
             }
 
-            guard labelRows.count == targetCount else {
+            guard !labelRows.isEmpty else {
                 throw TrainerError.invalidDataset(
-                    "Could only generate \(labelRows.count) unique synthetic rows for \(label) (\(language.rawValue))."
+                    "No distinct synthetic rows for \(label) (\(language.rawValue))."
                 )
             }
 

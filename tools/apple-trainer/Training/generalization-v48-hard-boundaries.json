@@ -16,7 +16,6 @@
     {"family":"points-miles-v48","label":"transaction.points","text":"会员积分补发完成，之前遗漏的420分已经进入积分账户。"},
     {"family":"points-miles-v48","label":"transaction.points","text":"A rewards adjustment is complete; the previously missing 420 points are now in your account."},
     {"family":"points-miles-v48","label":"transaction.points","text":"会員ポイントの補正が完了し、未反映だった420ポイントを残高へ追加しました。"},
-
     {"family":"refund-official-v48","label":"finance.refund","text":"【海湾航空】机票退款已成功，760元已退回原支付方式，请在官方订单记录查看。"},
     {"family":"refund-official-v48","label":"finance.refund","text":"Harbor Air confirms your ticket refund succeeded; $760 was returned to the original payment method."},
     {"family":"refund-official-v48","label":"finance.refund","text":"ハーバー航空：航空券の返金が完了し、760円を元のお支払い方法へ戻しました。"},
@@ -29,7 +28,6 @@
     {"family":"refund-official-v48","label":"finance.refund","text":"【官方旅行服务】订单差额退款已入账，原支付账户收到620元。"},
     {"family":"refund-official-v48","label":"finance.refund","text":"Official travel service: the order difference refund of $620 has reached the original payment account."},
     {"family":"refund-official-v48","label":"finance.refund","text":"公式旅行サービス：予約差額620円の返金が元のお支払い口座に反映されました。"},
-
     {"family":"card-cashback-promotion-v48","label":"promotion","text":"信用卡餐饮回馈活动：周末指定商户消费满300元，返50元刷卡金。"},
     {"family":"card-cashback-promotion-v48","label":"promotion","text":"Card dining offer: spend $300 at participating restaurants this weekend and receive a $50 statement credit."},
     {"family":"card-cashback-promotion-v48","label":"promotion","text":"クレジットカード飲食キャンペーン：対象店で週末に3万円利用すると5千円分を還元。"},
@@ -42,7 +40,6 @@
     {"family":"card-cashback-promotion-v48","label":"promotion","text":"会员专享刷卡金限时赠送，完成本周消费任务即可领取。"},
     {"family":"card-cashback-promotion-v48","label":"promotion","text":"Limited-time statement credits are available to members who complete this week's card-spend challenge."},
     {"family":"card-cashback-promotion-v48","label":"promotion","text":"会員限定の期間キャンペーンです。今週のカード利用条件を達成すると還元を受け取れます。"},
-
     {"family":"travel-ticketing-legitimate-v48","label":"travel.ticketing","text":"邮轮船票已确认，请按官方行程携带购票证件到港口柜台领取纸质船票。"},
     {"family":"travel-ticketing-legitimate-v48","label":"travel.ticketing","text":"Your cruise ticket is confirmed. Bring the booking document to the official port counter to collect the paper ticket."},
     {"family":"travel-ticketing-legitimate-v48","label":"travel.ticketing","text":"クルーズ乗船券が確定しました。予約時の証明書を持って公式港湾カウンターで紙の券を受け取ってください。"},
@@ -51,19 +48,6 @@
     {"family":"travel-ticketing-legitimate-v48","label":"travel.ticketing","text":"クルーズのチェックインは出航30分前に締め切ります。早めに到着して係員カウンターで手続きをしてください。"},
     {"family":"travel-ticketing-legitimate-v48","label":"travel.ticketing","text":"请核对购票证件与出境证件一致，完成值机后再前往国际出发区检票。"},
     {"family":"travel-ticketing-legitimate-v48","label":"travel.ticketing","text":"Make sure the booking and travel documents match, then proceed to the international gate after check-in."},
-    {"family":"travel-ticketing-legitimate-v48","label":"travel.ticketing","text":"購入時の証明書と渡航書類が一致することを確認し、チェックイン後に国際出発ゲートへ進んでください。"},
-
-    {"family":"travel-phishing-v48","label":"spam","text":"【港口客服】登船资格异常，请打开陌生网页上传身份证并填写短信验证码，否则立即取消订单。"},
-    {"family":"travel-phishing-v48","label":"spam","text":"A supposed cruise desk says your boarding status failed and asks you to upload ID and enter an SMS code at a new link."},
-    {"family":"travel-phishing-v48","label":"spam","text":"港のサポートを名乗り、乗船資格の確認として身分証とSMS認証コードを外部ページへ入力するよう求めています。"},
-    {"family":"travel-phishing-v48","label":"spam","text":"【航空客服】退款审核失败，请点击链接输入网银密码和动态码才能重新放款。"},
-    {"family":"travel-phishing-v48","label":"spam","text":"A fake airline agent claims the refund failed and demands your online-banking password and one-time code to release it."},
-    {"family":"travel-phishing-v48","label":"spam","text":"偽の航空会社担当者が返金失敗を理由に、ネットバンキングのパスワードとワンタイムコードを要求しています。"},
-    {"family":"travel-phishing-v48","label":"spam","text":"船票将被作废，陌生页面要求先缴处理费并发送登录验证码，请勿操作。"},
-    {"family":"travel-phishing-v48","label":"spam","text":"Your ferry ticket will supposedly be voided unless you pay a processing fee and send a login verification code."},
-    {"family":"travel-phishing-v48","label":"spam","text":"フェリー券が無効になると脅し、処理費の支払いとログイン認証コードの送信を求める詐欺です。"},
-    {"family":"travel-phishing-v48","label":"spam","text":"【行程安全中心】请在非官方链接补录护照、银行卡和短信验证码，逾期将无法登机。"},
-    {"family":"travel-phishing-v48","label":"spam","text":"A travel security center asks for passport, card details, and an SMS code on an unofficial link or claims you cannot board."},
-    {"family":"travel-phishing-v48","label":"spam","text":"旅行安全センターを装い、非公式リンクで旅券・カード情報・SMSコードを入力しないと搭乗できないと脅しています。"}
+    {"family":"travel-ticketing-legitimate-v48","label":"travel.ticketing","text":"購入時の証明書と渡航書類が一致することを確認し、チェックイン後に国際出発ゲートへ進んでください。"}
   ]
 }

@@ -22,6 +22,8 @@ Usage:
 
 from __future__ import annotations
 
+from sms_signatures import semantic_signature
+
 import argparse
 import hashlib
 import json
@@ -136,7 +138,7 @@ def parse_arguments() -> argparse.Namespace:
     )
     parser.add_argument("--audit", action="store_true", help="print the label × language coverage matrix summary")
     parser.add_argument("--audit-only", action="store_true", help="skip filtering/output; only audit the merged inputs")
-    parser.add_argument("--strict-audit", action="store_true", help="exit non-zero when core-language coverage gaps exist")
+    parser.add_argument("--strict-audit", action="store_true", help="exit non-zero for coverage gaps or unknown labels; audit-only also rejects retired rows")
     parser.add_argument("--min-core-rows", type=int, default=10, help="required rows per label for each core language (zh/en/ja)")
     return parser.parse_args()
 
@@ -173,11 +175,16 @@ def canonicalize_carrier_billing(text: str, label: str) -> tuple[str, bool]:
         return label, False
     lowered = text.casefold()
     markers = (
-        "账单", "缴费", "充值成功", "欠费", "应缴", "账期", "月结单",
-        "billing", "mobile bill", "monthly statement", "payment received",
+        "账单", "缴费", "充值成功", "欠费", "应缴", "月结单",
+        "billing notice", "billing statement", "billing reminder", "mobile bill", "monthly statement", "payment received",
         "autopay", "airtime balance", "請求", "支払い", "料金残高",
     )
-    return ("carrier.billing", True) if any(marker in lowered for marker in markers) else (label, False)
+    money_balance = any(re.search(pattern, lowered) for pattern in (
+        r"余额[为是：:仅有还剩不足已低于降至约\s]{0,10}\d[\d.,，。]*\s*元",
+        r"\bbalance\b\s*[:：]?\s*(?:(?:is|now|below|under|of|only)\s+){0,3}[$£€¥￥]\s*\d",
+        r"残高(?:は|が|[:：])?\s*\d[\d.,，。]*\s*円",
+    ))
+    return ("carrier.billing", True) if money_balance or any(marker in lowered for marker in markers) else (label, False)
 
 
 def load_rows(paths: list[Path], report: Report) -> list[Row]:
@@ -515,6 +522,7 @@ def load_holdout_keys(paths: list[Path], report: Report) -> tuple[set[str], set[
                     raise SystemExit(f"error: holdout text missing at {path}:{number}")
                 exact.add(text.lower())
                 signatures.add(near_duplicate_signature(text))
+                signatures.add("family:" + semantic_signature(text))
                 count += 1
         report.holdouts[str(path)] = count
     return exact, signatures
@@ -573,7 +581,8 @@ def apply_rule_tier(
             report.rejected["holdout-exact"] += 1
             append_rejection(rejected_sink, row, "holdout-exact")
             continue
-        if pre_redaction_signature in holdout_signatures:
+        if (pre_redaction_signature in holdout_signatures or
+                "family:" + semantic_signature(pre_redaction_text) in holdout_signatures):
             report.rejected["holdout-near"] += 1
             append_rejection(rejected_sink, row, "holdout-near")
             continue
@@ -640,7 +649,8 @@ def apply_rule_tier(
             reason = "cross-label-template-conflict"
         if reason is None and row.text.lower() in holdout_exact:
             reason = "holdout-exact"
-        if reason is None and signature in holdout_signatures:
+        if reason is None and (signature in holdout_signatures or
+                "family:" + semantic_signature(row.text) in holdout_signatures):
             reason = "holdout-near"
         if reason is None:
             exact_key = row.text.lower()
@@ -878,6 +888,17 @@ def main() -> None:
     report = Report()
     rejected_sink: list[dict] = []
     rows = load_rows(list(arguments.inputs), report)
+    from retired_samples import RetiredSamples
+    retirement=RetiredSamples()
+    active=[];retired_count=0
+    for row in rows:
+        reason=retirement.reason({'text':row.text,'label':row.label,'source':row.source})
+        if reason:
+            retired_count+=1;report.rejected['retired-training-sample']+=1
+            rejected_sink.append({'textHash':hashlib.sha256(row.text.encode()).hexdigest(),
+                'label':row.label,'source':row.source,'reason':reason})
+        else:active.append(row)
+    rows=active
     holdout_exact, holdout_signatures = load_holdout_keys(
         [path.expanduser().resolve() for path in arguments.holdout],
         report,
@@ -902,6 +923,9 @@ def main() -> None:
                     continue
             if row.label in valid_labels:
                 audited_rows.append(row)
+            else:
+                report.rejected["unknown-label"] += 1
+                append_rejection(rejected_sink, row, "unknown-label")
         rows = audited_rows
         build_matrix(rows, valid_labels, report)
         build_quality_report(rows, report)
@@ -910,7 +934,7 @@ def main() -> None:
         if arguments.report:
             arguments.report.parent.mkdir(parents=True, exist_ok=True)
             arguments.report.write_text(json.dumps(report.__dict__, ensure_ascii=False, indent=2, default=dict) + "\n", encoding="utf-8")
-        sys.exit(2 if arguments.strict_audit and report.audit_gaps else 0)
+        sys.exit(2 if arguments.strict_audit and (report.audit_gaps or retired_count or report.rejected["unknown-label"]) else 0)
 
     if not arguments.out:
         raise SystemExit("error: --out is required unless --audit-only")
@@ -971,7 +995,7 @@ def main() -> None:
         print(f"privacy-rejected {report.privacy_rejected} remote rows with residual sensitive values")
     if arguments.audit or arguments.strict_audit:
         print_audit(report, arguments.min_core_rows)
-    if arguments.strict_audit and report.audit_gaps:
+    if arguments.strict_audit and (report.audit_gaps or report.rejected["unknown-label"]):
         sys.exit(2)
 
 

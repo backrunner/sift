@@ -2,12 +2,6 @@
 {"text":"我发的是社区讲座报名页，不着急，周末有空再一起填。","label":"__sift_abstain__","source":"augmentation:boundary:generalization-v2-v3"}
 {"text":"电影票的钱已经转回给你了，晚点确认一下聊天里的收款记录。","label":"__sift_abstain__","source":"augmentation:boundary:generalization-v2-v3"}
 {"text":"旅行方案我还拿不定主意，你看完链接后帮我选一个。","label":"__sift_abstain__","source":"augmentation:boundary:generalization-v2-v3"}
-{"text":"假客服称退款卡住，要求把支付验证码发给他才能继续处理。","label":"spam","source":"augmentation:boundary:generalization-v2-v3"}
-{"text":"海关异常通知要求打开陌生网址缴纳放行费并上传银行卡照片。","label":"spam","source":"augmentation:boundary:generalization-v2-v3"}
-{"text":"票务保安声称座位将取消，让您先提交身份证和银行动态口令。","label":"spam","source":"augmentation:boundary:generalization-v2-v3"}
-{"text":"无征信借款要求放款前购买付费担保凭证，收款方为个人账户。","label":"spam","source":"augmentation:boundary:generalization-v2-v3"}
-{"text":"冒充监管人员的来电要求缴纳账户核查费，并索取卡片验证码。","label":"spam","source":"augmentation:boundary:generalization-v2-v3"}
-{"text":"登录即将失效，请在仿冒页面输入密码和证件号码恢复账户。","label":"spam","source":"augmentation:boundary:generalization-v2-v3"}
 {"text":"夜间专用手机流量还剩6GB，将在本周套餐周期结束时清零。","label":"carrier.data_reminder","source":"augmentation:boundary:generalization-v2-v3"}
 {"text":"境外数据包三天后失效，未使用的移动流量不能延期。","label":"carrier.data_reminder","source":"augmentation:boundary:generalization-v2-v3"}
 {"text":"家庭共享流量已使用76%，额度会在下月一日重新计算。","label":"carrier.data_reminder","source":"augmentation:boundary:generalization-v2-v3"}
@@ -32,12 +26,6 @@
 {"text":"That is the community lecture registration page I sent. We can complete it together this weekend.","label":"__sift_abstain__","source":"augmentation:boundary:generalization-v2-v3"}
 {"text":"I sent back the money for the movie tickets; check our chat payment record whenever you can.","label":"__sift_abstain__","source":"augmentation:boundary:generalization-v2-v3"}
 {"text":"I still cannot choose a travel plan. Look at the links and help me pick one later.","label":"__sift_abstain__","source":"augmentation:boundary:generalization-v2-v3"}
-{"text":"Fake support says a refund is stuck and demands the payment verification code before continuing.","label":"spam","source":"augmentation:boundary:generalization-v2-v3"}
-{"text":"A customs alert sends you to an unfamiliar site for a release fee and photos of your bank card.","label":"spam","source":"augmentation:boundary:generalization-v2-v3"}
-{"text":"A ticket security agent threatens to cancel your seat unless you submit identity files and a banking passcode.","label":"spam","source":"augmentation:boundary:generalization-v2-v3"}
-{"text":"A no-credit loan requires a paid guarantee certificate before disbursement to a personal account.","label":"spam","source":"augmentation:boundary:generalization-v2-v3"}
-{"text":"A caller posing as a regulator demands an account review charge and the code from your card message.","label":"spam","source":"augmentation:boundary:generalization-v2-v3"}
-{"text":"Your login will expire unless you enter a password and identity number on this imitation page.","label":"spam","source":"augmentation:boundary:generalization-v2-v3"}
 {"text":"Six GB remains in your nighttime mobile data allowance, which resets at the end of this plan week.","label":"carrier.data_reminder","source":"augmentation:boundary:generalization-v2-v3"}
 {"text":"The overseas cellular pass expires in three days and unused mobile data cannot be extended.","label":"carrier.data_reminder","source":"augmentation:boundary:generalization-v2-v3"}
 {"text":"Your family shared mobile data is 76 percent used and the allowance renews on the first of next month.","label":"carrier.data_reminder","source":"augmentation:boundary:generalization-v2-v3"}
@@ -62,12 +50,6 @@
 {"text":"送ったのは地域講座の申込ページです。週末に一緒に入力しましょう。","label":"__sift_abstain__","source":"augmentation:boundary:generalization-v2-v3"}
 {"text":"映画代は返したよ。時間があるときにチャットの送金履歴を確認して。","label":"__sift_abstain__","source":"augmentation:boundary:generalization-v2-v3"}
 {"text":"旅行案をまだ決められないので、リンクを見て後で選ぶのを手伝って。","label":"__sift_abstain__","source":"augmentation:boundary:generalization-v2-v3"}
-{"text":"偽サポートが返金処理の停止を理由に、支払い認証コードを送るよう求めています。","label":"spam","source":"augmentation:boundary:generalization-v2-v3"}
-{"text":"税関通知を装い、不審なサイトで解放料と銀行カードの写真を提出させようとしています。","label":"spam","source":"augmentation:boundary:generalization-v2-v3"}
-{"text":"チケット保安担当を名乗り、座席取消を理由に身分証資料と銀行認証コードを要求しています。","label":"spam","source":"augmentation:boundary:generalization-v2-v3"}
-{"text":"信用確認なしの融資が、個人口座への入金前に有料保証証明書を購入するよう求めています。","label":"spam","source":"augmentation:boundary:generalization-v2-v3"}
-{"text":"監督機関を装う電話が口座審査料とカード通知に届いた認証番号を要求しています。","label":"spam","source":"augmentation:boundary:generalization-v2-v3"}
-{"text":"ログイン期限を理由に、偽サイトでパスワードと本人確認番号を入力するよう促しています。","label":"spam","source":"augmentation:boundary:generalization-v2-v3"}
 {"text":"夜間用の携帯データは残り6GBで、今週のプラン終了時に利用枠をリセットします。","label":"carrier.data_reminder","source":"augmentation:boundary:generalization-v2-v3"}
 {"text":"海外用モバイルデータパスは3日後に失効し、未使用分は延長できません。","label":"carrier.data_reminder","source":"augmentation:boundary:generalization-v2-v3"}
 {"text":"家族共有の携帯データを76%使用し、来月1日に利用枠を更新します。","label":"carrier.data_reminder","source":"augmentation:boundary:generalization-v2-v3"}

@@ -198,7 +198,14 @@ public enum TransformerSignalReleaseContract {
     public static let neuralNetworkMinimumAppBuild = 32
     public static let neuralNetworkProfileID = "nn-fp32-mapped-w4-block16"
     public static let routedMinimumAppBuild = 34
+    public static let routedStableMinimumAppBuild = 35
     public static let routedAlgorithm = "supervised-rebuild-directional-routing"
+
+    static func isAcceptedRoutedRule(_ manifest: TransformerModelManifest) -> Bool {
+        let minimumBuild = manifest.track == .stable ? routedStableMinimumAppBuild : routedMinimumAppBuild
+        return manifest.minimumAppBuild >= minimumBuild
+            && manifest.routing.flatMap(TransformerRoutingGate.init(profile:)) != nil
+    }
 
     public static func accepts(_ manifest: TransformerModelManifest) -> Bool {
         if manifest.quantizationProfile.weightBits == 32 {
@@ -220,12 +227,10 @@ public enum TransformerSignalReleaseContract {
         guard manifest.releaseSequence >= distilledReleaseSequence else {
             return true
         }
-        // Rebuilt encoders have no teacher. They stay off the stable track, and
-        // routing weights must decode, so a stable app can never select one.
+        // Rebuilt encoders have no teacher. Stable needs a later build, so builds that
+        // shipped before this rule keep their distilled model, and routing weights must decode.
         if manifest.algorithm == routedAlgorithm {
-            return manifest.track != .stable
-                && manifest.minimumAppBuild >= routedMinimumAppBuild
-                && manifest.routing.flatMap(TransformerRoutingGate.init(profile:)) != nil
+            return isAcceptedRoutedRule(manifest)
         }
         guard
             manifest.minimumAppBuild >= distilledMinimumAppBuild,

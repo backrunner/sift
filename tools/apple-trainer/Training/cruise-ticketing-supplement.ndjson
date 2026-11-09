@@ -36,21 +36,3 @@
 {"text":"出航20分前に乗船受付を終了します。それまでに有人窓口でフェリーパスを受け取ってください。","label":"travel.ticketing","source":"augmentation:boundary:cruise-ticketing-v2"}
 {"text":"ポートベイ便のチェックインを開始しました。大型荷物はターミナルの係員へお預けください。","label":"travel.ticketing","source":"augmentation:boundary:cruise-ticketing-v2"}
 {"text":"復路フェリーの乗り場はCゲートへ変更されました。予約は有効で、追加の支払いや本人確認は不要です。","label":"travel.ticketing","source":"augmentation:boundary:cruise-ticketing-v2"}
-{"text":"所谓海运理赔专员称延误补偿已获批，要求先向个人账户转一笔认证费才能放款。","label":"spam","source":"augmentation:boundary:cruise-ticketing-v2"}
-{"text":"陌生码头客服声称登船资料失效，要求在非官方网页上传证件并输入短信验证码。","label":"spam","source":"augmentation:boundary:cruise-ticketing-v2"}
-{"text":"船票退款通知要求提供银行卡完整号码、有效期和验证码，否则当晚取消退款资格。","label":"spam","source":"augmentation:boundary:cruise-ticketing-v2"}
-{"text":"有人冒充轮渡公司称可优先改签，需先扫码支付保证金，完成后才发送新船票。","label":"spam","source":"augmentation:boundary:cruise-ticketing-v2"}
-{"text":"虚假港口安检消息称行李违规，要求点击短链登录支付账户并缴纳解冻手续费。","label":"spam","source":"augmentation:boundary:cruise-ticketing-v2"}
-{"text":"自称国际航运客服要求共享屏幕核对订舱信息，并索取银行动态口令处理退款。","label":"spam","source":"augmentation:boundary:cruise-ticketing-v2"}
-{"text":"A fake ferry compensation agent says your claim is approved but asks for an advance verification transfer to a personal account.","label":"spam","source":"augmentation:boundary:cruise-ticketing-v2"}
-{"text":"An unverified terminal message says your boarding profile expired and requests passport photos plus the one-time SMS code.","label":"spam","source":"augmentation:boundary:cruise-ticketing-v2"}
-{"text":"A supposed ticket refund desk asks for the full card number, security code, and online-banking password before tonight.","label":"spam","source":"augmentation:boundary:cruise-ticketing-v2"}
-{"text":"Someone posing as the ferry operator offers priority rebooking only after a refundable deposit is paid by QR code.","label":"spam","source":"augmentation:boundary:cruise-ticketing-v2"}
-{"text":"A bogus port-security alert claims your luggage is blocked and directs you to a short link to pay an account release charge.","label":"spam","source":"augmentation:boundary:cruise-ticketing-v2"}
-{"text":"A caller claiming to handle international sailings requests screen sharing and your bank one-time password for a refund.","label":"spam","source":"augmentation:boundary:cruise-ticketing-v2"}
-{"text":"偽のフェリー補償担当者が、給付前に個人口座へ認証料を振り込むよう求めています。","label":"spam","source":"augmentation:boundary:cruise-ticketing-v2"}
-{"text":"未確認の港湾メッセージが乗船情報の失効を告げ、旅券画像とSMS認証コードの入力を求めています。","label":"spam","source":"augmentation:boundary:cruise-ticketing-v2"}
-{"text":"船券返金窓口を名乗り、カード番号、有効期限、暗証情報を今夜までに送るよう要求する連絡です。","label":"spam","source":"augmentation:boundary:cruise-ticketing-v2"}
-{"text":"フェリー会社を装い、優先振替にはQRコードで保証金を先払いする必要があると案内しています。","label":"spam","source":"augmentation:boundary:cruise-ticketing-v2"}
-{"text":"偽の港湾保安通知が手荷物の差し止めを主張し、短縮リンクで解除手数料を払うよう誘導しています。","label":"spam","source":"augmentation:boundary:cruise-ticketing-v2"}
-{"text":"国際航路の担当者を名乗る人物が、返金処理のため画面共有と銀行のワンタイムパスワードを要求しています。","label":"spam","source":"augmentation:boundary:cruise-ticketing-v2"}

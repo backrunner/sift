@@ -101,6 +101,7 @@ GENERALIZATION_ACCEPTANCE_V17_TEST_SET = APPLE_TRAINER / "Evaluation" / "general
 GENERALIZATION_ACCEPTANCE_V18_TEST_SET = APPLE_TRAINER / "Evaluation" / "generalization-acceptance-v18.ndjson"
 GENERALIZATION_ACCEPTANCE_V19_TEST_SET = APPLE_TRAINER / "Evaluation" / "generalization-acceptance-v19.ndjson"
 GENERALIZATION_ACCEPTANCE_V20_TEST_SET = APPLE_TRAINER / "Evaluation" / "generalization-acceptance-v20.ndjson"
+CLOUDKIT_SERVICE_TEST_SET = APPLE_TRAINER / "Evaluation" / "cloudkit-service-v1.ndjson"
 TRAINING_SUPPLEMENTS = (
     APPLE_TRAINER / "Training" / "feizhu-boundary-supplement.ndjson",
     APPLE_TRAINER / "Training" / "feizhu-promotion-supplement.ndjson",
@@ -133,11 +134,12 @@ BOUNDARY_AUGMENTATION_CONFIGS = (
     APPLE_TRAINER / "Training" / "generalization-v48-hard-boundaries.json",
     APPLE_TRAINER / "Training" / "generalization-v49-hard-boundaries.json",
     APPLE_TRAINER / "Training" / "generalization-v50-digital-fulfillment.json",
+    APPLE_TRAINER / "Training" / "cloudkit-v58-reviewed-classic.json",
 )
 
 
 def holdout_test_sets() -> tuple[Path, ...]:
-    return (
+    listed = (
         CLASSIFICATION_TEST_SET,
         PROMOTION_TEST_SET,
         BILLING_CARD_TEST_SET,
@@ -166,11 +168,19 @@ def holdout_test_sets() -> tuple[Path, ...]:
         GENERALIZATION_ACCEPTANCE_V19_TEST_SET,
         GENERALIZATION_ACCEPTANCE_V20_TEST_SET,
     )
+    # Derived from submitted samples, so it stays out of the public repository.
+    return listed + tuple(path for path in (CLOUDKIT_SERVICE_TEST_SET,) if path.exists())
 
 
 def parse_arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("command", nargs="?", default="all", choices=["all", *STAGES, "select-transformer", "finetune"], help="stage to run (default all)")
+    parser.add_argument("command", nargs="?", default="all", choices=["all", *STAGES, "select-transformer", "finetune", "train-signal-approved"], help="stage to run (default all)")
+    parser.add_argument('--signal-study-profile',type=Path,default=None,
+                        help='Explicit reviewed research profile; retired historical inputs are not a default')
+    parser.add_argument('--signal-study-out',type=Path,default=PIPELINE_DIR/'signal-approved-study',
+                        help='fresh output directory for the frozen approved Signal research profile')
+    parser.add_argument('--signal-resume-state',type=Path,default=None,
+                        help='epoch-boundary optimizer/scheduler/RNG state for the identical approved plan')
     parser.add_argument("--skip", default="", help=f"comma-separated stages to skip out of: {','.join(STAGES)}")
     parser.add_argument("--only", default="", help="comma-separated stages to run (overrides command/--skip)")
 
@@ -187,6 +197,12 @@ def parse_arguments() -> argparse.Namespace:
     )
     corpus.add_argument("--seed-languages", default="all", help="seed languages passed to SiftAppleTrainer")
     corpus.add_argument("--extra-input", type=Path, action="append", default=[], help="additional NDJSON merged during curation (repeatable)")
+    corpus.add_argument("--signal-review-directory", type=Path, default=None,
+                        help="hash-bound reviewed Signal corpus package; used by train/distill/quantize/finetune")
+    corpus.add_argument("--reviewed-public-directory", type=Path, default=None,
+                        help="reviewed public package: train.ndjson, test.ndjson and import-report.json; adds its frozen holdout to every training isolation check")
+    corpus.add_argument("--extra-holdout", type=Path, action="append", default=[],
+                        help="additional private or source holdout, excluded at curation/augmentation and before training (repeatable)")
 
     remote = parser.add_argument_group("cloudkit")
     remote.add_argument("--cloudkit-env", choices=["development", "production"], default="production")
@@ -372,26 +388,79 @@ def load_texts(path: Path) -> list[str]:
     return texts
 
 
-def require_holdout_isolation(path: Path) -> None:
+def reviewed_public_paths(arguments: argparse.Namespace) -> tuple[Path | None, tuple[Path, ...]]:
+    extra = tuple(path.expanduser().resolve() for path in getattr(arguments, "extra_holdout", []))
+    directory = getattr(arguments, "reviewed_public_directory", None)
+    if directory is None:
+        return None, extra
+    directory = directory.expanduser().resolve()
+    report = json.loads((directory / "import-report.json").read_text())
+    manifest = Path(report["manifestPath"])
+    if hashlib.sha256(manifest.read_bytes()).hexdigest() != report["manifestSHA256"]:
+        raise SystemExit("error: reviewed public manifest checksum mismatch; re-import the package")
+    for name, field in (("train.ndjson", "trainSHA256"), ("test.ndjson", "testSHA256")):
+        if hashlib.sha256((directory / name).read_bytes()).hexdigest() != report[field]:
+            raise SystemExit("error: reviewed public dataset checksum mismatch; re-import the package")
+    return directory / "train.ndjson", (directory / "test.ndjson", *extra)
+
+
+def require_holdout_isolation(path: Path, extra_holdouts: tuple[Path, ...] = ()) -> None:
+    sys.path.insert(0, str(REPO_ROOT / "tools/transformer-trainer"))
+    from sms_signatures import semantic_signature
     holdout_texts = [
         text
-        for holdout_path in holdout_test_sets()
+        for holdout_path in (*holdout_test_sets(), *extra_holdouts)
         for text in load_texts(holdout_path)
     ]
     holdout_exact = {text.lower() for text in holdout_texts}
     holdout_near = {near_duplicate_signature(text) for text in holdout_texts}
+    holdout_families = {semantic_signature(text) for text in holdout_texts}
     exact_collisions = 0
     near_collisions = 0
     for text in load_texts(path):
         if text.lower() in holdout_exact:
             exact_collisions += 1
-        elif near_duplicate_signature(text) in holdout_near:
+        elif (near_duplicate_signature(text) in holdout_near or
+              semantic_signature(text) in holdout_families):
             near_collisions += 1
     if exact_collisions or near_collisions:
         raise SystemExit(
             "error: refusing to train on holdout-contaminated corpus: "
             f"{exact_collisions} exact and {near_collisions} near collisions; rerun the curate stage"
         )
+
+
+def signal_training_set(arguments: argparse.Namespace) -> tuple[Path, tuple[Path, ...]]:
+    """Use a reviewed Signal package only while corpus, decisions and holdouts match."""
+    directory = getattr(arguments, "signal_review_directory", None)
+    if directory is None:
+        if TRAIN_SET.exists():
+            unreviewed = ("huggingface:codesignal/sms-spam-collection",
+                          "github:reportsmishing/Smishing-Dataset-IMC25",
+                          "github:Cypher-Z/FBS_SMS_Dataset", "cloudkit:production")
+            with TRAIN_SET.open() as handle:
+                if any(json.loads(line).get("source", "").startswith(unreviewed)
+                       for line in handle if line.strip()):
+                    raise SystemExit("error: Signal corpus contains unreviewed coarse public/CloudKit labels; "
+                                     "supply --signal-review-directory after content review")
+        return TRAIN_SET, reviewed_public_paths(arguments)[1]
+    report = json.loads((directory.expanduser().resolve() / "corpus-review.json").read_text())
+    path = Path(report["outputPath"])
+    manifest = Path(report["reviewManifestPath"])
+    if (hashlib.sha256(path.read_bytes()).hexdigest() != report["outputSHA256"] or
+            hashlib.sha256(manifest.read_bytes()).hexdigest() != report["manifestSHA256"]):
+        raise SystemExit("error: reviewed Signal corpus/decisions changed; rerun corpus review")
+    for name, expected in json.loads(manifest.read_text()).get("reviewedSourcesSHA256", {}).items():
+        source = (REPO_ROOT / name).resolve()
+        if not source.is_relative_to(REPO_ROOT) or hashlib.sha256(source.read_bytes()).hexdigest() != expected:
+            raise SystemExit("error: public source review changed; rerun corpus review")
+    mandatory = {str(p.resolve()) for p in holdout_test_sets()}
+    if not mandatory.issubset(report["holdouts"]):
+        raise SystemExit("error: reviewed Signal package omits mandatory holdouts")
+    holdouts = tuple(Path(p) for p in report["holdouts"])
+    if any(hashlib.sha256(p.read_bytes()).hexdigest() != report["holdouts"][str(p)] for p in holdouts):
+        raise SystemExit("error: Signal holdout changed; rerun corpus review")
+    return path, (*holdouts, *reviewed_public_paths(arguments)[1])
 
 
 def stage_fetch_public(arguments: argparse.Namespace) -> None:
@@ -444,7 +513,21 @@ def stage_curate(arguments: argparse.Namespace) -> None:
         ],
         cwd=REPO_ROOT,
     )
-    inputs = [PUBLIC_CORPUS, CONVERSATION_TRAIN_SET, *TRAINING_SUPPLEMENTS]
+    public_input = PUBLIC_CORPUS
+    reviewed_input, reviewed_holdouts = reviewed_public_paths(arguments)
+    if reviewed_input is not None:
+        sys.path.insert(0, str(TRANSFORMER_TRAINER))
+        from import_reviewed_public import filter_coarse_rows
+
+        report = json.loads((reviewed_input.parent / "import-report.json").read_text())
+        manifest = json.loads(Path(report["manifestPath"]).read_text())
+        rows = [json.loads(line) for line in PUBLIC_CORPUS.read_text().splitlines() if line.strip()]
+        rows = filter_coarse_rows(rows, manifest, Path(report["sourceCache"]))
+        public_input = PIPELINE_DIR / "public-corpus-reviewed.ndjson"
+        public_input.write_text("".join(json.dumps(row, ensure_ascii=False) + "\n" for row in rows))
+    inputs = [public_input, CONVERSATION_TRAIN_SET, *TRAINING_SUPPLEMENTS]
+    if reviewed_input is not None:
+        inputs.append(reviewed_input)
     if REMOTE_CORPUS.exists():
         inputs.append(REMOTE_CORPUS)
     inputs.extend(path.expanduser().resolve() for path in arguments.extra_input)
@@ -468,7 +551,7 @@ def stage_curate(arguments: argparse.Namespace) -> None:
         "--report", str(CURATION_REPORT),
         *[
             argument
-            for holdout_path in holdout_test_sets()
+            for holdout_path in (*holdout_test_sets(), *reviewed_holdouts)
             for argument in ("--holdout", str(holdout_path))
         ],
         "--model-filter", arguments.model_filter,
@@ -500,7 +583,7 @@ def stage_augment(arguments: argparse.Namespace) -> None:
             ],
             *[
                 argument
-                for holdout_path in holdout_test_sets()
+                for holdout_path in (*holdout_test_sets(), *reviewed_public_paths(arguments)[1])
                 for argument in ("--holdout", str(holdout_path))
             ],
             "--taxonomy", str(REPO_ROOT / "packages/taxonomy/taxonomy.json"),
@@ -530,7 +613,7 @@ def stage_prune(arguments: argparse.Namespace) -> None:
         ],
         cwd=TRANSFORMER_TRAINER,
     )
-    require_holdout_isolation(TRAIN_SET)
+    require_holdout_isolation(TRAIN_SET, reviewed_public_paths(arguments)[1])
 
 
 def stage_train_classic(arguments: argparse.Namespace) -> None:
@@ -538,7 +621,7 @@ def stage_train_classic(arguments: argparse.Namespace) -> None:
     training_set = (arguments.classic_training_input or TRAIN_SET).resolve()
     if not training_set.exists():
         raise SystemExit(f"error: {training_set} missing; run the augment and prune stages first")
-    require_holdout_isolation(training_set)
+    require_holdout_isolation(training_set, reviewed_public_paths(arguments)[1])
     baseline_model = arguments.classic_baseline_model
     if arguments.install_ios and baseline_model is None:
         raise SystemExit("error: --install-ios requires --classic-baseline-model from the published built-in bundle")
@@ -634,9 +717,10 @@ def stage_train_classic(arguments: argparse.Namespace) -> None:
 
 def stage_train_transformer(arguments: argparse.Namespace, finetune: bool = False) -> None:
     require_tool("uv", "Install uv (https://docs.astral.sh/uv).")
-    if not TRAIN_SET.exists():
-        raise SystemExit(f"error: {TRAIN_SET} missing; run the augment and prune stages first")
-    require_holdout_isolation(TRAIN_SET)
+    training_set, holdouts = signal_training_set(arguments)
+    if not training_set.exists():
+        raise SystemExit(f"error: {training_set} missing; run corpus preparation first")
+    require_holdout_isolation(training_set, holdouts)
 
     resume_from = arguments.resume_from
     learning_rate = arguments.learning_rate
@@ -652,7 +736,7 @@ def stage_train_transformer(arguments: argparse.Namespace, finetune: bool = Fals
 
     command = [
         "uv", "run", "train_mmbert.py",
-        "--input", str(TRAIN_SET),
+        "--input", str(training_set),
         "--out", str(TRANSFORMER_OUT),
         "--version", arguments.version_transformer,
         "--model-abi", arguments.model_abi,
@@ -685,11 +769,24 @@ def stage_train_transformer(arguments: argparse.Namespace, finetune: bool = Fals
         print(f"  training report: {report.relative_to(REPO_ROOT)}")
 
 
+def stage_train_signal_approved(arguments: argparse.Namespace) -> None:
+    if not arguments.signal_study_profile:
+        raise SystemExit('error: --signal-study-profile is required; historical default corpora contain retired rows')
+    require_tool('uv','Install uv (https://docs.astral.sh/uv).')
+    command=['uv','run','run_approved_signal.py','--profile',
+             str(arguments.signal_study_profile.expanduser().resolve()),'--out',
+             str(arguments.signal_study_out.expanduser().resolve())]
+    if arguments.signal_resume_state is not None:
+        command.extend(['--resume-state',str(arguments.signal_resume_state.expanduser().resolve())])
+    run(command,cwd=TRANSFORMER_TRAINER)
+
+
 def stage_distill_transformer(arguments: argparse.Namespace) -> None:
     require_tool("uv", "Install uv (https://docs.astral.sh/uv).")
-    if not TRAIN_SET.exists():
-        raise SystemExit(f"error: {TRAIN_SET} missing; run the augment and prune stages first")
-    require_holdout_isolation(TRAIN_SET)
+    training_set, holdouts = signal_training_set(arguments)
+    if not training_set.exists():
+        raise SystemExit(f"error: {training_set} missing; run corpus preparation first")
+    require_holdout_isolation(training_set, holdouts)
     teacher_checkpoint = arguments.distill_teacher_checkpoint
     if teacher_checkpoint is not None:
         teacher_checkpoint = teacher_checkpoint.expanduser().resolve()
@@ -722,7 +819,7 @@ def stage_distill_transformer(arguments: argparse.Namespace) -> None:
         )
     command = [
         "uv", "run", "distill_mmbert.py",
-        "--input", str(TRAIN_SET),
+        "--input", str(training_set),
         "--teacher-checkpoint", str(teacher_checkpoint),
         "--out", str(TRANSFORMER_OUT),
         "--version", arguments.version_transformer,
@@ -749,6 +846,8 @@ def stage_distill_transformer(arguments: argparse.Namespace) -> None:
 
 
 def stage_quantize_transformer(arguments: argparse.Namespace) -> None:
+    training_set, holdouts = signal_training_set(arguments)
+    require_holdout_isolation(training_set, holdouts)
     require_tool("uv", "Install uv (https://docs.astral.sh/uv).")
     if not TRAIN_SET.exists() or not (TRANSFORMER_OUT / "SiftSignalModel.mlpackage").exists():
         raise SystemExit("error: run train-transformer before quantize-transformer")
@@ -758,7 +857,7 @@ def stage_quantize_transformer(arguments: argparse.Namespace) -> None:
         "--source-manifest", str(TRANSFORMER_OUT / "SiftSignalModel.manifest.json"),
         "--checkpoint", str(TRANSFORMER_OUT / "checkpoint"),
         "--tokenizer-artifact", str(TRANSFORMER_OUT / "SiftSignalModel.tokenizer.siftbpe"),
-        "--calibration-input", str(TRAIN_SET),
+        "--calibration-input", str(training_set),
         "--fixed-holdout", str(CLASSIFICATION_TEST_SET),
         "--promotion-holdout", str(PROMOTION_TEST_SET),
         "--billing-holdout", str(BILLING_CARD_TEST_SET),
@@ -811,7 +910,7 @@ def main() -> None:
         selected = [arguments.command]
 
     skipped = {stage.strip() for stage in arguments.skip.split(",") if stage.strip()}
-    unknown = (set(selected) | skipped) - set(STAGES) - {"select-transformer", "finetune"}
+    unknown = (set(selected) | skipped) - set(STAGES) - {"select-transformer", "finetune", "train-signal-approved"}
     if unknown:
         raise SystemExit(f"error: unknown stages: {', '.join(sorted(unknown))}")
     selected = [stage for stage in selected if stage not in skipped]
@@ -824,6 +923,7 @@ def main() -> None:
         "prune": stage_prune,
         "train-classic": stage_train_classic,
         "train-transformer": stage_train_transformer,
+        "train-signal-approved": stage_train_signal_approved,
         "distill-transformer": stage_distill_transformer,
         "quantize-transformer": stage_quantize_transformer,
         "select-transformer": stage_select_transformer,

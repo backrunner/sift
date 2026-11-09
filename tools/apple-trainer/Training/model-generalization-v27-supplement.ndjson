@@ -67,12 +67,6 @@
 {"text":"云平台告警：托管数据库 db-summit 将于周五到期，未续费会暂停访问并清理备份。","label":"work.alert","source":"augmentation:boundary:model-generalization-v27"}
 {"text":"Cloud platform alert: managed database db-summit expires Friday; access and backups are removed after the retention window.","label":"work.alert","source":"augmentation:boundary:model-generalization-v27"}
 {"text":"クラウドサービス db-summit の契約は金曜に終了します。更新しない場合は接続を停止し、バックアップを削除します。","label":"work.alert","source":"augmentation:boundary:model-generalization-v27"}
-{"text":"无需审核的装修贷当天放款，但要先缴纳保证金，请联系专员。","label":"spam","source":"augmentation:boundary:model-generalization-v27"}
-{"text":"No-review home loan pays today, but send a security deposit first and message our agent.","label":"spam","source":"augmentation:boundary:model-generalization-v27"}
-{"text":"審査なしの住宅ローンです。先に保証金を振り込み、担当者へ連絡してください。","label":"spam","source":"augmentation:boundary:model-generalization-v27"}
-{"text":"免审核借款可快速放款，请先支付账户解冻费用后等待入账。","label":"spam","source":"augmentation:boundary:model-generalization-v27"}
-{"text":"No-review cash advance releases funds after you pay the account-unlock charge first.","label":"spam","source":"augmentation:boundary:model-generalization-v27"}
-{"text":"無審査の融資で即日入金。先に口座解除費用を支払ってください。","label":"spam","source":"augmentation:boundary:model-generalization-v27"}
 {"text":"云缓存服务 cache-lake 将于周三到期，续期前会暂停写入，保留期后删除数据。","label":"work.alert","source":"augmentation:boundary:model-generalization-v27"}
 {"text":"Cloud cache service cache-lake expires Wednesday; writes pause at expiry and retained data is removed later.","label":"work.alert","source":"augmentation:boundary:model-generalization-v27"}
 {"text":"クラウドキャッシュ cache-lake の契約は水曜に終了します。更新しない場合は書き込みを停止します。","label":"work.alert","source":"augmentation:boundary:model-generalization-v27"}

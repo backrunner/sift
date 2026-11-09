@@ -17,5 +17,5 @@ description: Contact the Sift team for help with SMS filtering, purchases and do
 
 <details>
 <summary>How do I follow up on a request?</summary>
-<p>Keep the reference shown after submitting. Include it when contacting <a href="mailto:support@alkinum.io?subject=Sift%20Support">support@alkinum.io</a> so we can find your request. Please avoid submitting the same issue again.</p>
+<p>Keep the reference shown after submitting. If you need to follow up, use the support form and include that reference so we can find your request. Please avoid submitting the same issue again.</p>
 </details>

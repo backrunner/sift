@@ -19,14 +19,14 @@ const en = {
   send: 'Send request', sending: 'Sending…',
   consent: 'Your email and message will be used to handle this request.', privacyLink: 'Privacy policy',
   success: 'Request received', successDetail: 'Your request is with the Sift support team. Keep this reference if you contact us again.',
-  home: 'Back to Sift', emailAlternative: 'Prefer email?', noScript: 'JavaScript is required for security verification. You can also email support@alkinum.io.',
+  home: 'Back to Sift', noScript: 'Enable JavaScript to complete security verification and send your request.',
   errors: {
     method: 'This request could not be submitted. Reload the support page.', origin: 'Please submit from sift.alkinum.com/support.',
-    media: 'The request format is invalid. Reload the support page.', unavailable: 'Support is temporarily unavailable. Please email support@alkinum.io.',
+    media: 'The request format is invalid. Reload the support page.', unavailable: 'Support is temporarily unavailable. Keep a copy of your message and try again later.',
     rate_limit: 'Too many attempts. Please wait a minute before trying again.', invalid: 'Check your email and required fields, then complete the security check.',
     verification: 'Verification failed or expired. Please complete a new security check.',
-    uncertain: 'We could not confirm your submission. Please contact support@alkinum.io before submitting again.',
-    captcha: 'The security check could not load. Retry or email support@alkinum.io.', timeout: 'The security check timed out. Please retry.'
+    uncertain: 'We could not confirm your submission. Keep a copy of your message and wait before sending again to avoid duplicate requests.',
+    captcha: 'The security check could not load. Retry verification or try again later.', timeout: 'The security check timed out. Please retry.'
   }
 };
 
@@ -51,13 +51,13 @@ export const supportCopy: Record<SupportLocale, Copy> = {
     verified: '安全验证已完成。', verifying: '完成安全验证后即可提交。', retry: '重新验证',
     send: '提交工单', sending: '正在提交…', consent: '我们会使用你的邮箱和留言处理本次请求。', privacyLink: '隐私政策',
     success: '已收到你的请求', successDetail: '工单已提交给 Sift 支持团队。请保留以下编号，方便后续联系。',
-    home: '返回 Sift 首页', emailAlternative: '也可以发送邮件：', noScript: '安全验证需要启用 JavaScript。你也可以发送邮件至 support@alkinum.io。',
+    home: '返回 Sift 首页', noScript: '请启用 JavaScript，以完成安全验证并发送请求。',
     errors: {
       method: '暂时无法提交，请重新加载支持页面。', origin: '请从 sift.alkinum.com/support 提交。',
-      media: '请求格式有误，请重新加载支持页面。', unavailable: '支持服务暂时不可用，请发送邮件至 support@alkinum.io。',
+      media: '请求格式有误，请重新加载支持页面。', unavailable: '支持服务暂时不可用，请保存消息副本，稍后再试。',
       rate_limit: '尝试次数较多，请等待一分钟后再试。', invalid: '请检查邮箱和必填内容，并完成安全验证。',
-      verification: '验证失败或已过期，请重新完成安全验证。', uncertain: '暂时无法确认是否提交成功，请先联系 support@alkinum.io，避免重复提交。',
-      captcha: '安全验证未能加载，请重试或发送邮件至 support@alkinum.io。', timeout: '安全验证超时，请重试。'
+      verification: '验证失败或已过期，请重新完成安全验证。', uncertain: '暂时无法确认是否提交成功。为避免重复提交，请保存消息副本，等待一段时间后再发送。',
+      captcha: '安全验证未能加载，请重新验证或稍后再试。', timeout: '安全验证超时，请重试。'
     }
   },
   ja: {
@@ -78,13 +78,13 @@ export const supportCopy: Record<SupportLocale, Copy> = {
     verified: 'セキュリティ確認が完了しました。', verifying: '送信するにはセキュリティ確認を完了してください。', retry: 'もう一度確認',
     send: '問い合わせを送信', sending: '送信中…', consent: 'メールアドレスと内容は、お問い合わせへの対応に使用します。', privacyLink: 'プライバシーポリシー',
     success: 'お問い合わせを受け付けました', successDetail: 'Siftサポートチームに送信されました。再度ご連絡いただく際のために、この受付番号をお控えください。',
-    home: 'Siftのホームに戻る', emailAlternative: 'メールでも受け付けています：', noScript: 'セキュリティ確認にはJavaScriptが必要です。support@alkinum.ioへのメールでもお問い合わせいただけます。',
+    home: 'Siftのホームに戻る', noScript: 'JavaScriptを有効にして、セキュリティ確認を完了し、お問い合わせを送信してください。',
     errors: {
       method: '送信できませんでした。サポートページを再読み込みしてください。', origin: 'sift.alkinum.com/supportから送信してください。',
-      media: '送信形式が無効です。サポートページを再読み込みしてください。', unavailable: '現在サポートを利用できません。support@alkinum.ioへメールでご連絡ください。',
+      media: '送信形式が無効です。サポートページを再読み込みしてください。', unavailable: '現在サポートを利用できません。内容を保存し、時間をおいて再度お試しください。',
       rate_limit: '試行回数が多すぎます。1分ほど待ってから再度お試しください。', invalid: 'メールアドレスと必須項目を確認し、セキュリティ確認を完了してください。',
-      verification: '確認に失敗したか、有効期限が切れました。もう一度セキュリティ確認を行ってください。', uncertain: '送信結果を確認できませんでした。重複送信を避けるため、再送信の前にsupport@alkinum.ioへご連絡ください。',
-      captcha: 'セキュリティ確認を読み込めませんでした。再試行するかsupport@alkinum.ioへご連絡ください。', timeout: 'セキュリティ確認がタイムアウトしました。再度お試しください。'
+      verification: '確認に失敗したか、有効期限が切れました。もう一度セキュリティ確認を行ってください。', uncertain: '送信結果を確認できませんでした。内容を保存し、重複送信を避けるため、時間をおいてから再度送信してください。',
+      captcha: 'セキュリティ確認を読み込めませんでした。再確認するか、時間をおいて再度お試しください。', timeout: 'セキュリティ確認がタイムアウトしました。再度お試しください。'
     }
   }
 };
